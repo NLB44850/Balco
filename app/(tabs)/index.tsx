@@ -1,5 +1,5 @@
-import AsyncStorage from "@react-native-async-storage/async-storage";
-import { useEffect, useMemo, useState } from "react";
+import { useFocusEffect, useRouter } from "expo-router";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { Platform, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 import * as Haptics from "expo-haptics";
 import { LinearGradient } from "expo-linear-gradient";
@@ -10,7 +10,30 @@ import { FadeIn, PopIn } from "@/components/motion";
 import { ScreenContainer } from "@/components/screen-container";
 import { useLocalWeather } from "@/hooks/use-local-weather";
 import { useColors } from "@/hooks/use-colors";
-import { decideReminder, type MaintenanceEvent, type ReminderDecision, type PlantCareProfile } from "@/lib/reminders/reminder-engine";
+import { useGarden } from "@/lib/garden/garden-context";
+import {
+  POINTS_PER_GESTURE,
+  buildDailySession,
+  careProfileFor,
+  computeBadges,
+  computeProgress,
+  computeStats,
+  dailyTip,
+  dayKey,
+  eventForSessionTask,
+  eventsForPlant,
+  formatLongDate,
+  gardenDay,
+  greeting,
+  initials,
+  plantDisplayName,
+  plantStatus,
+  relativeDay,
+  seasonName,
+  type SessionTask,
+} from "@/lib/garden/garden-logic";
+import { effortLabel, recommendPlants } from "@/lib/plants/catalog";
+import { decideReminders, type ReminderDecision } from "@/lib/reminders/reminder-engine";
 import {
   defaultLocalReminderSettings,
   loadLocalReminderSettings,
@@ -19,164 +42,27 @@ import {
   type LocalReminderSettings,
 } from "@/lib/reminders/local-notifications";
 
-const ONBOARDING_STORAGE_KEY = "balco.onboarding.preferences.v1";
-const TASK_HISTORY_STORAGE_KEY = "balco.plant.task-history.v1";
+const TASK_TYPE_LABELS: Record<string, string> = { watering: "ARROSAGE", observation: "OBSERVATION", pruning: "ENTRETIEN", protection: "PROTECTION", harvest: "RÉCOLTE" };
 
-type OnboardingProfile = {
-  experience?: string;
-  sunlight?: string;
-  space?: string;
-  goals?: string[];
-  skipped?: boolean;
-};
-
-type PlantRecommendation = {
-  name: string;
-  emoji: string;
-  reason: string;
-  effort: string;
-};
-
-type TaskHistoryEntry = {
-  date: string;
-  task: string;
-};
-
-type TaskHistory = Record<string, TaskHistoryEntry[]>;
-
-function todayKey() {
-  const now = new Date();
-  return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
-}
-
-function formatHistoryDate(date: string) {
-  if (date === todayKey()) return "Aujourd'hui";
-  const yesterday = new Date();
-  yesterday.setDate(yesterday.getDate() - 1);
-  const yesterdayKey = `${yesterday.getFullYear()}-${String(yesterday.getMonth() + 1).padStart(2, "0")}-${String(yesterday.getDate()).padStart(2, "0")}`;
-  if (date === yesterdayKey) return "Hier";
-  return new Date(`${date}T12:00:00`).toLocaleDateString("fr-FR", { day: "numeric", month: "short" });
-}
-
-type DailyTask = {
-  label: string;
-  title: string;
-  instruction: string;
-  doneTitle: string;
-  doneText: string;
-};
-
-const dailyTasks: Record<string, DailyTask> = {
-  "Tomates cerises": { label: "TOMATES CERISES", title: "Aujourd'hui, vérifie la terre des tomates.", instruction: "Enfonce un doigt sur 2 cm : arrose doucement seulement si la terre est sèche.", doneTitle: "Tomates surveillées, journée gagnée.", doneText: "Ton plant est prêt à continuer sa croissance au soleil." },
-  "Basilic & menthe": { label: "BASILIC & MENTHE", title: "Aujourd'hui, arrose le basilic.", instruction: "Un petit verre au pied de la plante. La terre doit être sèche sur 2 cm.", doneTitle: "Aromatiques chouchoutées, journée gagnée.", doneText: "Tu viens de faire un geste utile pour ton micro-climat." },
-  "Capucines": { label: "CAPUCINES", title: "Aujourd'hui, observe les fleurs.", instruction: "Retire une fleur fanée pour encourager les nouvelles et laisse les abeilles butiner.", doneTitle: "Capucines observées, journée gagnée.", doneText: "Ton balcon reste accueillant pour les pollinisateurs." },
-  "Radis": { label: "RADIS", title: "Aujourd'hui, éclaircis les radis.", instruction: "Garde les pousses les plus vigoureuses, espacées de quelques centimètres.", doneTitle: "Radis éclaircis, journée gagnée.", doneText: "Tes jeunes plants ont maintenant plus de place pour grossir." },
-  "Menthe": { label: "MENTHE", title: "Aujourd'hui, pince la menthe.", instruction: "Coupe les extrémités juste au-dessus d'une paire de feuilles pour la faire ramifier.", doneTitle: "Menthe pincée, journée gagnée.", doneText: "Ta plante va produire de nouvelles pousses bien parfumées." },
-};
-
-const plantLibrary: Record<string, PlantRecommendation> = {
-  tomatoes: { name: "Tomates cerises", emoji: "🍅", reason: "Du soleil et un petit tuteur suffisent pour récolter cet été.", effort: "Soleil · facile" },
-  aromatics: { name: "Basilic & menthe", emoji: "🌿", reason: "Deux aromatiques généreuses pour cuisiner directement depuis ton balcon.", effort: "Mi-ombre · facile" },
-  bees: { name: "Capucines", emoji: "🌼", reason: "Des fleurs colorées qui attirent les abeilles et se plaisent en pot.", effort: "Soleil · facile" },
-  "zero-waste": { name: "Salade à couper", emoji: "🥬", reason: "Elle repousse plusieurs fois : parfaite pour récolter sans gaspiller.", effort: "Mi-ombre · facile" },
-  mint: { name: "Menthe", emoji: "🌱", reason: "Robuste et parfumée, elle démarre très bien dans un petit contenant.", effort: "Ombre · facile" },
-  radishes: { name: "Radis", emoji: "🌸", reason: "Une récolte rapide qui donne confiance dès les premières semaines.", effort: "Mi-ombre · express" },
-};
-
-function buildRecommendationPool(profile: OnboardingProfile | null): PlantRecommendation[] {
-  if (!profile || profile.skipped) return [plantLibrary.aromatics, plantLibrary.mint, plantLibrary.radishes, plantLibrary.bees];
-  const picks: PlantRecommendation[] = [];
-  const add = (key: string) => {
-    const plant = plantLibrary[key];
-    if (plant && !picks.some((item) => item.name === plant.name)) picks.push(plant);
-  };
-  (profile.goals ?? []).forEach((goal) => add(goal));
-  if (profile.sunlight === "shade") ["mint", "aromatics", "radishes"].forEach(add);
-  if (profile.sunlight === "partial") ["radishes", "aromatics", "mint"].forEach(add);
-  if (profile.sunlight === "sunny") ["tomatoes", "bees", "aromatics"].forEach(add);
-  if (profile.space === "windowsill") ["aromatics", "mint", "radishes"].forEach(add);
-  if (profile.space === "planter") ["radishes", "aromatics", "bees"].forEach(add);
-  if (profile.space === "balcony" || profile.space === "terrace") ["tomatoes", "bees", "aromatics"].forEach(add);
-  ["aromatics", "mint", "radishes", "tomatoes", "bees"].forEach(add);
-  return picks;
-}
-
-function buildRecommendations(profile: OnboardingProfile | null): PlantRecommendation[] {
-  return buildRecommendationPool(profile).slice(0, 3);
-}
-
-function careProfileForPlant(plant: PlantRecommendation): PlantCareProfile {
-  const isAromatic = plant.name === "Basilic & menthe" || plant.name === "Menthe";
-  const isFlower = plant.name === "Capucines";
-  return {
-    plantId: plant.name.toLowerCase().replaceAll(" ", "-"),
-    displayName: plant.name,
-    wateringIntervalHours: isAromatic ? 36 : isFlower ? 72 : 48,
-    rainSkipMm: 2,
-    heatThresholdC: isAromatic ? 28 : 30,
-    frostThresholdC: isAromatic ? 5 : 2,
-    windThresholdKmh: 40,
-    frostSensitive: true,
-    allowedTaskTypes: ["watering", "observation", "protection"],
-  };
-}
-
-function historyAsMaintenanceEvents(history: TaskHistory, plant: PlantRecommendation): MaintenanceEvent[] {
-  const plantId = careProfileForPlant(plant).plantId;
-  return (history[plant.name] ?? []).map((entry, index) => ({
-    id: `${plantId}-${entry.date}-${index}`,
-    plantId,
-    type: entry.task.toLowerCase().includes("arrose") || entry.task.toLowerCase().includes("terre") ? "watering" : "observation",
-    completedAt: `${entry.date}T12:00:00.000Z`,
-    source: "daily_task",
-    note: entry.task,
-  }));
+function reminderKey(decisions: ReminderDecision[]) {
+  return decisions.map((decision) => `${decision.plantId}:${decision.taskType}:${decision.validUntil}`).join("|");
 }
 
 export default function HomeScreen() {
   const colors = useColors();
-  const [taskDone, setTaskDone] = useState(false);
-  const [taskHistory, setTaskHistory] = useState<TaskHistory>({});
-  const [historyLoaded, setHistoryLoaded] = useState(false);
-  const [onboardingProfile, setOnboardingProfile] = useState<OnboardingProfile | null>(null);
-  const [profileLoaded, setProfileLoaded] = useState(false);
-  const [recommendationOverrides, setRecommendationOverrides] = useState<Record<number, PlantRecommendation>>({});
+  const router = useRouter();
+  const { loaded, resolvedPlants, events, profile, onboarding, addPlant, logEvent, removeEvent } = useGarden();
+  const [now, setNow] = useState(() => new Date());
+  const [skippedRecommendations, setSkippedRecommendations] = useState<string[]>([]);
   const [dismissedReminderKey, setDismissedReminderKey] = useState<string | null>(null);
   const [reminderSettings, setReminderSettings] = useState<LocalReminderSettings>(defaultLocalReminderSettings);
   const [reminderSettingsLoaded, setReminderSettingsLoaded] = useState(false);
   const [isSchedulingReminder, setIsSchedulingReminder] = useState(false);
-  const impact = taskDone ? 68 : 52;
-  const recommendationPool = useMemo(() => buildRecommendationPool(onboardingProfile), [onboardingProfile]);
-  const baseRecommendations = useMemo(() => buildRecommendations(onboardingProfile), [onboardingProfile]);
-  const recommendations = useMemo(() => baseRecommendations.map((plant, index) => recommendationOverrides[index] ?? plant), [baseRecommendations, recommendationOverrides]);
-  const recommendedPlant = recommendations[0] ?? plantLibrary.aromatics;
-  const dailyTask = dailyTasks[recommendedPlant.name] ?? dailyTasks["Basilic & menthe"];
-  const reminderPlant = useMemo(() => careProfileForPlant(recommendedPlant), [recommendedPlant]);
-  const maintenanceHistory = useMemo(() => historyAsMaintenanceEvents(taskHistory, recommendedPlant), [recommendedPlant, taskHistory]);
-  const { weather, weatherSnapshot, reminderDecision, isLoading, refresh } = useLocalWeather({
-    plant: reminderPlant,
-    history: maintenanceHistory,
-    reminderSettings: { enabled: reminderSettings.enabled, skipWateringWhenRainExpected: reminderSettings.skipWateringWhenRainExpected, maxNormalRemindersPerDay: reminderSettings.maxNormalRemindersPerDay },
-  });
-  const reminderKey = reminderDecision ? `${reminderDecision.plantId}:${reminderDecision.taskType}:${reminderDecision.validUntil}` : null;
-  const plantReminderEnabled = reminderSettings.enabledPlantIds.length === 0 || reminderSettings.enabledPlantIds.includes(reminderPlant.plantId);
-  const reminderDecisions = useMemo(() => {
-    if (!reminderSettings.enabled || !reminderSettingsLoaded || weather.isFallback) return [];
-    return recommendations.map((plant) => {
-      const profile = careProfileForPlant(plant);
-      if (reminderSettings.enabledPlantIds.length > 0 && !reminderSettings.enabledPlantIds.includes(profile.plantId)) return null;
-      return decideReminder({
-        plant: profile,
-        history: historyAsMaintenanceEvents(taskHistory, plant),
-        weather: weatherSnapshot,
-        settings: { enabled: true, skipWateringWhenRainExpected: reminderSettings.skipWateringWhenRainExpected, maxNormalRemindersPerDay: reminderSettings.maxNormalRemindersPerDay },
-      });
-    }).filter((decision): decision is ReminderDecision => decision !== null);
-  }, [recommendations, reminderSettings, reminderSettingsLoaded, taskHistory, weather.isFallback, weatherSnapshot]);
-  const reminderGroupKey = reminderDecisions.map((decision) => `${decision.plantId}:${decision.taskType}:${decision.validUntil}`).join("|");
-  const visibleReminders = reminderGroupKey !== dismissedReminderKey ? reminderDecisions : [];
+  const { weather, weatherSnapshot, isLoading, refresh } = useLocalWeather();
 
-  useEffect(() => {
+  // Recharge l'heure et les réglages (modifiables depuis le profil) à chaque retour sur l'écran.
+  useFocusEffect(useCallback(() => {
+    setNow(new Date());
     let active = true;
     loadLocalReminderSettings().then((settings) => {
       if (!active) return;
@@ -186,131 +72,104 @@ export default function HomeScreen() {
     return () => {
       active = false;
     };
-  }, []);
+  }, []));
+
+  const session = useMemo(() => buildDailySession(resolvedPlants, events, now), [events, now, resolvedPlants]);
+  const doneCount = session.filter((item) => item.done).length;
+  const stats = useMemo(() => computeStats(resolvedPlants, events, now), [events, now, resolvedPlants]);
+  const progress = useMemo(() => computeProgress(stats, computeBadges(stats)), [stats]);
+  const day = gardenDay(resolvedPlants.map(({ plant }) => plant), now);
+
+  const ownedCatalogIds = useMemo(() => resolvedPlants.map(({ entry }) => entry.id), [resolvedPlants]);
+  const recommendationPool = useMemo(() => recommendPlants(onboarding, { exclude: ownedCatalogIds, month: now.getMonth() + 1 }), [now, onboarding, ownedCatalogIds]);
+  const recommendations = useMemo(() => {
+    const available = recommendationPool.filter((entry) => !skippedRecommendations.includes(entry.id));
+    return (available.length >= 3 ? available : recommendationPool).slice(0, 3);
+  }, [recommendationPool, skippedRecommendations]);
+
+  const reminderPlants = useMemo(
+    () => resolvedPlants.filter(({ plant }) => reminderSettings.enabledPlantIds.length === 0 || reminderSettings.enabledPlantIds.includes(plant.id)),
+    [reminderSettings.enabledPlantIds, resolvedPlants],
+  );
+  const reminderDecisions = useMemo(() => {
+    if (!reminderSettingsLoaded || weather.isFallback) return [];
+    const settings = { enabled: reminderSettings.enabled, skipWateringWhenRainExpected: reminderSettings.skipWateringWhenRainExpected, maxNormalRemindersPerDay: reminderSettings.maxNormalRemindersPerDay };
+    const decisions = decideReminders(reminderPlants.map((resolved) => ({ plant: careProfileFor(resolved), history: events, weather: weatherSnapshot, settings })));
+    // Toutes les alertes urgentes, puis au plus N conseils normaux (cf. spec §6).
+    const normal = decisions.filter((decision) => decision.priority === "normal").slice(0, reminderSettings.maxNormalRemindersPerDay);
+    return [...decisions.filter((decision) => decision.priority !== "normal"), ...normal];
+  }, [events, reminderPlants, reminderSettings, reminderSettingsLoaded, weather.isFallback, weatherSnapshot]);
+  const visibleReminders = reminderKey(reminderDecisions) !== dismissedReminderKey ? reminderDecisions : [];
+  const topDecision = reminderDecisions[0] ?? null;
 
   useEffect(() => {
-    if (!reminderSettingsLoaded || !reminderSettings.enabled || !plantReminderEnabled || !reminderDecision) return;
-    void scheduleLocalReminder(reminderDecision, reminderSettings);
-  }, [plantReminderEnabled, reminderDecision, reminderSettings, reminderSettingsLoaded]);
+    if (!reminderSettingsLoaded || !reminderSettings.enabled || !topDecision) return;
+    void scheduleLocalReminder(topDecision, reminderSettings);
+  }, [reminderSettings, reminderSettingsLoaded, topDecision]);
 
-  const replaceRecommendation = (index: number) => {
-    const current = recommendations[index];
-    const visibleNames = recommendations.map((plant, plantIndex) => plantIndex === index ? "" : plant.name);
-    const alternative = recommendationPool.find((plant) => plant.name !== current.name && !visibleNames.includes(plant.name));
-    if (alternative) setRecommendationOverrides((currentOverrides) => ({ ...currentOverrides, [index]: alternative }));
-  };
-
-  useEffect(() => {
-    let active = true;
-    AsyncStorage.getItem(ONBOARDING_STORAGE_KEY)
-      .then((stored) => {
-        if (!active) return;
-        if (stored) {
-          try {
-            setOnboardingProfile(JSON.parse(stored) as OnboardingProfile);
-          } catch {
-            setOnboardingProfile(null);
-          }
-        }
-        setProfileLoaded(true);
-      })
-      .catch(() => {
-        if (active) setProfileLoaded(true);
-      });
-    return () => {
-      active = false;
-    };
-  }, []);
-
-  useEffect(() => {
-    let active = true;
-    AsyncStorage.getItem(TASK_HISTORY_STORAGE_KEY)
-      .then((stored) => {
-        if (!active) return;
-        if (stored) {
-          try {
-            setTaskHistory(JSON.parse(stored) as TaskHistory);
-          } catch {
-            setTaskHistory({});
-          }
-        }
-        setHistoryLoaded(true);
-      })
-      .catch(() => {
-        if (active) setHistoryLoaded(true);
-      });
-    return () => {
-      active = false;
-    };
-  }, []);
-
-  useEffect(() => {
-    setTaskDone(Boolean(taskHistory[recommendedPlant.name]?.some((entry) => entry.date === todayKey())));
-  }, [recommendedPlant.name, taskHistory]);
-
-  const completeTask = async () => {
-    const date = todayKey();
-    const plantHistory = taskHistory[recommendedPlant.name] ?? [];
-    const nextHistory = taskDone
-      ? { ...taskHistory, [recommendedPlant.name]: plantHistory.filter((entry) => entry.date !== date) }
-      : { ...taskHistory, [recommendedPlant.name]: [{ date, task: dailyTask.title }, ...plantHistory.filter((entry) => entry.date !== date)].slice(0, 30) };
-    setTaskHistory(nextHistory);
-    setTaskDone(!taskDone);
-    await AsyncStorage.setItem(TASK_HISTORY_STORAGE_KEY, JSON.stringify(nextHistory));
+  const toggleSessionTask = async (item: SessionTask) => {
+    if (item.done) await removeEvent(item.eventId);
+    else await logEvent(eventForSessionTask(item, new Date()));
     if (Platform.OS !== "web") await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
   };
 
   const completeReminder = async (decision: ReminderDecision) => {
-    const date = todayKey();
-    const plantHistory = taskHistory[recommendedPlant.name] ?? [];
-    const nextHistory = {
-      ...taskHistory,
-      [recommendedPlant.name]: [{ date, task: decision.title }, ...plantHistory.filter((entry) => entry.date !== date)].slice(0, 30),
-    };
-    setTaskHistory(nextHistory);
-    setDismissedReminderKey(reminderGroupKey);
-    await AsyncStorage.setItem(TASK_HISTORY_STORAGE_KEY, JSON.stringify(nextHistory));
+    await logEvent({
+      id: `reminder:${decision.plantId}:${decision.taskType}:${dayKey(new Date())}`,
+      plantId: decision.plantId,
+      // Suivre un « pas besoin d'arroser » compte comme une observation, pas comme un arrosage.
+      type: decision.action === "skip" ? "observation" : decision.taskType,
+      completedAt: new Date().toISOString(),
+      source: "reminder",
+      note: decision.title,
+    });
+    setDismissedReminderKey(reminderKey(reminderDecisions));
     if (Platform.OS !== "web") await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
   };
 
-  const dismissReminder = (decision: ReminderDecision) => {
-    setDismissedReminderKey(`${decision.plantId}:${decision.taskType}:${decision.validUntil}`);
-  };
-
-  const dismissReminderGroup = (decisions: ReminderDecision[]) => {
-    setDismissedReminderKey(decisions.map((decision) => `${decision.plantId}:${decision.taskType}:${decision.validUntil}`).join("|"));
-  };
+  const dismissReminder = () => setDismissedReminderKey(reminderKey(reminderDecisions));
 
   const activateReminders = async () => {
-    if (!reminderDecision) return;
+    if (!topDecision) return;
     setIsSchedulingReminder(true);
-    const nextSettings = { ...reminderSettings, enabled: true, enabledPlantIds: [reminderPlant.plantId] };
+    const nextSettings = { ...reminderSettings, enabled: true };
     setReminderSettings(nextSettings);
     await saveLocalReminderSettings(nextSettings);
-    await scheduleLocalReminder(reminderDecision, nextSettings);
-    setReminderSettingsLoaded(true);
+    await scheduleLocalReminder(topDecision, nextSettings);
     setIsSchedulingReminder(false);
   };
+
+  const replaceRecommendation = (catalogId: string) => {
+    setSkippedRecommendations((current) => (current.length + 3 >= recommendationPool.length ? [catalogId] : [...current, catalogId]));
+  };
+
+  const addRecommendation = async (catalogId: string) => {
+    await addPlant(catalogId);
+    if (Platform.OS !== "web") await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+  };
+
+  const userInitials = initials(profile.firstName);
+  const season = seasonName(now).toUpperCase();
 
   return (
     <ScreenContainer edges={["top", "left", "right"]}>
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.content}>
         <View style={styles.header}>
-          <View><Text style={[styles.overline, { color: colors.muted }]}>LUNDI 22 SEPTEMBRE · {weather.city.toUpperCase()}</Text><Text style={[styles.title, { color: colors.foreground }]}>Bonjour, Camille <Text style={{ color: colors.terracotta }}>✳</Text></Text></View>
-          <View style={[styles.avatar, { backgroundColor: colors.terracotta }]}><Text style={styles.avatarText}>CM</Text></View>
+          <View><Text style={[styles.overline, { color: colors.muted }]}>{formatLongDate(now)} · {weather.city.toUpperCase()}</Text><Text style={[styles.title, { color: colors.foreground }]}>{greeting(profile.firstName)} <Text style={{ color: colors.terracotta }}>✳</Text></Text></View>
+          <Pressable accessibilityRole="button" accessibilityLabel="Mon profil" onPress={() => router.push("/(tabs)/profile")} style={({ pressed }) => [styles.avatar, { backgroundColor: colors.terracotta }, pressed && styles.pressed]}><Text style={userInitials ? styles.avatarText : styles.avatarEmoji}>{userInitials ?? "🌱"}</Text></Pressable>
         </View>
 
         <FadeIn delay={80}>
           <LinearGradient colors={[colors.foreground, "#2F644B"]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={styles.hero}>
             <View style={styles.heroTop}><Text style={styles.heroLabel}>{isLoading ? "MÉTÉO LOCALE · CHARGEMENT" : "TON POTAGER AUJOURD'HUI"}</Text><Pressable onPress={() => void refresh()} style={[styles.weatherPill, { backgroundColor: "rgba(255,255,255,0.14)" }]}><Text style={styles.weatherPillText}>{weather.isDay ? "☀" : "☾"} {Math.round(weather.temperature)}°C</Text></Pressable></View>
             <Text style={styles.heroTitle}>Une petite session.{`\n`}Un balcon qui grandit.</Text>
-            <Text style={styles.heroMeta}>{weather.summary} · 3 actions simples pour prendre soin du vivant.</Text>
-            <View style={styles.heroBottom}><Text style={styles.heroDate}>SAISON 01 · JOUR 04</Text><Text style={styles.heroArrow}>↗</Text></View>
+            <Text style={styles.heroMeta}>{weather.summary} · {session.length > 0 ? `${session.length} geste${session.length > 1 ? "s" : ""} simple${session.length > 1 ? "s" : ""} pour aujourd’hui.` : "ajoute une plante pour recevoir tes gestes du jour."}</Text>
+            <View style={styles.heroBottom}><Text style={styles.heroDate}>{day ? `${season} · JOUR ${String(day).padStart(2, "0")}` : season}</Text><Text style={styles.heroArrow}>↗</Text></View>
           </LinearGradient>
         </FadeIn>
 
         {visibleReminders.length > 0 && <FadeIn delay={120} style={styles.reminderWrapper}>
-          {visibleReminders.length > 1 ? <GroupedReminderCard decisions={visibleReminders} onComplete={(decision) => void completeReminder(decision)} onDismiss={dismissReminderGroup} /> : <ContextualReminderCard decision={visibleReminders[0]} onComplete={(decision) => void completeReminder(decision)} onDismiss={dismissReminder} />}
+          {visibleReminders.length > 1 ? <GroupedReminderCard decisions={visibleReminders} onComplete={(decision) => void completeReminder(decision)} onDismiss={dismissReminder} /> : <ContextualReminderCard decision={visibleReminders[0]} onComplete={(decision) => void completeReminder(decision)} onDismiss={dismissReminder} />}
           <View style={styles.reminderSettingsRow}>
             <Text style={[styles.reminderSettingsText, { color: colors.muted }]}>
               {reminderSettings.enabled ? `Rappel local actif à ${String(reminderSettings.preferredHour).padStart(2, "0")} h ${String(reminderSettings.preferredMinute).padStart(2, "0")}` : "Recevoir ce conseil au bon moment"}
@@ -321,38 +180,60 @@ export default function HomeScreen() {
           </View>
         </FadeIn>}
 
-        <View style={styles.sectionRow}><View><Text style={[styles.sectionOverline, { color: colors.terracotta }]}>SESSION DU JOUR</Text><Text style={[styles.sectionTitle, { color: colors.foreground }]}>Le geste le plus utile</Text></View><View style={[styles.countPill, { backgroundColor: colors.sun }]}><Text style={[styles.countText, { color: colors.foreground }]}>01 / 03</Text></View></View>
+        <View style={styles.sectionRow}><View><Text style={[styles.sectionOverline, { color: colors.terracotta }]}>SESSION DU JOUR</Text><Text style={[styles.sectionTitle, { color: colors.foreground }]}>Les gestes les plus utiles</Text></View>{session.length > 0 && <View style={[styles.countPill, { backgroundColor: colors.sun }]}><Text style={[styles.countText, { color: colors.foreground }]}>{String(doneCount).padStart(2, "0")} / {String(session.length).padStart(2, "0")}</Text></View>}</View>
 
-        <PopIn delay={140}>
-          <LinearGradient colors={taskDone ? [colors.leaf, "#F4F6E8"] : [colors.surface, colors.cream]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={styles.taskCard}>
-            <View style={styles.taskHeader}><View style={[styles.taskNumber, { backgroundColor: taskDone ? colors.success : colors.terracotta }]}><Text style={styles.taskNumberText}>{taskDone ? "✓" : "01"}</Text></View><View style={styles.taskType}><Text style={[styles.taskTypeText, { color: colors.primary }]}>ENTRETIEN · 3 MIN</Text><Text style={[styles.taskPlant, { color: colors.muted }]}>{dailyTask.label}</Text></View></View>
-            <Text style={[styles.taskTitle, { color: colors.foreground }]}>{taskDone ? dailyTask.doneTitle : dailyTask.title}</Text>
-            <Text style={[styles.taskText, { color: colors.muted }]}>{taskDone ? dailyTask.doneText : dailyTask.instruction}</Text>
-            <Pressable onPress={completeTask} style={({ pressed }) => [styles.taskButton, { backgroundColor: taskDone ? colors.primary : colors.terracotta }, pressed && styles.pressed]}><Text style={styles.taskButtonText}>{taskDone ? "Geste validé  ✓" : "Marquer comme fait"}</Text></Pressable>
-            {taskDone && <PopIn delay={40} style={[styles.impactPill, { backgroundColor: colors.leaf }]}><Text style={[styles.impactPillText, { color: colors.primary }]}>✦ +4 impact éco</Text></PopIn>}
-          </LinearGradient>
-        </PopIn>
+        {loaded && session.length === 0 && (
+          <PopIn delay={140}>
+            <LinearGradient colors={[colors.surface, colors.cream]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={styles.taskCard}>
+              <View style={styles.taskHeader}><View style={[styles.taskNumber, { backgroundColor: colors.terracotta }]}><Text style={styles.taskNumberText}>01</Text></View><View style={styles.taskType}><Text style={[styles.taskTypeText, { color: colors.primary }]}>POUR COMMENCER · 1 MIN</Text><Text style={[styles.taskPlant, { color: colors.muted }]}>TON BALCON</Text></View></View>
+              <Text style={[styles.taskTitle, { color: colors.foreground }]}>{resolvedPlants.length === 0 ? "Ajoute ta première plante." : "Rien à faire aujourd’hui."}</Text>
+              <Text style={[styles.taskText, { color: colors.muted }]}>{resolvedPlants.length === 0 ? "Choisis parmi les idées ci-dessous ou dans le catalogue : Balco te proposera chaque jour le geste utile pour chacune." : "Tes plantes sont au repos ce mois-ci. Profite-en pour regarder le calendrier et préparer la suite."}</Text>
+              <Pressable onPress={() => router.push(resolvedPlants.length === 0 ? "/garden/add" : "/(tabs)/calendar")} style={({ pressed }) => [styles.taskButton, { backgroundColor: colors.terracotta }, pressed && styles.pressed]}><Text style={styles.taskButtonText}>{resolvedPlants.length === 0 ? "Ouvrir le catalogue" : "Voir le calendrier"}</Text></Pressable>
+            </LinearGradient>
+          </PopIn>
+        )}
+
+        {session.map((item, index) => {
+          const { task, done } = item;
+          return (
+            <PopIn key={item.eventId} delay={140 + index * 50}>
+              <LinearGradient colors={done ? [colors.leaf, "#F4F6E8"] : [colors.surface, colors.cream]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={styles.taskCard}>
+                <View style={styles.taskHeader}><View style={[styles.taskNumber, { backgroundColor: done ? colors.success : colors.terracotta }]}><Text style={styles.taskNumberText}>{done ? "✓" : String(index + 1).padStart(2, "0")}</Text></View><View style={styles.taskType}><Text style={[styles.taskTypeText, { color: colors.primary }]}>{TASK_TYPE_LABELS[task.type]} · {task.minutes} MIN</Text><Text style={[styles.taskPlant, { color: colors.muted }]}>{item.resolved.entry.emoji} {plantDisplayName(item.resolved).toUpperCase()}</Text></View></View>
+                <Text style={[styles.taskTitle, { color: colors.foreground }]}>{done ? task.doneTitle : task.title}</Text>
+                <Text style={[styles.taskText, { color: colors.muted }]}>{done ? task.doneText : task.instruction}</Text>
+                <Pressable onPress={() => void toggleSessionTask(item)} style={({ pressed }) => [styles.taskButton, { backgroundColor: done ? colors.primary : colors.terracotta }, pressed && styles.pressed]}><Text style={styles.taskButtonText}>{done ? "Geste validé  ✓" : "Marquer comme fait"}</Text></Pressable>
+                {done && <PopIn delay={40} style={[styles.impactPill, { backgroundColor: colors.leaf }]}><Text style={[styles.impactPillText, { color: colors.primary }]}>✦ +{POINTS_PER_GESTURE} points</Text></PopIn>}
+              </LinearGradient>
+            </PopIn>
+          );
+        })}
 
         <FadeIn delay={230}>
-          <View style={[styles.impactCard, { backgroundColor: colors.foreground }]}><View style={styles.impactTop}><View><Text style={styles.impactLabel}>IMPACT ÉCO</Text><Text style={styles.impactTitle}>Ton balcon respire avec toi.</Text></View><Text style={[styles.impactScore, { color: colors.sun }]}>{impact}<Text style={styles.impactOutOf}>/100</Text></Text></View><View style={styles.progressTrack}><View style={[styles.progressFill, { width: `${impact}%`, backgroundColor: colors.sun }]} /></View><Text style={styles.impactCaption}>{taskDone ? "Niveau suivant : plus que 32 points" : "Valide un geste pour gagner 4 points"}</Text></View>
+          <View style={[styles.impactCard, { backgroundColor: colors.foreground }]}><View style={styles.impactTop}><View><Text style={styles.impactLabel}>NIVEAU {progress.level} · {progress.levelTitle.toUpperCase()}</Text><Text style={styles.impactTitle}>Ton balcon respire avec toi.</Text></View><Text style={[styles.impactScore, { color: colors.sun }]}>{progress.pointsInLevel}<Text style={styles.impactOutOf}>/100</Text></Text></View><View style={styles.progressTrack}><View style={[styles.progressFill, { width: `${Math.max(progress.pointsInLevel, 2)}%`, backgroundColor: colors.sun }]} /></View><Text style={styles.impactCaption}>{`Plus que ${progress.pointsToNext} points avant le niveau ${progress.level + 1} · +${POINTS_PER_GESTURE} par geste validé`}</Text></View>
         </FadeIn>
 
-        {profileLoaded && <FadeIn delay={280}>
-          <View style={styles.recommendationHeader}><View><Text style={[styles.sectionOverline, { color: colors.terracotta }]}>POUR TON BALCON</Text><Text style={[styles.sectionTitle, { color: colors.foreground }]}>Mes idées adaptées</Text></View><Text style={[styles.recommendationCount, { color: colors.primary }]}>3 PLANTES</Text></View>
-          <Text style={[styles.recommendationIntro, { color: colors.muted }]}>{onboardingProfile && !onboardingProfile.skipped ? "Selon tes réponses d'arrivée, voici par quoi commencer." : "Des plantes faciles pour faire pousser tes premières habitudes."}</Text>
-          <View style={styles.recommendationList}>{recommendations.map((plant, index) => <View key={`${plant.name}-${index}`} style={[styles.recommendationCard, { backgroundColor: colors.surface, borderColor: colors.border }]}><View style={[styles.recommendationEmoji, { backgroundColor: colors.leaf }]}><Text style={styles.recommendationEmojiText}>{plant.emoji}</Text></View><View style={styles.recommendationCopy}><Text style={[styles.recommendationName, { color: colors.foreground }]}>{plant.name}</Text><Text style={[styles.recommendationReason, { color: colors.muted }]}>{plant.reason}</Text><Text style={[styles.recommendationEffort, { color: colors.primary }]}>{plant.effort}</Text></View><Pressable onPress={() => replaceRecommendation(index)} style={({ pressed }) => [styles.changeButton, { backgroundColor: colors.leaf }, pressed && styles.pressed]}><Text style={[styles.changeButtonText, { color: colors.primary }]}>↻ Changer</Text></Pressable></View>)}</View>
+        {loaded && resolvedPlants.length > 0 && <FadeIn delay={260}>
+          <View style={styles.sectionRow}><Text style={[styles.sectionTitle, { color: colors.foreground }]}>Ton balcon</Text><Pressable onPress={() => router.push("/garden")}><Text style={[styles.link, { color: colors.primary }]}>Tout voir ({resolvedPlants.length})  ›</Text></Pressable></View>
+          <View style={[styles.plantsRow, { marginTop: 10 }]}>{resolvedPlants.slice(0, 2).map((resolved) => {
+            const status = plantStatus(resolved, events, now);
+            const tone = status.tone === "watch" ? colors.terracotta : status.tone === "good" ? colors.success : colors.muted;
+            return <Pressable key={resolved.plant.id} onPress={() => router.push("/garden")} style={({ pressed }) => [styles.plantCard, { backgroundColor: colors.surface, borderColor: colors.border }, pressed && styles.pressed]}><View style={styles.plantTop}><Text style={styles.plantEmoji}>{resolved.entry.emoji}</Text><Text style={[styles.plantStatus, { color: tone }]}>{status.label}</Text></View><Text style={[styles.plantName, { color: colors.foreground }]}>{plantDisplayName(resolved)}</Text><Text style={[styles.plantMeta, { color: colors.muted }]}>{status.meta}</Text><View style={[styles.miniTrack, { backgroundColor: colors.leaf }]}><View style={[styles.miniFill, { width: `${Math.round(status.freshness * 100)}%`, backgroundColor: tone }]} /></View></Pressable>;
+          })}</View>
         </FadeIn>}
 
-        {historyLoaded && <FadeIn delay={320}>
-          <View style={styles.recommendationHeader}><View><Text style={[styles.sectionOverline, { color: colors.terracotta }]}>SUIVI DES GESTES</Text><Text style={[styles.sectionTitle, { color: colors.foreground }]}>Historique d’entretien</Text></View><Text style={[styles.recommendationCount, { color: colors.primary }]}>{Object.values(taskHistory).reduce((total, entries) => total + entries.length, 0)} GESTES</Text></View>
+        {loaded && recommendations.length > 0 && <FadeIn delay={280}>
+          <View style={styles.recommendationHeader}><View><Text style={[styles.sectionOverline, { color: colors.terracotta }]}>POUR TON BALCON</Text><Text style={[styles.sectionTitle, { color: colors.foreground }]}>Mes idées adaptées</Text></View><Pressable onPress={() => router.push("/garden/add")}><Text style={[styles.recommendationCount, { color: colors.primary }]}>CATALOGUE  ›</Text></Pressable></View>
+          <Text style={[styles.recommendationIntro, { color: colors.muted }]}>{onboarding && !onboarding.skipped ? "Selon tes réponses d'arrivée et la saison, voici par quoi continuer." : "Des plantes faciles pour faire pousser tes premières habitudes."}</Text>
+          <View style={styles.recommendationList}>{recommendations.map((entry) => <View key={entry.id} style={[styles.recommendationCard, { backgroundColor: colors.surface, borderColor: colors.border }]}><View style={[styles.recommendationEmoji, { backgroundColor: colors.leaf }]}><Text style={styles.recommendationEmojiText}>{entry.emoji}</Text></View><View style={styles.recommendationCopy}><Text style={[styles.recommendationName, { color: colors.foreground }]}>{entry.name}</Text><Text style={[styles.recommendationReason, { color: colors.muted }]}>{entry.pitch}</Text><Text style={[styles.recommendationEffort, { color: colors.primary }]}>{effortLabel(entry)}</Text></View><View style={styles.recommendationActions}><Pressable onPress={() => void addRecommendation(entry.id)} style={({ pressed }) => [styles.changeButton, { backgroundColor: colors.terracotta }, pressed && styles.pressed]}><Text style={[styles.changeButtonText, { color: "#FFFFFF" }]}>+ Ajouter</Text></Pressable><Pressable onPress={() => replaceRecommendation(entry.id)} style={({ pressed }) => [styles.changeButton, { backgroundColor: colors.leaf }, pressed && styles.pressed]}><Text style={[styles.changeButtonText, { color: colors.primary }]}>↻ Changer</Text></Pressable></View></View>)}</View>
+        </FadeIn>}
+
+        {loaded && resolvedPlants.length > 0 && <FadeIn delay={320}>
+          <View style={styles.recommendationHeader}><View><Text style={[styles.sectionOverline, { color: colors.terracotta }]}>SUIVI DES GESTES</Text><Text style={[styles.sectionTitle, { color: colors.foreground }]}>Historique d’entretien</Text></View><Text style={[styles.recommendationCount, { color: colors.primary }]}>{stats.gestures} GESTE{stats.gestures > 1 ? "S" : ""}</Text></View>
           <Text style={[styles.recommendationIntro, { color: colors.muted }]}>Chaque petite action compte. Retrouve les soins réalisés plante par plante.</Text>
-          <View style={styles.historyList}>{recommendations.map((plant) => { const entries = taskHistory[plant.name] ?? []; const latest = entries[0]; return <View key={`history-${plant.name}`} style={[styles.historyCard, { backgroundColor: colors.cream }]}><View style={[styles.historyEmoji, { backgroundColor: colors.leaf }]}><Text style={styles.recommendationEmojiText}>{plant.emoji}</Text></View><View style={styles.recommendationCopy}><Text style={[styles.recommendationName, { color: colors.foreground }]}>{plant.name}</Text><Text style={[styles.historyMeta, { color: colors.muted }]}>{entries.length > 0 ? `${entries.length} geste${entries.length > 1 ? "s" : ""} · dernier : ${formatHistoryDate(latest.date)}` : "Aucun geste enregistré pour le moment"}</Text>{latest && <Text numberOfLines={1} style={[styles.historyTask, { color: colors.primary }]}>{latest.task}</Text>}</View><Text style={[styles.historyCheck, { color: entries.length > 0 ? colors.success : colors.muted }]}>{entries.length > 0 ? "✓" : "·"}</Text></View>; })}</View>
+          <View style={styles.historyList}>{resolvedPlants.map((resolved) => { const entries = eventsForPlant(events, resolved.plant.id); const latest = entries[0]; return <View key={`history-${resolved.plant.id}`} style={[styles.historyCard, { backgroundColor: colors.cream }]}><View style={[styles.historyEmoji, { backgroundColor: colors.leaf }]}><Text style={styles.recommendationEmojiText}>{resolved.entry.emoji}</Text></View><View style={styles.recommendationCopy}><Text style={[styles.recommendationName, { color: colors.foreground }]}>{plantDisplayName(resolved)}</Text><Text style={[styles.historyMeta, { color: colors.muted }]}>{entries.length > 0 ? `${entries.length} geste${entries.length > 1 ? "s" : ""} · dernier : ${relativeDay(new Date(latest.completedAt), now)}` : "Aucun geste enregistré pour le moment"}</Text>{latest?.note && <Text numberOfLines={1} style={[styles.historyTask, { color: colors.primary }]}>{latest.note}</Text>}</View><Text style={[styles.historyCheck, { color: entries.length > 0 ? colors.success : colors.muted }]}>{entries.length > 0 ? "✓" : "·"}</Text></View>; })}</View>
         </FadeIn>}
 
-        <View style={styles.sectionRow}><Text style={[styles.sectionTitle, { color: colors.foreground }]}>Ton balcon</Text><Text style={[styles.link, { color: colors.primary }]}>Tout voir  ›</Text></View>
-        <View style={styles.plantsRow}><View style={[styles.plantCard, { backgroundColor: colors.surface, borderColor: colors.border }]}><View style={styles.plantTop}><Text style={styles.plantEmoji}>🍅</Text><Text style={[styles.plantStatus, { color: colors.success }]}>EN FORME</Text></View><Text style={[styles.plantName, { color: colors.foreground }]}>Tomates cerises</Text><Text style={[styles.plantMeta, { color: colors.muted }]}>Floraison · 68%</Text><View style={[styles.miniTrack, { backgroundColor: colors.leaf }]}><View style={[styles.miniFill, { width: "68%", backgroundColor: colors.success }]} /></View></View><View style={[styles.plantCard, { backgroundColor: colors.surface, borderColor: colors.border }]}><View style={styles.plantTop}><Text style={styles.plantEmoji}>🌿</Text><Text style={[styles.plantStatus, { color: colors.terracotta }]}>À SURVEILLER</Text></View><Text style={[styles.plantName, { color: colors.foreground }]}>Menthe</Text><Text style={[styles.plantMeta, { color: colors.muted }]}>Dernier soin · hier</Text><View style={[styles.miniTrack, { backgroundColor: colors.leaf }]}><View style={[styles.miniFill, { width: "84%", backgroundColor: colors.terracotta }]} /></View></View></View>
-
-        <View style={[styles.noteCard, { backgroundColor: colors.cream }]}><Text style={[styles.noteMark, { color: colors.terracotta }]}>✦</Text><View style={{ flex: 1 }}><Text style={[styles.noteLabel, { color: colors.primary }]}>NOTE DE NORA</Text><Text style={[styles.noteText, { color: colors.foreground }]}>L’eau de cuisson refroidie est un bon coup de pouce pour tes plantes.</Text></View><Text style={[styles.noteArrow, { color: colors.terracotta }]}>›</Text></View>
+        <View style={[styles.noteCard, { backgroundColor: colors.cream }]}><Text style={[styles.noteMark, { color: colors.terracotta }]}>✦</Text><View style={{ flex: 1 }}><Text style={[styles.noteLabel, { color: colors.primary }]}>ASTUCE DU JOUR</Text><Text style={[styles.noteText, { color: colors.foreground }]}>{dailyTip(now)}</Text></View></View>
       </ScrollView>
     </ScreenContainer>
   );
@@ -365,6 +246,7 @@ const styles = StyleSheet.create({
   title: { fontSize: 25, fontWeight: "800", letterSpacing: -0.8, marginTop: 5 },
   avatar: { width: 40, height: 40, borderRadius: 14, alignItems: "center", justifyContent: "center" },
   avatarText: { color: "#FFF", fontWeight: "800", fontSize: 12 },
+  avatarEmoji: { fontSize: 18 },
   hero: { borderRadius: 26, padding: 19, minHeight: 184, overflow: "hidden" },
   heroTop: { flexDirection: "row", alignItems: "center", justifyContent: "space-between" },
   heroLabel: { color: "rgba(255,255,255,0.65)", fontSize: 9, letterSpacing: 1, fontWeight: "800" },
@@ -385,7 +267,7 @@ const styles = StyleSheet.create({
   sectionTitle: { fontSize: 19, fontWeight: "800", letterSpacing: -0.3, marginTop: 3 },
   countPill: { borderRadius: 12, paddingHorizontal: 9, paddingVertical: 6 },
   countText: { fontSize: 10, fontWeight: "800" },
-  taskCard: { borderRadius: 24, padding: 18, shadowColor: "#9A765C", shadowOpacity: 0.08, shadowRadius: 13, shadowOffset: { width: 0, height: 5 }, elevation: 2 },
+  taskCard: { marginTop: -6, borderRadius: 24, padding: 18, shadowColor: "#9A765C", shadowOpacity: 0.08, shadowRadius: 13, shadowOffset: { width: 0, height: 5 }, elevation: 2 },
   taskHeader: { flexDirection: "row", alignItems: "center", gap: 11 },
   taskNumber: { width: 41, height: 41, borderRadius: 14, alignItems: "center", justifyContent: "center" },
   taskNumberText: { color: "#FFF", fontWeight: "800", fontSize: 14 },
@@ -420,6 +302,7 @@ const styles = StyleSheet.create({
   recommendationEffort: { fontSize: 9, fontWeight: "800", marginTop: 4, letterSpacing: 0.4 },
   changeButton: { alignSelf: "flex-start", borderRadius: 10, paddingHorizontal: 8, paddingVertical: 7 },
   changeButtonText: { fontSize: 9, fontWeight: "800" },
+  recommendationActions: { gap: 6 },
   recommendationArrow: { fontSize: 25, fontWeight: "300" },
   historyList: { gap: 8, marginTop: 10 },
   historyCard: { borderRadius: 18, padding: 11, flexDirection: "row", alignItems: "center", gap: 11 },

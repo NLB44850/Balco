@@ -2,12 +2,13 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useRef, useState } from "react";
 import { Animated, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
-import { useRouter } from "expo-router";
+import { Redirect, useRouter } from "expo-router";
 
 import { BalcoIllustration } from "@/components/balco-illustration";
 import { FadeIn, PopIn } from "@/components/motion";
 import { ScreenContainer } from "@/components/screen-container";
 import { useColors } from "@/hooks/use-colors";
+import { useGarden } from "@/lib/garden/garden-context";
 
 const ONBOARDING_STORAGE_KEY = "balco.onboarding.preferences.v1";
 const experiences = [
@@ -36,6 +37,7 @@ const goals = [
 export default function OnboardingScreen() {
   const colors = useColors();
   const router = useRouter();
+  const garden = useGarden();
   const press = useRef(new Animated.Value(1)).current;
   const [step, setStep] = useState(0);
   const [experience, setExperience] = useState<string | null>(null);
@@ -45,6 +47,7 @@ export default function OnboardingScreen() {
 
   const finish = async () => {
     await AsyncStorage.setItem(ONBOARDING_STORAGE_KEY, JSON.stringify({ experience, sunlight: sunlightChoice, space: spaceChoice, goals: goalChoices, completedAt: new Date().toISOString() }));
+    await garden.reloadOnboarding();
     router.replace("/(tabs)");
   };
 
@@ -61,6 +64,7 @@ export default function OnboardingScreen() {
 
   const skip = async () => {
     await AsyncStorage.setItem(ONBOARDING_STORAGE_KEY, JSON.stringify({ skipped: true, completedAt: new Date().toISOString() }));
+    await garden.reloadOnboarding();
     router.replace("/(tabs)");
   };
 
@@ -78,6 +82,10 @@ export default function OnboardingScreen() {
   const titles = ["On commence par\nfaire connaissance.", "Combien de soleil\nreçoit ton balcon ?", "Quel espace veux-tu\nfaire pousser ?", "Qu'aimerais-tu\ncultiver ou protéger ?"];
   const subtitles = ["Pas de jargon ici. Balco s'adapte à ton expérience, sans pression.", "Une estimation suffit : tes conseils de culture seront plus justes.", "Même un rebord de fenêtre peut devenir un petit écosystème.", "Choisis tout ce qui te donne envie. Balco construira ton premier plan de culture."];
   const captions = ["Un potager à ton rythme.", "Chaque balcon a son propre climat.", "Un coin de nature, juste là.", "Des choix qui ont du goût."];
+
+  // Onboarding déjà fait : on ne repose pas les questions à chaque lancement.
+  if (!garden.loaded) return null;
+  if (garden.onboarding) return <Redirect href="/(tabs)" />;
 
   return (
     <ScreenContainer className="px-5" edges={["top", "left", "right", "bottom"]}>

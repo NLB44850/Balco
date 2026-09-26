@@ -19,10 +19,10 @@ describe("Balco MVP content", () => {
   });
 
   it("contains the requested gardening prototype content", () => {
-    expect(readProjectFile("app/(tabs)/index.tsx")).toContain("arrose le basilic");
+    expect(readProjectFile("lib/plants/catalog.ts")).toContain("arrose ${label} si besoin");
     expect(readProjectFile("app/(tabs)/assistant.tsx")).toContain("Quoi planter en avril");
     expect(readProjectFile("app/(tabs)/scanner.tsx")).toContain("SOLUTION NATURELLE");
-    expect(readProjectFile("app/(tabs)/profile.tsx")).toContain("Ami des Abeilles");
+    expect(readProjectFile("lib/garden/garden-logic.ts")).toContain("Ami des Abeilles");
   });
 
   it("includes the warmer modern layer requested for the second iteration", () => {
@@ -46,36 +46,56 @@ describe("Balco MVP content", () => {
     expect(onboarding).toContain("Créer mon balcon");
   });
 
-  it("uses onboarding answers to recommend plants on the home screen", () => {
+  it("builds the home screen from the user's real garden", () => {
     const home = readProjectFile("app/(tabs)/index.tsx");
 
-    expect(home).toContain("ONBOARDING_STORAGE_KEY");
-    expect(home).toContain("buildRecommendations");
+    expect(home).toContain("useGarden");
+    expect(home).toContain("recommendPlants");
     expect(home).toContain("Mes idées adaptées");
     expect(home).toContain("Selon tes réponses d'arrivée");
-    expect(home).toContain("Tomates cerises");
     expect(home).toContain("replaceRecommendation");
     expect(home).toContain("↻ Changer");
-    expect(home).toContain("recommendationPool");
-    expect(home).toContain("dailyTasks");
-    expect(home).toContain("recommendedPlant");
-    expect(home).toContain("dailyTask.title");
-    expect(home).toContain("TASK_HISTORY_STORAGE_KEY");
-    expect(home).toContain("Historique d'entretien");
-    expect(home).toContain("formatHistoryDate");
+    expect(home).toContain("+ Ajouter");
+    expect(home).toContain("buildDailySession");
+    expect(home).toContain("toggleSessionTask");
+    expect(home).toContain("Historique d’entretien");
     expect(home).toContain("ContextualReminderCard");
     expect(home).toContain("visibleReminder");
     expect(home).toContain("completeReminder");
     expect(home).toContain("dismissReminder");
+    expect(readProjectFile("lib/garden/garden-context.tsx")).toContain("balco.garden.plants.v1");
+  });
+
+  it("no longer ships placeholder identity or fixed dates", () => {
+    const home = readProjectFile("app/(tabs)/index.tsx");
+    const profile = readProjectFile("app/(tabs)/profile.tsx");
+    const calendar = readProjectFile("app/(tabs)/calendar.tsx");
+
+    for (const source of [home, profile, calendar]) {
+      expect(source).not.toContain("Camille");
+      expect(source).not.toContain("SAISON 01");
+      expect(source).not.toContain("22 SEPTEMBRE");
+    }
+    expect(home).toContain("formatLongDate");
+    expect(profile).toContain("computeBadges");
+    expect(profile).not.toMatch(/>12<\/Text>/);
+  });
+
+  it("lets users manage their plants from the catalog", () => {
+    expect(readProjectFile("app/garden/index.tsx")).toContain("removePlant");
+    expect(readProjectFile("app/garden/add.tsx")).toContain("searchCatalog");
+    expect(readProjectFile("app/_layout.tsx")).toContain("GardenProvider");
+    expect(readProjectFile("app/index.tsx")).toContain("Redirect");
   });
 
   it("includes a personalized cultivation calendar", () => {
     const calendar = readProjectFile("app/(tabs)/calendar.tsx");
 
     expect(calendar).toContain("TON CLIMAT LOCAL · EN DIRECT");
-    expect(calendar).toContain("Tomates cerises");
+    expect(calendar).toContain("calendarActivities");
     expect(calendar).toContain("selectedMonth");
-    expect(calendar).toContain("Ajouter à ma session");
+    expect(calendar).toContain("Noter comme fait");
+    expect(calendar).toContain("+ Ajouter à mon balcon");
     expect(readProjectFile("app/(tabs)/_layout.tsx")).toContain('name="calendar"');
   });
 
@@ -132,12 +152,12 @@ describe("Balco MVP content", () => {
     expect(readProjectFile("lib/reminders/local-notifications.ts")).toContain("inQuietHours");
   });
 
-  it("supports grouped reminders for several recommended plants", () => {
+  it("supports grouped reminders for several garden plants", () => {
     const home = readProjectFile("app/(tabs)/index.tsx");
     const grouped = readProjectFile("components/grouped-reminder-card.tsx");
     expect(home).toContain("reminderDecisions");
     expect(home).toContain("GroupedReminderCard");
-    expect(home).toContain("dismissReminderGroup");
+    expect(home).toContain("decideReminders");
     expect(grouped).toContain("CONSEILS POUR TON BALCON");
     expect(grouped).toContain("onComplete");
     expect(grouped).toContain("onDismiss");

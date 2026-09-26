@@ -1,10 +1,15 @@
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import { useRouter } from "expo-router";
 import { useEffect, useMemo, useState } from "react";
-import { Alert, FlatList, Pressable, StyleSheet, Text, View } from "react-native";
+import { Alert, FlatList, Pressable, StyleSheet, Text, TextInput, View } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 
 import { PopIn } from "@/components/motion";
 import { ScreenContainer } from "@/components/screen-container";
 import { useColors } from "@/hooks/use-colors";
+import { ONBOARDING_STORAGE_KEY, useGarden } from "@/lib/garden/garden-context";
+import { computeBadges, computeProgress, computeStats, initials, plantDisplayName } from "@/lib/garden/garden-logic";
+import { SPACE_LABELS, SUNLIGHT_LABELS, type SpaceSize, type Sunlight } from "@/lib/plants/catalog";
 import {
   clearAndDisableLocalReminders,
   defaultLocalReminderSettings,
@@ -14,26 +19,29 @@ import {
   type LocalReminderSettings,
 } from "@/lib/reminders/local-notifications";
 
-type Badge = { id: string; title: string; detail: string; icon: string; tone: string; unlocked: boolean };
-
-const badges: Badge[] = [
-  { id: "bees", title: "Ami des Abeilles", detail: "3 plantes mellifères", icon: "✺", tone: "#F5D27C", unlocked: true },
-  { id: "water", title: "Zéro Gâchis d'Eau", detail: "5 arrosages économes", icon: "◌", tone: "#B9DCD3", unlocked: true },
-  { id: "bio", title: "Bio-Défenseur", detail: "2 soins naturels", icon: "♧", tone: "#DCE8DD", unlocked: true },
-  { id: "plate", title: "Du Balcon à l'Assiette", detail: "Récolte ta première tomate", icon: "♡", tone: "#F0D2C5", unlocked: false },
-];
-
-const reminderPlants = [
-  { id: "tomates-cerises", label: "Tomates cerises", icon: "🍅" },
-  { id: "basilic-&-menthe", label: "Basilic & menthe", icon: "🌿" },
-  { id: "menthe", label: "Menthe", icon: "🌱" },
-];
+function capitalize(value: string) {
+  return value.charAt(0).toUpperCase() + value.slice(1);
+}
 
 export default function ProfileScreen() {
   const colors = useColors();
-  const unlockedCount = badges.filter((badge) => badge.unlocked).length;
+  const router = useRouter();
+  const { resolvedPlants, events, profile, onboarding, updateProfile, reloadOnboarding } = useGarden();
   const [reminderSettings, setReminderSettings] = useState<LocalReminderSettings>(defaultLocalReminderSettings);
   const [settingsLoaded, setSettingsLoaded] = useState(false);
+  const [editing, setEditing] = useState(false);
+  const [nameDraft, setNameDraft] = useState("");
+
+  const stats = useMemo(() => computeStats(resolvedPlants, events, new Date()), [events, resolvedPlants]);
+  const badges = useMemo(() => computeBadges(stats), [stats]);
+  const progress = useMemo(() => computeProgress(stats, badges), [badges, stats]);
+  const unlockedCount = badges.filter((badge) => badge.unlocked).length;
+  const userInitials = initials(profile.firstName);
+  const balconyMeta = [
+    onboarding?.space && !onboarding.skipped ? capitalize(SPACE_LABELS[onboarding.space as SpaceSize]) : null,
+    onboarding?.sunlight && !onboarding.skipped ? SUNLIGHT_LABELS[onboarding.sunlight as Sunlight].toLowerCase() : null,
+    `${stats.plants} plante${stats.plants > 1 ? "s" : ""}`,
+  ].filter(Boolean).join(" · ");
 
   useEffect(() => {
     loadLocalReminderSettings().then((settings) => {
@@ -59,32 +67,62 @@ export default function ProfileScreen() {
       Alert.alert("Notifications désactivées", "Autorise les notifications dans les réglages de ton téléphone pour recevoir les conseils Balco.");
       return;
     }
-    await updateReminderSettings({ enabled: true, enabledPlantIds: reminderPlants.map((plant) => plant.id) });
+    // Liste vide = toutes les plantes, y compris celles ajoutées plus tard.
+    await updateReminderSettings({ enabled: true, enabledPlantIds: [] });
   };
+
+  const isPlantEnabled = (plantId: string) => reminderSettings.enabledPlantIds.length === 0 || reminderSettings.enabledPlantIds.includes(plantId);
 
   const togglePlant = async (plantId: string) => {
-    const enabledPlantIds = reminderSettings.enabledPlantIds.includes(plantId)
-      ? reminderSettings.enabledPlantIds.filter((id) => id !== plantId)
-      : [...reminderSettings.enabledPlantIds, plantId];
-    await updateReminderSettings({ enabledPlantIds });
+    const current = reminderSettings.enabledPlantIds.length === 0 ? resolvedPlants.map(({ plant }) => plant.id) : reminderSettings.enabledPlantIds;
+    const next = current.includes(plantId) ? current.filter((id) => id !== plantId) : [...current, plantId];
+    const allEnabled = resolvedPlants.every(({ plant }) => next.includes(plant.id));
+    await updateReminderSettings({ enabledPlantIds: allEnabled ? [] : next });
   };
 
-  const header = useMemo(() => (
+  const startEditing = () => {
+    setNameDraft(profile.firstName ?? "");
+    setEditing((value) => !value);
+  };
+
+  const saveName = async () => {
+    await updateProfile({ firstName: nameDraft.trim() || undefined });
+    setEditing(false);
+  };
+
+  const redoOnboarding = async () => {
+    await AsyncStorage.removeItem(ONBOARDING_STORAGE_KEY);
+    await reloadOnboarding();
+    router.replace("/");
+  };
+
+  const header = (
     <>
       <View style={styles.profileHeader}>
-        <View style={[styles.avatar, { backgroundColor: colors.terracotta }]}><Text style={styles.avatarText}>CM</Text></View>
-        <View style={styles.profileCopy}><Text style={[styles.profileName, { color: colors.foreground }]}>Camille Martin</Text><Text style={[styles.profileMeta, { color: colors.muted }]}>Paris · balcon sud-est</Text></View>
-        <Pressable onPress={() => Alert.alert("Réglages", "Les réglages du profil arrivent bientôt.")} style={({ pressed }) => [styles.settingsButton, { borderColor: colors.border }, pressed && styles.pressed]}><Text style={[styles.settingsText, { color: colors.foreground }]}>⚙</Text></Pressable>
+        <View style={[styles.avatar, { backgroundColor: colors.terracotta }]}><Text style={userInitials ? styles.avatarText : styles.avatarEmoji}>{userInitials ?? "🌱"}</Text></View>
+        <View style={styles.profileCopy}><Text style={[styles.profileName, { color: colors.foreground }]}>{profile.firstName?.trim() || "Mon balcon"}</Text><Text style={[styles.profileMeta, { color: colors.muted }]}>{balconyMeta}</Text></View>
+        <Pressable accessibilityRole="button" accessibilityLabel="Réglages du profil" onPress={startEditing} style={({ pressed }) => [styles.settingsButton, { borderColor: editing ? colors.primary : colors.border }, pressed && styles.pressed]}><Text style={[styles.settingsText, { color: colors.foreground }]}>⚙</Text></Pressable>
       </View>
+      {editing && (
+        <View style={[styles.editCard, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+          <Text style={[styles.reminderOptionLabel, { color: colors.foreground }]}>Ton prénom</Text>
+          <View style={styles.editRow}>
+            <TextInput value={nameDraft} onChangeText={setNameDraft} onSubmitEditing={() => void saveName()} placeholder="Pour que Balco te dise bonjour" placeholderTextColor={colors.muted} maxLength={30} autoFocus returnKeyType="done" style={[styles.nameInput, { borderColor: colors.border, color: colors.foreground }]} />
+            <Pressable onPress={() => void saveName()} style={({ pressed }) => [styles.editButton, { backgroundColor: colors.primary }, pressed && styles.pressed]}><Text style={styles.editButtonText}>OK</Text></Pressable>
+          </View>
+          <Pressable onPress={() => void redoOnboarding()} style={({ pressed }) => [pressed && styles.pressed]}><Text style={[styles.editLink, { color: colors.primary }]}>↻ Mettre à jour l’exposition et l’espace de mon balcon</Text></Pressable>
+          <Pressable onPress={() => router.push("/garden")} style={({ pressed }) => [pressed && styles.pressed]}><Text style={[styles.editLink, { color: colors.primary }]}>🪴 Gérer mes plantes</Text></Pressable>
+        </View>
+      )}
       <LinearGradient colors={[colors.primary, "#5B9670"]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={styles.impactHero}>
-        <View style={styles.impactHeroTop}><View><Text style={styles.impactHeroEyebrow}>MON IMPACT ÉCO</Text><Text style={styles.impactHeroTitle}>Jardinier·ère en herbe</Text></View><Text style={styles.impactHeroScore}>68</Text></View>
-        <View style={styles.heroProgressTrack}><View style={[styles.heroProgressFill, { width: "68%" }]} /></View>
-        <View style={styles.impactHeroBottom}><Text style={styles.impactHeroCaption}>32 points avant le niveau suivant</Text><Text style={styles.impactHeroLevel}>NIVEAU 2</Text></View>
+        <View style={styles.impactHeroTop}><View><Text style={styles.impactHeroEyebrow}>MON IMPACT ÉCO</Text><Text style={styles.impactHeroTitle}>{progress.levelTitle}</Text></View><Text style={styles.impactHeroScore}>{progress.points}</Text></View>
+        <View style={styles.heroProgressTrack}><View style={[styles.heroProgressFill, { width: `${Math.max(progress.pointsInLevel, 2)}%` }]} /></View>
+        <View style={styles.impactHeroBottom}><Text style={styles.impactHeroCaption}>{progress.pointsToNext} points avant le niveau suivant</Text><Text style={styles.impactHeroLevel}>NIVEAU {progress.level}</Text></View>
       </LinearGradient>
       <View style={styles.statsRow}>
-        <View style={[styles.statCard, { backgroundColor: colors.surface, borderColor: colors.border }]}><Text style={[styles.statValue, { color: colors.foreground }]}>12</Text><Text style={[styles.statLabel, { color: colors.muted }]}>gestes faits</Text></View>
-        <View style={[styles.statCard, { backgroundColor: colors.surface, borderColor: colors.border }]}><Text style={[styles.statValue, { color: colors.foreground }]}>4</Text><Text style={[styles.statLabel, { color: colors.muted }]}>jours de suite</Text></View>
-        <View style={[styles.statCard, { backgroundColor: colors.surface, borderColor: colors.border }]}><Text style={[styles.statValue, { color: colors.foreground }]}>{unlockedCount}</Text><Text style={[styles.statLabel, { color: colors.muted }]}>badges</Text></View>
+        <View style={[styles.statCard, { backgroundColor: colors.surface, borderColor: colors.border }]}><Text style={[styles.statValue, { color: colors.foreground }]}>{stats.gestures}</Text><Text style={[styles.statLabel, { color: colors.muted }]}>geste{stats.gestures > 1 ? "s" : ""} fait{stats.gestures > 1 ? "s" : ""}</Text></View>
+        <View style={[styles.statCard, { backgroundColor: colors.surface, borderColor: colors.border }]}><Text style={[styles.statValue, { color: colors.foreground }]}>{stats.streakDays}</Text><Text style={[styles.statLabel, { color: colors.muted }]}>jour{stats.streakDays > 1 ? "s" : ""} de suite</Text></View>
+        <View style={[styles.statCard, { backgroundColor: colors.surface, borderColor: colors.border }]}><Text style={[styles.statValue, { color: colors.foreground }]}>{unlockedCount}</Text><Text style={[styles.statLabel, { color: colors.muted }]}>badge{unlockedCount > 1 ? "s" : ""}</Text></View>
       </View>
       <View style={[styles.reminderCard, { backgroundColor: colors.surface, borderColor: colors.border }]}>
         <View style={styles.reminderCardHeader}>
@@ -95,11 +133,12 @@ export default function ProfileScreen() {
         <View style={styles.quietBlock}><View><Text style={[styles.reminderOptionLabel, { color: colors.foreground }]}>Plage calme</Text><Text style={[styles.reminderOptionHint, { color: colors.muted }]}>Aucune notification pendant ces heures</Text></View><Text style={[styles.reminderQuietValue, { color: colors.primary }]}>{reminderSettings.quietStartHour} → {reminderSettings.quietEndHour} h</Text></View>
         <View style={styles.quietChoices}><View style={styles.quietChoiceGroup}><Text style={[styles.quietChoiceLabel, { color: colors.muted }]}>Début</Text><View style={styles.timeChoices}>{[20, 21, 22].map((hour) => <Pressable key={`start-${hour}`} disabled={!reminderSettings.enabled} onPress={() => void updateReminderSettings({ quietStartHour: hour })} style={[styles.timeChoice, { backgroundColor: reminderSettings.quietStartHour === hour ? colors.leaf : colors.cream, opacity: reminderSettings.enabled ? 1 : 0.5 }]}><Text style={[styles.timeChoiceText, { color: colors.primary }]}>{hour} h</Text></Pressable>)}</View></View><View style={styles.quietChoiceGroup}><Text style={[styles.quietChoiceLabel, { color: colors.muted }]}>Fin</Text><View style={styles.timeChoices}>{[7, 8, 9].map((hour) => <Pressable key={`end-${hour}`} disabled={!reminderSettings.enabled} onPress={() => void updateReminderSettings({ quietEndHour: hour })} style={[styles.timeChoice, { backgroundColor: reminderSettings.quietEndHour === hour ? colors.leaf : colors.cream, opacity: reminderSettings.enabled ? 1 : 0.5 }]}><Text style={[styles.timeChoiceText, { color: colors.primary }]}>{hour} h</Text></Pressable>)}</View></View></View>
         <Text style={[styles.reminderOptionLabel, { color: colors.foreground }]}>Plantes concernées</Text>
-        <View style={styles.plantToggles}>{reminderPlants.map((plant) => { const enabled = reminderSettings.enabledPlantIds.includes(plant.id); return <Pressable key={plant.id} disabled={!reminderSettings.enabled} onPress={() => void togglePlant(plant.id)} style={[styles.plantToggle, { backgroundColor: enabled ? colors.leaf : colors.cream, opacity: reminderSettings.enabled ? 1 : 0.5 }]}><Text style={styles.plantToggleIcon}>{plant.icon}</Text><Text style={[styles.plantToggleText, { color: colors.foreground }]}>{plant.label}</Text><Text style={[styles.plantToggleCheck, { color: enabled ? colors.primary : colors.muted }]}>{enabled ? "✓" : "·"}</Text></Pressable>; })}</View>
+        {resolvedPlants.length === 0 && <Text style={[styles.reminderOptionHint, { color: colors.muted, marginTop: -8 }]}>Ajoute des plantes à ton balcon pour choisir lesquelles suivre.</Text>}
+        <View style={styles.plantToggles}>{resolvedPlants.map((resolved) => { const enabled = isPlantEnabled(resolved.plant.id); return <Pressable key={resolved.plant.id} disabled={!reminderSettings.enabled} onPress={() => void togglePlant(resolved.plant.id)} style={[styles.plantToggle, { backgroundColor: enabled ? colors.leaf : colors.cream, opacity: reminderSettings.enabled ? 1 : 0.5 }]}><Text style={styles.plantToggleIcon}>{resolved.entry.emoji}</Text><Text style={[styles.plantToggleText, { color: colors.foreground }]}>{plantDisplayName(resolved)}</Text><Text style={[styles.plantToggleCheck, { color: enabled ? colors.primary : colors.muted }]}>{enabled ? "✓" : "·"}</Text></Pressable>; })}</View>
       </View>
-      <View style={styles.badgeHeading}><View><Text style={[styles.sectionEyebrow, { color: colors.terracotta }]}>PETITES VICTOIRES</Text><Text style={[styles.sectionTitle, { color: colors.foreground }]}>Mes badges éco</Text></View><Text style={[styles.badgeCount, { color: colors.primary }]}>{unlockedCount}/4</Text></View>
+      <View style={styles.badgeHeading}><View><Text style={[styles.sectionEyebrow, { color: colors.terracotta }]}>PETITES VICTOIRES</Text><Text style={[styles.sectionTitle, { color: colors.foreground }]}>Mes badges éco</Text></View><Text style={[styles.badgeCount, { color: colors.primary }]}>{unlockedCount}/{badges.length}</Text></View>
     </>
-  ), [colors, unlockedCount]);
+  );
 
   return (
     <ScreenContainer className="px-5" edges={["top", "left", "right"]}>
@@ -112,10 +151,11 @@ export default function ProfileScreen() {
         contentContainerStyle={styles.content}
         showsVerticalScrollIndicator={false}
         renderItem={({ item }) => (
-          <Pressable onPress={() => Alert.alert(item.title, item.unlocked ? item.detail : "Encore 1 geste pour débloquer ce badge.")} style={({ pressed }) => [styles.badgeCard, { backgroundColor: item.unlocked ? colors.surface : "#F0EEE8", borderColor: item.unlocked ? colors.border : "#E3E0D8" }, pressed && styles.pressed]}>
+          <Pressable onPress={() => Alert.alert(item.title, item.unlocked ? `Débloqué : ${item.detail.toLowerCase()}.` : `${item.detail} — encore ${item.target - item.current} pour le débloquer.`)} style={({ pressed }) => [styles.badgeCard, { backgroundColor: item.unlocked ? colors.surface : "#F0EEE8", borderColor: item.unlocked ? colors.border : "#E3E0D8" }, pressed && styles.pressed]}>
             <View style={[styles.badgeIcon, { backgroundColor: item.unlocked ? item.tone : "#E4E1D9" }]}><Text style={[styles.badgeIconText, { color: item.unlocked ? colors.foreground : "#A8AAA4" }]}>{item.unlocked ? item.icon : "·"}</Text></View>
             <Text style={[styles.badgeTitle, { color: item.unlocked ? colors.foreground : colors.muted }]}>{item.title}</Text>
-            <Text style={[styles.badgeDetail, { color: item.unlocked ? colors.muted : "#A8AAA4" }]}>{item.unlocked ? item.detail : "À débloquer"}</Text>
+            <Text style={[styles.badgeDetail, { color: item.unlocked ? colors.muted : "#A8AAA4" }]}>{item.detail}</Text>
+            {!item.unlocked && <Text style={[styles.badgeProgress, { color: colors.muted }]}>{item.current} / {item.target}</Text>}
             {item.unlocked && <PopIn delay={180} style={[styles.unlockedMark, { backgroundColor: colors.leaf }]}><Text style={[styles.unlockedMarkText, { color: colors.primary }]}>✓</Text></PopIn>}
           </Pressable>
         )}
@@ -130,6 +170,13 @@ const styles = StyleSheet.create({
   profileHeader: { flexDirection: "row", alignItems: "center", marginBottom: 20 },
   avatar: { width: 53, height: 53, borderRadius: 19, alignItems: "center", justifyContent: "center" },
   avatarText: { color: "#FFFFFF", fontSize: 16, fontWeight: "800", letterSpacing: 0.5 },
+  avatarEmoji: { fontSize: 24 },
+  editCard: { borderRadius: 19, borderWidth: 1, padding: 14, gap: 10, marginTop: -8, marginBottom: 16 },
+  editRow: { flexDirection: "row", gap: 8 },
+  nameInput: { flex: 1, borderWidth: 1, borderRadius: 12, paddingHorizontal: 11, paddingVertical: 9, fontSize: 14 },
+  editButton: { borderRadius: 12, paddingHorizontal: 15, justifyContent: "center" },
+  editButtonText: { color: "#FFFFFF", fontSize: 12, fontWeight: "800" },
+  editLink: { fontSize: 12, fontWeight: "800" },
   profileCopy: { flex: 1, marginLeft: 13 },
   profileName: { fontSize: 19, fontWeight: "800", letterSpacing: -0.3 },
   profileMeta: { fontSize: 12, marginTop: 4 },
@@ -183,6 +230,7 @@ const styles = StyleSheet.create({
   badgeIconText: { fontSize: 25, fontWeight: "700" },
   badgeTitle: { fontSize: 13, lineHeight: 16, fontWeight: "800", marginTop: 13 },
   badgeDetail: { fontSize: 10, lineHeight: 14, marginTop: 5 },
+  badgeProgress: { fontSize: 10, fontWeight: "800", marginTop: 6 },
   unlockedMark: { width: 19, height: 19, borderRadius: 10, position: "absolute", right: 11, top: 11, alignItems: "center", justifyContent: "center" },
   unlockedMarkText: { fontSize: 12, fontWeight: "800" },
   footerCard: { borderRadius: 20, padding: 15, flexDirection: "row", alignItems: "center", marginTop: 8 },

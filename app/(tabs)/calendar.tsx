@@ -6,42 +6,52 @@ import { FadeIn, PopIn } from "@/components/motion";
 import { ScreenContainer } from "@/components/screen-container";
 import { type CityResult, useLocalWeather } from "@/hooks/use-local-weather";
 import { useColors } from "@/hooks/use-colors";
+import { useGarden } from "@/lib/garden/garden-context";
+import { dayKey, plantDisplayName } from "@/lib/garden/garden-logic";
+import { calendarActivities, upcomingMonths, type CalendarActivity, type CalendarSubject } from "@/lib/plants/calendar";
+import { MONTH_LONG, MONTH_SHORT, recommendPlants } from "@/lib/plants/catalog";
 
-type PlantKey = "Toutes" | "Tomates cerises" | "Basilic" | "Menthe";
-
-const months = ["Sep", "Oct", "Nov", "Déc", "Jan", "Fév", "Mar", "Avr", "Mai", "Juin", "Juil", "Août"];
-const plantFilters: PlantKey[] = ["Toutes", "Tomates cerises", "Basilic", "Menthe"];
-const activities: Record<PlantKey, { type: string; title: string; description: string; tag: string; tone: "green" | "coral" | "lime" }[]> = {
-  Toutes: [
-    { type: "MAINTENANT", title: "Arroser le basilic", description: "Au pied, seulement si la terre est sèche sur 2 cm.", tag: "3 MIN", tone: "coral" },
-    { type: "CETTE SEMAINE", title: "Récolter les tomates cerises", description: "Cueille-les quand elles sont bien rouges et légèrement souples.", tag: "RÉCOLTE", tone: "green" },
-    { type: "À PRÉVOIR", title: "Bouturer la menthe", description: "Une tige dans un verre d'eau suffit pour préparer l'automne.", tag: "15 MIN", tone: "lime" },
-  ],
-  "Tomates cerises": [
-    { type: "CETTE SEMAINE", title: "Récolter les tomates cerises", description: "Cueille-les quand elles sont bien rouges et légèrement souples.", tag: "RÉCOLTE", tone: "green" },
-    { type: "À PRÉVOIR", title: "Retirer les feuilles basses", description: "Aère le pied pour limiter l'humidité et les maladies.", tag: "5 MIN", tone: "lime" },
-  ],
-  Basilic: [
-    { type: "MAINTENANT", title: "Arroser le basilic", description: "Au pied, seulement si la terre est sèche sur 2 cm.", tag: "3 MIN", tone: "coral" },
-    { type: "À PRÉVOIR", title: "Pincer les fleurs", description: "Garde l'énergie de la plante dans les feuilles parfumées.", tag: "2 MIN", tone: "lime" },
-  ],
-  Menthe: [
-    { type: "CETTE SEMAINE", title: "Bouturer la menthe", description: "Une tige dans un verre d'eau suffit pour préparer l'automne.", tag: "15 MIN", tone: "green" },
-    { type: "À PRÉVOIR", title: "Rafraîchir le pot", description: "Coupe les tiges sèches et garde la terre légèrement humide.", tag: "5 MIN", tone: "lime" },
-  ],
-};
+type PlantFilter = "all" | string;
+const TONE_TAG_BACKGROUND = { coral: "cream", green: "leaf", lime: "leaf" } as const;
 
 export default function CalendarScreen() {
   const colors = useColors();
   const { weather, isLoading, refresh, requestDeviceLocation, searchCities, selectCity } = useLocalWeather();
-  const [selectedMonth, setSelectedMonth] = useState("Sep");
-  const [selectedPlant, setSelectedPlant] = useState<PlantKey>("Toutes");
+  const { resolvedPlants, events, onboarding, addPlant, logEvent, removeEvent } = useGarden();
+  const now = useMemo(() => new Date(), []);
+  const currentMonth = now.getMonth() + 1;
+  const months = useMemo(() => upcomingMonths(now), [now]);
+  const [selectedMonth, setSelectedMonth] = useState(currentMonth);
+  const [selectedPlant, setSelectedPlant] = useState<PlantFilter>("all");
   const [cityModalVisible, setCityModalVisible] = useState(false);
   const [cityQuery, setCityQuery] = useState("");
   const [cityResults, setCityResults] = useState<CityResult[]>([]);
   const [citySearchLoading, setCitySearchLoading] = useState(false);
   const [citySearchError, setCitySearchError] = useState<string | null>(null);
-  const currentActivities = useMemo(() => activities[selectedPlant], [selectedPlant]);
+  // Sans plante au balcon, le calendrier montre des idées adaptées plutôt qu'un écran vide.
+  const showingIdeas = resolvedPlants.length === 0;
+  const subjects = useMemo<CalendarSubject[]>(
+    () => showingIdeas
+      ? recommendPlants(onboarding, { month: currentMonth }).slice(0, 4).map((entry) => ({ id: entry.id, entry, displayName: entry.name }))
+      : resolvedPlants.map((resolved) => ({ id: resolved.plant.id, entry: resolved.entry, displayName: plantDisplayName(resolved) })),
+    [currentMonth, onboarding, resolvedPlants, showingIdeas],
+  );
+  const activeFilter = selectedPlant === "all" || subjects.some((subject) => subject.id === selectedPlant) ? selectedPlant : "all";
+  const currentActivities = useMemo(
+    () => calendarActivities(activeFilter === "all" ? subjects : subjects.filter((subject) => subject.id === activeFilter), selectedMonth),
+    [activeFilter, selectedMonth, subjects],
+  );
+  const eventIds = useMemo(() => new Set(events.map((event) => event.id)), [events]);
+  const activityEventId = (activity: CalendarActivity) => `${activity.subjectId}:calendar-${activity.kind}:${dayKey(now)}`;
+
+  const toggleActivity = async (activity: CalendarActivity) => {
+    const id = activityEventId(activity);
+    if (eventIds.has(id)) {
+      await removeEvent(id);
+      return;
+    }
+    await logEvent({ id, plantId: activity.subjectId, type: activity.eventType, completedAt: new Date().toISOString(), source: "manual", note: activity.title });
+  };
 
   const searchManualCity = async () => {
     setCitySearchLoading(true);
@@ -76,30 +86,35 @@ export default function CalendarScreen() {
           </LinearGradient>
         </PopIn>
 
-        <View style={styles.sectionHead}><View><Text style={[styles.sectionOverline, { color: colors.terracotta }]}>SAISON 01 · 2026</Text><Text style={[styles.sectionTitle, { color: colors.foreground }]}>Ton rythme de culture</Text></View><Text style={[styles.plantsCount, { color: colors.primary }]}>3 plantes suivies</Text></View>
+        <View style={styles.sectionHead}><View><Text style={[styles.sectionOverline, { color: colors.terracotta }]}>{MONTH_LONG[currentMonth - 1].toUpperCase()} {now.getFullYear()} → {MONTH_LONG[(currentMonth + 10) % 12].toUpperCase()}</Text><Text style={[styles.sectionTitle, { color: colors.foreground }]}>Ton rythme de culture</Text></View><Text style={[styles.plantsCount, { color: colors.primary }]}>{showingIdeas ? "idées de saison" : `${resolvedPlants.length} plante${resolvedPlants.length > 1 ? "s" : ""} suivie${resolvedPlants.length > 1 ? "s" : ""}`}</Text></View>
 
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentOffset={{ x: 250, y: 0 }} contentContainerStyle={styles.monthsRow}>
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.monthsRow}>
           {months.map((month) => {
             const active = selectedMonth === month;
-            return <Pressable key={month} onPress={() => setSelectedMonth(month)} style={({ pressed }) => [styles.monthItem, active && { backgroundColor: colors.foreground }, pressed && styles.pressed]}><Text style={[styles.monthText, { color: active ? colors.sun : colors.muted }]}>{month}</Text>{month === "Sep" && <View style={[styles.monthDot, { backgroundColor: active ? colors.sun : colors.terracotta }]} />}</Pressable>;
+            return <Pressable key={month} onPress={() => setSelectedMonth(month)} style={({ pressed }) => [styles.monthItem, active && { backgroundColor: colors.foreground }, pressed && styles.pressed]}><Text style={[styles.monthText, { color: active ? colors.sun : colors.muted }]}>{MONTH_SHORT[month - 1]}</Text>{month === currentMonth && <View style={[styles.monthDot, { backgroundColor: active ? colors.sun : colors.terracotta }]} />}</Pressable>;
           })}
         </ScrollView>
 
-        <Text style={[styles.monthTitle, { color: colors.foreground }]}>En {selectedMonth === "Sep" ? "septembre" : selectedMonth.toLowerCase()}, ton balcon</Text>
-        <Text style={[styles.monthIntro, { color: colors.muted }]}>Voici les actions adaptées à ton climat et aux plantes que tu as choisies.</Text>
+        <Text style={[styles.monthTitle, { color: colors.foreground }]}>En {MONTH_LONG[selectedMonth - 1]}, ton balcon</Text>
+        <Text style={[styles.monthIntro, { color: colors.muted }]}>{showingIdeas ? "Ton balcon est vide : voici ce que tu pourrais cultiver. Ajoute une plante pour un calendrier sur mesure." : "Voici les gestes de saison pour les plantes de ton balcon."}</Text>
 
         <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.filtersRow}>
-          {plantFilters.map((plant) => {
-            const active = selectedPlant === plant;
-            return <Pressable key={plant} onPress={() => setSelectedPlant(plant)} style={({ pressed }) => [styles.filterChip, { borderColor: active ? colors.foreground : colors.border, backgroundColor: active ? colors.foreground : colors.surface }, pressed && styles.pressed]}><Text style={[styles.filterText, { color: active ? colors.sun : colors.foreground }]}>{plant}</Text></Pressable>;
+          {[{ id: "all", label: "Toutes" }, ...subjects.map((subject) => ({ id: subject.id, label: `${subject.entry.emoji} ${subject.displayName}` }))].map(({ id, label }) => {
+            const active = activeFilter === id;
+            return <Pressable key={id} onPress={() => setSelectedPlant(id)} style={({ pressed }) => [styles.filterChip, { borderColor: active ? colors.foreground : colors.border, backgroundColor: active ? colors.foreground : colors.surface }, pressed && styles.pressed]}><Text style={[styles.filterText, { color: active ? colors.sun : colors.foreground }]}>{label}</Text></Pressable>;
           })}
         </ScrollView>
 
         <View style={styles.activityList}>
           {currentActivities.map((activity, index) => {
             const tone = activity.tone === "coral" ? colors.terracotta : activity.tone === "lime" ? colors.success : colors.primary;
-            return <FadeIn key={`${selectedPlant}-${activity.title}`} delay={180 + index * 70} style={styles.activityRow}><View style={styles.timeline}><View style={[styles.timelineDot, { backgroundColor: tone }]} />{index < currentActivities.length - 1 && <View style={[styles.timelineLine, { backgroundColor: colors.border }]} />}</View><View style={[styles.activityCard, { backgroundColor: colors.surface, borderColor: colors.border }]}><View style={styles.activityTop}><Text style={[styles.activityType, { color: tone }]}>{activity.type}</Text><View style={[styles.activityTag, { backgroundColor: activity.tone === "coral" ? colors.cream : colors.leaf }]}><Text style={[styles.activityTagText, { color: tone }]}>{activity.tag}</Text></View></View><Text style={[styles.activityTitle, { color: colors.foreground }]}>{activity.title}</Text><Text style={[styles.activityDescription, { color: colors.muted }]}>{activity.description}</Text><Pressable onPress={() => {}} style={({ pressed }) => [styles.actionLink, pressed && styles.pressed]}><Text style={[styles.actionLinkText, { color: colors.primary }]}>Ajouter à ma session  →</Text></Pressable></View></FadeIn>;
+            return <FadeIn key={`${activeFilter}-${selectedMonth}-${activity.key}`} delay={180 + index * 70} style={styles.activityRow}><View style={styles.timeline}><View style={[styles.timelineDot, { backgroundColor: tone }]} />{index < currentActivities.length - 1 && <View style={[styles.timelineLine, { backgroundColor: colors.border }]} />}</View><View style={[styles.activityCard, { backgroundColor: colors.surface, borderColor: colors.border }]}><View style={styles.activityTop}><Text style={[styles.activityType, { color: tone }]}>{activity.typeLabel}</Text><View style={[styles.activityTag, { backgroundColor: colors[TONE_TAG_BACKGROUND[activity.tone]] }]}><Text style={[styles.activityTagText, { color: tone }]}>{activity.tag}</Text></View></View><Text style={[styles.activityTitle, { color: colors.foreground }]}>{activity.title}</Text><Text style={[styles.activityDescription, { color: colors.muted }]}>{activity.description}</Text>{showingIdeas ? (
+              <Pressable onPress={() => void addPlant(activity.entry.id)} style={({ pressed }) => [styles.actionLink, pressed && styles.pressed]}><Text style={[styles.actionLinkText, { color: colors.primary }]}>+ Ajouter à mon balcon  →</Text></Pressable>
+            ) : selectedMonth === currentMonth ? (
+              <Pressable onPress={() => void toggleActivity(activity)} style={({ pressed }) => [styles.actionLink, pressed && styles.pressed]}><Text style={[styles.actionLinkText, { color: eventIds.has(activityEventId(activity)) ? colors.success : colors.primary }]}>{eventIds.has(activityEventId(activity)) ? "✓ Noté aujourd’hui" : "Noter comme fait  →"}</Text></Pressable>
+            ) : null}</View></FadeIn>;
           })}
+          {currentActivities.length === 0 && <Text style={[styles.activityDescription, { color: colors.muted, textAlign: "center", paddingVertical: 18 }]}>Rien de prévu en {MONTH_LONG[selectedMonth - 1]} : tes plantes se reposent. Regarde les mois suivants.</Text>}
         </View>
 
         <View style={[styles.legendCard, { backgroundColor: colors.cream }]}><Text style={styles.legendIcon}>✦</Text><View style={{ flex: 1 }}><Text style={[styles.legendTitle, { color: colors.foreground }]}>Le calendrier apprend avec toi.</Text><Text style={[styles.legendText, { color: colors.muted }]}>Chaque geste réalisé rend les prochaines recommandations plus personnelles.</Text></View></View>
