@@ -1,16 +1,83 @@
+import { useRouter } from "expo-router";
 import { useState } from "react";
-import { Pressable, StyleSheet, Text, View } from "react-native";
+import { ActivityIndicator, Image, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 
 import { ScreenContainer } from "@/components/screen-container";
 import { useColors } from "@/hooks/use-colors";
+import { pickPlantPhoto, type PreparedPhoto } from "@/lib/ai/photo";
+import { quotaLabel } from "@/lib/ai/quota-text";
+import { useGarden } from "@/lib/garden/garden-context";
+import { getCatalogPlant } from "@/lib/plants/catalog";
+import { trpc } from "@/lib/trpc";
+import type { AppRouter } from "@/server/routers";
+import type { inferRouterOutputs } from "@trpc/server";
+
+type Diagnosis = inferRouterOutputs<AppRouter>["ai"]["diagnose"]["diagnosis"];
+
+const HEALTH = {
+  healthy: { label: "EN PLEINE FORME", emoji: "🌿" },
+  needs_attention: { label: "À SURVEILLER", emoji: "🔍" },
+  sick: { label: "BESOIN DE SOINS", emoji: "🩹" },
+  unknown: { label: "DIAGNOSTIC INCERTAIN", emoji: "❔" },
+} as const;
+const CONFIDENCE = { high: "Confiance élevée", medium: "Confiance moyenne", low: "Confiance faible" } as const;
 
 export default function ScannerScreen() {
   const colors = useColors();
-  const [scanned, setScanned] = useState(false);
+  const router = useRouter();
+  const { account, resolvedPlants, addPlant, logEvent } = useGarden();
+  const status = trpc.ai.status.useQuery(undefined, { enabled: account.signedIn, retry: false });
+  const utils = trpc.useUtils();
+  const diagnose = trpc.ai.diagnose.useMutation({ onSuccess: () => void utils.ai.status.invalidate() });
+  const [photo, setPhoto] = useState<PreparedPhoto | null>(null);
+  const [notice, setNotice] = useState<string | null>(null);
+  const [savedNote, setSavedNote] = useState(false);
+
+  const scan = status.data?.scan;
+  const noScansLeft = scan ? scan.remaining <= 0 : false;
+  const diagnosis: Diagnosis | undefined = diagnose.data?.diagnosis;
+  const entry = diagnosis?.catalogId ? getCatalogPlant(diagnosis.catalogId) : undefined;
+  const owned = entry ? resolvedPlants.find((resolved) => resolved.entry.id === entry.id) : undefined;
+
+  const choose = async (source: "camera" | "library") => {
+    setNotice(null);
+    try {
+      const result = await pickPlantPhoto(source);
+      if (result.status === "denied") setNotice("Autorise l’appareil photo dans les réglages du téléphone, ou choisis une photo dans ta galerie.");
+      if (result.status === "ok") {
+        setPhoto(result.photo);
+        setSavedNote(false);
+        diagnose.reset();
+      }
+    } catch {
+      setNotice("Impossible d’ouvrir cette photo. Essaie avec une autre.");
+    }
+  };
+
+  const analyze = () => {
+    if (!photo) return;
+    setSavedNote(false);
+    diagnose.mutate({ imageBase64: photo.base64 });
+  };
+
+  const restart = () => {
+    setPhoto(null);
+    setSavedNote(false);
+    diagnose.reset();
+  };
+
+  const saveObservation = async () => {
+    if (!owned || !diagnosis) return;
+    await logEvent({ id: `scan:${owned.plant.id}:${Date.now()}`, plantId: owned.plant.id, type: "observation", completedAt: new Date().toISOString(), source: "manual", note: `Scanner : ${diagnosis.summary}`.slice(0, 480) });
+    setSavedNote(true);
+  };
+
+  const canScan = account.signedIn && status.data?.available !== false && !noScansLeft;
+  const frameLabel = diagnose.isPending ? "ANALYSE EN COURS" : photo ? "PHOTO PRÊTE" : "PRÊT À SCANNER";
 
   return (
     <ScreenContainer className="px-5" edges={["top", "left", "right"]}>
-      <View style={styles.content}>
+      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.content}>
         <View style={styles.header}>
           <View>
             <Text style={[styles.eyebrow, { color: colors.terracotta }]}>OBSERVE, COMPRENDS, AGIS</Text>
@@ -19,52 +86,131 @@ export default function ScannerScreen() {
           <View style={[styles.aiPill, { backgroundColor: colors.leaf }]}><Text style={[styles.aiPillText, { color: colors.primary }]}>IA ✦</Text></View>
         </View>
         <Text style={[styles.subtitle, { color: colors.muted }]}>Une photo pour identifier une pousse ou prendre soin d’une feuille malade.</Text>
+        {account.signedIn && scan && <Text style={[styles.quota, { color: noScansLeft ? colors.terracotta : colors.primary }]}>{quotaLabel(scan)}</Text>}
 
         <View style={styles.cameraFrame}>
+          {photo && <Image source={{ uri: photo.uri }} style={StyleSheet.absoluteFill} resizeMode="cover" accessibilityLabel="Photo à analyser" />}
+          {photo && <View style={[StyleSheet.absoluteFill, styles.photoShade]} />}
           <View style={styles.cameraTopRow}>
-            <View style={styles.livePill}><View style={styles.liveDot} /><Text style={styles.liveText}>PRÊT À SCANNER</Text></View>
-            <Text style={styles.cameraHint}>×1</Text>
+            <View style={styles.livePill}><View style={styles.liveDot} /><Text style={styles.liveText}>{frameLabel}</Text></View>
+            {photo && !diagnose.isPending && <Pressable onPress={restart} accessibilityLabel="Retirer la photo"><Text style={styles.cameraHint}>✕</Text></Pressable>}
           </View>
           <View style={styles.focusArea}>
             <View style={[styles.corner, styles.cornerTL]} /><View style={[styles.corner, styles.cornerTR]} />
             <View style={[styles.corner, styles.cornerBL]} /><View style={[styles.corner, styles.cornerBR]} />
-            <Text style={styles.leafPreview}>🌿</Text>
-            <Text style={styles.focusLabel}>{scanned ? "FEUILLE ANALYSÉE" : "Place ta plante dans le cadre"}</Text>
+            {diagnose.isPending ? <ActivityIndicator size="large" color="#FFFFFF" /> : !photo && <Text style={styles.leafPreview}>🌿</Text>}
+            {!photo && <Text style={styles.focusLabel}>{canScan ? "Photographie une feuille ou la plante entière" : account.signedIn ? " " : "Connecte-toi pour analyser tes plantes"}</Text>}
+            {diagnose.isPending && <Text style={styles.focusLabel}>Nora observe les feuilles…</Text>}
           </View>
           <View style={styles.cameraBottomRow}>
-            <Pressable onPress={() => setScanned(false)} style={({ pressed }) => [styles.galleryButton, pressed && styles.pressed]}><Text style={styles.galleryIcon}>▧</Text></Pressable>
-            <Pressable onPress={() => setScanned(true)} accessibilityRole="button" style={({ pressed }) => [styles.shutterOuter, pressed && styles.pressed]}><View style={[styles.shutterInner, { backgroundColor: colors.terracotta }]} /></Pressable>
-            <Pressable onPress={() => {}} style={({ pressed }) => [styles.flashButton, pressed && styles.pressed]}><Text style={styles.flashIcon}>✧</Text></Pressable>
+            <Pressable disabled={!canScan || diagnose.isPending} onPress={() => void choose("library")} accessibilityLabel="Choisir dans la galerie" style={({ pressed }) => [styles.galleryButton, !canScan && styles.disabled, pressed && styles.pressed]}><Text style={styles.galleryIcon}>▧</Text></Pressable>
+            {photo && !diagnose.isPending && !diagnosis ? (
+              <Pressable onPress={analyze} accessibilityRole="button" style={({ pressed }) => [styles.analyzeButton, { backgroundColor: colors.terracotta }, pressed && styles.pressed]}><Text style={styles.analyzeText}>Analyser</Text></Pressable>
+            ) : (
+              <Pressable disabled={!canScan || diagnose.isPending} onPress={() => void choose("camera")} accessibilityRole="button" accessibilityLabel="Prendre une photo" style={({ pressed }) => [styles.shutterOuter, !canScan && styles.disabled, pressed && styles.pressed]}><View style={[styles.shutterInner, { backgroundColor: colors.terracotta }]} /></Pressable>
+            )}
+            <View style={styles.flashButton} />
           </View>
         </View>
 
-        {scanned ? (
+        {notice && <Text style={[styles.notice, { color: colors.terracotta }]}>{notice}</Text>}
+        {diagnose.error && <Text accessibilityRole="alert" style={[styles.notice, { color: colors.error }]}>{diagnose.error.message}</Text>}
+
+        {!account.signedIn ? (
+          <View style={[styles.helperCard, { backgroundColor: colors.cream }]}>
+            <Text style={styles.helperIcon}>✦</Text>
+            <View style={styles.helperCopy}>
+              <Text style={[styles.helperTitle, { color: colors.foreground }]}>3 analyses offertes chaque mois.</Text>
+              <Text style={[styles.helperText, { color: colors.muted }]}>Crée ton compte gratuit pour identifier tes plantes et savoir quoi faire quand une feuille jaunit.</Text>
+              <Pressable onPress={() => router.push("/login")} style={({ pressed }) => [styles.inlineButton, { backgroundColor: colors.terracotta }, pressed && styles.pressed]}><Text style={styles.inlineButtonText}>Se connecter</Text></Pressable>
+            </View>
+          </View>
+        ) : status.data?.available === false ? (
+          <View style={[styles.helperCard, { backgroundColor: colors.cream }]}><Text style={styles.helperIcon}>✦</Text><View style={styles.helperCopy}><Text style={[styles.helperTitle, { color: colors.foreground }]}>Le scanner arrive bientôt.</Text><Text style={[styles.helperText, { color: colors.muted }]}>Il sera disponible dans une prochaine mise à jour.</Text></View></View>
+        ) : diagnosis ? (
           <View style={[styles.resultCard, { backgroundColor: colors.surface, borderColor: colors.border }]}>
-            <View style={styles.resultHeader}>
-              <View style={[styles.resultIcon, { backgroundColor: colors.leaf }]}><Text style={styles.resultEmoji}>🌱</Text></View>
-              <View style={styles.resultTitleWrap}><Text style={[styles.resultKicker, { color: colors.primary }]}>DIAGNOSTIC DOUX</Text><Text style={[styles.resultTitle, { color: colors.foreground }]}>Basilic · petites taches</Text></View>
-              <Text style={[styles.resultConfidence, { color: colors.success }]}>92%</Text>
-            </View>
-            <Text style={[styles.resultDescription, { color: colors.muted }]}>Rien d’inquiétant : ta plante a probablement eu trop d’eau sur les feuilles.</Text>
-            <View style={[styles.naturalSolution, { backgroundColor: colors.cream }]}>
-              <Text style={[styles.solutionTitle, { color: colors.terracotta }]}>SOLUTION NATURELLE</Text>
-              <Text style={[styles.solutionText, { color: colors.foreground }]}>Retire les feuilles touchées, espace les arrosages et vaporise un peu de décoction d’ail.</Text>
-            </View>
-            <Pressable onPress={() => setScanned(false)} style={({ pressed }) => [styles.rescanButton, { borderColor: colors.border }, pressed && styles.pressed]}><Text style={[styles.rescanText, { color: colors.primary }]}>Scanner une autre plante</Text></Pressable>
+            {!diagnosis.isPlant ? (
+              <>
+                <Text style={[styles.resultTitle, { color: colors.foreground }]}>Je ne vois pas de plante sur cette photo.</Text>
+                <Text style={[styles.resultDescription, { color: colors.muted }]}>{diagnosis.summary}</Text>
+              </>
+            ) : (
+              <>
+                <View style={styles.resultHeader}>
+                  <View style={[styles.resultIcon, { backgroundColor: colors.leaf }]}><Text style={styles.resultEmoji}>{entry?.emoji ?? HEALTH[diagnosis.health].emoji}</Text></View>
+                  <View style={styles.resultTitleWrap}>
+                    <Text style={[styles.resultKicker, { color: diagnosis.health === "healthy" ? colors.success : diagnosis.health === "sick" ? colors.terracotta : colors.primary }]}>{HEALTH[diagnosis.health].label}</Text>
+                    <Text style={[styles.resultTitle, { color: colors.foreground }]}>{diagnosis.commonName || "Plante non identifiée"}</Text>
+                    {!!diagnosis.scientificName && <Text style={[styles.scientific, { color: colors.muted }]}>{diagnosis.scientificName}</Text>}
+                  </View>
+                  <Text style={[styles.resultConfidence, { color: diagnosis.confidence === "high" ? colors.success : colors.muted }]}>{CONFIDENCE[diagnosis.confidence]}</Text>
+                </View>
+                <Text style={[styles.resultDescription, { color: colors.foreground }]}>{diagnosis.summary}</Text>
+                {diagnosis.observations.length > 0 && (
+                  <View style={styles.list}>{diagnosis.observations.map((observation, index) => <Text key={index} style={[styles.listItem, { color: colors.muted }]}>•  {observation}</Text>)}</View>
+                )}
+                {diagnosis.actions.length > 0 && (
+                  <View style={styles.actions}>
+                    <Text style={[styles.solutionTitle, { color: colors.primary }]}>À FAIRE</Text>
+                    {diagnosis.actions.map((action, index) => (
+                      <View key={index} style={styles.actionRow}>
+                        <View style={[styles.actionNumber, { backgroundColor: colors.leaf }]}><Text style={[styles.actionNumberText, { color: colors.primary }]}>{index + 1}</Text></View>
+                        <View style={styles.flex}><Text style={[styles.actionTitle, { color: colors.foreground }]}>{action.title}</Text><Text style={[styles.actionDetail, { color: colors.muted }]}>{action.detail}</Text></View>
+                      </View>
+                    ))}
+                  </View>
+                )}
+                {!!diagnosis.naturalRemedy && (
+                  <View style={[styles.naturalSolution, { backgroundColor: colors.cream }]}>
+                    <Text style={[styles.solutionTitle, { color: colors.terracotta }]}>SOLUTION NATURELLE</Text>
+                    <Text style={[styles.solutionText, { color: colors.foreground }]}>{diagnosis.naturalRemedy}</Text>
+                  </View>
+                )}
+                {diagnosis.seeExpert && <Text style={[styles.expert, { color: colors.terracotta }]}>Ce problème mérite un œil expert : montre ta plante (ou cette photo) en jardinerie.</Text>}
+                {entry && !owned && (
+                  <Pressable onPress={() => void addPlant(entry.id)} style={({ pressed }) => [styles.inlineButton, { backgroundColor: colors.terracotta }, pressed && styles.pressed]}><Text style={styles.inlineButtonText}>+ Ajouter {entry.name.toLowerCase()} à mon balcon</Text></Pressable>
+                )}
+                {owned && (
+                  <Pressable disabled={savedNote} onPress={() => void saveObservation()} style={({ pressed }) => [styles.inlineButton, { backgroundColor: savedNote ? colors.leaf : colors.primary }, pressed && styles.pressed]}><Text style={[styles.inlineButtonText, savedNote && { color: colors.primary }]}>{savedNote ? "✓ Noté dans l’historique" : `Noter ce diagnostic pour ${owned.plant.nickname || owned.entry.name}`}</Text></Pressable>
+                )}
+              </>
+            )}
+            <Pressable onPress={restart} style={({ pressed }) => [styles.rescanButton, { borderColor: colors.border }, pressed && styles.pressed]}><Text style={[styles.rescanText, { color: colors.primary }]}>Scanner une autre plante</Text></Pressable>
+            <Text style={[styles.disclaimer, { color: colors.muted }]}>Diagnostic indicatif généré par une IA : en cas de doute, demande conseil en jardinerie.</Text>
           </View>
         ) : (
           <View style={[styles.helperCard, { backgroundColor: colors.cream }]}>
             <Text style={styles.helperIcon}>✦</Text>
-            <View style={styles.helperCopy}><Text style={[styles.helperTitle, { color: colors.foreground }]}>Pas besoin d’être expert.</Text><Text style={[styles.helperText, { color: colors.muted }]}>Balco privilégie toujours les soins naturels et les gestes qui respectent le vivant.</Text></View>
+            <View style={styles.helperCopy}><Text style={[styles.helperTitle, { color: colors.foreground }]}>{noScansLeft ? "Tes analyses du mois sont utilisées." : "Pas besoin d’être expert."}</Text><Text style={[styles.helperText, { color: colors.muted }]}>{noScansLeft ? "En attendant, pose tes questions à Nora ou observe tes feuilles de près : dessous, tiges et terre." : "Balco privilégie toujours les soins naturels et les gestes qui respectent le vivant. Pour un bon diagnostic : une photo nette, en lumière naturelle, avec la feuille abîmée bien visible."}</Text></View>
           </View>
         )}
-      </View>
+      </ScrollView>
     </ScreenContainer>
   );
 }
 
 const styles = StyleSheet.create({
-  content: { flex: 1, paddingTop: 16, paddingBottom: 18 },
+  content: { paddingTop: 16, paddingBottom: 30 },
+  flex: { flex: 1 },
+  quota: { fontSize: 11, fontWeight: "800", marginTop: 8 },
+  photoShade: { backgroundColor: "rgba(20,53,43,0.28)" },
+  disabled: { opacity: 0.4 },
+  analyzeButton: { borderRadius: 22, paddingHorizontal: 28, height: 56, alignItems: "center", justifyContent: "center" },
+  analyzeText: { color: "#FFFFFF", fontSize: 15, fontWeight: "800" },
+  notice: { fontSize: 12, lineHeight: 18, fontWeight: "700", marginTop: 12 },
+  inlineButton: { alignSelf: "flex-start", borderRadius: 13, paddingHorizontal: 14, paddingVertical: 10, marginTop: 12 },
+  inlineButtonText: { color: "#FFFFFF", fontSize: 12, fontWeight: "800" },
+  scientific: { fontSize: 11, fontStyle: "italic", marginTop: 2 },
+  list: { marginTop: 8, gap: 4 },
+  listItem: { fontSize: 12, lineHeight: 18 },
+  actions: { marginTop: 14, gap: 10 },
+  actionRow: { flexDirection: "row", gap: 10 },
+  actionNumber: { width: 24, height: 24, borderRadius: 8, alignItems: "center", justifyContent: "center" },
+  actionNumberText: { fontSize: 12, fontWeight: "800" },
+  actionTitle: { fontSize: 13, fontWeight: "800" },
+  actionDetail: { fontSize: 12, lineHeight: 17, marginTop: 2 },
+  expert: { fontSize: 12, lineHeight: 18, fontWeight: "700", marginTop: 12 },
+  disclaimer: { fontSize: 10, lineHeight: 14, marginTop: 10, textAlign: "center" },
   header: { flexDirection: "row", alignItems: "flex-end", justifyContent: "space-between" },
   eyebrow: { fontSize: 10, fontWeight: "800", letterSpacing: 1.15 },
   title: { fontSize: 29, lineHeight: 34, fontWeight: "800", letterSpacing: -0.8, marginTop: 4 },
@@ -104,7 +250,7 @@ const styles = StyleSheet.create({
   resultTitleWrap: { flex: 1, marginLeft: 11 },
   resultKicker: { fontSize: 9, fontWeight: "800", letterSpacing: 1 },
   resultTitle: { fontSize: 15, fontWeight: "800", marginTop: 3 },
-  resultConfidence: { fontSize: 13, fontWeight: "800" },
+  resultConfidence: { fontSize: 10, fontWeight: "800", maxWidth: 80, textAlign: "right" },
   resultDescription: { fontSize: 12, lineHeight: 18, marginTop: 13 },
   naturalSolution: { borderRadius: 14, padding: 12, marginTop: 13 },
   solutionTitle: { fontSize: 9, fontWeight: "800", letterSpacing: 1 },

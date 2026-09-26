@@ -1,3 +1,4 @@
+import { aiRouter } from "./ai/router";
 import { authRouter } from "./auth/router";
 import { systemRouter } from "./_core/systemRouter";
 import { remindersRouter } from "./reminders-router";
@@ -8,6 +9,7 @@ export const appRouter = router({
   system: systemRouter,
   auth: authRouter,
   reminders: remindersRouter,
+  ai: aiRouter,
 });
 
 export type AppRouter = typeof appRouter;

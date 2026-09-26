@@ -2,6 +2,11 @@ function list(value: string | undefined) {
   return (value ?? "").split(",").map((item) => item.trim()).filter(Boolean);
 }
 
+function intEnv(name: string, fallback: number) {
+  const value = Number.parseInt(process.env[name] ?? "", 10);
+  return Number.isFinite(value) && value >= 0 ? value : fallback;
+}
+
 export const ENV = {
   isProduction: process.env.NODE_ENV === "production",
   databaseUrl: process.env.DATABASE_URL ?? "",
@@ -20,6 +25,14 @@ export const ENV = {
   /** Client IDs OAuth Google (iOS, Android, web) acceptés dans les jetons Google. */
   googleClientIds: list(process.env.GOOGLE_CLIENT_IDS),
   googleJwksUrl: process.env.GOOGLE_JWKS_URL || "https://www.googleapis.com/oauth2/v3/certs",
+  /** Clé de l'API Claude : sans elle, le scanner et Nora s'affichent comme indisponibles. */
+  anthropicApiKey: process.env.ANTHROPIC_API_KEY ?? "",
+  /** Modèle utilisé par le scanner et Nora. */
+  aiModel: process.env.BALCO_AI_MODEL || "claude-opus-5",
+  aiQuotas: {
+    free: { scan: intEnv("AI_FREE_SCANS_PER_MONTH", 3), chat: intEnv("AI_FREE_QUESTIONS_PER_MONTH", 15) },
+    plus: { scan: intEnv("AI_PLUS_SCANS_PER_MONTH", 40), chat: intEnv("AI_PLUS_QUESTIONS_PER_MONTH", 300) },
+  },
   /** Dossier de l'export web (`expo export -p web`), servi par l'API s'il existe. */
   webDir: process.env.WEB_DIR ?? "dist/web",
 };

@@ -382,7 +382,7 @@ export function GardenProvider({ children }: { children: ReactNode }) {
   const deleteAccount = useCallback(async () => {
     await deleteServerAccount();
     if (timerRef.current) clearTimeout(timerRef.current);
-    await AsyncStorage.multiRemove([GARDEN_PLANTS_STORAGE_KEY, GARDEN_EVENTS_STORAGE_KEY, USER_PROFILE_STORAGE_KEY, ONBOARDING_STORAGE_KEY, SYNC_OUTBOX_STORAGE_KEY, SYNC_META_STORAGE_KEY, SERVER_PUSH_STORAGE_KEY]).catch(() => undefined);
+    await AsyncStorage.multiRemove([GARDEN_PLANTS_STORAGE_KEY, GARDEN_EVENTS_STORAGE_KEY, USER_PROFILE_STORAGE_KEY, ONBOARDING_STORAGE_KEY, SYNC_OUTBOX_STORAGE_KEY, SYNC_META_STORAGE_KEY, SERVER_PUSH_STORAGE_KEY, "balco.assistant.history.v1"]).catch(() => undefined);
     await clearAndDisableLocalReminders().catch(() => undefined);
     plantsRef.current = [];
     eventsRef.current = [];

@@ -8,6 +8,8 @@ export const users = mysqlTable("users", {
   email: varchar("email", { length: 320 }),
   loginMethod: varchar("loginMethod", { length: 64 }),
   role: varchar("role", { length: 16 }).default("user").notNull(),
+  /** Forfait : « free » ou « plus » (Balco+). Fixé plus tard par les achats intégrés. */
+  plan: varchar("plan", { length: 16 }).default("free").notNull(),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
   lastSignedIn: timestamp("lastSignedIn").defaultNow().notNull(),
@@ -38,6 +40,23 @@ export const loginCodes = mysqlTable("login_codes", {
   consumedAt: timestamp("consumedAt"),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
 }, (table) => ({ emailIndex: index("login_codes_email_index").on(table.email, table.createdAt) }));
+
+/**
+ * Un appel à l'IA (diagnostic photo ou question à Nora). Sert aux quotas — une ligne « pending »
+ * est réservée avant l'appel, pour que des requêtes simultanées ne dépassent pas la limite —
+ * et au suivi des coûts (jetons consommés).
+ */
+export const aiRequests = mysqlTable("ai_requests", {
+  id: int("id").autoincrement().primaryKey(),
+  userId: int("userId").notNull(),
+  kind: varchar("kind", { length: 16 }).notNull(),
+  status: varchar("status", { length: 16 }).default("pending").notNull(),
+  model: varchar("model", { length: 64 }),
+  inputTokens: int("inputTokens"),
+  outputTokens: int("outputTokens"),
+  cacheReadTokens: int("cacheReadTokens"),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+}, (table) => ({ userKindDateIndex: index("ai_requests_user_kind_date_index").on(table.userId, table.kind, table.createdAt) }));
 
 export const reminderProfiles = mysqlTable("reminder_profiles", {
   id: int("id").autoincrement().primaryKey(),
@@ -127,3 +146,4 @@ export type MaintenanceEvent = typeof maintenanceEvents.$inferSelect;
 export type ReminderDecisionRow = typeof reminderDecisions.$inferSelect;
 export type DevicePushToken = typeof devicePushTokens.$inferSelect;
 export type AuthIdentity = typeof authIdentities.$inferSelect;
+export type AiRequest = typeof aiRequests.$inferSelect;

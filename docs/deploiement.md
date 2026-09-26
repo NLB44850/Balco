@@ -57,7 +57,31 @@ Il faut appeler `POST /api/scheduled/reminders` toutes les heures à la minute 3
 - **le cron de l'hébergeur**, le plus précis : `31 * * * * curl -fsS -X POST -H "Authorization: Bearer $CRON_SECRET" https://api.ton-domaine.fr/api/scheduled/reminders` ;
 - **GitHub Actions**, déjà prêt (`.github/workflows/reminders-cron.yml`) : ajoute la variable `BALCO_API_URL` et le secret `CRON_SECRET` dans les réglages du dépôt.
 
-## 5. Publier les apps iOS et Android
+## 5. Scanner et Nora (IA)
+
+1. Crée une clé API sur https://console.anthropic.com et renseigne-la dans `ANTHROPIC_API_KEY`. Sans clé, l'app affiche « bientôt disponible » à la place du scanner et de Nora.
+2. **Fixe une limite de dépense mensuelle** dans la console Anthropic : c'est le vrai garde-fou si quelque chose tourne mal.
+3. Les quotas se règlent avec `AI_FREE_*` et `AI_PLUS_*`. Par défaut, un compte gratuit a droit à 3 analyses et 15 questions par mois, un compte Balco+ à 40 analyses et 300 questions. Les refus et les pannes ne sont pas décomptés.
+
+**Coût estimé avec `claude-opus-5`** (5 $ par million de jetons en entrée, 25 $ en sortie). Ce sont des ordres de grandeur, à vérifier sur les vrais chiffres :
+
+| | Par appel | Compte gratuit au maximum | Compte Balco+ au maximum |
+|---|---|---|---|
+| Analyse photo | ≈ 0,05 $ | 3 → 0,15 $ | 40 → 2 $ |
+| Question à Nora | ≈ 0,03 $ | 15 → 0,45 $ | 300 → 9 $ |
+
+Chaque appel est enregistré dans la table `ai_requests` (jetons consommés, modèle, statut), ce qui permet de mesurer le coût réel :
+
+```sql
+SELECT kind, COUNT(*) AS appels, SUM(inputTokens) AS entree, SUM(outputTokens) AS sortie
+FROM ai_requests WHERE status = 'ok' AND createdAt >= DATE_FORMAT(NOW(), '%Y-%m-01') GROUP BY kind;
+```
+
+Pour réduire la facture, `BALCO_AI_MODEL=claude-sonnet-5` coûte environ 2,5 fois moins cher. La qualité des diagnostics est à comparer sur un échantillon de vraies photos avant de basculer.
+
+Pour faire passer un compte en Balco+ en attendant les achats intégrés : `UPDATE users SET plan = 'plus' WHERE email = '…';`
+
+## 6. Publier les apps iOS et Android
 
 1. Choisis l'**identifiant de l'app** (ex. `fr.ton-domaine.balco`). Il est définitif après la première publication. Renseigne-le dans `APP_BUNDLE_ID`.
 2. `npm i -g eas-cli`, puis `eas login` et `eas init` : note l'identifiant de projet dans `EAS_PROJECT_ID`. C'est nécessaire aux notifications push.
@@ -77,10 +101,11 @@ Il faut appeler `POST /api/scheduled/reminders` toutes les heures à la minute 3
 
 Tant que ces variables sont vides, le bouton correspondant n'apparaît pas : la connexion par e-mail fonctionne seule.
 
-## 6. Avant de soumettre aux stores
+## 7. Avant de soumettre aux stores
 
 - **Politique de confidentialité** en ligne (exigée par Apple et Google). Elle doit indiquer que Balco stocke l'adresse e-mail, les plantes, l'historique des gestes et la ville utilisée pour la météo.
 - La **suppression de compte** est dans l'app (Profil → Supprimer mon compte), comme l'exige Apple.
+- **IA** : indique dans la politique de confidentialité que les photos et les questions sont envoyées à Anthropic pour l'analyse. Balco ne conserve pas les photos.
 - **Météo** : l'API gratuite d'Open-Meteo est réservée à un usage non commercial. Dès que l'app est payante, prends l'offre commerciale (clé API).
 
 ## Développement local

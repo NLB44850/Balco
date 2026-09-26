@@ -36,6 +36,13 @@
       "when": 1790431545975,
       "tag": "0004_own_auth",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "5",
+      "when": 1790455440082,
+      "tag": "0005_ai_features",
+      "breakpoints": true
     }
   ]
 }

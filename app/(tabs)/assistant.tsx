@@ -1,11 +1,20 @@
-import { useMemo, useState } from "react";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import { useRouter } from "expo-router";
+import { useEffect, useRef, useState } from "react";
 import { FlatList, KeyboardAvoidingView, Platform, Pressable, StyleSheet, Text, TextInput, View } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 
 import { ScreenContainer } from "@/components/screen-container";
 import { useColors } from "@/hooks/use-colors";
+import { quotaLabel } from "@/lib/ai/quota-text";
+import { useGarden } from "@/lib/garden/garden-context";
+import { trpc } from "@/lib/trpc";
 
-type Message = { id: string; from: "bot" | "user"; text: string; time: string };
+/** « notice » : message de l'app (erreur, quota), affiché mais jamais envoyé à Nora. */
+type Message = { id: string; from: "bot" | "user" | "notice"; text: string; time: string };
+
+const HISTORY_STORAGE_KEY = "balco.assistant.history.v1";
+const MAX_STORED_MESSAGES = 40;
 
 const quickQuestions = [
   "Quoi planter en avril sur mon balcon ?",
@@ -13,42 +22,80 @@ const quickQuestions = [
   "Comment économiser l'eau ?",
 ];
 
-const answers: Record<string, string> = {
-  "Quoi planter en avril sur mon balcon ?": "En avril, mise sur les radis, la menthe et les tomates cerises. Pour ton balcon sud-est, plante aussi du basilic quand les nuits seront plus douces.",
-  "Pourquoi les feuilles jaunissent ?": "Souvent, c'est un excès d'eau ou un manque de lumière. Touche la terre : elle doit être sèche sur 2 cm avant le prochain arrosage.",
-  "Comment économiser l'eau ?": "Arrose tôt le matin, directement au pied. Un petit paillage avec des écorces ou des feuilles séchées garde l'humidité plus longtemps.",
-};
+function clock(date = new Date()) {
+  return `${String(date.getHours()).padStart(2, "0")}:${String(date.getMinutes()).padStart(2, "0")}`;
+}
 
 export default function AssistantScreen() {
   const colors = useColors();
-  const [messages, setMessages] = useState<Message[]>([
-    { id: "welcome", from: "bot", text: "Bonjour Camille ! Je suis Nora, ton coach pour un balcon vivant et facile à entretenir.", time: "09:41" },
-    { id: "prompt", from: "bot", text: "Une question sur tes tomates, ton basilic ou ta menthe ? Je suis là 🌿", time: "09:41" },
-  ]);
+  const router = useRouter();
+  const { account, profile } = useGarden();
+  const utils = trpc.useUtils();
+  const status = trpc.ai.status.useQuery(undefined, { enabled: account.signedIn, retry: false });
+  const ask = trpc.ai.ask.useMutation({ onSuccess: () => void utils.ai.status.invalidate() });
+  const [messages, setMessages] = useState<Message[]>([]);
+  const [loaded, setLoaded] = useState(false);
   const [draft, setDraft] = useState("");
+  const listRef = useRef<FlatList<Message>>(null);
 
-  const sendMessage = (text: string) => {
+  useEffect(() => {
+    AsyncStorage.getItem(HISTORY_STORAGE_KEY)
+      .then((stored) => setMessages(stored ? (JSON.parse(stored) as Message[]) : []))
+      .catch(() => setMessages([]))
+      .finally(() => setLoaded(true));
+  }, []);
+
+  useEffect(() => {
+    if (!loaded) return;
+    void AsyncStorage.setItem(HISTORY_STORAGE_KEY, JSON.stringify(messages.slice(-MAX_STORED_MESSAGES))).catch(() => undefined);
+    setTimeout(() => listRef.current?.scrollToEnd({ animated: true }), 50);
+  }, [loaded, messages]);
+
+  const chat = status.data?.chat;
+  const unavailable = status.data?.available === false;
+  const noQuestionsLeft = chat ? chat.remaining <= 0 : false;
+  const canAsk = account.signedIn && !unavailable && !noQuestionsLeft && !ask.isPending;
+  const firstName = profile.firstName?.trim();
+
+  const welcome: Message[] = [
+    { id: "welcome", from: "bot", text: `Bonjour${firstName ? ` ${firstName}` : ""} ! Je suis Nora, ta coach pour un balcon vivant et facile à entretenir.`, time: "" },
+    { id: "prompt", from: "bot", text: account.signedIn ? "Pose-moi une question sur tes plantes, ton exposition ou la saison : je connais ton balcon 🌿" : "Connecte-toi pour me poser tes questions : je réponds en tenant compte de tes plantes et de ta ville 🌿", time: "" },
+  ];
+
+  const send = (text: string) => {
     const clean = text.trim();
     if (!clean) return;
-    const now = new Date();
-    const time = `${String(now.getHours()).padStart(2, "0")}:${String(now.getMinutes()).padStart(2, "0")}`;
-    setMessages((current) => [
-      ...current,
-      { id: `${Date.now()}-user`, from: "user", text: clean, time },
-      { id: `${Date.now()}-bot`, from: "bot", text: answers[clean] ?? "Bonne question ! Observe ta plante pendant une journée et dis-moi ce que tu remarques : lumière, terre, feuilles ou petits visiteurs.", time },
-    ]);
+    if (!account.signedIn) {
+      router.push("/login");
+      return;
+    }
+    if (!canAsk) return;
+    const userMessage: Message = { id: `${Date.now()}-user`, from: "user", text: clean, time: clock() };
+    const next = [...messages, userMessage];
+    setMessages(next);
     setDraft("");
+    // Seuls les vrais échanges partent (pas les notices), en commençant par une question.
+    const history = next.filter((message) => message.from !== "notice").map((message) => ({ role: message.from === "user" ? ("user" as const) : ("assistant" as const), content: message.text.slice(0, 2000) }));
+    ask.mutate({ messages: history }, {
+      onSuccess: (result) => setMessages((current) => [...current, { id: `${Date.now()}-bot`, from: "bot", text: result.answer, time: clock() }]),
+      onError: (error) => setMessages((current) => [...current, { id: `${Date.now()}-notice`, from: "notice", text: error.message, time: clock() }]),
+    });
   };
 
-  const header = useMemo(() => (
+  const clearConversation = () => {
+    setMessages([]);
+    ask.reset();
+  };
+
+  const header = (
     <>
       <View style={styles.chatHeader}>
         <View style={[styles.noraAvatar, { backgroundColor: colors.leaf }]}><Text style={styles.noraEmoji}>✦</Text></View>
         <View style={styles.chatHeaderCopy}>
           <Text style={[styles.chatTitle, { color: colors.foreground }]}>Nora</Text>
-          <View style={styles.onlineRow}><View style={[styles.onlineDot, { backgroundColor: colors.success }]} /><Text style={[styles.onlineText, { color: colors.muted }]}>Coach balcon · en ligne</Text></View>
+          <View style={styles.onlineRow}><View style={[styles.onlineDot, { backgroundColor: unavailable ? colors.muted : colors.success }]} /><Text style={[styles.onlineText, { color: colors.muted }]}>{unavailable ? "Coach balcon · bientôt disponible" : "Coach balcon · IA"}</Text></View>
         </View>
-        <Pressable style={({ pressed }) => [styles.moreButton, { borderColor: colors.border }, pressed && styles.pressed]} onPress={() => {}}><Text style={[styles.moreText, { color: colors.muted }]}>•••</Text></Pressable>
+        {messages.length > 0 && <Pressable accessibilityLabel="Effacer la conversation" style={({ pressed }) => [styles.moreButton, { borderColor: colors.border }, pressed && styles.pressed]} onPress={clearConversation}><Text style={[styles.clearText, { color: colors.muted }]}>Effacer</Text></Pressable>}
       </View>
       <LinearGradient colors={[colors.cream, "#FFE2CE"]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={styles.introCard}>
         <Text style={[styles.introLabel, { color: colors.terracotta }]}>COACH JARDINAGE URBAIN</Text>
@@ -62,47 +109,69 @@ export default function AssistantScreen() {
         keyExtractor={(item) => item}
         contentContainerStyle={styles.quickList}
         renderItem={({ item }) => (
-          <Pressable onPress={() => sendMessage(item)} style={({ pressed }) => [styles.quickChip, { backgroundColor: colors.surface, borderColor: colors.border }, pressed && styles.pressed]}>
+          <Pressable disabled={account.signedIn && !canAsk} onPress={() => send(item)} style={({ pressed }) => [styles.quickChip, { backgroundColor: colors.surface, borderColor: colors.border }, pressed && styles.pressed]}>
             <Text style={[styles.quickChipText, { color: colors.primary }]}>{item}</Text>
           </Pressable>
         )}
       />
     </>
-  ), [colors]);
+  );
+
+  const footer = ask.isPending ? (
+    <View style={styles.messageRow}>
+      <View style={[styles.smallAvatar, { backgroundColor: colors.primary }]}><Text style={styles.smallAvatarText}>N</Text></View>
+      <View style={[styles.bubble, { backgroundColor: colors.surface, borderColor: colors.border }]}><Text style={[styles.messageText, { color: colors.muted }]}>Nora réfléchit…</Text></View>
+    </View>
+  ) : null;
 
   return (
     <ScreenContainer className="px-5" edges={["top", "left", "right"]}>
       <KeyboardAvoidingView style={styles.flex} behavior={Platform.OS === "ios" ? "padding" : undefined}>
         <FlatList
-          data={messages}
+          ref={listRef}
+          data={[...welcome, ...messages]}
           keyExtractor={(item) => item.id}
           ListHeaderComponent={header}
+          ListFooterComponent={footer}
           showsVerticalScrollIndicator={false}
           contentContainerStyle={styles.content}
-          renderItem={({ item }) => (
+          renderItem={({ item }) => item.from === "notice" ? (
+            <Text accessibilityRole="alert" style={[styles.notice, { color: colors.terracotta, backgroundColor: colors.cream }]}>{item.text}</Text>
+          ) : (
             <View style={[styles.messageRow, item.from === "user" && styles.messageRowUser]}>
               {item.from === "bot" && <View style={[styles.smallAvatar, { backgroundColor: colors.primary }]}><Text style={styles.smallAvatarText}>N</Text></View>}
               <View style={[styles.bubble, item.from === "bot" ? { backgroundColor: colors.surface, borderColor: colors.border } : { backgroundColor: colors.primary }, item.from === "user" && styles.userBubble]}>
-                <Text style={[styles.messageText, { color: item.from === "bot" ? colors.foreground : "#FFFFFF" }]}>{item.text}</Text>
-                <Text style={[styles.messageTime, { color: item.from === "bot" ? colors.muted : "rgba(255,255,255,0.7)" }]}>{item.time}</Text>
+                <Text selectable style={[styles.messageText, { color: item.from === "bot" ? colors.foreground : "#FFFFFF" }]}>{item.text}</Text>
+                {!!item.time && <Text style={[styles.messageTime, { color: item.from === "bot" ? colors.muted : "rgba(255,255,255,0.7)" }]}>{item.time}</Text>}
               </View>
             </View>
           )}
         />
-        <View style={[styles.composer, { backgroundColor: colors.surface, borderColor: colors.border }]}>
-          <TextInput
-            value={draft}
-            onChangeText={setDraft}
-            placeholder="Écris à Nora…"
-            placeholderTextColor={colors.muted}
-            style={[styles.input, { color: colors.foreground }]}
-            returnKeyType="send"
-            onSubmitEditing={() => sendMessage(draft)}
-          />
-          <Pressable onPress={() => sendMessage(draft)} accessibilityLabel="Envoyer" style={({ pressed }) => [styles.sendButton, { backgroundColor: draft.trim() ? colors.terracotta : colors.leaf }, pressed && styles.pressed]}>
-            <Text style={[styles.sendText, { color: draft.trim() ? "#FFFFFF" : colors.primary }]}>↑</Text>
+        {account.signedIn ? (
+          <>
+            {chat && <Text style={[styles.quota, { color: noQuestionsLeft ? colors.terracotta : colors.muted }]}>{unavailable ? "Nora arrive bientôt dans une mise à jour." : quotaLabel(chat)}</Text>}
+            <View style={[styles.composer, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+              <TextInput
+                value={draft}
+                onChangeText={setDraft}
+                editable={!unavailable && !noQuestionsLeft}
+                placeholder={noQuestionsLeft ? "Plus de question ce mois-ci" : "Écris à Nora…"}
+                placeholderTextColor={colors.muted}
+                style={[styles.input, { color: colors.foreground }]}
+                maxLength={2000}
+                returnKeyType="send"
+                onSubmitEditing={() => send(draft)}
+              />
+              <Pressable disabled={!canAsk || !draft.trim()} onPress={() => send(draft)} accessibilityLabel="Envoyer" style={({ pressed }) => [styles.sendButton, { backgroundColor: draft.trim() && canAsk ? colors.terracotta : colors.leaf }, pressed && styles.pressed]}>
+                <Text style={[styles.sendText, { color: draft.trim() && canAsk ? "#FFFFFF" : colors.primary }]}>↑</Text>
+              </Pressable>
+            </View>
+          </>
+        ) : (
+          <Pressable onPress={() => router.push("/login")} style={({ pressed }) => [styles.loginBar, { backgroundColor: colors.terracotta }, pressed && styles.pressed]}>
+            <Text style={styles.loginBarText}>Se connecter pour discuter avec Nora</Text>
           </Pressable>
-        </View>
+        )}
       </KeyboardAvoidingView>
     </ScreenContainer>
   );
@@ -119,8 +188,12 @@ const styles = StyleSheet.create({
   onlineRow: { flexDirection: "row", alignItems: "center", marginTop: 3, gap: 5 },
   onlineDot: { width: 7, height: 7, borderRadius: 4 },
   onlineText: { fontSize: 11 },
-  moreButton: { width: 38, height: 38, borderRadius: 19, borderWidth: 1, alignItems: "center", justifyContent: "center" },
-  moreText: { fontSize: 15, letterSpacing: 2, marginBottom: 7 },
+  moreButton: { height: 34, paddingHorizontal: 12, borderRadius: 17, borderWidth: 1, alignItems: "center", justifyContent: "center" },
+  clearText: { fontSize: 10, fontWeight: "800" },
+  notice: { fontSize: 12, lineHeight: 18, fontWeight: "700", borderRadius: 14, padding: 12, overflow: "hidden" },
+  quota: { fontSize: 10, fontWeight: "700", textAlign: "center", marginBottom: 6 },
+  loginBar: { borderRadius: 19, paddingVertical: 16, alignItems: "center", marginBottom: 9 },
+  loginBarText: { color: "#FFFFFF", fontSize: 14, fontWeight: "800" },
   introCard: { padding: 16, borderRadius: 20, marginBottom: 16, shadowColor: "#C56D52", shadowOpacity: 0.07, shadowRadius: 12, shadowOffset: { width: 0, height: 5 }, elevation: 1 },
   introLabel: { fontSize: 9, fontWeight: "800", letterSpacing: 1.1 },
   introText: { fontSize: 14, lineHeight: 20, fontWeight: "700", marginTop: 5, maxWidth: 285 },

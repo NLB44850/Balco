@@ -51,6 +51,15 @@ const config: ExpoConfig = {
     "expo-apple-authentication",
     "expo-secure-store",
     [
+      "expo-image-picker",
+      {
+        cameraPermission: "Balco utilise l’appareil photo pour analyser tes plantes.",
+        photosPermission: "Balco accède à tes photos pour analyser une plante que tu as déjà photographiée.",
+        // Pas de vidéo dans Balco : aucune demande d'accès au micro.
+        microphonePermission: false,
+      },
+    ],
+    [
       "expo-location",
       {
         locationWhenInUsePermission: "Balco utilise ta position pour adapter la météo et les conseils de culture.",

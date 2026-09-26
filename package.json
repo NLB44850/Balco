@@ -22,6 +22,7 @@
     "build:standalone": "esbuild server/_core/index.ts server/migrate.ts --platform=node --target=node22 --bundle --format=esm --outdir=dist/standalone --entry-names=[name] --out-extension:.js=.mjs --banner:js=\"import { createRequire as __balcoRequire } from 'node:module'; const require = __balcoRequire(import.meta.url);\""
   },
   "dependencies": {
+    "@anthropic-ai/sdk": "^0.128.0",
     "@expo/vector-icons": "^15.0.3",
     "@react-native-async-storage/async-storage": "^2.2.0",
     "@react-navigation/bottom-tabs": "^7.8.12",
@@ -44,6 +45,8 @@
     "expo-font": "~14.0.10",
     "expo-haptics": "~15.0.8",
     "expo-image": "~3.0.11",
+    "expo-image-manipulator": "~14.0.8",
+    "expo-image-picker": "~17.0.10",
     "expo-keep-awake": "~15.0.8",
     "expo-linear-gradient": "~15.0.8",
     "expo-linking": "~8.0.10",

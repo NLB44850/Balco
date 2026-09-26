@@ -67,7 +67,8 @@ export function createApp() {
     next();
   });
 
-  app.use(express.json({ limit: "2mb" }));
+  // Assez pour une photo de plante (le scanner) ; les autres requêtes restent minuscules.
+  app.use(express.json({ limit: "8mb" }));
 
   app.get("/api/health", (_req, res) => {
     res.json({ ok: true, timestamp: Date.now() });
