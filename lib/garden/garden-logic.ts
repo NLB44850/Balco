@@ -11,6 +11,10 @@ export type GardenPlant = {
   catalogId: string;
   nickname?: string;
   addedAt: string;
+  /** Dernière modification sur l'appareil : départage deux appareils qui modifient la même plante. */
+  updatedAt?: string;
+  /** Plante retirée : conservée comme « pierre tombale » pour que le retrait se propage aux autres appareils. */
+  removedAt?: string;
 };
 
 export type ResolvedPlant = { plant: GardenPlant; entry: CatalogPlant };
@@ -20,7 +24,11 @@ const DAY_MS = 24 * HOUR_MS;
 export const MAX_STORED_EVENTS = 1000;
 
 export function createGardenPlant(catalogId: string, now = new Date()): GardenPlant {
-  return { id: `${catalogId}-${now.getTime().toString(36)}${Math.random().toString(36).slice(2, 6)}`, catalogId, addedAt: now.toISOString() };
+  return { id: `${catalogId}-${now.getTime().toString(36)}${Math.random().toString(36).slice(2, 6)}`, catalogId, addedAt: now.toISOString(), updatedAt: now.toISOString() };
+}
+
+export function activePlants(plants: GardenPlant[]) {
+  return plants.filter((plant) => !plant.removedAt);
 }
 
 export function resolvePlants(plants: GardenPlant[]): ResolvedPlant[] {

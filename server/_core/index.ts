@@ -73,7 +73,7 @@ async function startServer() {
     try {
       const recalculated = await recalculateAllReminders();
       const dispatched = await dispatchDueReminderNotifications();
-      res.json({ recalculated: { users: recalculated.users, decisions: recalculated.decisions }, dispatched });
+      res.json({ recalculated: { users: recalculated.users, decisions: recalculated.decisions, failures: recalculated.failures }, dispatched });
     } catch (error) {
       console.error("[scheduled/reminders] failed", error);
       res.status(500).json({ error: "failed" });

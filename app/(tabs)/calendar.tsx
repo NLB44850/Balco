@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Modal, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 
@@ -17,8 +17,14 @@ const TONE_TAG_BACKGROUND = { coral: "cream", green: "leaf", lime: "leaf" } as c
 export default function CalendarScreen() {
   const colors = useColors();
   const { weather, isLoading, refresh, requestDeviceLocation, searchCities, selectCity } = useLocalWeather();
-  const { resolvedPlants, events, onboarding, addPlant, logEvent, removeEvent } = useGarden();
+  const { resolvedPlants, events, onboarding, addPlant, logEvent, removeEvent, reportLocation } = useGarden();
   const now = useMemo(() => new Date(), []);
+
+  // Une ville choisie ici doit aussi servir aux rappels envoyés par le serveur.
+  useEffect(() => {
+    if (weather.isFallback) return;
+    reportLocation({ city: weather.city, latitude: weather.latitude, longitude: weather.longitude, timezone: Intl.DateTimeFormat().resolvedOptions().timeZone || "Europe/Paris" });
+  }, [reportLocation, weather.city, weather.isFallback, weather.latitude, weather.longitude]);
   const currentMonth = now.getMonth() + 1;
   const months = useMemo(() => upcomingMonths(now), [now]);
   const [selectedMonth, setSelectedMonth] = useState(currentMonth);

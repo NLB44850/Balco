@@ -1,5 +1,6 @@
 import { ThemedView } from "@/components/themed-view";
 import * as Api from "@/lib/_core/api";
+import { useGarden } from "@/lib/garden/garden-context";
 import * as Auth from "@/lib/_core/auth";
 import * as Linking from "expo-linking";
 import { useLocalSearchParams, useRouter } from "expo-router";
@@ -9,6 +10,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 
 export default function OAuthCallback() {
   const router = useRouter();
+  const { refreshAccount } = useGarden();
   const params = useLocalSearchParams<{
     code?: string;
     state?: string;
@@ -60,6 +62,8 @@ export default function OAuthCallback() {
           }
 
           setStatus("success");
+          // Le jardin se synchronise dès que le compte est connu.
+          void refreshAccount();
           console.log("[OAuth] Web authentication successful, redirecting to home...");
           setTimeout(() => {
             router.replace("/(tabs)");
@@ -157,6 +161,8 @@ export default function OAuthCallback() {
           // User info is already in the OAuth callback response
           // No need to fetch from API
           setStatus("success");
+          // Le jardin se synchronise dès que le compte est connu.
+          void refreshAccount();
           console.log("[OAuth] Redirecting to home...");
           setTimeout(() => {
             router.replace("/(tabs)");
@@ -210,6 +216,8 @@ export default function OAuthCallback() {
           }
 
           setStatus("success");
+          // Le jardin se synchronise dès que le compte est connu.
+          void refreshAccount();
           console.log("[OAuth] Authentication successful, redirecting to home...");
 
           // Redirect to home after a short delay
@@ -232,7 +240,7 @@ export default function OAuthCallback() {
     };
 
     handleCallback();
-  }, [params.code, params.state, params.error, params.sessionToken, params.user, router]);
+  }, [params.code, params.state, params.error, params.sessionToken, params.user, refreshAccount, router]);
 
   return (
     <SafeAreaView className="flex-1" edges={["top", "bottom", "left", "right"]}>

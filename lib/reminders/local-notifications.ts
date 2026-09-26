@@ -40,8 +40,36 @@ export async function loadLocalReminderSettings(): Promise<LocalReminderSettings
   }
 }
 
-export async function saveLocalReminderSettings(settings: LocalReminderSettings) {
+export type ReminderSettingsChangeSource = "user" | "sync";
+type ReminderSettingsListener = (settings: LocalReminderSettings, source: ReminderSettingsChangeSource) => void;
+const settingsListeners = new Set<ReminderSettingsListener>();
+
+/** Prévient les écrans ouverts et la synchro qu'un réglage a changé (par l'utilisateur ou depuis un autre appareil). */
+export function subscribeReminderSettings(listener: ReminderSettingsListener) {
+  settingsListeners.add(listener);
+  return () => {
+    settingsListeners.delete(listener);
+  };
+}
+
+export async function saveLocalReminderSettings(settings: LocalReminderSettings, source: ReminderSettingsChangeSource = "user") {
   await AsyncStorage.setItem(REMINDER_SETTINGS_STORAGE_KEY, JSON.stringify(settings));
+  settingsListeners.forEach((listener) => listener(settings, source));
+}
+
+/**
+ * Quand l'appareil est inscrit aux notifications push du serveur, c'est le serveur qui prévient
+ * (il voit la météo évoluer même application fermée) : les notifications locales s'effacent
+ * pour ne pas recevoir le même conseil deux fois.
+ */
+export const SERVER_PUSH_STORAGE_KEY = "balco.push.registration.v1";
+
+export async function isServerPushActive() {
+  try {
+    return Boolean(await AsyncStorage.getItem(SERVER_PUSH_STORAGE_KEY));
+  } catch {
+    return false;
+  }
 }
 
 export async function configureLocalNotifications() {
@@ -101,6 +129,10 @@ export async function cancelBalcoReminderNotifications() {
 
 export async function scheduleLocalReminder(decision: ReminderDecision, settings: LocalReminderSettings, now = new Date()) {
   if (Platform.OS === "web" || !settings.enabled) return null;
+  if (await isServerPushActive()) {
+    await cancelBalcoReminderNotifications();
+    return null;
+  }
   const permissionGranted = await requestLocalNotificationPermission();
   if (!permissionGranted) return null;
 

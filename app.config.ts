@@ -128,6 +128,8 @@ const config: ExpoConfig = {
       },
     ],
   ],
+  // `eas init` crée le projet EAS ; son identifiant est nécessaire pour les notifications push serveur.
+  extra: process.env.EAS_PROJECT_ID ? { eas: { projectId: process.env.EAS_PROJECT_ID } } : {},
   experiments: {
     typedRoutes: true,
     reactCompiler: true,

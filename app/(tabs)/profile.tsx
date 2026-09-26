@@ -8,7 +8,7 @@ import { PopIn } from "@/components/motion";
 import { ScreenContainer } from "@/components/screen-container";
 import { useColors } from "@/hooks/use-colors";
 import { ONBOARDING_STORAGE_KEY, useGarden } from "@/lib/garden/garden-context";
-import { computeBadges, computeProgress, computeStats, initials, plantDisplayName } from "@/lib/garden/garden-logic";
+import { computeBadges, computeProgress, computeStats, initials, plantDisplayName, relativeDay } from "@/lib/garden/garden-logic";
 import { SPACE_LABELS, SUNLIGHT_LABELS, type SpaceSize, type Sunlight } from "@/lib/plants/catalog";
 import {
   clearAndDisableLocalReminders,
@@ -16,6 +16,7 @@ import {
   loadLocalReminderSettings,
   requestLocalNotificationPermission,
   saveLocalReminderSettings,
+  subscribeReminderSettings,
   type LocalReminderSettings,
 } from "@/lib/reminders/local-notifications";
 
@@ -26,7 +27,7 @@ function capitalize(value: string) {
 export default function ProfileScreen() {
   const colors = useColors();
   const router = useRouter();
-  const { resolvedPlants, events, profile, onboarding, updateProfile, reloadOnboarding } = useGarden();
+  const { resolvedPlants, events, profile, onboarding, account, updateProfile, reloadOnboarding, signIn, signOut, syncNow } = useGarden();
   const [reminderSettings, setReminderSettings] = useState<LocalReminderSettings>(defaultLocalReminderSettings);
   const [settingsLoaded, setSettingsLoaded] = useState(false);
   const [editing, setEditing] = useState(false);
@@ -48,6 +49,8 @@ export default function ProfileScreen() {
       setReminderSettings(settings);
       setSettingsLoaded(true);
     });
+    // Un réglage changé sur un autre appareil arrive par la synchro.
+    return subscribeReminderSettings((settings) => setReminderSettings(settings));
   }, []);
 
   const updateReminderSettings = async (patch: Partial<LocalReminderSettings>) => {
@@ -96,6 +99,16 @@ export default function ProfileScreen() {
     router.replace("/");
   };
 
+  const syncLabel = !account.signedIn
+    ? null
+    : account.status === "syncing"
+      ? "Synchronisation…"
+      : account.status === "offline"
+        ? "Hors ligne : tes changements partiront dès que possible."
+        : account.lastSyncedAt
+          ? `Sauvegardé ${relativeDay(new Date(account.lastSyncedAt))} à ${new Date(account.lastSyncedAt).toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" })}`
+          : "Première sauvegarde en cours…";
+
   const header = (
     <>
       <View style={styles.profileHeader}>
@@ -123,6 +136,27 @@ export default function ProfileScreen() {
         <View style={[styles.statCard, { backgroundColor: colors.surface, borderColor: colors.border }]}><Text style={[styles.statValue, { color: colors.foreground }]}>{stats.gestures}</Text><Text style={[styles.statLabel, { color: colors.muted }]}>geste{stats.gestures > 1 ? "s" : ""} fait{stats.gestures > 1 ? "s" : ""}</Text></View>
         <View style={[styles.statCard, { backgroundColor: colors.surface, borderColor: colors.border }]}><Text style={[styles.statValue, { color: colors.foreground }]}>{stats.streakDays}</Text><Text style={[styles.statLabel, { color: colors.muted }]}>jour{stats.streakDays > 1 ? "s" : ""} de suite</Text></View>
         <View style={[styles.statCard, { backgroundColor: colors.surface, borderColor: colors.border }]}><Text style={[styles.statValue, { color: colors.foreground }]}>{unlockedCount}</Text><Text style={[styles.statLabel, { color: colors.muted }]}>badge{unlockedCount > 1 ? "s" : ""}</Text></View>
+      </View>
+      <View style={[styles.accountCard, { backgroundColor: account.signedIn ? colors.leaf : colors.cream }]}>
+        <Text style={[styles.sectionEyebrow, { color: colors.terracotta }]}>SAUVEGARDE</Text>
+        <Text style={[styles.reminderCardTitle, { color: colors.foreground }]}>{account.signedIn ? "Ton balcon est sauvegardé" : "Ne perds jamais ton balcon"}</Text>
+        <Text style={[styles.reminderCardText, { color: colors.muted }]}>
+          {account.signedIn
+            ? `${syncLabel}${account.serverPush ? " · Rappels envoyés même application fermée." : ""}`
+            : "Connecte-toi pour retrouver tes plantes et ton historique sur un autre téléphone, et recevoir les rappels météo même application fermée."}
+        </Text>
+        <View style={styles.accountActions}>
+          {account.signedIn ? (
+            <>
+              <Pressable disabled={account.status === "syncing"} onPress={() => void syncNow()} style={({ pressed }) => [styles.accountButton, { backgroundColor: colors.primary }, pressed && styles.pressed]}><Text style={styles.accountButtonText}>Synchroniser</Text></Pressable>
+              <Pressable onPress={() => void signOut()} style={({ pressed }) => [styles.accountButtonGhost, pressed && styles.pressed]}><Text style={[styles.accountGhostText, { color: colors.primary }]}>Se déconnecter</Text></Pressable>
+            </>
+          ) : account.loginAvailable ? (
+            <Pressable disabled={account.checking} onPress={() => void signIn()} style={({ pressed }) => [styles.accountButton, { backgroundColor: colors.terracotta }, pressed && styles.pressed]}><Text style={styles.accountButtonText}>{account.checking ? "Vérification…" : "Se connecter"}</Text></Pressable>
+          ) : (
+            <Text style={[styles.reminderOptionHint, { color: colors.muted }]}>Connexion non configurée sur cette version de l’app.</Text>
+          )}
+        </View>
       </View>
       <View style={[styles.reminderCard, { backgroundColor: colors.surface, borderColor: colors.border }]}>
         <View style={styles.reminderCardHeader}>
@@ -196,6 +230,12 @@ const styles = StyleSheet.create({
   statCard: { flex: 1, borderWidth: 1, borderRadius: 17, paddingVertical: 13, alignItems: "center" },
   statValue: { fontSize: 21, fontWeight: "800" },
   statLabel: { fontSize: 10, marginTop: 3 },
+  accountCard: { borderRadius: 21, padding: 15, marginBottom: 16, gap: 2 },
+  accountActions: { flexDirection: "row", alignItems: "center", gap: 10, marginTop: 10 },
+  accountButton: { borderRadius: 12, paddingHorizontal: 14, paddingVertical: 9 },
+  accountButtonText: { color: "#FFFFFF", fontSize: 12, fontWeight: "800" },
+  accountButtonGhost: { paddingHorizontal: 6, paddingVertical: 9 },
+  accountGhostText: { fontSize: 12, fontWeight: "800" },
   reminderCard: { borderRadius: 21, borderWidth: 1, padding: 15, marginBottom: 25, gap: 14 },
   reminderCardHeader: { flexDirection: "row", alignItems: "center", gap: 12 },
   reminderCardCopy: { flex: 1 },

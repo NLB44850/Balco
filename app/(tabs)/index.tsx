@@ -39,6 +39,7 @@ import {
   loadLocalReminderSettings,
   saveLocalReminderSettings,
   scheduleLocalReminder,
+  subscribeReminderSettings,
   type LocalReminderSettings,
 } from "@/lib/reminders/local-notifications";
 
@@ -51,7 +52,7 @@ function reminderKey(decisions: ReminderDecision[]) {
 export default function HomeScreen() {
   const colors = useColors();
   const router = useRouter();
-  const { loaded, resolvedPlants, events, profile, onboarding, addPlant, logEvent, removeEvent } = useGarden();
+  const { loaded, resolvedPlants, events, profile, onboarding, addPlant, logEvent, removeEvent, reportLocation } = useGarden();
   const [now, setNow] = useState(() => new Date());
   const [skippedRecommendations, setSkippedRecommendations] = useState<string[]>([]);
   const [dismissedReminderKey, setDismissedReminderKey] = useState<string | null>(null);
@@ -73,6 +74,15 @@ export default function HomeScreen() {
       active = false;
     };
   }, []));
+
+  // Réglages modifiés depuis le profil ou un autre appareil.
+  useEffect(() => subscribeReminderSettings((settings) => setReminderSettings(settings)), []);
+
+  // Le serveur a besoin de la vraie position pour les rappels app fermée ; jamais de la ville de repli.
+  useEffect(() => {
+    if (weather.isFallback) return;
+    reportLocation({ city: weather.city, latitude: weather.latitude, longitude: weather.longitude, timezone: Intl.DateTimeFormat().resolvedOptions().timeZone || "Europe/Paris" });
+  }, [reportLocation, weather.city, weather.isFallback, weather.latitude, weather.longitude]);
 
   const session = useMemo(() => buildDailySession(resolvedPlants, events, now), [events, now, resolvedPlants]);
   const doneCount = session.filter((item) => item.done).length;

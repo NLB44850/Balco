@@ -21,6 +21,8 @@ export const reminderProfiles = mysqlTable("reminder_profiles", {
   latitude: double("latitude").notNull().default(48.8566),
   longitude: double("longitude").notNull().default(2.3522),
   timezone: varchar("timezone", { length: 64 }).notNull().default("Europe/Paris"),
+  /** Nul tant que l'appareil n'a pas envoyé de vraie position : pas de rappel météo sur la ville par défaut. */
+  locationUpdatedAt: timestamp("locationUpdatedAt"),
   preferredHour: int("preferredHour").default(18).notNull(),
   preferredMinute: int("preferredMinute").default(30).notNull(),
   quietStartHour: int("quietStartHour").default(21).notNull(),
@@ -28,6 +30,9 @@ export const reminderProfiles = mysqlTable("reminder_profiles", {
   skipWateringWhenRainExpected: int("skipWateringWhenRainExpected").default(1).notNull(),
   maxNormalRemindersPerDay: int("maxNormalRemindersPerDay").default(1).notNull(),
   enabledPlantIds: text("enabledPlantIds"),
+  firstName: varchar("firstName", { length: 64 }),
+  /** Réponses d'onboarding (exposition, espace, objectifs) en JSON. */
+  balconyJson: text("balconyJson"),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
 }, (table) => ({ userUnique: uniqueIndex("reminder_profiles_user_unique").on(table.userId) }));
@@ -39,6 +44,12 @@ export const reminderPlants = mysqlTable("reminder_plants", {
   displayName: varchar("displayName", { length: 128 }).notNull(),
   profileJson: text("profileJson").notNull(),
   active: int("active").default(1).notNull(),
+  catalogId: varchar("catalogId", { length: 64 }),
+  nickname: varchar("nickname", { length: 128 }),
+  addedAt: timestamp("addedAt"),
+  removedAt: timestamp("removedAt"),
+  /** Horodatage de la dernière modification côté appareil : la plus récente gagne. */
+  clientUpdatedAt: timestamp("clientUpdatedAt", { fsp: 3 }),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
 }, (table) => ({ userPlantUnique: uniqueIndex("reminder_plants_user_plant_unique").on(table.userId, table.plantId), userIndex: index("reminder_plants_user_index").on(table.userId) }));
