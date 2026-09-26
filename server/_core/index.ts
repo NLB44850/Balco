@@ -1,14 +1,15 @@
 import "dotenv/config";
-import express from "express";
-import { createServer } from "http";
-import net from "net";
+import { existsSync } from "node:fs";
+import path from "node:path";
+import { createServer } from "node:http";
+import net from "node:net";
 import { createExpressMiddleware } from "@trpc/server/adapters/express";
-import { registerOAuthRoutes } from "./oauth";
-import { registerStorageProxy } from "./storageProxy";
+import express, { type Express } from "express";
+
 import { appRouter } from "../routers";
-import { createContext } from "./context";
-import { ENV } from "./env";
 import { dispatchDueReminderNotifications, recalculateAllReminders } from "../reminders";
+import { createContext } from "./context";
+import { assertProductionConfig, ENV } from "./env";
 
 function isPortAvailable(port: number): Promise<boolean> {
   return new Promise((resolve) => {
@@ -20,51 +21,59 @@ function isPortAvailable(port: number): Promise<boolean> {
   });
 }
 
-async function findAvailablePort(startPort: number = 3000): Promise<number> {
+async function findAvailablePort(startPort: number): Promise<number> {
   for (let port = startPort; port < startPort + 20; port++) {
-    if (await isPortAvailable(port)) {
-      return port;
-    }
+    if (await isPortAvailable(port)) return port;
   }
   throw new Error(`No available port found starting from ${startPort}`);
 }
 
-async function startServer() {
+/** Origines autorisées : celles listées dans CORS_ORIGINS, plus le serveur Expo local en développement. */
+export function isAllowedOrigin(origin: string) {
+  if (ENV.corsOrigins.includes(origin)) return true;
+  return !ENV.isProduction && /^https?:\/\/(localhost|127\.0\.0\.1|\d+\.\d+\.\d+\.\d+)(:\d+)?$/.test(origin);
+}
+
+/** L'app web (export Expo statique) est servie par l'API : même origine, pas de CORS à ouvrir. */
+function serveWebApp(app: Express) {
+  const webDir = path.resolve(ENV.webDir);
+  if (!existsSync(path.join(webDir, "index.html"))) return false;
+  app.use(express.static(webDir, { extensions: ["html"], index: "index.html", maxAge: "1h" }));
+  app.get(/^(?!\/api\/).*/, (_req, res) => res.sendFile(path.join(webDir, "index.html")));
+  return true;
+}
+
+export function createApp() {
   const app = express();
-  const server = createServer(app);
+  // Derrière le proxy de l'hébergeur : vraie IP du client (limites de débit) et détection du HTTPS.
+  app.set("trust proxy", 1);
+  app.disable("x-powered-by");
 
-  // Enable CORS for all routes - reflect the request origin to support credentials
   app.use((req, res, next) => {
+    res.header("X-Content-Type-Options", "nosniff");
+    res.header("Referrer-Policy", "strict-origin-when-cross-origin");
     const origin = req.headers.origin;
-    if (origin) {
+    if (origin && isAllowedOrigin(origin)) {
       res.header("Access-Control-Allow-Origin", origin);
+      res.header("Vary", "Origin");
+      res.header("Access-Control-Allow-Credentials", "true");
+      res.header("Access-Control-Allow-Methods", "GET, POST, OPTIONS");
+      res.header("Access-Control-Allow-Headers", "Content-Type, Authorization");
     }
-    res.header("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS");
-    res.header(
-      "Access-Control-Allow-Headers",
-      "Origin, X-Requested-With, Content-Type, Accept, Authorization",
-    );
-    res.header("Access-Control-Allow-Credentials", "true");
-
-    // Handle preflight requests
     if (req.method === "OPTIONS") {
-      res.sendStatus(200);
+      res.sendStatus(origin && isAllowedOrigin(origin) ? 204 : 403);
       return;
     }
     next();
   });
 
-  app.use(express.json({ limit: "50mb" }));
-  app.use(express.urlencoded({ limit: "50mb", extended: true }));
-
-  registerStorageProxy(app);
-  registerOAuthRoutes(app);
+  app.use(express.json({ limit: "2mb" }));
 
   app.get("/api/health", (_req, res) => {
     res.json({ ok: true, timestamp: Date.now() });
   });
 
-  // Appelé par un cron externe (toutes les heures conseillé) : recalcule les décisions avec une météo fraîche puis envoie les push dus.
+  // Appelé par un cron externe (toutes les heures, minute 31) : recalcule les décisions avec une météo fraîche puis envoie les push dus.
   app.post("/api/scheduled/reminders", async (req, res) => {
     if (!ENV.cronSecret || req.headers.authorization !== `Bearer ${ENV.cronSecret}`) {
       res.status(401).json({ error: "unauthorized" });
@@ -80,24 +89,29 @@ async function startServer() {
     }
   });
 
-  app.use(
-    "/api/trpc",
-    createExpressMiddleware({
-      router: appRouter,
-      createContext,
-    }),
-  );
+  app.use("/api/trpc", createExpressMiddleware({ router: appRouter, createContext }));
+  app.use("/api", (_req, res) => res.status(404).json({ error: "not_found" }));
 
+  const servesWeb = serveWebApp(app);
+  return { app, servesWeb };
+}
+
+async function startServer() {
+  assertProductionConfig();
+  const { app, servesWeb } = createApp();
+  const server = createServer(app);
   const preferredPort = parseInt(process.env.PORT || "3000");
-  const port = await findAvailablePort(preferredPort);
-
-  if (port !== preferredPort) {
-    console.log(`Port ${preferredPort} is busy, using port ${port} instead`);
-  }
-
+  // En production, le port est imposé par l'hébergeur : pas question d'en choisir un autre.
+  const port = ENV.isProduction ? preferredPort : await findAvailablePort(preferredPort);
+  if (port !== preferredPort) console.log(`Port ${preferredPort} is busy, using port ${port} instead`);
   server.listen(port, () => {
-    console.log(`[api] server listening on port ${port}`);
+    console.log(`[api] server listening on port ${port}${servesWeb ? " (web app included)" : ""}`);
   });
 }
 
-startServer().catch(console.error);
+if (process.env.VITEST !== "true") {
+  startServer().catch((error) => {
+    console.error(error);
+    process.exit(1);
+  });
+}

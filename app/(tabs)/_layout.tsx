@@ -1,15 +1,21 @@
-import { Tabs } from "expo-router";
+import { Redirect, Tabs } from "expo-router";
 import { Platform } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { HapticTab } from "@/components/haptic-tab";
 import { IconSymbol } from "@/components/ui/icon-symbol";
 import { useColors } from "@/hooks/use-colors";
+import { useGarden } from "@/lib/garden/garden-context";
 
 export default function TabLayout() {
   const colors = useColors();
   const insets = useSafeAreaInsets();
   const bottomPadding = Platform.OS === "web" ? 10 : Math.max(insets.bottom, 8);
+  const { loaded, onboarding } = useGarden();
+
+  // Premier lancement (ou compte supprimé, questionnaire à refaire) : on passe par l'accueil.
+  if (!loaded) return null;
+  if (!onboarding) return <Redirect href="/welcome" />;
 
   return (
     <Tabs

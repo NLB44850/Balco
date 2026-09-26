@@ -2,13 +2,15 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { AppState } from "react-native";
 
-import { APP_ID, OAUTH_PORTAL_URL, startOAuthLogin } from "@/constants/oauth";
-import { useAuth } from "@/hooks/use-auth";
+import { router } from "expo-router";
+
+import { useAuth, type SignInResult } from "@/hooks/use-auth";
 import type { OnboardingAnswers } from "@/lib/plants/catalog";
 import type { MaintenanceEvent } from "@/lib/reminders/reminder-engine";
 import {
   SERVER_PUSH_STORAGE_KEY,
   cancelBalcoReminderNotifications,
+  clearAndDisableLocalReminders,
   defaultLocalReminderSettings,
   loadLocalReminderSettings,
   saveLocalReminderSettings,
@@ -49,11 +51,12 @@ type SyncMeta = { openId?: string; lastSyncedAt?: string; lastLocation?: SyncLoc
 type PushRegistration = { token: string; openId: string };
 
 export type AccountState = {
-  /** Connexion configurée pour ce build (portail OAuth et identifiant d'app). */
+  /** Connexion possible (toujours vrai depuis l'authentification maison ; gardé pour les écrans). */
   loginAvailable: boolean;
   signedIn: boolean;
   checking: boolean;
   name?: string | null;
+  email?: string | null;
   status: "idle" | "syncing" | "offline";
   lastSyncedAt?: string;
   serverPush: boolean;
@@ -79,6 +82,8 @@ type GardenContextValue = {
   signOut: () => Promise<void>;
   syncNow: () => Promise<void>;
   refreshAccount: () => Promise<void>;
+  completeSignIn: (result: SignInResult) => Promise<void>;
+  deleteAccount: () => Promise<void>;
 };
 
 const GardenContext = createContext<GardenContextValue | null>(null);
@@ -129,7 +134,8 @@ export function GardenProvider({ children }: { children: ReactNode }) {
   const runSyncRef = useRef<() => Promise<void>>(async () => {});
 
   signedInRef.current = auth.isAuthenticated;
-  openIdRef.current = auth.user?.openId;
+  // Identifie le compte synchronisé : un changement de compte relance une fusion complète.
+  openIdRef.current = auth.user ? `user:${auth.user.id}` : undefined;
 
   useEffect(() => {
     let active = true;
@@ -351,8 +357,11 @@ export function GardenProvider({ children }: { children: ReactNode }) {
   }, [refreshAuth]);
 
   const signIn = useCallback(async () => {
-    await startOAuthLogin();
+    router.push("/login");
   }, []);
+
+  const { completeSignIn: completeAuthSignIn, deleteAccount: deleteServerAccount } = auth;
+  const completeSignIn = useCallback((result: SignInResult) => completeAuthSignIn(result), [completeAuthSignIn]);
 
   const signOut = useCallback(async () => {
     const registration = await readJson<PushRegistration | null>(SERVER_PUSH_STORAGE_KEY, null);
@@ -369,21 +378,43 @@ export function GardenProvider({ children }: { children: ReactNode }) {
 
   const syncNow = useCallback(() => runSync(), [runSync]);
 
+  /** Efface le compte côté serveur puis tout ce qui reste sur l'appareil : on repart de zéro. */
+  const deleteAccount = useCallback(async () => {
+    await deleteServerAccount();
+    if (timerRef.current) clearTimeout(timerRef.current);
+    await AsyncStorage.multiRemove([GARDEN_PLANTS_STORAGE_KEY, GARDEN_EVENTS_STORAGE_KEY, USER_PROFILE_STORAGE_KEY, ONBOARDING_STORAGE_KEY, SYNC_OUTBOX_STORAGE_KEY, SYNC_META_STORAGE_KEY, SERVER_PUSH_STORAGE_KEY]).catch(() => undefined);
+    await clearAndDisableLocalReminders().catch(() => undefined);
+    plantsRef.current = [];
+    eventsRef.current = [];
+    profileRef.current = {};
+    onboardingRef.current = null;
+    outboxRef.current = emptyOutbox();
+    metaRef.current = {};
+    setAllPlants([]);
+    setEvents([]);
+    setProfile({});
+    setOnboarding(null);
+    setLastSyncedAt(undefined);
+    setServerPush(false);
+    router.replace("/welcome");
+  }, [deleteServerAccount]);
+
   const plants = useMemo(() => activePlants(allPlants), [allPlants]);
   const resolvedPlants = useMemo(() => resolvePlants(plants), [plants]);
   const account = useMemo<AccountState>(() => ({
-    loginAvailable: Boolean(OAUTH_PORTAL_URL && APP_ID),
+    loginAvailable: true,
     signedIn: auth.isAuthenticated,
     checking: auth.loading,
     name: auth.user?.name,
+    email: auth.user?.email,
     status: syncStatus,
     lastSyncedAt,
     serverPush,
-  }), [auth.isAuthenticated, auth.loading, auth.user?.name, lastSyncedAt, serverPush, syncStatus]);
+  }), [auth.isAuthenticated, auth.loading, auth.user?.email, auth.user?.name, lastSyncedAt, serverPush, syncStatus]);
 
   const value = useMemo<GardenContextValue>(
-    () => ({ loaded, plants, resolvedPlants, events, profile, onboarding, account, addPlant, removePlant, renamePlant, logEvent, removeEvent, updateProfile, reloadOnboarding, reportLocation, signIn, signOut, syncNow, refreshAccount }),
-    [loaded, plants, resolvedPlants, events, profile, onboarding, account, addPlant, removePlant, renamePlant, logEvent, removeEvent, updateProfile, reloadOnboarding, reportLocation, signIn, signOut, syncNow, refreshAccount],
+    () => ({ loaded, plants, resolvedPlants, events, profile, onboarding, account, addPlant, removePlant, renamePlant, logEvent, removeEvent, updateProfile, reloadOnboarding, reportLocation, signIn, signOut, syncNow, refreshAccount, completeSignIn, deleteAccount }),
+    [loaded, plants, resolvedPlants, events, profile, onboarding, account, addPlant, removePlant, renamePlant, logEvent, removeEvent, updateProfile, reloadOnboarding, reportLocation, signIn, signOut, syncNow, refreshAccount, completeSignIn, deleteAccount],
   );
 
   return <GardenContext.Provider value={value}>{children}</GardenContext.Provider>;

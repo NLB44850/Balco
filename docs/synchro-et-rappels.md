@@ -11,17 +11,7 @@
 
 ## Mise en production
 
-1. Appliquer les migrations : `DATABASE_URL=… pnpm db:push`.
-2. Variables du serveur :
-
-   | Variable | Rôle |
-   |---|---|
-   | `DATABASE_URL` | Base MySQL |
-   | `JWT_SECRET` | Signature des sessions |
-   | `CRON_SECRET` | Secret attendu par `POST /api/scheduled/reminders` (`Authorization: Bearer …`) |
-
-3. Planifier un appel **toutes les heures à la minute 31** vers `POST /api/scheduled/reminders`. Les rappels partent à 17 h 30, 18 h 30 ou 19 h 30, heure locale. Les alertes urgentes (gel, orage, vent fort) partent au premier passage, hors plage calme.
-4. Notifications push : lancer `eas init`, puis builder l'app avec `EAS_PROJECT_ID=<id>`. Sans cet identifiant, l'app garde les notifications locales.
+Voir [deploiement.md](deploiement.md) : variables d'environnement, cron des rappels, notifications push (`eas init` et `EAS_PROJECT_ID`).
 
 ## Tests
 

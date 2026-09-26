@@ -27,11 +27,25 @@ function capitalize(value: string) {
 export default function ProfileScreen() {
   const colors = useColors();
   const router = useRouter();
-  const { resolvedPlants, events, profile, onboarding, account, updateProfile, reloadOnboarding, signIn, signOut, syncNow } = useGarden();
+  const { resolvedPlants, events, profile, onboarding, account, updateProfile, reloadOnboarding, signIn, signOut, syncNow, deleteAccount } = useGarden();
   const [reminderSettings, setReminderSettings] = useState<LocalReminderSettings>(defaultLocalReminderSettings);
   const [settingsLoaded, setSettingsLoaded] = useState(false);
   const [editing, setEditing] = useState(false);
   const [nameDraft, setNameDraft] = useState("");
+  const [confirmDelete, setConfirmDelete] = useState(false);
+  const [deleting, setDeleting] = useState(false);
+  const [deleteError, setDeleteError] = useState<string | null>(null);
+
+  const removeAccount = async () => {
+    setDeleting(true);
+    setDeleteError(null);
+    try {
+      await deleteAccount();
+    } catch {
+      setDeleteError("La suppression n’a pas abouti. Vérifie ta connexion et réessaie.");
+      setDeleting(false);
+    }
+  };
 
   const stats = useMemo(() => computeStats(resolvedPlants, events, new Date()), [events, resolvedPlants]);
   const badges = useMemo(() => computeBadges(stats), [stats]);
@@ -96,7 +110,7 @@ export default function ProfileScreen() {
   const redoOnboarding = async () => {
     await AsyncStorage.removeItem(ONBOARDING_STORAGE_KEY);
     await reloadOnboarding();
-    router.replace("/");
+    router.replace("/welcome");
   };
 
   const syncLabel = !account.signedIn
@@ -142,7 +156,7 @@ export default function ProfileScreen() {
         <Text style={[styles.reminderCardTitle, { color: colors.foreground }]}>{account.signedIn ? "Ton balcon est sauvegardé" : "Ne perds jamais ton balcon"}</Text>
         <Text style={[styles.reminderCardText, { color: colors.muted }]}>
           {account.signedIn
-            ? `${syncLabel}${account.serverPush ? " · Rappels envoyés même application fermée." : ""}`
+            ? `${account.email ? `Connecté avec ${account.email}. ` : ""}${syncLabel}${account.serverPush ? " · Rappels envoyés même application fermée." : ""}`
             : "Connecte-toi pour retrouver tes plantes et ton historique sur un autre téléphone, et recevoir les rappels météo même application fermée."}
         </Text>
         <View style={styles.accountActions}>
@@ -157,6 +171,22 @@ export default function ProfileScreen() {
             <Text style={[styles.reminderOptionHint, { color: colors.muted }]}>Connexion non configurée sur cette version de l’app.</Text>
           )}
         </View>
+        {account.signedIn && (
+          <View style={styles.deleteBlock}>
+            {confirmDelete ? (
+              <>
+                <Text style={[styles.reminderOptionHint, { color: colors.foreground }]}>Ton compte, tes plantes et tout ton historique seront effacés définitivement, sur ce téléphone et sur nos serveurs.</Text>
+                <View style={styles.accountActions}>
+                  <Pressable disabled={deleting} onPress={() => void removeAccount()} style={({ pressed }) => [styles.accountButton, { backgroundColor: colors.error }, pressed && styles.pressed]}><Text style={styles.accountButtonText}>{deleting ? "Suppression…" : "Oui, tout supprimer"}</Text></Pressable>
+                  <Pressable disabled={deleting} onPress={() => setConfirmDelete(false)} style={({ pressed }) => [styles.accountButtonGhost, pressed && styles.pressed]}><Text style={[styles.accountGhostText, { color: colors.primary }]}>Annuler</Text></Pressable>
+                </View>
+                {deleteError && <Text style={[styles.reminderOptionHint, { color: colors.error }]}>{deleteError}</Text>}
+              </>
+            ) : (
+              <Pressable onPress={() => setConfirmDelete(true)}><Text style={[styles.deleteLink, { color: colors.error }]}>Supprimer mon compte</Text></Pressable>
+            )}
+          </View>
+        )}
       </View>
       <View style={[styles.reminderCard, { backgroundColor: colors.surface, borderColor: colors.border }]}>
         <View style={styles.reminderCardHeader}>
@@ -236,6 +266,8 @@ const styles = StyleSheet.create({
   accountButtonText: { color: "#FFFFFF", fontSize: 12, fontWeight: "800" },
   accountButtonGhost: { paddingHorizontal: 6, paddingVertical: 9 },
   accountGhostText: { fontSize: 12, fontWeight: "800" },
+  deleteBlock: { marginTop: 12, gap: 4 },
+  deleteLink: { fontSize: 11, fontWeight: "700" },
   reminderCard: { borderRadius: 21, borderWidth: 1, padding: 15, marginBottom: 25, gap: 14 },
   reminderCardHeader: { flexDirection: "row", alignItems: "center", gap: 12 },
   reminderCardCopy: { flex: 1 },

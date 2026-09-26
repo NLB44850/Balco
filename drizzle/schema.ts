@@ -13,6 +13,32 @@ export const users = mysqlTable("users", {
   lastSignedIn: timestamp("lastSignedIn").defaultNow().notNull(),
 });
 
+/**
+ * Moyens de connexion d'un compte : une adresse e-mail, un identifiant Apple, un identifiant Google.
+ * Un même compte peut en avoir plusieurs (par exemple e-mail + Apple avec la même adresse vérifiée).
+ */
+export const authIdentities = mysqlTable("auth_identities", {
+  id: int("id").autoincrement().primaryKey(),
+  userId: int("userId").notNull(),
+  provider: varchar("provider", { length: 16 }).notNull(),
+  /** Adresse e-mail normalisée, ou identifiant stable (« sub ») chez Apple et Google. */
+  subject: varchar("subject", { length: 320 }).notNull(),
+  email: varchar("email", { length: 320 }),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  lastUsedAt: timestamp("lastUsedAt").defaultNow().notNull(),
+}, (table) => ({ providerSubjectUnique: uniqueIndex("auth_identities_provider_subject_unique").on(table.provider, table.subject), userIndex: index("auth_identities_user_index").on(table.userId) }));
+
+/** Codes à usage unique envoyés par e-mail. Seule leur empreinte est stockée. */
+export const loginCodes = mysqlTable("login_codes", {
+  id: int("id").autoincrement().primaryKey(),
+  email: varchar("email", { length: 320 }).notNull(),
+  codeHash: varchar("codeHash", { length: 64 }).notNull(),
+  attempts: int("attempts").default(0).notNull(),
+  expiresAt: timestamp("expiresAt").notNull(),
+  consumedAt: timestamp("consumedAt"),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+}, (table) => ({ emailIndex: index("login_codes_email_index").on(table.email, table.createdAt) }));
+
 export const reminderProfiles = mysqlTable("reminder_profiles", {
   id: int("id").autoincrement().primaryKey(),
   userId: int("userId").notNull(),
@@ -100,3 +126,4 @@ export type ReminderPlant = typeof reminderPlants.$inferSelect;
 export type MaintenanceEvent = typeof maintenanceEvents.$inferSelect;
 export type ReminderDecisionRow = typeof reminderDecisions.$inferSelect;
 export type DevicePushToken = typeof devicePushTokens.$inferSelect;
+export type AuthIdentity = typeof authIdentities.$inferSelect;

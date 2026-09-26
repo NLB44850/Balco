@@ -29,6 +29,13 @@
       "when": 1790427713519,
       "tag": "0003_garden_sync",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "5",
+      "when": 1790431545975,
+      "tag": "0004_own_auth",
+      "breakpoints": true
     }
   ]
 }

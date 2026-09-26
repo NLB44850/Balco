@@ -3,7 +3,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { Stack, useRouter } from "expo-router";
 import * as Notifications from "expo-notifications";
 import { StatusBar } from "expo-status-bar";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import "react-native-reanimated";
 import { Platform } from "react-native";
@@ -15,10 +15,9 @@ import {
   SafeAreaProvider,
   initialWindowMetrics,
 } from "react-native-safe-area-context";
-import type { EdgeInsets, Metrics, Rect } from "react-native-safe-area-context";
+import type { EdgeInsets, Rect } from "react-native-safe-area-context";
 
 import { trpc, createTRPCClient } from "@/lib/trpc";
-import { initManusRuntime, subscribeSafeAreaInsets } from "@/lib/_core/manus-runtime";
 import { configureLocalNotifications } from "@/lib/reminders/local-notifications";
 import { GardenProvider } from "@/lib/garden/garden-context";
 
@@ -34,13 +33,8 @@ export default function RootLayout() {
   const initialInsets = initialWindowMetrics?.insets ?? DEFAULT_WEB_INSETS;
   const initialFrame = initialWindowMetrics?.frame ?? DEFAULT_WEB_FRAME;
 
-  const [insets, setInsets] = useState<EdgeInsets>(initialInsets);
-  const [frame, setFrame] = useState<Rect>(initialFrame);
-
-  // Initialize Manus runtime for cookie injection from parent container
-  useEffect(() => {
-    initManusRuntime();
-  }, []);
+  const [insets] = useState<EdgeInsets>(initialInsets);
+  const [frame] = useState<Rect>(initialFrame);
 
   useEffect(() => {
     if (Platform.OS === "web") return;
@@ -51,17 +45,6 @@ export default function RootLayout() {
     });
     return () => responseSubscription.remove();
   }, [router]);
-
-  const handleSafeAreaUpdate = useCallback((metrics: Metrics) => {
-    setInsets(metrics.insets);
-    setFrame(metrics.frame);
-  }, []);
-
-  useEffect(() => {
-    if (Platform.OS !== "web") return;
-    const unsubscribe = subscribeSafeAreaInsets(handleSafeAreaUpdate);
-    return () => unsubscribe();
-  }, [handleSafeAreaUpdate]);
 
   // Create clients once and reuse them
   const [queryClient] = useState(
@@ -100,10 +83,10 @@ export default function RootLayout() {
           {/* Default to hiding native headers so raw route segments don't appear (e.g. "(tabs)", "products/[id]"). */}
           {/* If a screen needs the native header, explicitly enable it and set a human title via Stack.Screen options. */}
           {/* in order for ios apps tab switching to work properly, use presentation: "fullScreenModal" for login page, whenever you decide to use presentation: "modal*/}
-          <Stack initialRouteName="index" screenOptions={{ headerShown: false }}>
-            <Stack.Screen name="index" />
+          <Stack initialRouteName="(tabs)" screenOptions={{ headerShown: false }}>
+            <Stack.Screen name="welcome" />
             <Stack.Screen name="(tabs)" />
-            <Stack.Screen name="oauth/callback" />
+            <Stack.Screen name="login" options={{ presentation: "modal" }} />
             <Stack.Screen name="garden/index" />
             <Stack.Screen name="garden/add" />
           </Stack>

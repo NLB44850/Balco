@@ -26,15 +26,15 @@ describe("Balco MVP content", () => {
   });
 
   it("includes the warmer modern layer requested for the second iteration", () => {
-    expect(readProjectFile("app/index.tsx")).toContain("On commence par");
-    expect(readProjectFile("app/index.tsx")).toContain("BalcoIllustration");
+    expect(readProjectFile("app/welcome.tsx")).toContain("On commence par");
+    expect(readProjectFile("app/welcome.tsx")).toContain("BalcoIllustration");
     expect(readProjectFile("components/motion.tsx")).toContain("FadeIn");
     expect(readProjectFile("app/(tabs)/index.tsx")).toContain("LinearGradient");
     expect(readProjectFile("package.json")).toContain("expo-linear-gradient");
   });
 
   it("defines the personalized four-step onboarding", () => {
-    const onboarding = readProjectFile("app/index.tsx");
+    const onboarding = readProjectFile("app/welcome.tsx");
 
     expect(onboarding).toContain("Je débute");
     expect(onboarding).toContain("Combien de soleil");
@@ -85,7 +85,7 @@ describe("Balco MVP content", () => {
     expect(readProjectFile("app/garden/index.tsx")).toContain("removePlant");
     expect(readProjectFile("app/garden/add.tsx")).toContain("searchCatalog");
     expect(readProjectFile("app/_layout.tsx")).toContain("GardenProvider");
-    expect(readProjectFile("app/index.tsx")).toContain("Redirect");
+    expect(readProjectFile("app/welcome.tsx")).toContain("Redirect");
   });
 
   it("includes a personalized cultivation calendar", () => {
