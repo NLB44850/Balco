@@ -91,7 +91,7 @@ export default function RootLayout() {
             <Stack.Screen name="garden/add" />
             <Stack.Screen name="garden/[id]" />
           </Stack>
-          <StatusBar style="auto" />
+          <StatusBar style="dark" />
           </GardenProvider>
         </QueryClientProvider>
       </trpc.Provider>
