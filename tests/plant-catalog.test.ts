@@ -39,6 +39,11 @@ describe("plant catalog integrity", () => {
     });
   });
 
+  it("gives every plant its own emoji, to tell them apart at a glance", () => {
+    const emojis = PLANT_CATALOG.map((entry) => entry.emoji);
+    expect(new Set(emojis).size).toBe(emojis.length);
+  });
+
   it("marks tender plants as frost sensitive", () => {
     ["basil", "cherry-tomato", "zucchini", "nasturtium"].forEach((id) => expect(getCatalogPlant(id)?.care.frostSensitive).toBe(true));
     ["mint", "thyme", "lambs-lettuce"].forEach((id) => expect(getCatalogPlant(id)?.care.frostSensitive).toBe(false));

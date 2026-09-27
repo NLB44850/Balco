@@ -173,7 +173,7 @@ export const PLANT_CATALOG: CatalogPlant[] = [
     extraTasks: [customTask({ id: "pinch-flowers", type: "pruning", title: "Aujourd’hui, pince les fleurs du basilic.", instruction: "Coupe les boutons floraux dès qu’ils apparaissent : l’énergie reste dans les feuilles parfumées.", minutes: 2, months: [7, 8, 9] })],
   }),
   plant({
-    id: "mint", name: "Menthe", label: "la menthe", emoji: "🌱", category: "aromatic",
+    id: "mint", name: "Menthe", label: "la menthe", emoji: "🍃", category: "aromatic",
     sunlight: ["shade", "partial", "sunny"], minSpace: "windowsill", difficulty: "easy", perennial: true, melliferous: true, goals: ["aromatics"], potLiters: 5,
     pitch: "Robuste et parfumée, elle démarre très bien dans un petit contenant, même à l’ombre.",
     sowMonths: [], plantMonths: [3, 4, 5, 9, 10], harvestMonths: [4, 5, 6, 7, 8, 9, 10],
@@ -182,7 +182,7 @@ export const PLANT_CATALOG: CatalogPlant[] = [
     extraTasks: [customTask({ id: "pinch", type: "pruning", title: "Aujourd’hui, pince la menthe.", instruction: "Coupe les extrémités juste au-dessus d’une paire de feuilles pour la faire ramifier.", minutes: 2, months: [5, 6, 7, 8] })],
   }),
   plant({
-    id: "parsley", name: "Persil", label: "le persil", emoji: "🌿", category: "aromatic",
+    id: "parsley", name: "Persil", label: "le persil", emoji: "☘️", category: "aromatic",
     sunlight: ["partial", "shade", "sunny"], minSpace: "windowsill", difficulty: "easy", perennial: false, melliferous: false, goals: ["aromatics", "zero-waste"], potLiters: 3,
     pitch: "Il se récolte presque toute l’année et repousse après chaque coupe.",
     sowMonths: [3, 4, 5, 6, 7, 8], plantMonths: [4, 5, 9], harvestMonths: [5, 6, 7, 8, 9, 10, 11],
@@ -191,7 +191,7 @@ export const PLANT_CATALOG: CatalogPlant[] = [
     wateringMonths: [4, 5, 6, 7, 8, 9, 10, 11],
   }),
   plant({
-    id: "chives", name: "Ciboulette", label: "la ciboulette", emoji: "🌱", category: "aromatic",
+    id: "chives", name: "Ciboulette", label: "la ciboulette", emoji: "🌾", category: "aromatic",
     sunlight: ["sunny", "partial", "shade"], minSpace: "windowsill", difficulty: "easy", perennial: true, melliferous: true, goals: ["aromatics", "bees"], potLiters: 2,
     pitch: "Increvable, elle revient chaque printemps et ses fleurs mauves attirent les abeilles.",
     sowMonths: [3, 4, 5], plantMonths: [3, 4, 5, 9, 10], harvestMonths: [3, 4, 5, 6, 7, 8, 9, 10],
@@ -200,7 +200,7 @@ export const PLANT_CATALOG: CatalogPlant[] = [
     wateringMonths: [3, 4, 5, 6, 7, 8, 9, 10],
   }),
   plant({
-    id: "thyme", name: "Thym", label: "le thym", emoji: "🌿", category: "aromatic",
+    id: "thyme", name: "Thym", label: "le thym", emoji: "🍖", category: "aromatic",
     sunlight: ["sunny"], minSpace: "windowsill", difficulty: "easy", perennial: true, melliferous: true, goals: ["aromatics", "bees"], potLiters: 3,
     pitch: "Il adore le soleil et oublie volontiers tes arrosages : parfait pour les balcons brûlants.",
     sowMonths: [4, 5], plantMonths: [3, 4, 5, 9, 10], harvestMonths: WHOLE_YEAR,
@@ -210,7 +210,7 @@ export const PLANT_CATALOG: CatalogPlant[] = [
     extraTasks: [customTask({ id: "trim", type: "pruning", title: "Aujourd’hui, taille légèrement le thym.", instruction: "Après la floraison, rabats les tiges d’un tiers pour garder une touffe compacte.", minutes: 5, months: [7, 8] })],
   }),
   plant({
-    id: "rosemary", name: "Romarin", label: "le romarin", emoji: "🌿", category: "aromatic",
+    id: "rosemary", name: "Romarin", label: "le romarin", emoji: "🌲", category: "aromatic",
     sunlight: ["sunny"], minSpace: "planter", difficulty: "easy", perennial: true, melliferous: true, goals: ["aromatics", "bees"], potLiters: 10,
     pitch: "Un arbuste méditerranéen qui fleurit dès la fin de l’hiver, une aubaine pour les pollinisateurs.",
     sowMonths: [], plantMonths: [3, 4, 5, 9, 10], harvestMonths: WHOLE_YEAR,
@@ -219,7 +219,7 @@ export const PLANT_CATALOG: CatalogPlant[] = [
     wateringInstruction: "Le romarin craint l’excès d’eau : arrose seulement si la terre est sèche sur 4 cm.",
   }),
   plant({
-    id: "coriander", name: "Coriandre", label: "la coriandre", emoji: "🌿", category: "aromatic",
+    id: "coriander", name: "Coriandre", label: "la coriandre", emoji: "🍀", category: "aromatic",
     sunlight: ["partial", "sunny"], minSpace: "windowsill", difficulty: "medium", perennial: false, melliferous: true, goals: ["aromatics"], potLiters: 4,
     pitch: "Fraîche et citronnée, elle pousse vite au printemps et à la fin de l’été.",
     sowMonths: [3, 4, 5, 8, 9], plantMonths: [], harvestMonths: [5, 6, 7, 9, 10],
@@ -228,7 +228,7 @@ export const PLANT_CATALOG: CatalogPlant[] = [
     wateringMonths: [3, 4, 5, 6, 7, 8, 9, 10],
   }),
   plant({
-    id: "sage", name: "Sauge officinale", label: "la sauge", emoji: "🌿", category: "aromatic",
+    id: "sage", name: "Sauge officinale", label: "la sauge", emoji: "🪶", category: "aromatic",
     sunlight: ["sunny"], minSpace: "planter", difficulty: "easy", perennial: true, melliferous: true, goals: ["aromatics", "bees"], potLiters: 8,
     pitch: "Feuillage velouté, fleurs bleues adorées des bourdons, et presque aucun entretien.",
     sowMonths: [4, 5], plantMonths: [3, 4, 5, 9, 10], harvestMonths: [4, 5, 6, 7, 8, 9, 10],
@@ -236,7 +236,7 @@ export const PLANT_CATALOG: CatalogPlant[] = [
     care: { ...DROUGHT, heatThresholdC: 36, frostThresholdC: -10, frostSensitive: false },
   }),
   plant({
-    id: "oregano", name: "Origan", label: "l’origan", emoji: "🌿", category: "aromatic",
+    id: "oregano", name: "Origan", label: "l’origan", emoji: "🍕", category: "aromatic",
     sunlight: ["sunny", "partial"], minSpace: "windowsill", difficulty: "easy", perennial: true, melliferous: true, goals: ["aromatics", "bees"], potLiters: 3,
     pitch: "L’herbe de la pizza, couverte de petites fleurs roses que les abeilles adorent.",
     sowMonths: [4, 5], plantMonths: [3, 4, 5, 9], harvestMonths: [5, 6, 7, 8, 9, 10],
@@ -244,7 +244,7 @@ export const PLANT_CATALOG: CatalogPlant[] = [
     care: { ...DROUGHT, heatThresholdC: 35, frostThresholdC: -12, frostSensitive: false },
   }),
   plant({
-    id: "dill", name: "Aneth", label: "l’aneth", emoji: "🌿", category: "aromatic",
+    id: "dill", name: "Aneth", label: "l’aneth", emoji: "🐟", category: "aromatic",
     sunlight: ["sunny"], minSpace: "planter", difficulty: "easy", perennial: false, melliferous: true, goals: ["aromatics", "bees"], potLiters: 6,
     pitch: "Un feuillage plumeux au goût anisé, et des ombelles jaunes qui attirent les insectes utiles.",
     sowMonths: [4, 5, 6], plantMonths: [], harvestMonths: [6, 7, 8, 9],
@@ -252,7 +252,7 @@ export const PLANT_CATALOG: CatalogPlant[] = [
     care: { ...REGULAR, heatThresholdC: 30, frostThresholdC: 2, frostSensitive: true },
   }),
   plant({
-    id: "lemon-balm", name: "Mélisse", label: "la mélisse", emoji: "🍋", category: "aromatic",
+    id: "lemon-balm", name: "Mélisse", label: "la mélisse", emoji: "🫖", category: "aromatic",
     sunlight: ["partial", "shade", "sunny"], minSpace: "planter", difficulty: "easy", perennial: true, melliferous: true, goals: ["aromatics", "bees"], potLiters: 6,
     pitch: "Son parfum citronné fait des merveilles en tisane, et son nom vient du grec « abeille ».",
     sowMonths: [4, 5], plantMonths: [3, 4, 5, 9, 10], harvestMonths: [5, 6, 7, 8, 9],
@@ -260,7 +260,7 @@ export const PLANT_CATALOG: CatalogPlant[] = [
     care: { ...REGULAR, heatThresholdC: 30, frostThresholdC: -10, frostSensitive: false },
   }),
   plant({
-    id: "lemon-verbena", name: "Verveine citronnelle", label: "la verveine", emoji: "🍋", category: "aromatic",
+    id: "lemon-verbena", name: "Verveine citronnelle", label: "la verveine", emoji: "🍵", category: "aromatic",
     sunlight: ["sunny"], minSpace: "planter", difficulty: "medium", perennial: true, melliferous: true, goals: ["aromatics"], potLiters: 12,
     pitch: "Le parfum de citron le plus intense du balcon, à rentrer à l’abri quand il gèle.",
     sowMonths: [], plantMonths: [5, 6], harvestMonths: [6, 7, 8, 9, 10],
@@ -269,7 +269,7 @@ export const PLANT_CATALOG: CatalogPlant[] = [
   }),
 
   plant({
-    id: "tarragon", name: "Estragon", label: "l’estragon", emoji: "🌿", category: "aromatic",
+    id: "tarragon", name: "Estragon", label: "l’estragon", emoji: "🐉", category: "aromatic",
     sunlight: ["sunny", "partial"], minSpace: "planter", difficulty: "easy", perennial: true, melliferous: false, goals: ["aromatics"], potLiters: 6,
     pitch: "Son goût anisé réveille une vinaigrette ou un poulet rôti, et il revient chaque printemps.",
     sowMonths: [], plantMonths: [4, 5, 9], harvestMonths: [5, 6, 7, 8, 9, 10],
@@ -281,7 +281,7 @@ export const PLANT_CATALOG: CatalogPlant[] = [
     ],
   }),
   plant({
-    id: "chervil", name: "Cerfeuil", label: "le cerfeuil", emoji: "🌱", category: "aromatic",
+    id: "chervil", name: "Cerfeuil", label: "le cerfeuil", emoji: "🥣", category: "aromatic",
     sunlight: ["partial", "shade"], minSpace: "windowsill", difficulty: "easy", perennial: false, melliferous: false, goals: ["aromatics"], potLiters: 3,
     pitch: "L’aromatique des balcons à l’ombre : il monte en graines au soleil, mais s’épanouit au nord.",
     sowMonths: [3, 4, 5, 8, 9], plantMonths: [], harvestMonths: [4, 5, 6, 9, 10, 11],
@@ -294,7 +294,7 @@ export const PLANT_CATALOG: CatalogPlant[] = [
     ],
   }),
   plant({
-    id: "savory", name: "Sarriette", label: "la sarriette", emoji: "🌿", category: "aromatic",
+    id: "savory", name: "Sarriette", label: "la sarriette", emoji: "🏔️", category: "aromatic",
     sunlight: ["sunny"], minSpace: "windowsill", difficulty: "easy", perennial: true, melliferous: true, goals: ["aromatics", "bees"], potLiters: 3,
     pitch: "Le « poivre d’âne » provençal : parfum puissant, fleurs pour les abeilles et presque pas d’eau.",
     sowMonths: [4, 5], plantMonths: [4, 5, 9], harvestMonths: [6, 7, 8, 9],
@@ -307,7 +307,7 @@ export const PLANT_CATALOG: CatalogPlant[] = [
     ],
   }),
   plant({
-    id: "shiso", name: "Shiso", label: "le shiso", emoji: "🍃", category: "aromatic",
+    id: "shiso", name: "Shiso", label: "le shiso", emoji: "🍣", category: "aromatic",
     sunlight: ["sunny", "partial"], minSpace: "windowsill", difficulty: "easy", perennial: false, melliferous: true, goals: ["aromatics"], potLiters: 4,
     pitch: "L’aromatique japonaise, entre menthe, basilic et cumin : originale et très décorative.",
     sowMonths: [4, 5], plantMonths: [5, 6], harvestMonths: [6, 7, 8, 9, 10],
@@ -320,7 +320,7 @@ export const PLANT_CATALOG: CatalogPlant[] = [
     ],
   }),
   plant({
-    id: "lemongrass", name: "Citronnelle", label: "la citronnelle", emoji: "🌾", category: "aromatic",
+    id: "lemongrass", name: "Citronnelle", label: "la citronnelle", emoji: "🎋", category: "aromatic",
     sunlight: ["sunny"], minSpace: "balcony", difficulty: "medium", perennial: true, melliferous: false, goals: ["aromatics"], potLiters: 15,
     pitch: "Les tiges parfumées de la cuisine thaïe : une belle touffe exotique sur un balcon chaud.",
     sowMonths: [], plantMonths: [5, 6], harvestMonths: [7, 8, 9, 10],
@@ -333,7 +333,7 @@ export const PLANT_CATALOG: CatalogPlant[] = [
     ],
   }),
   plant({
-    id: "stevia", name: "Stévia", label: "la stévia", emoji: "🍃", category: "aromatic",
+    id: "stevia", name: "Stévia", label: "la stévia", emoji: "🍬", category: "aromatic",
     sunlight: ["sunny", "partial"], minSpace: "windowsill", difficulty: "medium", perennial: true, melliferous: true, goals: ["aromatics"], potLiters: 4,
     pitch: "Une feuille suffit à sucrer une tisane : la curiosité qui fait parler sur le balcon.",
     sowMonths: [], plantMonths: [5, 6], harvestMonths: [7, 8, 9, 10],
@@ -359,7 +359,7 @@ export const PLANT_CATALOG: CatalogPlant[] = [
     ],
   }),
   plant({
-    id: "wild-garlic", name: "Ail des ours", label: "l’ail des ours", emoji: "🌿", category: "aromatic",
+    id: "wild-garlic", name: "Ail des ours", label: "l’ail des ours", emoji: "🐻", category: "aromatic",
     sunlight: ["shade", "partial"], minSpace: "planter", difficulty: "medium", perennial: true, melliferous: true, goals: ["aromatics"], potLiters: 8,
     pitch: "Le pesto du printemps pousse… à l’ombre : l’allié idéal des balcons orientés nord.",
     sowMonths: [9, 10], plantMonths: [9, 10, 11], harvestMonths: [3, 4, 5],
@@ -405,7 +405,7 @@ export const PLANT_CATALOG: CatalogPlant[] = [
     extraTasks: [customTask({ id: "runners", type: "pruning", title: "Aujourd’hui, coupe les stolons des fraisiers.", instruction: "Supprime les longs filaments qui partent du pied, sauf si tu veux de nouveaux plants.", minutes: 3, months: [6, 7, 8] })],
   }),
   plant({
-    id: "zucchini", name: "Courgette", label: "la courgette", emoji: "🥒", category: "fruiting-vegetable",
+    id: "zucchini", name: "Courgette", label: "la courgette", emoji: "🎃", category: "fruiting-vegetable",
     sunlight: ["sunny"], minSpace: "terrace", difficulty: "easy", perennial: false, melliferous: true, goals: ["bees"], potLiters: 40,
     pitch: "Généreuse et spectaculaire, elle demande un grand bac mais nourrit tout l’été.",
     sowMonths: [4, 5], plantMonths: [5, 6], harvestMonths: [7, 8, 9],
@@ -432,7 +432,7 @@ export const PLANT_CATALOG: CatalogPlant[] = [
     wateringMonths: [5, 6, 7, 8, 9],
   }),
   plant({
-    id: "pea", name: "Petits pois", label: "les petits pois", emoji: "🫛", category: "fruiting-vegetable",
+    id: "pea", name: "Petits pois", label: "les petits pois", emoji: "🟢", category: "fruiting-vegetable",
     sunlight: ["sunny", "partial"], minSpace: "planter", difficulty: "easy", perennial: false, melliferous: false, goals: [], potLiters: 10,
     pitch: "Ils aiment la fraîcheur du printemps et grimpent sur un simple filet.",
     sowMonths: [2, 3, 4], plantMonths: [], harvestMonths: [5, 6],
@@ -451,7 +451,7 @@ export const PLANT_CATALOG: CatalogPlant[] = [
   }),
 
   plant({
-    id: "dwarf-tomato", name: "Tomates naines", label: "les tomates naines", emoji: "🍅", category: "fruiting-vegetable",
+    id: "dwarf-tomato", name: "Tomates naines", label: "les tomates naines", emoji: "🪴", category: "fruiting-vegetable",
     sunlight: ["sunny"], minSpace: "windowsill", difficulty: "easy", perennial: false, melliferous: false, goals: ["tomatoes"], potLiters: 8,
     pitch: "Des variétés de 20 à 60 cm, sans tuteur ni taille : des tomates même sur un rebord de fenêtre.",
     sowMonths: [3, 4], plantMonths: [5, 6], harvestMonths: [7, 8, 9, 10],
@@ -495,7 +495,7 @@ export const PLANT_CATALOG: CatalogPlant[] = [
     ],
   }),
   plant({
-    id: "pole-bean", name: "Haricots à rames", label: "les haricots à rames", emoji: "🫛", category: "fruiting-vegetable",
+    id: "pole-bean", name: "Haricots à rames", label: "les haricots à rames", emoji: "🪜", category: "fruiting-vegetable",
     sunlight: ["sunny", "partial"], minSpace: "planter", difficulty: "easy", perennial: false, melliferous: true, goals: ["bees"], potLiters: 15,
     pitch: "Ils grimpent le long de la rambarde : beaucoup de récolte pour très peu de place au sol.",
     sowMonths: [5, 6, 7], plantMonths: [], harvestMonths: [7, 8, 9, 10],
@@ -510,7 +510,7 @@ export const PLANT_CATALOG: CatalogPlant[] = [
     ],
   }),
   plant({
-    id: "cucamelon", name: "Concombre à la souris", label: "le concombre à la souris", emoji: "🍈", category: "fruiting-vegetable",
+    id: "cucamelon", name: "Concombre à la souris", label: "le concombre à la souris", emoji: "🐭", category: "fruiting-vegetable",
     sunlight: ["sunny", "partial"], minSpace: "planter", difficulty: "easy", perennial: false, melliferous: true, goals: [], potLiters: 10,
     pitch: "Des mini-concombres de la taille d’un grain de raisin, sur une liane légère qui habille la rambarde.",
     sowMonths: [4, 5], plantMonths: [5, 6], harvestMonths: [7, 8, 9, 10],
@@ -548,7 +548,7 @@ export const PLANT_CATALOG: CatalogPlant[] = [
     wateringMonths: [3, 4, 5, 6, 7, 8, 9, 10, 11],
   }),
   plant({
-    id: "arugula", name: "Roquette", label: "la roquette", emoji: "🥬", category: "leafy-vegetable",
+    id: "arugula", name: "Roquette", label: "la roquette", emoji: "🥗", category: "leafy-vegetable",
     sunlight: ["partial", "sunny"], minSpace: "windowsill", difficulty: "easy", perennial: false, melliferous: false, goals: ["zero-waste"], potLiters: 3,
     pitch: "Prête à croquer trois semaines après le semis, avec un petit goût poivré.",
     sowMonths: [3, 4, 5, 8, 9], plantMonths: [], harvestMonths: [4, 5, 6, 9, 10, 11],
@@ -557,7 +557,7 @@ export const PLANT_CATALOG: CatalogPlant[] = [
     wateringMonths: [3, 4, 5, 6, 8, 9, 10, 11],
   }),
   plant({
-    id: "spinach", name: "Épinards", label: "les épinards", emoji: "🥬", category: "leafy-vegetable",
+    id: "spinach", name: "Épinards", label: "les épinards", emoji: "💪", category: "leafy-vegetable",
     sunlight: ["partial", "shade"], minSpace: "planter", difficulty: "easy", perennial: false, melliferous: false, goals: ["zero-waste"], potLiters: 6,
     pitch: "Ils préfèrent la fraîcheur et se plaisent sur les balcons peu ensoleillés.",
     sowMonths: [3, 4, 8, 9], plantMonths: [], harvestMonths: [4, 5, 6, 10, 11],
@@ -566,7 +566,7 @@ export const PLANT_CATALOG: CatalogPlant[] = [
     wateringMonths: [3, 4, 5, 6, 8, 9, 10, 11],
   }),
   plant({
-    id: "chard", name: "Blettes", label: "les blettes", emoji: "🥬", category: "leafy-vegetable",
+    id: "chard", name: "Blettes", label: "les blettes", emoji: "🌈", category: "leafy-vegetable",
     sunlight: ["partial", "sunny"], minSpace: "balcony", difficulty: "easy", perennial: false, melliferous: false, goals: ["zero-waste"], potLiters: 15,
     pitch: "Des côtes colorées qui se récoltent feuille à feuille de l’été jusqu’à l’hiver.",
     sowMonths: [4, 5, 6], plantMonths: [5, 6], harvestMonths: [6, 7, 8, 9, 10, 11],
@@ -575,7 +575,7 @@ export const PLANT_CATALOG: CatalogPlant[] = [
     wateringMonths: [4, 5, 6, 7, 8, 9, 10, 11],
   }),
   plant({
-    id: "lambs-lettuce", name: "Mâche", label: "la mâche", emoji: "🥬", category: "leafy-vegetable",
+    id: "lambs-lettuce", name: "Mâche", label: "la mâche", emoji: "❄️", category: "leafy-vegetable",
     sunlight: ["partial", "shade", "sunny"], minSpace: "planter", difficulty: "easy", perennial: false, melliferous: false, goals: ["zero-waste"], potLiters: 4,
     pitch: "La salade de l’hiver : semée à la rentrée, elle se récolte quand le reste du balcon dort.",
     sowMonths: [8, 9, 10], plantMonths: [], harvestMonths: [10, 11, 12, 1, 2, 3],
@@ -584,7 +584,7 @@ export const PLANT_CATALOG: CatalogPlant[] = [
     wateringMonths: [8, 9, 10, 11, 3],
   }),
   plant({
-    id: "kale", name: "Chou kale", label: "le chou kale", emoji: "🥬", category: "leafy-vegetable",
+    id: "kale", name: "Chou kale", label: "le chou kale", emoji: "🥦", category: "leafy-vegetable",
     sunlight: ["sunny", "partial"], minSpace: "balcony", difficulty: "easy", perennial: false, melliferous: false, goals: ["zero-waste"], potLiters: 15,
     pitch: "Il résiste au froid et devient même plus doux après les premières gelées.",
     sowMonths: [4, 5, 6], plantMonths: [5, 6, 7], harvestMonths: [9, 10, 11, 12, 1, 2],
@@ -594,7 +594,7 @@ export const PLANT_CATALOG: CatalogPlant[] = [
   }),
 
   plant({
-    id: "garden-cress", name: "Cresson alénois", label: "le cresson", emoji: "🌱", category: "leafy-vegetable",
+    id: "garden-cress", name: "Cresson alénois", label: "le cresson", emoji: "💧", category: "leafy-vegetable",
     sunlight: ["partial", "shade", "sunny"], minSpace: "windowsill", difficulty: "easy", perennial: false, melliferous: false, goals: ["zero-waste"], potLiters: 1,
     pitch: "Semé lundi, dégusté le week-end : la récolte la plus rapide du balcon.",
     sowMonths: [3, 4, 5, 6, 7, 8, 9, 10], plantMonths: [], harvestMonths: [3, 4, 5, 6, 7, 8, 9, 10, 11],
@@ -608,7 +608,7 @@ export const PLANT_CATALOG: CatalogPlant[] = [
     ],
   }),
   plant({
-    id: "sorrel", name: "Oseille", label: "l’oseille", emoji: "🍃", category: "leafy-vegetable",
+    id: "sorrel", name: "Oseille", label: "l’oseille", emoji: "🥚", category: "leafy-vegetable",
     sunlight: ["partial", "shade", "sunny"], minSpace: "planter", difficulty: "easy", perennial: true, melliferous: false, goals: ["zero-waste"], potLiters: 6,
     pitch: "Vivace, acidulée et increvable : elle repousse chaque printemps, même au nord.",
     sowMonths: [3, 4, 5, 9], plantMonths: [3, 4, 10], harvestMonths: [4, 5, 6, 7, 8, 9, 10],
@@ -620,7 +620,7 @@ export const PLANT_CATALOG: CatalogPlant[] = [
     ],
   }),
   plant({
-    id: "purslane", name: "Pourpier", label: "le pourpier", emoji: "🌱", category: "leafy-vegetable",
+    id: "purslane", name: "Pourpier", label: "le pourpier", emoji: "🌵", category: "leafy-vegetable",
     sunlight: ["sunny"], minSpace: "windowsill", difficulty: "easy", perennial: false, melliferous: false, goals: ["zero-waste"], potLiters: 3,
     pitch: "La salade des balcons brûlants : charnue, croquante et presque sans arrosage.",
     sowMonths: [5, 6, 7], plantMonths: [], harvestMonths: [6, 7, 8, 9],
@@ -632,7 +632,7 @@ export const PLANT_CATALOG: CatalogPlant[] = [
     ],
   }),
   plant({
-    id: "pak-choi", name: "Pak choï", label: "le pak choï", emoji: "🥬", category: "leafy-vegetable",
+    id: "pak-choi", name: "Pak choï", label: "le pak choï", emoji: "🥢", category: "leafy-vegetable",
     sunlight: ["partial", "sunny"], minSpace: "planter", difficulty: "easy", perennial: false, melliferous: false, goals: [], potLiters: 6,
     pitch: "Le chou chinois express : récolté en six semaines, délicieux sauté au wok.",
     sowMonths: [4, 5, 8, 9], plantMonths: [], harvestMonths: [5, 6, 9, 10, 11],
@@ -645,7 +645,7 @@ export const PLANT_CATALOG: CatalogPlant[] = [
     ],
   }),
   plant({
-    id: "mizuna", name: "Mizuna", label: "la mizuna", emoji: "🥬", category: "leafy-vegetable",
+    id: "mizuna", name: "Mizuna", label: "la mizuna", emoji: "🍱", category: "leafy-vegetable",
     sunlight: ["partial", "shade", "sunny"], minSpace: "windowsill", difficulty: "easy", perennial: false, melliferous: false, goals: ["zero-waste"], potLiters: 3,
     pitch: "Une moutarde japonaise dentelée, douce et poivrée, qui repousse après chaque coupe.",
     sowMonths: [3, 4, 5, 8, 9, 10], plantMonths: [], harvestMonths: [4, 5, 6, 9, 10, 11, 12],
@@ -675,7 +675,7 @@ export const PLANT_CATALOG: CatalogPlant[] = [
 
   // --- Racines --------------------------------------------------------------
   plant({
-    id: "radish", name: "Radis", label: "les radis", emoji: "🌸", category: "root",
+    id: "radish", name: "Radis", label: "les radis", emoji: "🔴", category: "root",
     sunlight: ["partial", "sunny"], minSpace: "windowsill", difficulty: "easy", perennial: false, melliferous: false, goals: [], potLiters: 3,
     pitch: "Une récolte en quatre semaines qui donne confiance dès le premier essai.",
     sowMonths: [3, 4, 5, 6, 7, 8, 9], plantMonths: [], harvestMonths: [4, 5, 6, 7, 8, 9, 10],
@@ -764,7 +764,7 @@ export const PLANT_CATALOG: CatalogPlant[] = [
 
   // --- Fleurs ---------------------------------------------------------------
   plant({
-    id: "nasturtium", name: "Capucines", label: "les capucines", emoji: "🌼", category: "flower",
+    id: "nasturtium", name: "Capucines", label: "les capucines", emoji: "🧡", category: "flower",
     sunlight: ["sunny", "partial"], minSpace: "planter", difficulty: "easy", perennial: false, melliferous: true, goals: ["bees"], potLiters: 5,
     pitch: "Des fleurs colorées et comestibles, qui attirent les abeilles et éloignent les pucerons des tomates.",
     sowMonths: [4, 5, 6], plantMonths: [5, 6], harvestMonths: [6, 7, 8, 9, 10],
@@ -802,7 +802,7 @@ export const PLANT_CATALOG: CatalogPlant[] = [
     wateringMonths: [5, 6, 7, 8, 9, 10],
   }),
   plant({
-    id: "borage", name: "Bourrache", label: "la bourrache", emoji: "💙", category: "flower",
+    id: "borage", name: "Bourrache", label: "la bourrache", emoji: "⭐", category: "flower",
     sunlight: ["sunny", "partial"], minSpace: "planter", difficulty: "easy", perennial: false, melliferous: true, goals: ["bees"], potLiters: 10,
     pitch: "Ses fleurs bleues en étoile sont parmi les plus visitées par les abeilles.",
     sowMonths: [3, 4, 5, 6], plantMonths: [], harvestMonths: [6, 7, 8, 9],
@@ -811,7 +811,7 @@ export const PLANT_CATALOG: CatalogPlant[] = [
     wateringMonths: [4, 5, 6, 7, 8, 9],
   }),
   plant({
-    id: "marigold", name: "Œillets d’Inde", label: "les œillets d’Inde", emoji: "🌼", category: "flower",
+    id: "marigold", name: "Œillets d’Inde", label: "les œillets d’Inde", emoji: "🏵️", category: "flower",
     sunlight: ["sunny"], minSpace: "windowsill", difficulty: "easy", perennial: false, melliferous: true, goals: ["bees", "tomatoes"], potLiters: 2,
     pitch: "Les compagnons des tomates : leur odeur tient à distance certains ravageurs.",
     sowMonths: [3, 4, 5], plantMonths: [5, 6], harvestMonths: [6, 7, 8, 9, 10],
@@ -829,7 +829,7 @@ export const PLANT_CATALOG: CatalogPlant[] = [
     wateringMonths: [5, 6, 7, 8, 9],
   }),
   plant({
-    id: "viola", name: "Violas et pensées", label: "les violas", emoji: "🌼", category: "flower",
+    id: "viola", name: "Violas et pensées", label: "les violas", emoji: "🎨", category: "flower",
     sunlight: ["partial", "shade", "sunny"], minSpace: "windowsill", difficulty: "easy", perennial: false, melliferous: true, goals: ["bees"], potLiters: 2,
     pitch: "Des fleurs comestibles de l’automne au printemps : le balcon reste gai même en hiver, même au nord.",
     sowMonths: [7, 8], plantMonths: [9, 10, 11, 3, 4], harvestMonths: [10, 11, 12, 1, 2, 3, 4, 5],
@@ -858,7 +858,7 @@ export const PLANT_CATALOG: CatalogPlant[] = [
     ],
   }),
   plant({
-    id: "phacelia", name: "Phacélie", label: "la phacélie", emoji: "💜", category: "flower",
+    id: "phacelia", name: "Phacélie", label: "la phacélie", emoji: "🌀", category: "flower",
     sunlight: ["sunny", "partial"], minSpace: "planter", difficulty: "easy", perennial: false, melliferous: true, goals: ["bees"], potLiters: 6,
     pitch: "La plante préférée des abeilles : ses fleurs bleues bourdonnent six semaines après le semis.",
     sowMonths: [3, 4, 5, 6, 7, 8, 9], plantMonths: [], harvestMonths: [5, 6, 7, 8, 9, 10],
@@ -869,7 +869,7 @@ export const PLANT_CATALOG: CatalogPlant[] = [
     ],
   }),
   plant({
-    id: "cornflower", name: "Bleuets", label: "les bleuets", emoji: "💙", category: "flower",
+    id: "cornflower", name: "Bleuets", label: "les bleuets", emoji: "💠", category: "flower",
     sunlight: ["sunny"], minSpace: "planter", difficulty: "easy", perennial: false, melliferous: true, goals: ["bees"], potLiters: 5,
     pitch: "Le bleu des champs, comestible et adoré des butineurs, qui pousse dans peu de terre.",
     sowMonths: [3, 4, 5, 9], plantMonths: [], harvestMonths: [5, 6, 7, 8],
@@ -893,7 +893,7 @@ export const PLANT_CATALOG: CatalogPlant[] = [
     ],
   }),
   plant({
-    id: "sweet-pea", name: "Pois de senteur", label: "les pois de senteur", emoji: "🌸", category: "flower",
+    id: "sweet-pea", name: "Pois de senteur", label: "les pois de senteur", emoji: "🎀", category: "flower",
     sunlight: ["sunny", "partial"], minSpace: "planter", difficulty: "easy", perennial: false, melliferous: true, goals: ["bees"], potLiters: 10,
     pitch: "Une liane parfumée qui fleurit la rambarde tout le printemps. Attention : ses graines ne se mangent pas.",
     sowMonths: [2, 3, 4, 10], plantMonths: [4, 5], harvestMonths: [5, 6, 7, 8],
@@ -906,7 +906,7 @@ export const PLANT_CATALOG: CatalogPlant[] = [
     ],
   }),
   plant({
-    id: "hardy-geranium", name: "Géranium vivace", label: "le géranium vivace", emoji: "🌸", category: "flower",
+    id: "hardy-geranium", name: "Géranium vivace", label: "le géranium vivace", emoji: "🌷", category: "flower",
     sunlight: ["shade", "partial"], minSpace: "planter", difficulty: "easy", perennial: true, melliferous: true, goals: ["bees"], potLiters: 8,
     pitch: "La vivace des balcons à l’ombre : feuillage parfumé, fleurs pour les abeilles, aucun entretien.",
     sowMonths: [], plantMonths: [3, 4, 9, 10], harvestMonths: [5, 6, 7],
@@ -918,7 +918,7 @@ export const PLANT_CATALOG: CatalogPlant[] = [
     ],
   }),
   plant({
-    id: "tall-verbena", name: "Verveine de Buenos Aires", label: "la verveine de Buenos Aires", emoji: "💜", category: "flower",
+    id: "tall-verbena", name: "Verveine de Buenos Aires", label: "la verveine de Buenos Aires", emoji: "🦋", category: "flower",
     sunlight: ["sunny"], minSpace: "balcony", difficulty: "easy", perennial: true, melliferous: true, goals: ["bees"], potLiters: 12,
     pitch: "De hautes tiges légères couronnées de violet, véritable aimant à papillons jusqu’en octobre.",
     sowMonths: [3, 4], plantMonths: [4, 5], harvestMonths: [7, 8, 9, 10],
