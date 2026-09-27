@@ -1,13 +1,13 @@
 import "@/global.css";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { Stack, useRouter } from "expo-router";
-import * as Notifications from "expo-notifications";
 import { StatusBar } from "expo-status-bar";
 import { useEffect, useMemo, useState } from "react";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import "react-native-reanimated";
 import { Platform } from "react-native";
 import "@/lib/_core/nativewind-pressable";
+import { Notifications } from "@/lib/notifications/module";
 import { ThemeProvider } from "@/lib/theme-provider";
 import {
   SafeAreaFrameContext,
@@ -37,7 +37,7 @@ export default function RootLayout() {
   const [frame] = useState<Rect>(initialFrame);
 
   useEffect(() => {
-    if (Platform.OS === "web") return;
+    if (!Notifications) return;
     void configureLocalNotifications();
     const responseSubscription = Notifications.addNotificationResponseReceivedListener(() => {
       // A notification opens the garden; it never validates the task implicitly.

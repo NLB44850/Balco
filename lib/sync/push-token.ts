@@ -1,6 +1,7 @@
 import Constants from "expo-constants";
-import * as Notifications from "expo-notifications";
 import { Platform } from "react-native";
+
+import { Notifications } from "@/lib/notifications/module";
 
 export type PushTokenResult =
   | { status: "ok"; token: string; platform: "ios" | "android" }
@@ -16,7 +17,7 @@ function easProjectId(): string | undefined {
  * elle est demandée au moment où l'utilisateur active les rappels.
  */
 export async function getDevicePushToken(): Promise<PushTokenResult> {
-  if (Platform.OS === "web") return { status: "unavailable", reason: "web" };
+  if (!Notifications) return { status: "unavailable", reason: "web" };
   const permission = await Notifications.getPermissionsAsync();
   if (permission.status !== "granted") return { status: "unavailable", reason: "permission" };
   const projectId = easProjectId();

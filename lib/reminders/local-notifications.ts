@@ -1,7 +1,7 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { Platform } from "react-native";
-import * as Notifications from "expo-notifications";
 
+import { Notifications } from "@/lib/notifications/module";
 import type { ReminderDecision } from "@/lib/reminders/reminder-engine";
 
 export const REMINDER_SETTINGS_STORAGE_KEY = "balco.reminder.settings.v1";
@@ -73,7 +73,7 @@ export async function isServerPushActive() {
 }
 
 export async function configureLocalNotifications() {
-  if (Platform.OS === "web") return;
+  if (!Notifications) return;
   await Notifications.setNotificationHandler({
     handleNotification: async () => ({
       shouldShowAlert: true,
@@ -94,7 +94,7 @@ export async function configureLocalNotifications() {
 }
 
 export async function requestLocalNotificationPermission() {
-  if (Platform.OS === "web") return false;
+  if (!Notifications) return false;
   const current = await Notifications.getPermissionsAsync();
   if (current.status === "granted") return true;
   const requested = await Notifications.requestPermissionsAsync();
@@ -118,17 +118,18 @@ function decisionId(decision: ReminderDecision) {
 }
 
 export async function cancelBalcoReminderNotifications() {
-  if (Platform.OS === "web") return;
-  const scheduled = await Notifications.getAllScheduledNotificationsAsync();
+  const notifications = Notifications;
+  if (!notifications) return;
+  const scheduled = await notifications.getAllScheduledNotificationsAsync();
   await Promise.all(
     scheduled
       .filter((item) => item.content.data && (item.content.data as { source?: string }).source === "balco-reminder")
-      .map((item) => Notifications.cancelScheduledNotificationAsync(item.identifier)),
+      .map((item) => notifications.cancelScheduledNotificationAsync(item.identifier)),
   );
 }
 
 export async function scheduleLocalReminder(decision: ReminderDecision, settings: LocalReminderSettings, now = new Date()) {
-  if (Platform.OS === "web" || !settings.enabled) return null;
+  if (!Notifications || !settings.enabled) return null;
   if (await isServerPushActive()) {
     await cancelBalcoReminderNotifications();
     return null;
