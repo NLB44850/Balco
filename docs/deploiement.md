@@ -116,3 +116,14 @@ cp .env.example .env     # DATABASE_URL vers un MySQL local ; SMTP_URL vide = co
 pnpm build && pnpm db:migrate
 pnpm dev                 # API sur :3000, app web sur :8081
 ```
+
+### Tester dans GitHub Codespaces (sans Docker sur son PC)
+
+Dans un Codespace, les conteneurs n'arrivent parfois pas à se joindre (`connect ETIMEDOUT` dans `docker compose logs app`). Lance alors Balco avec la variante prévue pour ça :
+
+```bash
+docker compose down
+docker compose -f docker-compose.yml -f docker-compose.codespaces.yml up -d --build
+```
+
+Ouvre ensuite le port 3000 depuis l'onglet « Ports ». Les codes de connexion s'affichent avec `docker compose logs app | grep "login code"`.
