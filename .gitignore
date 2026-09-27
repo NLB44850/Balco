@@ -66,3 +66,11 @@ Thumbs.db
 # Webdev artifacts (checkpoint zips, migrations, etc.)
 .webdev/
 .project-config.json
+
+# Le projet s'installe avec pnpm (pnpm-lock.yaml) : un autre fichier de verrouillage,
+# créé par erreur, ferait installer EAS avec npm ou yarn et casserait le build.
+package-lock.json
+npm-shrinkwrap.json
+yarn.lock
+bun.lock
+bun.lockb
