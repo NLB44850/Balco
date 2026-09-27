@@ -10,6 +10,8 @@ export type GardenPlant = {
   id: string;
   catalogId: string;
   nickname?: string;
+  /** Variété choisie parmi celles du catalogue ; absente si l'utilisateur ne la connaît pas. */
+  varietyId?: string;
   addedAt: string;
   /** Dernière modification sur l'appareil : départage deux appareils qui modifient la même plante. */
   updatedAt?: string;
@@ -40,6 +42,11 @@ export function resolvePlants(plants: GardenPlant[]): ResolvedPlant[] {
 
 export function plantDisplayName({ plant, entry }: ResolvedPlant) {
   return plant.nickname?.trim() || entry.name;
+}
+
+/** Variété choisie, si elle figure toujours dans le catalogue. */
+export function plantVariety({ plant, entry }: ResolvedPlant) {
+  return plant.varietyId ? entry.varieties.find((variety) => variety.id === plant.varietyId) : undefined;
 }
 
 export function careProfileFor(resolved: ResolvedPlant): PlantCareProfile {

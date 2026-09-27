@@ -6,7 +6,7 @@ import { FadeIn } from "@/components/motion";
 import { ScreenContainer } from "@/components/screen-container";
 import { useColors } from "@/hooks/use-colors";
 import { useGarden } from "@/lib/garden/garden-context";
-import { eventsForPlant, plantDisplayName, plantStatus, relativeDay } from "@/lib/garden/garden-logic";
+import { eventsForPlant, plantDisplayName, plantStatus, plantVariety, relativeDay } from "@/lib/garden/garden-logic";
 import { CATEGORY_LABELS, effortLabel, formatMonthRange } from "@/lib/plants/catalog";
 
 export default function GardenScreen() {
@@ -63,7 +63,7 @@ export default function GardenScreen() {
                   ) : (
                     <Text style={[styles.plantName, { color: colors.foreground }]}>{plantDisplayName(resolved)}</Text>
                   )}
-                  <Text style={[styles.plantMeta, { color: colors.muted }]}>{plant.nickname ? `${entry.name} · ` : ""}{CATEGORY_LABELS[entry.category]} · {effortLabel(entry)}</Text>
+                  <Text style={[styles.plantMeta, { color: colors.muted }]}>{plant.nickname ? `${entry.name} · ` : ""}{plantVariety(resolved) ? `${plantVariety(resolved)!.name} · ` : ""}{CATEGORY_LABELS[entry.category]} · {effortLabel(entry)}</Text>
                 </View>
                 <Text style={[styles.status, { color: statusColor }]}>{status.label}</Text>
               </View>

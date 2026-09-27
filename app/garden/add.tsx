@@ -101,6 +101,7 @@ export default function AddPlantScreen() {
                 </Pressable>
               </View>
               <Text style={[styles.pitch, { color: colors.muted }]}>{entry.pitch}</Text>
+              {entry.varieties.length > 0 && <Text style={[styles.facts, { color: colors.foreground }]}>Variétés conseillées : {entry.varieties.map((variety) => variety.name).join(", ")}</Text>}
               <Text style={[styles.facts, { color: colors.muted }]}>
                 {entry.sowMonths.length > 0 ? `Semis : ${formatMonthRange(entry.sowMonths)} · ` : ""}
                 {entry.plantMonths.length > 0 ? `Plantation : ${formatMonthRange(entry.plantMonths)} · ` : ""}

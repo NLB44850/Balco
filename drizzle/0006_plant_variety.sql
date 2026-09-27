@@ -1,0 +1,1 @@
+ALTER TABLE `reminder_plants` ADD `varietyId` varchar(64);

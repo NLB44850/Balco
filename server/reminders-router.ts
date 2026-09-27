@@ -38,6 +38,7 @@ const syncInput = z.object({
     id,
     catalogId: z.string().min(1).max(64),
     nickname: z.string().max(128).optional(),
+    varietyId: z.string().max(64).optional(),
     addedAt: z.iso.datetime(),
     updatedAt: z.iso.datetime(),
     removedAt: z.iso.datetime().optional(),

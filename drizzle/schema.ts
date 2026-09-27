@@ -91,6 +91,8 @@ export const reminderPlants = mysqlTable("reminder_plants", {
   active: int("active").default(1).notNull(),
   catalogId: varchar("catalogId", { length: 64 }),
   nickname: varchar("nickname", { length: 128 }),
+  /** Variété choisie parmi celles conseillées par le catalogue (lib/plants/varieties.ts). */
+  varietyId: varchar("varietyId", { length: 64 }),
   addedAt: timestamp("addedAt"),
   removedAt: timestamp("removedAt"),
   /** Horodatage de la dernière modification côté appareil : la plus récente gagne. */

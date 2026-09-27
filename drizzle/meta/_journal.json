@@ -43,6 +43,13 @@
       "when": 1790455440082,
       "tag": "0005_ai_features",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "5",
+      "when": 1790525319650,
+      "tag": "0006_plant_variety",
+      "breakpoints": true
     }
   ]
 }

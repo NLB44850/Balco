@@ -73,6 +73,7 @@ type GardenContextValue = {
   addPlant: (catalogId: string) => Promise<GardenPlant>;
   removePlant: (plantId: string) => Promise<void>;
   renamePlant: (plantId: string, nickname: string) => Promise<void>;
+  setPlantVariety: (plantId: string, varietyId: string | undefined) => Promise<void>;
   logEvent: (event: MaintenanceEvent) => Promise<void>;
   removeEvent: (eventId: string) => Promise<void>;
   updateProfile: (patch: Partial<UserProfile>) => Promise<void>;
@@ -322,6 +323,7 @@ export function GardenProvider({ children }: { children: ReactNode }) {
   // L'historique d'une plante retirée est conservé : il reste utile si elle revient.
   const removePlant = useCallback((plantId: string) => updatePlant(plantId, (plant) => ({ ...plant, removedAt: new Date().toISOString() })), [updatePlant]);
   const renamePlant = useCallback((plantId: string, nickname: string) => updatePlant(plantId, (plant) => ({ ...plant, nickname: nickname.trim() || undefined })), [updatePlant]);
+  const setPlantVariety = useCallback((plantId: string, varietyId: string | undefined) => updatePlant(plantId, (plant) => ({ ...plant, varietyId })), [updatePlant]);
 
   const logEvent = useCallback(async (event: MaintenanceEvent) => {
     await saveEvents(appendEvent(eventsRef.current, event));
@@ -413,8 +415,8 @@ export function GardenProvider({ children }: { children: ReactNode }) {
   }), [auth.isAuthenticated, auth.loading, auth.user?.email, auth.user?.name, lastSyncedAt, serverPush, syncStatus]);
 
   const value = useMemo<GardenContextValue>(
-    () => ({ loaded, plants, resolvedPlants, events, profile, onboarding, account, addPlant, removePlant, renamePlant, logEvent, removeEvent, updateProfile, reloadOnboarding, reportLocation, signIn, signOut, syncNow, refreshAccount, completeSignIn, deleteAccount }),
-    [loaded, plants, resolvedPlants, events, profile, onboarding, account, addPlant, removePlant, renamePlant, logEvent, removeEvent, updateProfile, reloadOnboarding, reportLocation, signIn, signOut, syncNow, refreshAccount, completeSignIn, deleteAccount],
+    () => ({ loaded, plants, resolvedPlants, events, profile, onboarding, account, addPlant, removePlant, renamePlant, setPlantVariety, logEvent, removeEvent, updateProfile, reloadOnboarding, reportLocation, signIn, signOut, syncNow, refreshAccount, completeSignIn, deleteAccount }),
+    [loaded, plants, resolvedPlants, events, profile, onboarding, account, addPlant, removePlant, renamePlant, setPlantVariety, logEvent, removeEvent, updateProfile, reloadOnboarding, reportLocation, signIn, signOut, syncNow, refreshAccount, completeSignIn, deleteAccount],
   );
 
   return <GardenContext.Provider value={value}>{children}</GardenContext.Provider>;

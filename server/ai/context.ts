@@ -29,7 +29,12 @@ export async function loadGardenFacts(userId: number, now = new Date()): Promise
   } catch {
     balcony = null;
   }
-  const plants = rows.map((row) => ({ id: row.plantId, catalogId: row.catalogId, name: row.nickname?.trim() || getCatalogPlant(row.catalogId ?? "")?.name || row.displayName }));
+  const plants = rows.map((row) => {
+    const entry = getCatalogPlant(row.catalogId ?? "");
+    const variety = entry?.varieties.find((item) => item.id === row.varietyId);
+    const name = row.nickname?.trim() || entry?.name || row.displayName;
+    return { id: row.plantId, catalogId: row.catalogId, name: variety ? `${name} (variété ${variety.name})` : name };
+  });
   const nameOf = new Map(plants.map((plant) => [plant.id, plant.name]));
   return {
     firstName: profile?.firstName ?? null,

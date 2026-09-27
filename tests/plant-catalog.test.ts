@@ -27,11 +27,44 @@ describe("plant catalog integrity", () => {
     expect(entry.tasks.some((task) => task.type === "watering")).toBe(true);
     const harvest = entry.tasks.find((task) => task.type === "harvest");
     expect(harvest?.months).toEqual(entry.harvestMonths);
+
+    expect(entry.varieties.length).toBeGreaterThan(0);
+    const varietyIds = entry.varieties.map((variety) => variety.id);
+    expect(new Set(varietyIds).size).toBe(varietyIds.length);
+    entry.varieties.forEach((variety) => {
+      expect(variety.id).toMatch(/^[a-z0-9-]+$/);
+      expect(variety.name.trim()).not.toBe("");
+      expect(variety.note.length).toBeGreaterThan(20);
+      expect(variety.note.length).toBeLessThanOrEqual(130);
+    });
   });
 
   it("marks tender plants as frost sensitive", () => {
     ["basil", "cherry-tomato", "zucchini", "nasturtium"].forEach((id) => expect(getCatalogPlant(id)?.care.frostSensitive).toBe(true));
     ["mint", "thyme", "lambs-lettuce"].forEach((id) => expect(getCatalogPlant(id)?.care.frostSensitive).toBe(false));
+  });
+});
+
+describe("balcony context", () => {
+  it("offers real choices on a shaded balcony, in every main category", () => {
+    const shaded = recommendPlants({ sunlight: "shade", space: "balcony" });
+    expect(shaded.length).toBeGreaterThanOrEqual(12);
+    expect(new Set(shaded.map((entry) => entry.category)).size).toBeGreaterThanOrEqual(4);
+    shaded.forEach((entry) => expect(entry.sunlight).toContain("shade"));
+  });
+
+  it("keeps a windowsill selection for tiny spaces", () => {
+    const windowsill = recommendPlants({ sunlight: "sunny", space: "windowsill" });
+    expect(windowsill.length).toBeGreaterThanOrEqual(15);
+    windowsill.forEach((entry) => expect(entry.minSpace).toBe("windowsill"));
+    expect(windowsill.map((entry) => entry.id)).toContain("dwarf-tomato");
+  });
+
+  it("finds a plant from one of its varieties or a common word", () => {
+    expect(searchCatalog("mara des bois").map((entry) => entry.id)).toEqual(["strawberry"]);
+    expect(searchCatalog("micro tom").map((entry) => entry.id)).toEqual(["dwarf-tomato"]);
+    expect(searchCatalog("myrtille").map((entry) => entry.id)).toContain("blueberry");
+    expect(searchCatalog("tomate").map((entry) => entry.id)).toEqual(expect.arrayContaining(["cherry-tomato", "dwarf-tomato"]));
   });
 });
 
