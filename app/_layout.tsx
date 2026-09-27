@@ -89,6 +89,7 @@ export default function RootLayout() {
             <Stack.Screen name="login" options={{ presentation: "modal" }} />
             <Stack.Screen name="garden/index" />
             <Stack.Screen name="garden/add" />
+            <Stack.Screen name="garden/[id]" />
           </Stack>
           <StatusBar style="auto" />
           </GardenProvider>

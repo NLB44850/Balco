@@ -47,7 +47,9 @@ export default function GardenScreen() {
         {resolvedPlants.map((resolved, index) => {
           const { plant, entry } = resolved;
           const status = plantStatus(resolved, events, now);
-          const latest = eventsForPlant(events, plant.id)[0];
+          const history = eventsForPlant(events, plant.id);
+          const latest = history[0];
+          const historyCount = history.length;
           const statusColor = status.tone === "watch" ? colors.terracotta : status.tone === "good" ? colors.success : colors.muted;
           const confirming = confirmRemoveId === plant.id;
           const editing = editingId === plant.id;
@@ -69,6 +71,7 @@ export default function GardenScreen() {
               <Text style={[styles.detail, { color: colors.muted }]}>{latest ? `${status.meta} · ${latest.note ?? "geste enregistré"}` : `Ajoutée ${relativeDay(new Date(plant.addedAt), now)} · pot conseillé ${entry.potLiters} L`}</Text>
               <Text style={[styles.detail, { color: colors.muted }]}>Récolte : {formatMonthRange(entry.harvestMonths)}</Text>
               <View style={styles.actions}>
+                <Pressable accessibilityRole="button" onPress={() => router.push({ pathname: "/garden/[id]", params: { id: plant.id } })} style={({ pressed }) => [styles.actionButton, { backgroundColor: colors.primary }, pressed && styles.pressed]}><Text style={[styles.actionText, { color: "#FFFFFF" }]}>Historique{historyCount ? ` (${historyCount})` : ""}</Text></Pressable>
                 {editing ? (
                   <Pressable onPress={() => void saveNickname(plant.id)} style={({ pressed }) => [styles.actionButton, { backgroundColor: colors.leaf }, pressed && styles.pressed]}><Text style={[styles.actionText, { color: colors.primary }]}>Enregistrer</Text></Pressable>
                 ) : (

@@ -12,7 +12,9 @@ import {
   formatLongDate,
   gardenDay,
   greeting,
+  historyByDay,
   initials,
+  isScannerEvent,
   plantStatus,
   relativeDay,
   resolvePlants,
@@ -160,5 +162,37 @@ describe("dates and identity", () => {
     expect(greeting("  Léa ")).toBe("Bonjour, Léa");
     expect(initials("Léa Martin")).toBe("LM");
     expect(initials("")).toBeNull();
+  });
+});
+
+describe("historyByDay", () => {
+  const event = (id: string, plantId: string, date: Date, type: MaintenanceEvent["type"] = "watering"): MaintenanceEvent => ({ id, plantId, type, completedAt: date.toISOString(), source: "manual" });
+
+  it("regroupe les gestes d'une plante par jour, du plus récent au plus ancien", () => {
+    const events = [
+      event("a", "basil", daysAgo(0, 8)),
+      event("b", "basil", daysAgo(0, 18), "observation"),
+      event("c", "basil", daysAgo(1)),
+      event("d", "tomato", daysAgo(0)),
+      event("e", "basil", daysAgo(6)),
+    ];
+    const days = historyByDay(events, "basil", now);
+    expect(days.map((day) => day.label)).toEqual(["Aujourd’hui", "Hier", "Dimanche 20 septembre"]);
+    expect(days[0].events.map((item) => item.id)).toEqual(["b", "a"]);
+    expect(days.flatMap((day) => day.events).some((item) => item.plantId !== "basil")).toBe(false);
+  });
+
+  it("précise l'année pour un geste d'une autre année", () => {
+    const [day] = historyByDay([event("old", "basil", new Date(2025, 5, 3))], "basil", now);
+    expect(day.label).toBe("Mardi 3 juin 2025");
+  });
+
+  it("renvoie une liste vide sans historique", () => {
+    expect(historyByDay([], "basil", now)).toEqual([]);
+  });
+
+  it("reconnaît les notes du scanner", () => {
+    expect(isScannerEvent(event("scan:basil:1", "basil", now, "observation"))).toBe(true);
+    expect(isScannerEvent(event("task:basil", "basil", now))).toBe(false);
   });
 });

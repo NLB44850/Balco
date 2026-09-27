@@ -115,6 +115,43 @@ export function eventsForPlant(events: MaintenanceEvent[], plantId: string) {
   return events.filter((event) => event.plantId === plantId).sort((a, b) => b.completedAt.localeCompare(a.completedAt));
 }
 
+// --- Historique d'une plante --------------------------------------------------
+
+export const EVENT_TYPE_LABELS: Record<MaintenanceTaskType, { label: string; icon: string }> = {
+  watering: { label: "Arrosage", icon: "💧" },
+  observation: { label: "Observation", icon: "🔎" },
+  pruning: { label: "Taille", icon: "✂️" },
+  protection: { label: "Protection", icon: "🛡️" },
+  harvest: { label: "Récolte", icon: "🧺" },
+};
+
+export type HistoryDay = { key: string; label: string; events: MaintenanceEvent[] };
+
+/** Gestes d'une plante, du plus récent au plus ancien, regroupés par jour. */
+export function historyByDay(events: MaintenanceEvent[], plantId: string, now = new Date()): HistoryDay[] {
+  const days: HistoryDay[] = [];
+  for (const event of eventsForPlant(events, plantId)) {
+    const date = new Date(event.completedAt);
+    const key = startOfDay(date).toISOString();
+    const current = days.at(-1);
+    if (current?.key === key) current.events.push(event);
+    else days.push({ key, label: historyDayLabel(date, now), events: [event] });
+  }
+  return days;
+}
+
+function historyDayLabel(date: Date, now: Date) {
+  const days = daysBetween(date, now);
+  if (days <= 0) return "Aujourd’hui";
+  if (days === 1) return "Hier";
+  const label = date.toLocaleDateString("fr-FR", { weekday: "long", day: "numeric", month: "long", ...(date.getFullYear() !== now.getFullYear() && { year: "numeric" }) });
+  return label.charAt(0).toUpperCase() + label.slice(1);
+}
+
+export function isScannerEvent(event: MaintenanceEvent) {
+  return event.id.startsWith("scan:");
+}
+
 export function appendEvent(events: MaintenanceEvent[], event: MaintenanceEvent) {
   return [event, ...events.filter((existing) => existing.id !== event.id)].slice(0, MAX_STORED_EVENTS);
 }

@@ -39,6 +39,9 @@ function serveWebApp(app: Express) {
   const webDir = path.resolve(ENV.webDir);
   if (!existsSync(path.join(webDir, "index.html"))) return false;
   app.use(express.static(webDir, { extensions: ["html"], index: "index.html", maxAge: "1h" }));
+  // Route dynamique : l'export statique produit garden/[id].html, à servir pour /garden/<id> (lien direct, rechargement).
+  const plantPage = path.join(webDir, "garden", "[id].html");
+  if (existsSync(plantPage)) app.get("/garden/:id", (_req, res) => res.sendFile(plantPage));
   app.get(/^(?!\/api\/).*/, (_req, res) => res.sendFile(path.join(webDir, "index.html")));
   return true;
 }

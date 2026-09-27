@@ -22,6 +22,12 @@ const HEALTH = {
 } as const;
 const CONFIDENCE = { high: "Confiance élevée", medium: "Confiance moyenne", low: "Confiance faible" } as const;
 
+/** Ce qui reste dans l'historique de la plante : le constat et les gestes conseillés (500 caractères au plus côté serveur). */
+function scannerNote(diagnosis: Diagnosis) {
+  const actions = diagnosis.actions.map((action) => action.title).join(" · ");
+  return `Scanner : ${diagnosis.summary}${actions ? ` À faire : ${actions}.` : ""}`.slice(0, 480);
+}
+
 export default function ScannerScreen() {
   const colors = useColors();
   const router = useRouter();
@@ -68,7 +74,7 @@ export default function ScannerScreen() {
 
   const saveObservation = async () => {
     if (!owned || !diagnosis) return;
-    await logEvent({ id: `scan:${owned.plant.id}:${Date.now()}`, plantId: owned.plant.id, type: "observation", completedAt: new Date().toISOString(), source: "manual", note: `Scanner : ${diagnosis.summary}`.slice(0, 480) });
+    await logEvent({ id: `scan:${owned.plant.id}:${Date.now()}`, plantId: owned.plant.id, type: "observation", completedAt: new Date().toISOString(), source: "manual", note: scannerNote(diagnosis) });
     setSavedNote(true);
   };
 
@@ -170,6 +176,9 @@ export default function ScannerScreen() {
                 {entry && !owned && (
                   <Pressable onPress={() => void addPlant(entry.id)} style={({ pressed }) => [styles.inlineButton, { backgroundColor: colors.terracotta }, pressed && styles.pressed]}><Text style={styles.inlineButtonText}>+ Ajouter {entry.name.toLowerCase()} à mon balcon</Text></Pressable>
                 )}
+                {owned && savedNote && (
+                  <Pressable accessibilityRole="button" onPress={() => router.push({ pathname: "/garden/[id]", params: { id: owned.plant.id } })} style={({ pressed }) => [pressed && styles.pressed]}><Text style={[styles.historyLink, { color: colors.primary }]}>Voir l’historique de {owned.plant.nickname || owned.entry.name.toLowerCase()}  ›</Text></Pressable>
+                )}
                 {owned && (
                   <Pressable disabled={savedNote} onPress={() => void saveObservation()} style={({ pressed }) => [styles.inlineButton, { backgroundColor: savedNote ? colors.leaf : colors.primary }, pressed && styles.pressed]}><Text style={[styles.inlineButtonText, savedNote && { color: colors.primary }]}>{savedNote ? "✓ Noté dans l’historique" : `Noter ce diagnostic pour ${owned.plant.nickname || owned.entry.name}`}</Text></Pressable>
                 )}
@@ -199,6 +208,7 @@ const styles = StyleSheet.create({
   analyzeText: { color: "#FFFFFF", fontSize: 15, fontWeight: "800" },
   notice: { fontSize: 12, lineHeight: 18, fontWeight: "700", marginTop: 12 },
   inlineButton: { alignSelf: "flex-start", borderRadius: 13, paddingHorizontal: 14, paddingVertical: 10, marginTop: 12 },
+  historyLink: { fontSize: 13, fontWeight: "800", textAlign: "center", paddingVertical: 4 },
   inlineButtonText: { color: "#FFFFFF", fontSize: 12, fontWeight: "800" },
   scientific: { fontSize: 11, fontStyle: "italic", marginTop: 2 },
   list: { marginTop: 8, gap: 4 },
