@@ -7,17 +7,32 @@
     "development": {
       "developmentClient": true,
       "distribution": "internal",
-      "env": { "EXPO_PUBLIC_API_BASE_URL": "http://localhost:3000" }
+      "env": {
+        "EXPO_PUBLIC_API_BASE_URL": "http://localhost:3000"
+      }
+    },
+    "test": {
+      "distribution": "internal",
+      "android": {
+        "buildType": "apk"
+      },
+      "env": {
+        "EXPO_PUBLIC_API_BASE_URL": "https://cautious-broccoli-q7x6wq46pxp434pj-3000.app.github.dev"
+      }
     },
     "preview": {
       "distribution": "internal",
       "channel": "preview",
-      "env": { "EXPO_PUBLIC_API_BASE_URL": "https://api.votre-domaine.fr" }
+      "env": {
+        "EXPO_PUBLIC_API_BASE_URL": "https://api.votre-domaine.fr"
+      }
     },
     "production": {
       "channel": "production",
       "autoIncrement": true,
-      "env": { "EXPO_PUBLIC_API_BASE_URL": "https://api.votre-domaine.fr" }
+      "env": {
+        "EXPO_PUBLIC_API_BASE_URL": "https://api.votre-domaine.fr"
+      }
     }
   },
   "submit": {

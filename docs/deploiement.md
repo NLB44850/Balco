@@ -127,3 +127,14 @@ docker compose -f docker-compose.yml -f docker-compose.codespaces.yml up -d --bu
 ```
 
 Ouvre ensuite le port 3000 depuis l'onglet « Ports ». Les codes de connexion s'affichent avec `docker compose logs app | grep "login code"`.
+
+### Version de test Android (APK, sans Play Store)
+
+Expo Go ne gère plus les notifications sur Android : pour tester les rappels, construis la version de test.
+
+```bash
+export EXPO_TOKEN=…            # jeton créé sur https://expo.dev/settings/access-tokens
+npx eas-cli build --platform android --profile test
+```
+
+Le profil `test` de `eas.json` pointe vers le serveur du Codespace (port 3000 en public). À la fin, EAS donne un lien et un QR code pour télécharger l'APK sur le téléphone.
