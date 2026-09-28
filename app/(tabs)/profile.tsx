@@ -17,6 +17,7 @@ import {
   loadLocalReminderSettings,
   requestLocalNotificationPermission,
   saveLocalReminderSettings,
+  sendTestNotification,
   subscribeReminderSettings,
   type LocalReminderSettings,
 } from "@/lib/reminders/local-notifications";
@@ -70,6 +71,13 @@ export default function ProfileScreen() {
 
   // Les notifications n'existent que dans l'app mobile, et pas dans Expo Go sur Android.
   const notificationsSupported = notificationsUnavailableReason === null;
+  const [testStatus, setTestStatus] = useState<"idle" | "sending" | "sent" | "denied">("idle");
+
+  const sendTest = async () => {
+    setTestStatus("sending");
+    const result = await sendTestNotification();
+    setTestStatus(result === "sent" ? "sent" : "denied");
+  };
 
   const updateReminderSettings = async (patch: Partial<LocalReminderSettings>) => {
     const next = { ...reminderSettings, ...patch };
@@ -197,6 +205,15 @@ export default function ProfileScreen() {
           <View style={styles.reminderCardCopy}><Text style={[styles.sectionEyebrow, { color: colors.terracotta }]}>RAPPELS CONTEXTUELS</Text><Text style={[styles.reminderCardTitle, { color: colors.foreground }]}>Seulement quand c’est utile</Text><Text style={[styles.reminderCardText, { color: colors.muted }]}>Balco croise la météo et ton dernier geste.</Text></View>
           <Pressable accessibilityRole="switch" accessibilityState={{ checked: reminderSettings.enabled, disabled: !notificationsSupported }} disabled={!settingsLoaded || !notificationsSupported} onPress={() => void toggleReminders()} style={({ pressed }) => [styles.toggle, { backgroundColor: reminderSettings.enabled ? colors.primary : colors.border, opacity: notificationsSupported ? 1 : 0.5 }, pressed && styles.pressed]}><View style={[styles.toggleKnob, reminderSettings.enabled && styles.toggleKnobOn]} /></Pressable>
         </View>
+        {notificationsSupported && (
+          <View style={styles.testRow}>
+            <Pressable accessibilityRole="button" disabled={testStatus === "sending"} onPress={() => void sendTest()} style={({ pressed }) => [styles.testButton, { borderColor: colors.primary }, pressed && styles.pressed]}>
+              <Text style={[styles.testButtonText, { color: colors.primary }]}>{testStatus === "sending" ? "Envoi…" : "Envoyer une notification de test"}</Text>
+            </Pressable>
+            {testStatus === "sent" && <Text style={[styles.testHint, { color: colors.muted }]}>Elle arrive dans 5 secondes. Verrouille ton téléphone pour la voir comme un vrai rappel, puis essaie ses boutons.</Text>}
+            {testStatus === "denied" && <Text style={[styles.testHint, { color: colors.error }]}>Les notifications sont bloquées : autorise-les pour Balco dans les réglages du téléphone.</Text>}
+          </View>
+        )}
         {!notificationsSupported && <Text style={[styles.reminderWebNote, { backgroundColor: colors.cream, color: colors.foreground }]}>{notificationsUnavailableReason === "expo-go-android" ? "Expo Go ne permet plus les notifications sur Android : pour tester les rappels, installe la version de test de Balco." : "Les rappels arrivent en notification sur ton téléphone : active-les depuis l’app Balco pour iPhone ou Android. La version web ne peut pas envoyer de notifications."}</Text>}
         <View style={styles.reminderOptionRow}><Text style={[styles.reminderOptionLabel, { color: colors.foreground }]}>Rappel préféré</Text><View style={styles.timeChoices}>{[17, 18, 19].map((hour) => <Pressable key={hour} disabled={!reminderSettings.enabled} onPress={() => void updateReminderSettings({ preferredHour: hour })} style={[styles.timeChoice, { backgroundColor: reminderSettings.preferredHour === hour ? colors.leaf : colors.cream, opacity: reminderSettings.enabled ? 1 : 0.5 }]}><Text style={[styles.timeChoiceText, { color: colors.primary }]}>{hour}h30</Text></Pressable>)}</View></View>
         <View style={styles.quietBlock}><View><Text style={[styles.reminderOptionLabel, { color: colors.foreground }]}>Plage calme</Text><Text style={[styles.reminderOptionHint, { color: colors.muted }]}>Aucune notification pendant ces heures</Text></View><Text style={[styles.reminderQuietValue, { color: colors.primary }]}>{reminderSettings.quietStartHour} → {reminderSettings.quietEndHour} h</Text></View>
@@ -276,6 +293,10 @@ const styles = StyleSheet.create({
   reminderCard: { borderRadius: 21, borderWidth: 1, padding: 15, marginBottom: 25, gap: 14 },
   reminderCardHeader: { flexDirection: "row", alignItems: "center", gap: 12 },
   reminderCardCopy: { flex: 1 },
+  testRow: { marginTop: 12, gap: 6 },
+  testButton: { alignSelf: "flex-start", borderWidth: 1, borderRadius: 12, paddingHorizontal: 12, paddingVertical: 8 },
+  testButtonText: { fontSize: 12, fontWeight: "800" },
+  testHint: { fontSize: 12, lineHeight: 17 },
   reminderWebNote: { fontSize: 12, lineHeight: 18, borderRadius: 14, padding: 12, marginTop: 12 },
   reminderCardTitle: { fontSize: 17, fontWeight: "800", marginTop: 4 },
   reminderCardText: { fontSize: 11, lineHeight: 16, marginTop: 4 },

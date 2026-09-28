@@ -1,11 +1,21 @@
 import { Pressable, StyleSheet, Text, View } from "react-native";
 
+import type { ReminderSnooze } from "@/lib/reminders/reminder-actions";
 import type { ReminderDecision } from "@/lib/reminders/reminder-engine";
 
 type ContextualReminderCardProps = {
   decision: ReminderDecision | null;
   onComplete?: (decision: ReminderDecision) => void;
-  onDismiss?: (decision: ReminderDecision) => void;
+  /** « Dans 3 h » (later) ou « Pas aujourd'hui » (skip). */
+  onSnooze?: (decision: ReminderDecision, kind: ReminderSnooze["kind"]) => void;
+};
+
+export const TASK_LABELS: Record<ReminderDecision["taskType"], string> = {
+  watering: "ARROSAGE",
+  observation: "OBSERVATION",
+  pruning: "ENTRETIEN",
+  protection: "PROTECTION",
+  harvest: "RÉCOLTE",
 };
 
 const priorityLabels: Record<ReminderDecision["priority"], string> = {
@@ -14,7 +24,7 @@ const priorityLabels: Record<ReminderDecision["priority"], string> = {
   urgent: "À PROTÉGER",
 };
 
-export function ContextualReminderCard({ decision, onComplete, onDismiss }: ContextualReminderCardProps) {
+export function ContextualReminderCard({ decision, onComplete, onSnooze }: ContextualReminderCardProps) {
   if (!decision) return null;
 
   const isSkip = decision.action === "skip";
@@ -25,32 +35,42 @@ export function ContextualReminderCard({ decision, onComplete, onDismiss }: Cont
       <View style={styles.header}>
         <View style={[styles.dot, isUrgent ? styles.urgentDot : isSkip ? styles.skipDot : styles.normalDot]} />
         <Text style={styles.label}>{priorityLabels[decision.priority]}</Text>
-        <Text style={styles.action}>{decision.action === "protect" ? "PROTECTION" : decision.taskType.toUpperCase()}</Text>
+        <Text style={styles.action}>{decision.action === "protect" ? "PROTECTION" : TASK_LABELS[decision.taskType]}</Text>
       </View>
 
       <Text style={styles.title}>{decision.title}</Text>
       <Text style={styles.body}>{decision.body}</Text>
-      <Text style={styles.reason}>{decision.reason}</Text>
+      <Text style={styles.reason}>Pourquoi ce conseil : {decision.reason}</Text>
 
       <View style={styles.actions}>
         {!isSkip && onComplete ? (
           <Pressable
             accessibilityRole="button"
-            accessibilityLabel={`Valider le geste pour ${decision.plantId}`}
+            accessibilityLabel={`Fait : ${decision.title}`}
             onPress={() => onComplete(decision)}
             style={({ pressed }) => [styles.primaryButton, pressed && styles.pressed]}
           >
-            <Text style={styles.primaryButtonText}>Je m’en occupe</Text>
+            <Text style={styles.primaryButtonText}>Fait ✓</Text>
           </Pressable>
         ) : null}
-        {onDismiss ? (
+        {!isSkip && onSnooze ? (
           <Pressable
             accessibilityRole="button"
-            accessibilityLabel="Fermer le rappel"
-            onPress={() => onDismiss(decision)}
+            accessibilityLabel="Me le rappeler dans 3 heures"
+            onPress={() => onSnooze(decision, "later")}
             style={({ pressed }) => [styles.secondaryButton, pressed && styles.pressed]}
           >
-            <Text style={styles.secondaryButtonText}>{isSkip ? "Compris" : "Plus tard"}</Text>
+            <Text style={styles.secondaryButtonText}>Dans 3 h</Text>
+          </Pressable>
+        ) : null}
+        {onSnooze ? (
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel={isSkip ? "Compris" : "Pas aujourd’hui"}
+            onPress={() => onSnooze(decision, "skip")}
+            style={({ pressed }) => [isSkip ? styles.primaryButton : styles.secondaryButton, pressed && styles.pressed]}
+          >
+            <Text style={isSkip ? styles.primaryButtonText : styles.secondaryButtonText}>{isSkip ? "Compris" : "Pas aujourd’hui"}</Text>
           </Pressable>
         ) : null}
       </View>
@@ -139,7 +159,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     justifyContent: "center",
     minHeight: 44,
-    paddingHorizontal: 16,
+    paddingHorizontal: 12,
   },
   secondaryButtonText: {
     color: "#477151",

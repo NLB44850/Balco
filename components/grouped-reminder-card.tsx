@@ -1,14 +1,18 @@
 import { Pressable, StyleSheet, Text, View } from "react-native";
 
+import type { ReminderSnooze } from "@/lib/reminders/reminder-actions";
 import type { ReminderDecision } from "@/lib/reminders/reminder-engine";
+
+import { TASK_LABELS } from "./contextual-reminder-card";
 
 type GroupedReminderCardProps = {
   decisions: ReminderDecision[];
   onComplete: (decision: ReminderDecision) => void;
-  onDismiss: (decisions: ReminderDecision[]) => void;
+  /** « Dans 3 h » (later) ou « Pas aujourd'hui » (skip), pour tous les conseils de la carte. */
+  onSnooze: (decisions: ReminderDecision[], kind: ReminderSnooze["kind"]) => void;
 };
 
-export function GroupedReminderCard({ decisions, onComplete, onDismiss }: GroupedReminderCardProps) {
+export function GroupedReminderCard({ decisions, onComplete, onSnooze }: GroupedReminderCardProps) {
   if (decisions.length === 0) return null;
   const urgent = decisions.some((decision) => decision.priority === "urgent");
   const skipped = decisions.every((decision) => decision.action === "skip");
@@ -19,7 +23,7 @@ export function GroupedReminderCard({ decisions, onComplete, onDismiss }: Groupe
       <View style={styles.header}>
         <View style={[styles.dot, urgent ? styles.urgentDot : skipped ? styles.skipDot : styles.normalDot]} />
         <Text style={styles.label}>{decisions.length > 1 ? `${decisions.length} CONSEILS POUR TON BALCON` : "CONSEIL DU JOUR"}</Text>
-        <Text style={styles.action}>{urgent ? "PRIORITÉ" : first.taskType.toUpperCase()}</Text>
+        <Text style={styles.action}>{urgent ? "PRIORITÉ" : TASK_LABELS[first.taskType]}</Text>
       </View>
       <Text style={styles.title}>{decisions.length > 1 ? "Un même geste, plusieurs plantes." : first.title}</Text>
       <Text style={styles.body}>{decisions.length > 1 ? "Balco a repéré le même besoin météo sur plusieurs plantes." : first.body}</Text>
@@ -27,11 +31,14 @@ export function GroupedReminderCard({ decisions, onComplete, onDismiss }: Groupe
         {decisions.map((decision) => (
           <View key={`${decision.plantId}:${decision.taskType}`} style={styles.item}>
             <View style={styles.itemCopy}><Text style={styles.itemTitle}>{decision.title}</Text><Text style={styles.itemReason}>{decision.reason}</Text></View>
-            {!skipped && <Pressable accessibilityRole="button" accessibilityLabel={`Valider ${decision.title}`} onPress={() => onComplete(decision)} style={({ pressed }) => [styles.itemButton, pressed && styles.pressed]}><Text style={styles.itemButtonText}>Fait</Text></Pressable>}
+            {decision.action !== "skip" && <Pressable accessibilityRole="button" accessibilityLabel={`Fait : ${decision.title}`} onPress={() => onComplete(decision)} style={({ pressed }) => [styles.itemButton, pressed && styles.pressed]}><Text style={styles.itemButtonText}>Fait ✓</Text></Pressable>}
           </View>
         ))}
       </View>
-      <Pressable accessibilityRole="button" accessibilityLabel="Fermer les rappels groupés" onPress={() => onDismiss(decisions)} style={({ pressed }) => [styles.dismissButton, pressed && styles.pressed]}><Text style={styles.dismissText}>{skipped ? "Compris" : "Plus tard"}</Text></Pressable>
+      <View style={styles.footer}>
+        {!skipped && <Pressable accessibilityRole="button" accessibilityLabel="Me rappeler ces conseils dans 3 heures" onPress={() => onSnooze(decisions, "later")} style={({ pressed }) => [styles.dismissButton, pressed && styles.pressed]}><Text style={styles.dismissText}>Dans 3 h</Text></Pressable>}
+        <Pressable accessibilityRole="button" accessibilityLabel={skipped ? "Compris" : "Pas aujourd’hui"} onPress={() => onSnooze(decisions, "skip")} style={({ pressed }) => [styles.dismissButton, pressed && styles.pressed]}><Text style={styles.dismissText}>{skipped ? "Compris" : "Pas aujourd’hui"}</Text></Pressable>
+      </View>
     </View>
   );
 }
@@ -55,6 +62,7 @@ const styles = StyleSheet.create({
   itemReason: { color: "#7D8B78", fontSize: 10, lineHeight: 14, marginTop: 2 },
   itemButton: { backgroundColor: "#2F644B", borderRadius: 10, paddingHorizontal: 10, paddingVertical: 7 },
   itemButtonText: { color: "#FFFFFF", fontSize: 11, fontWeight: "800" },
+  footer: { flexDirection: "row", gap: 8 },
   dismissButton: { alignSelf: "flex-start", borderColor: "#C9D6C8", borderRadius: 12, borderWidth: 1, paddingHorizontal: 14, paddingVertical: 9 },
   dismissText: { color: "#477151", fontSize: 12, fontWeight: "700" },
   pressed: { opacity: 0.75, transform: [{ scale: 0.98 }] },

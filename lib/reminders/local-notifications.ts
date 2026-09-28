@@ -2,11 +2,28 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import { Platform } from "react-native";
 
 import { Notifications } from "@/lib/notifications/module";
+import type { ReminderSnooze } from "@/lib/reminders/reminder-actions";
 import type { ReminderDecision } from "@/lib/reminders/reminder-engine";
 
 export const REMINDER_SETTINGS_STORAGE_KEY = "balco.reminder.settings.v1";
 export const REMINDER_DECISIONS_STORAGE_KEY = "balco.reminder.decisions.v1";
 export const BALCO_NOTIFICATION_CHANNEL_ID = "balco-reminders";
+export const REMINDER_SNOOZES_STORAGE_KEY = "balco.reminder.snoozes.v1";
+/** Boutons sous la notification : « Fait », « Dans 3 h », « Pas aujourd'hui ». */
+export const BALCO_REMINDER_CATEGORY = "balco-reminder";
+/** Conseil sans geste à faire (« n'arrose pas ») : seulement « Compris ». */
+export const BALCO_REMINDER_INFO_CATEGORY = "balco-reminder-info";
+export const REMINDER_ACTIONS = { done: "done", later: "later", skip: "skip" } as const;
+
+/** Ce que transporte une notification de rappel, pour pouvoir y répondre sans ouvrir l'écran. */
+export type ReminderNotificationData = {
+  source: "balco-reminder" | "balco-test";
+  plantId?: string;
+  taskType?: ReminderDecision["taskType"];
+  action?: ReminderDecision["action"];
+  title?: string;
+  validUntil?: string;
+};
 
 export type LocalReminderSettings = {
   enabled: boolean;
@@ -72,8 +89,41 @@ export async function isServerPushActive() {
   }
 }
 
+export async function loadReminderSnoozes(): Promise<ReminderSnooze[]> {
+  try {
+    const stored = await AsyncStorage.getItem(REMINDER_SNOOZES_STORAGE_KEY);
+    const parsed = stored ? (JSON.parse(stored) as unknown) : [];
+    return Array.isArray(parsed) ? (parsed as ReminderSnooze[]) : [];
+  } catch {
+    return [];
+  }
+}
+
+const snoozeListeners = new Set<(snoozes: ReminderSnooze[]) => void>();
+
+export function subscribeReminderSnoozes(listener: (snoozes: ReminderSnooze[]) => void) {
+  snoozeListeners.add(listener);
+  return () => {
+    snoozeListeners.delete(listener);
+  };
+}
+
+export async function saveReminderSnoozes(snoozes: ReminderSnooze[]) {
+  await AsyncStorage.setItem(REMINDER_SNOOZES_STORAGE_KEY, JSON.stringify(snoozes));
+  snoozeListeners.forEach((listener) => listener(snoozes));
+}
+
 export async function configureLocalNotifications() {
   if (!Notifications) return;
+  // Les boutons ouvrent l'app : c'est elle qui enregistre le geste ou met le rappel en sommeil.
+  await Notifications.setNotificationCategoryAsync(BALCO_REMINDER_CATEGORY, [
+    { identifier: REMINDER_ACTIONS.done, buttonTitle: "Fait ✓", options: { opensAppToForeground: true } },
+    { identifier: REMINDER_ACTIONS.later, buttonTitle: "Dans 3 h", options: { opensAppToForeground: true } },
+    { identifier: REMINDER_ACTIONS.skip, buttonTitle: "Pas aujourd’hui", options: { opensAppToForeground: true } },
+  ]);
+  await Notifications.setNotificationCategoryAsync(BALCO_REMINDER_INFO_CATEGORY, [
+    { identifier: REMINDER_ACTIONS.skip, buttonTitle: "Compris", options: { opensAppToForeground: true } },
+  ]);
   await Notifications.setNotificationHandler({
     handleNotification: async () => ({
       shouldShowAlert: true,
@@ -101,18 +151,6 @@ export async function requestLocalNotificationPermission() {
   return requested.status === "granted";
 }
 
-function nextPreferredDate(settings: LocalReminderSettings, now = new Date()) {
-  const trigger = new Date(now);
-  trigger.setHours(settings.preferredHour, settings.preferredMinute, 0, 0);
-  if (trigger.getTime() <= now.getTime()) trigger.setDate(trigger.getDate() + 1);
-  const triggerHour = trigger.getHours();
-  const inQuietHours = settings.quietStartHour > settings.quietEndHour
-    ? triggerHour >= settings.quietStartHour || triggerHour < settings.quietEndHour
-    : triggerHour >= settings.quietStartHour && triggerHour < settings.quietEndHour;
-  if (inQuietHours) trigger.setDate(trigger.getDate() + 1);
-  return trigger;
-}
-
 function decisionId(decision: ReminderDecision) {
   return `${decision.plantId}:${decision.taskType}:${decision.validUntil}`;
 }
@@ -128,7 +166,8 @@ export async function cancelBalcoReminderNotifications() {
   );
 }
 
-export async function scheduleLocalReminder(decision: ReminderDecision, settings: LocalReminderSettings, now = new Date()) {
+/** Programme LA notification de rappel (une seule à la fois), à la date choisie par planNotification. */
+export async function scheduleLocalReminder(decision: ReminderDecision, settings: LocalReminderSettings, triggerDate: Date) {
   if (!Notifications || !settings.enabled) return null;
   if (await isServerPushActive()) {
     await cancelBalcoReminderNotifications();
@@ -140,9 +179,7 @@ export async function scheduleLocalReminder(decision: ReminderDecision, settings
   await configureLocalNotifications();
   await cancelBalcoReminderNotifications();
 
-  const triggerDate = nextPreferredDate(settings, now);
-  const validUntil = new Date(decision.validUntil).getTime();
-  if (!Number.isFinite(validUntil) || triggerDate.getTime() >= validUntil) return null;
+  if (triggerDate.getTime() <= Date.now()) return null;
 
   const id = await Notifications.scheduleNotificationAsync({
     content: {
@@ -153,14 +190,18 @@ export async function scheduleLocalReminder(decision: ReminderDecision, settings
         url: "/",
         plantId: decision.plantId,
         taskType: decision.taskType,
+        action: decision.action,
+        title: decision.title,
         decisionId: decisionId(decision),
         validUntil: decision.validUntil,
       },
-      ...(Platform.OS === "android" ? { channelId: BALCO_NOTIFICATION_CHANNEL_ID } : {}),
+      categoryIdentifier: decision.action === "skip" ? BALCO_REMINDER_INFO_CATEGORY : BALCO_REMINDER_CATEGORY,
     },
+    // Sur Android, le canal se précise dans le déclencheur (réglable à part dans les paramètres du téléphone).
     trigger: {
       type: Notifications.SchedulableTriggerInputTypes.DATE,
       date: triggerDate,
+      channelId: BALCO_NOTIFICATION_CHANNEL_ID,
     },
   });
 
@@ -173,4 +214,22 @@ export async function clearAndDisableLocalReminders() {
   const settings = await loadLocalReminderSettings();
   await saveLocalReminderSettings({ ...settings, enabled: false });
   await AsyncStorage.removeItem(REMINDER_DECISIONS_STORAGE_KEY);
+}
+
+/** Notification d'essai, 5 secondes plus tard : vérifie permission, affichage et boutons. */
+export async function sendTestNotification(): Promise<"sent" | "denied" | "unavailable"> {
+  if (!Notifications) return "unavailable";
+  const granted = await requestLocalNotificationPermission();
+  if (!granted) return "denied";
+  await configureLocalNotifications();
+  await Notifications.scheduleNotificationAsync({
+    content: {
+      title: "Balco : les rappels fonctionnent 🌱",
+      body: "C’est à ça que ressemblera un conseil. Essaie les boutons Fait, Dans 3 h ou Pas aujourd’hui.",
+      data: { source: "balco-test" },
+      categoryIdentifier: BALCO_REMINDER_CATEGORY,
+    },
+    trigger: { type: Notifications.SchedulableTriggerInputTypes.TIME_INTERVAL, seconds: 5, channelId: BALCO_NOTIFICATION_CHANNEL_ID },
+  });
+  return "sent";
 }

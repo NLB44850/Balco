@@ -54,6 +54,7 @@ export function careProfileFor(resolved: ResolvedPlant): PlantCareProfile {
   return {
     plantId: plant.id,
     displayName: plantDisplayName(resolved),
+    label: plant.nickname?.trim() || entry.label,
     ...entry.care,
     allowedTaskTypes: Array.from(new Set<MaintenanceTaskType>([...entry.tasks.map((task) => task.type), "observation", "protection"])),
   };

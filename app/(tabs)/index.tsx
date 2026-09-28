@@ -19,7 +19,6 @@ import {
   computeProgress,
   computeStats,
   dailyTip,
-  dayKey,
   eventForSessionTask,
   eventsForPlant,
   formatLongDate,
@@ -33,21 +32,22 @@ import {
   type SessionTask,
 } from "@/lib/garden/garden-logic";
 import { effortLabel, recommendPlants } from "@/lib/plants/catalog";
+import { addSnooze, eventForReminder, planNotification, withoutSnoozed, type ReminderSnooze } from "@/lib/reminders/reminder-actions";
 import { decideReminders, type ReminderDecision } from "@/lib/reminders/reminder-engine";
 import {
+  cancelBalcoReminderNotifications,
   defaultLocalReminderSettings,
   loadLocalReminderSettings,
+  loadReminderSnoozes,
   saveLocalReminderSettings,
+  saveReminderSnoozes,
   scheduleLocalReminder,
   subscribeReminderSettings,
+  subscribeReminderSnoozes,
   type LocalReminderSettings,
 } from "@/lib/reminders/local-notifications";
 
 const TASK_TYPE_LABELS: Record<string, string> = { watering: "ARROSAGE", observation: "OBSERVATION", pruning: "ENTRETIEN", protection: "PROTECTION", harvest: "RÉCOLTE" };
-
-function reminderKey(decisions: ReminderDecision[]) {
-  return decisions.map((decision) => `${decision.plantId}:${decision.taskType}:${decision.validUntil}`).join("|");
-}
 
 export default function HomeScreen() {
   const colors = useColors();
@@ -55,7 +55,8 @@ export default function HomeScreen() {
   const { loaded, resolvedPlants, events, profile, onboarding, addPlant, logEvent, removeEvent, reportLocation } = useGarden();
   const [now, setNow] = useState(() => new Date());
   const [skippedRecommendations, setSkippedRecommendations] = useState<string[]>([]);
-  const [dismissedReminderKey, setDismissedReminderKey] = useState<string | null>(null);
+  const [snoozes, setSnoozes] = useState<ReminderSnooze[]>([]);
+  const [snoozesLoaded, setSnoozesLoaded] = useState(false);
   const [reminderSettings, setReminderSettings] = useState<LocalReminderSettings>(defaultLocalReminderSettings);
   const [reminderSettingsLoaded, setReminderSettingsLoaded] = useState(false);
   const [isSchedulingReminder, setIsSchedulingReminder] = useState(false);
@@ -77,6 +78,15 @@ export default function HomeScreen() {
 
   // Réglages modifiés depuis le profil ou un autre appareil.
   useEffect(() => subscribeReminderSettings((settings) => setReminderSettings(settings)), []);
+
+  // Rappels mis en sommeil, ici ou depuis les boutons d'une notification.
+  useEffect(() => {
+    void loadReminderSnoozes().then((stored) => {
+      setSnoozes(stored);
+      setSnoozesLoaded(true);
+    });
+    return subscribeReminderSnoozes(setSnoozes);
+  }, []);
 
   // Le serveur a besoin de la vraie position pour les rappels app fermée ; jamais de la ville de repli.
   useEffect(() => {
@@ -109,13 +119,15 @@ export default function HomeScreen() {
     const normal = decisions.filter((decision) => decision.priority === "normal").slice(0, reminderSettings.maxNormalRemindersPerDay);
     return [...decisions.filter((decision) => decision.priority !== "normal"), ...normal];
   }, [events, reminderPlants, reminderSettings, reminderSettingsLoaded, weather.isFallback, weatherSnapshot]);
-  const visibleReminders = reminderKey(reminderDecisions) !== dismissedReminderKey ? reminderDecisions : [];
-  const topDecision = reminderDecisions[0] ?? null;
+  const visibleReminders = useMemo(() => withoutSnoozed(reminderDecisions, snoozes, new Date()), [reminderDecisions, snoozes]);
 
+  // Une seule notification programmée : le prochain conseil utile, à l'heure préférée ou au réveil d'un « Dans 3 h ».
   useEffect(() => {
-    if (!reminderSettingsLoaded || !reminderSettings.enabled || !topDecision) return;
-    void scheduleLocalReminder(topDecision, reminderSettings);
-  }, [reminderSettings, reminderSettingsLoaded, topDecision]);
+    if (!reminderSettingsLoaded || !snoozesLoaded || !reminderSettings.enabled || weather.isFallback) return;
+    const plan = planNotification(reminderDecisions, snoozes, reminderSettings, new Date());
+    if (plan) void scheduleLocalReminder(plan.decision, reminderSettings, plan.date);
+    else void cancelBalcoReminderNotifications();
+  }, [reminderDecisions, reminderSettings, reminderSettingsLoaded, snoozes, snoozesLoaded, weather.isFallback]);
 
   const toggleSessionTask = async (item: SessionTask) => {
     if (item.done) await removeEvent(item.eventId);
@@ -124,28 +136,26 @@ export default function HomeScreen() {
   };
 
   const completeReminder = async (decision: ReminderDecision) => {
-    await logEvent({
-      id: `reminder:${decision.plantId}:${decision.taskType}:${dayKey(new Date())}`,
-      plantId: decision.plantId,
-      // Suivre un « pas besoin d'arroser » compte comme une observation, pas comme un arrosage.
-      type: decision.action === "skip" ? "observation" : decision.taskType,
-      completedAt: new Date().toISOString(),
-      source: "reminder",
-      note: decision.title,
-    });
-    setDismissedReminderKey(reminderKey(reminderDecisions));
+    await logEvent(eventForReminder(decision, new Date()));
+    // Une alerte gel reste vraie après avoir protégé le pot : on ne la remontre pas avant demain.
+    await snoozeReminders([decision], "skip");
     if (Platform.OS !== "web") await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
   };
 
-  const dismissReminder = () => setDismissedReminderKey(reminderKey(reminderDecisions));
+  /** « Dans 3 h » ou « Pas aujourd'hui » : le conseil disparaît et revient plus tard s'il est toujours utile. */
+  const snoozeReminders = async (decisions: ReminderDecision[], kind: ReminderSnooze["kind"]) => {
+    const now = new Date();
+    const next = decisions.reduce((current, decision) => addSnooze(current, decision, kind, reminderSettings, now), snoozes);
+    await saveReminderSnoozes(next);
+  };
 
   const activateReminders = async () => {
-    if (!topDecision) return;
     setIsSchedulingReminder(true);
     const nextSettings = { ...reminderSettings, enabled: true };
     setReminderSettings(nextSettings);
     await saveLocalReminderSettings(nextSettings);
-    await scheduleLocalReminder(topDecision, nextSettings);
+    const plan = planNotification(reminderDecisions, snoozes, nextSettings, new Date());
+    if (plan) await scheduleLocalReminder(plan.decision, nextSettings, plan.date);
     setIsSchedulingReminder(false);
   };
 
@@ -179,7 +189,7 @@ export default function HomeScreen() {
         </FadeIn>
 
         {visibleReminders.length > 0 && <FadeIn delay={120} style={styles.reminderWrapper}>
-          {visibleReminders.length > 1 ? <GroupedReminderCard decisions={visibleReminders} onComplete={(decision) => void completeReminder(decision)} onDismiss={dismissReminder} /> : <ContextualReminderCard decision={visibleReminders[0]} onComplete={(decision) => void completeReminder(decision)} onDismiss={dismissReminder} />}
+          {visibleReminders.length > 1 ? <GroupedReminderCard decisions={visibleReminders} onComplete={(decision) => void completeReminder(decision)} onSnooze={(decisions, kind) => void snoozeReminders(decisions, kind)} /> : <ContextualReminderCard decision={visibleReminders[0]} onComplete={(decision) => void completeReminder(decision)} onSnooze={(decision, kind) => void snoozeReminders([decision], kind)} />}
           <View style={styles.reminderSettingsRow}>
             <Text style={[styles.reminderSettingsText, { color: colors.muted }]}>
               {reminderSettings.enabled ? `Rappel local actif à ${String(reminderSettings.preferredHour).padStart(2, "0")} h ${String(reminderSettings.preferredMinute).padStart(2, "0")}` : "Recevoir ce conseil au bon moment"}

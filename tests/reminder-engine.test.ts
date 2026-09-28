@@ -91,7 +91,29 @@ describe("decideReminder", () => {
     });
 
     expect(result).toMatchObject({ action: "skip", taskType: "observation" });
-    expect(result?.title).toContain("Pas besoin d’arroser");
+    expect(result?.title).toContain("N’arrose pas");
+    expect(result?.body).toContain("mm de pluie sont prévus");
+  });
+
+  it("speaks about the plant with its article, as in « N’arrose pas les tomates cerises aujourd’hui »", () => {
+    const withLabel = { ...plant, label: "les tomates cerises" };
+    const rain = decideReminder({
+      plant: withLabel,
+      history: [event("watering", "2026-09-20T10:00:00.000Z")],
+      weather: weather({ next12h: { precipitationMm: 8, precipitationProbabilityMax: 80, windGustKmhMax: 10 } }),
+      now,
+    });
+    expect(rain?.title).toBe("N’arrose pas les tomates cerises aujourd’hui");
+    expect(rain?.body).toMatch(/^8 mm de pluie sont prévus dans les 12 prochaines heures/);
+
+    const heat = decideReminder({
+      plant: { ...plant, label: "le basilic" },
+      history: [event("watering", "2026-09-20T10:00:00.000Z")],
+      weather: weather({ today: { precipitationMm: 0, temperatureMinC: 20, temperatureMaxC: 34, windGustKmhMax: 10 } }),
+      now,
+    });
+    expect(heat?.title).toBe("34 °C aujourd’hui : pense au basilic");
+    expect(heat?.body).toContain("Dernier arrosage il y a 3 jours");
   });
 
   it("asks for a soil check after the watering interval", () => {
@@ -115,7 +137,7 @@ describe("decideReminder", () => {
     });
 
     expect(result).toMatchObject({ action: "observe", taskType: "watering", priority: "important" });
-    expect(result?.body).toContain("vérifie");
+    expect(result?.body).toContain("Touche la terre");
   });
 
   it("limits repeated reminders to one per day", () => {

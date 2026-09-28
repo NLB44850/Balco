@@ -1,13 +1,12 @@
 import "@/global.css";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { Stack, useRouter } from "expo-router";
+import { Stack } from "expo-router";
 import { StatusBar } from "expo-status-bar";
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import "react-native-reanimated";
 import { Platform } from "react-native";
 import "@/lib/_core/nativewind-pressable";
-import { Notifications } from "@/lib/notifications/module";
 import { ThemeProvider } from "@/lib/theme-provider";
 import {
   SafeAreaFrameContext,
@@ -18,7 +17,7 @@ import {
 import type { EdgeInsets, Rect } from "react-native-safe-area-context";
 
 import { trpc, createTRPCClient } from "@/lib/trpc";
-import { configureLocalNotifications } from "@/lib/reminders/local-notifications";
+import { ReminderNotificationResponder } from "@/components/reminder-notification-responder";
 import { GardenProvider } from "@/lib/garden/garden-context";
 
 const DEFAULT_WEB_INSETS: EdgeInsets = { top: 0, right: 0, bottom: 0, left: 0 };
@@ -29,22 +28,11 @@ export const unstable_settings = {
 };
 
 export default function RootLayout() {
-  const router = useRouter();
   const initialInsets = initialWindowMetrics?.insets ?? DEFAULT_WEB_INSETS;
   const initialFrame = initialWindowMetrics?.frame ?? DEFAULT_WEB_FRAME;
 
   const [insets] = useState<EdgeInsets>(initialInsets);
   const [frame] = useState<Rect>(initialFrame);
-
-  useEffect(() => {
-    if (!Notifications) return;
-    void configureLocalNotifications();
-    const responseSubscription = Notifications.addNotificationResponseReceivedListener(() => {
-      // A notification opens the garden; it never validates the task implicitly.
-      router.replace("/(tabs)" as never);
-    });
-    return () => responseSubscription.remove();
-  }, [router]);
 
   // Create clients once and reuse them
   const [queryClient] = useState(
@@ -92,6 +80,7 @@ export default function RootLayout() {
             <Stack.Screen name="garden/[id]" />
           </Stack>
           <StatusBar style="dark" />
+          <ReminderNotificationResponder />
           </GardenProvider>
         </QueryClientProvider>
       </trpc.Provider>

@@ -23,6 +23,8 @@ export type MaintenanceEvent = {
 export type PlantCareProfile = {
   plantId: string;
   displayName: string;
+  /** Nom avec son article pour les phrases (« le basilic », « les tomates cerises ») ; à défaut, displayName. */
+  label?: string;
   wateringIntervalHours: number;
   rainSkipMm: number;
   heatThresholdC: number;
@@ -143,11 +145,18 @@ function formatElapsed(hours: number) {
   return `${days} jour${days > 1 ? "s" : ""}`;
 }
 
+/** « à » contracté devant l'article : « au basilic », « aux fraisiers », « à la menthe ». */
+function toLabel(label: string) {
+  if (label.startsWith("le ")) return `au ${label.slice(3)}`;
+  if (label.startsWith("les ")) return `aux ${label.slice(4)}`;
+  return `à ${label}`;
+}
+
 type DraftDecision = Omit<ReminderDecision, "plantId" | "validUntil" | "weatherFetchedAt">;
 
 function safetyDecision(plant: PlantCareProfile, weather: WeatherSnapshot): DraftDecision | null {
   if (!allows(plant, "protection")) return null;
-  const name = plant.displayName;
+  const name = plant.label ?? plant.displayName;
   const gust = Math.max(weather.next12h.windGustKmhMax, weather.today.windGustKmhMax);
   const minTemp = weather.today.temperatureMinC;
 
@@ -157,7 +166,7 @@ function safetyDecision(plant: PlantCareProfile, weather: WeatherSnapshot): Draf
       priority: "urgent",
       action: "protect",
       title: `Orage : mets ${name} à l’abri`,
-      body: "Un orage est en cours ou imminent. Rentre les pots mobiles depuis l’intérieur, sans sortir sur le balcon.",
+      body: "Un orage arrive sur ton balcon. Rentre les pots mobiles depuis l’intérieur, sans sortir sur le balcon.",
       reason: `Code météo orage (${weather.current.weatherCode}).`,
     };
   }
@@ -168,8 +177,8 @@ function safetyDecision(plant: PlantCareProfile, weather: WeatherSnapshot): Draf
       taskType: "protection",
       priority: hardFrost ? "urgent" : "important",
       action: "protect",
-      title: `${name} : protège du froid ce soir`,
-      body: `${round(minTemp)} °C prévus au plus bas. Rapproche le pot du mur ou couvre-le d’un voile d’hivernage.`,
+      title: hardFrost ? `Gel cette nuit : protège ${name}` : `Nuit fraîche : protège ${name}`,
+      body: `Jusqu’à ${round(minTemp)} °C cette nuit. Avant ce soir, rapproche le pot du mur ou couvre-le d’un voile d’hivernage.`,
       reason: `Minimum prévu ${round(minTemp)} °C, seuil de la plante ${plant.frostThresholdC} °C.`,
     };
   }
@@ -180,7 +189,7 @@ function safetyDecision(plant: PlantCareProfile, weather: WeatherSnapshot): Draf
       taskType: "protection",
       priority: strong ? "urgent" : "important",
       action: "protect",
-      title: strong ? `Vent fort : mets ${name} à l’abri` : `${name} : vérifie tuteur et pot`,
+      title: strong ? `Vent fort : mets ${name} à l’abri` : `Coup de vent : vérifie ${name}`,
       body: strong
         ? `Rafales jusqu’à ${Math.round(gust)} km/h. Rentre les contenants mobiles ou cale-les contre le mur.`
         : `Rafales jusqu’à ${Math.round(gust)} km/h sur ton balcon. Vérifie que le tuteur et le pot tiennent bien.`,
@@ -203,7 +212,7 @@ function wateringDecision(
   // Sans historique, Balco n'invente pas de besoin d'arrosage.
   if (!lastWatering) return null;
 
-  const name = plant.displayName;
+  const name = plant.label ?? plant.displayName;
   const elapsed = hoursBetween(lastWatering, now);
   const due = elapsed >= plant.wateringIntervalHours;
   const rainMm = weather.next12h.precipitationMm;
@@ -217,8 +226,8 @@ function wateringDecision(
       taskType: "observation",
       priority: "normal",
       action: "skip",
-      title: "Pas besoin d’arroser aujourd’hui",
-      body: `${name} : ${round(rainMm)} mm de pluie prévus d’ici 12 h. Vérifie plutôt que le pot draine bien.`,
+      title: `N’arrose pas ${name} aujourd’hui`,
+      body: `${round(rainMm)} mm de pluie sont prévus dans les 12 prochaines heures. Pot à l’abri de la pluie ? Touche quand même la terre.`,
       reason: `Pluie prévue ${round(rainMm)} mm (seuil ${plant.rainSkipMm} mm), probabilité max ${Math.round(weather.next12h.precipitationProbabilityMax)} %.`,
     };
   }
@@ -228,8 +237,8 @@ function wateringDecision(
       taskType: "watering",
       priority: "important",
       action: "observe",
-      title: `${name} : contrôle renforcé, il fait chaud`,
-      body: `Jusqu’à ${Math.round(maxTemp)} °C aujourd’hui : vérifie la terre tôt le matin ou en début de soirée avant d’arroser.`,
+      title: `${Math.round(maxTemp)} °C aujourd’hui : pense ${toLabel(name)}`,
+      body: `Dernier arrosage il y a ${formatElapsed(elapsed)}. Touche la terre ce soir ou demain tôt, et arrose au pied si elle est sèche.`,
       reason: `Maximum ${Math.round(maxTemp)} °C (seuil ${plant.heatThresholdC} °C), dernier arrosage il y a ${formatElapsed(elapsed)}.`,
     };
   }
@@ -239,8 +248,8 @@ function wateringDecision(
       taskType: "watering",
       priority: "normal",
       action: "observe",
-      title: `${name} : vérifie la terre`,
-      body: `Dernier arrosage il y a ${formatElapsed(elapsed)}, pas de pluie prévue. Enfonce un doigt dans la terre : arrose si elle est sèche.`,
+      title: `Arrose ${name} si la terre est sèche`,
+      body: `Dernier arrosage il y a ${formatElapsed(elapsed)} et pas de pluie prévue : arrose si la terre est sèche sur 2 cm.`,
       reason: `Délai de ${plant.wateringIntervalHours} h dépassé, ${round(rainMm)} mm prévus d’ici 12 h.`,
     };
   }

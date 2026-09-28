@@ -403,7 +403,7 @@ export async function dispatchDueReminderNotifications(now = new Date()) {
     const response = await fetch(EXPO_PUSH_URL, {
       method: "POST",
       headers: { "content-type": "application/json", accept: "application/json" },
-      body: JSON.stringify(tokens.map((token) => ({ to: token.token, title: parsed.title, body: parsed.body.slice(0, 120), data: { source: "balco-reminder", url: "/", plantId: parsed.plantId, taskType: parsed.taskType, decisionId: decision.decisionKey, validUntil: parsed.validUntil }, sound: "default", channelId: "balco-reminders" }))),
+      body: JSON.stringify(tokens.map((token) => ({ to: token.token, title: parsed.title, body: parsed.body.slice(0, 120), data: { source: "balco-reminder", url: "/", plantId: parsed.plantId, taskType: parsed.taskType, action: parsed.action, title: parsed.title, decisionId: decision.decisionKey, validUntil: parsed.validUntil }, sound: "default", channelId: "balco-reminders", categoryId: parsed.action === "skip" ? "balco-reminder-info" : "balco-reminder" }))),
     });
     if (!response.ok) {
       skipped += 1;

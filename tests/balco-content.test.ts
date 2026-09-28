@@ -62,7 +62,7 @@ describe("Balco MVP content", () => {
     expect(home).toContain("ContextualReminderCard");
     expect(home).toContain("visibleReminder");
     expect(home).toContain("completeReminder");
-    expect(home).toContain("dismissReminder");
+    expect(home).toContain("snoozeReminders");
     expect(readProjectFile("lib/garden/garden-context.tsx")).toContain("balco.garden.plants.v1");
   });
 
@@ -131,8 +131,12 @@ describe("Balco MVP content", () => {
     expect(home).toContain("Activer");
     expect(home).toContain("scheduleLocalReminder");
     expect(notifications).toContain("preferredHour: 18");
-    expect(layout).toContain("addNotificationResponseReceivedListener");
-    expect(layout).toContain("router.replace");
+    expect(layout).toContain("ReminderNotificationResponder");
+    const responder = readProjectFile("components/reminder-notification-responder.tsx");
+    expect(responder).toContain("addNotificationResponseReceivedListener");
+    expect(responder).toContain("getLastNotificationResponseAsync");
+    expect(notifications).toContain("setNotificationCategoryAsync");
+    expect(notifications).toContain("sendTestNotification");
     expect(config).toContain('"expo-notifications"');
   });
 
@@ -149,7 +153,8 @@ describe("Balco MVP content", () => {
     expect(profile).toContain("enabledPlantIds");
     expect(profile).toContain("requestLocalNotificationPermission");
     expect(profile).toContain("clearAndDisableLocalReminders");
-    expect(readProjectFile("lib/reminders/local-notifications.ts")).toContain("inQuietHours");
+    expect(readProjectFile("lib/reminders/reminder-actions.ts")).toContain("isQuietHour");
+    expect(profile).toContain("Envoyer une notification de test");
   });
 
   it("supports grouped reminders for several garden plants", () => {
@@ -160,7 +165,8 @@ describe("Balco MVP content", () => {
     expect(home).toContain("decideReminders");
     expect(grouped).toContain("CONSEILS POUR TON BALCON");
     expect(grouped).toContain("onComplete");
-    expect(grouped).toContain("onDismiss");
+    expect(grouped).toContain("onSnooze");
+    expect(grouped).toContain("Pas aujourd’hui");
   });
 
   it("keeps the Balco nature palette in the theme tokens", () => {

@@ -149,9 +149,9 @@ Très cohérent avec la promesse écologique.
 | Tâche quotidienne par plante | ✅ | Session du jour sur l'accueil, gestes tirés du catalogue selon le mois |
 | Météo : pluie, gel, chaleur, vent, orage | ✅ | Moteur de décision testé (`lib/reminders/reminder-engine.ts`), données Open-Meteo |
 | Historique du dernier entretien | ✅ | Pris en compte dans la décision, visible dans la fiche plante |
-| Message explicatif | 🟡 | Chaque décision a sa raison (« Pluie prévue 8 mm… »). Le texte montré à l'utilisateur est à rendre plus parlant |
-| Notifications par plante | 🟡 | Locales dans l'app et envoi par le serveur, choix des plantes concernées. **Pas encore validé sur un vrai téléphone** ; l'envoi serveur sur Android attend la configuration Firebase |
-| Reporter / ignorer / confirmer | 🟡 | « Marquer comme fait » existe. Reporter et ignorer, depuis l'app ou la notification : à faire |
+| Message explicatif | ✅ | « N'arrose pas les tomates cerises aujourd'hui : 8 mm de pluie sont prévus dans les 12 prochaines heures », avec la raison sous le conseil |
+| Notifications par plante | 🟡 | Locales dans l'app et envoi par le serveur, choix des plantes concernées, bouton « Envoyer une notification de test ». **Validation sur un vrai téléphone en cours** ; l'envoi serveur sur Android attend la configuration Firebase |
+| Reporter / ignorer / confirmer | ✅ | « Fait ✓ », « Dans 3 h » (jamais pendant la plage calme) et « Pas aujourd'hui », sur la carte de l'accueil et dans la notification. La mise en sommeil reste sur le téléphone (pas encore transmise au serveur) |
 | Limiter les rappels | ✅ | Plafond par jour, plage calme, délai de 24 h entre deux rappels |
 
 ### 2. Assistant IA (Nora)
