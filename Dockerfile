@@ -14,6 +14,9 @@ COPY . .
 # Identifiants publics injectés dans l'app web au moment du build (facultatifs).
 ARG EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID=""
 ENV EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID=$EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID
+# « 1 » pour afficher la simulation météo dans l'app web (versions de test uniquement).
+ARG EXPO_PUBLIC_WEATHER_SIMULATION=""
+ENV EXPO_PUBLIC_WEATHER_SIMULATION=$EXPO_PUBLIC_WEATHER_SIMULATION
 RUN pnpm build:standalone && pnpm build:web
 
 FROM node:22-slim

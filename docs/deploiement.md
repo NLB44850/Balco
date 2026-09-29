@@ -134,6 +134,8 @@ bash scripts/codespace-demarrer.sh
 
 Ouvre ensuite le port 3000 depuis l'onglet « Ports ». Les codes de connexion s'affichent avec `docker compose logs app | grep "login code"`.
 
+**Voir l'app sur le téléphone sans build** : l'adresse du port 3000 (`https://<codespace>-3000.app.github.dev`) ouvre aussi l'app web. Dans Chrome sur le téléphone, elle se comporte comme l'app (écrans, animations, simulation météo dans « Moi »), sauf les notifications. Menu ⋮ → « Ajouter à l'écran d'accueil » pour l'ouvrir en plein écran.
+
 ### Version de test Android (APK, sans Play Store)
 
 Expo Go ne gère plus les notifications sur Android : pour tester les rappels, construis la version de test.

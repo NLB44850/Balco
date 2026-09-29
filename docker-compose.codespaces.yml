@@ -11,5 +11,9 @@ services:
   app:
     network_mode: host
     ports: !reset []
+    build:
+      args:
+        # L'app web du Codespace sert aussi à tester sur téléphone : on y garde la simulation météo.
+        EXPO_PUBLIC_WEATHER_SIMULATION: "1"
     environment:
       DATABASE_URL: mysql://balco:${MYSQL_PASSWORD}@127.0.0.1:3306/balco
