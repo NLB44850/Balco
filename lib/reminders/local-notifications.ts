@@ -26,6 +26,8 @@ export type ReminderNotificationData = {
   action?: ReminderDecision["action"];
   title?: string;
   validUntil?: string;
+  /** Notification d'aperçu (simulation météo) : jamais annulée par la reprogrammation du rappel du jour. */
+  preview?: boolean;
 };
 
 export type LocalReminderSettings = {
@@ -164,7 +166,10 @@ export async function cancelBalcoReminderNotifications() {
   const scheduled = await notifications.getAllScheduledNotificationsAsync();
   await Promise.all(
     scheduled
-      .filter((item) => item.content.data && (item.content.data as { source?: string }).source === "balco-reminder")
+      .filter((item) => {
+        const data = item.content.data as Partial<ReminderNotificationData> | undefined;
+        return data?.source === "balco-reminder" && !data.preview;
+      })
       .map((item) => notifications.cancelScheduledNotificationAsync(item.identifier)),
   );
 }
@@ -232,6 +237,34 @@ export async function sendTestNotification(): Promise<"sent" | "denied" | "unava
       body: "C’est à ça que ressemblera un conseil. Essaie les boutons Fait, Dans 3 h ou Pas aujourd’hui.",
       data: { source: "balco-test" },
       categoryIdentifier: BALCO_REMINDER_CATEGORY,
+    },
+    trigger: { type: Notifications.SchedulableTriggerInputTypes.TIME_INTERVAL, seconds: 5, channelId: BALCO_NOTIFICATION_CHANNEL_ID },
+  });
+  return "sent";
+}
+
+/** Version de test : envoie tout de suite (5 s) l'alerte affichée, avec ses boutons, pour la voir en notification. */
+export async function sendReminderPreview(group: ReminderGroup): Promise<"sent" | "denied" | "unavailable"> {
+  if (!Notifications) return "unavailable";
+  const granted = await requestLocalNotificationPermission();
+  if (!granted) return "denied";
+  await configureLocalNotifications();
+  const data: ReminderNotificationData = {
+    source: "balco-reminder",
+    preview: true,
+    plantId: group.plantId,
+    plantIds: group.decisions.map((item) => item.plantId),
+    taskType: group.taskType,
+    action: group.action,
+    title: group.title,
+    validUntil: group.validUntil,
+  };
+  await Notifications.scheduleNotificationAsync({
+    content: {
+      title: group.title,
+      body: group.body.slice(0, 120),
+      data,
+      categoryIdentifier: group.action === "skip" ? BALCO_REMINDER_INFO_CATEGORY : BALCO_REMINDER_CATEGORY,
     },
     trigger: { type: Notifications.SchedulableTriggerInputTypes.TIME_INTERVAL, seconds: 5, channelId: BALCO_NOTIFICATION_CHANNEL_ID },
   });

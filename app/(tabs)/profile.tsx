@@ -6,7 +6,9 @@ import { LinearGradient } from "expo-linear-gradient";
 
 import { PopIn } from "@/components/motion";
 import { ScreenContainer } from "@/components/screen-container";
+import { useWeatherSimulation } from "@/hooks/use-weather-simulation";
 import { notificationsUnavailableReason } from "@/lib/notifications/module";
+import { WEATHER_SCENARIOS } from "@/lib/weather/simulation";
 import { useColors } from "@/hooks/use-colors";
 import { ONBOARDING_STORAGE_KEY, useGarden } from "@/lib/garden/garden-context";
 import { computeBadges, computeProgress, computeStats, initials, plantDisplayName, relativeDay } from "@/lib/garden/garden-logic";
@@ -71,6 +73,7 @@ export default function ProfileScreen() {
 
   // Les notifications n'existent que dans l'app mobile, et pas dans Expo Go sur Android.
   const notificationsSupported = notificationsUnavailableReason === null;
+  const simulation = useWeatherSimulation();
   const [testStatus, setTestStatus] = useState<"idle" | "sending" | "sent" | "denied">("idle");
 
   const sendTest = async () => {
@@ -200,6 +203,24 @@ export default function ProfileScreen() {
           </View>
         )}
       </View>
+      {simulation.available && (
+        <View style={[styles.reminderCard, { backgroundColor: colors.cream, borderColor: colors.border }]}>
+          <Text style={[styles.sectionEyebrow, { color: colors.terracotta }]}>VERSION DE TEST</Text>
+          <Text style={[styles.reminderCardTitle, { color: colors.foreground }]}>Simulation météo</Text>
+          <Text style={[styles.reminderCardText, { color: colors.muted }]}>Fais comme si cette météo arrivait, pour voir les alertes sur l’accueil. N’existe pas dans l’app publiée.</Text>
+          <View style={styles.simulationChips}>
+            {WEATHER_SCENARIOS.map((item) => {
+              const active = simulation.scenario === item.id;
+              return (
+                <Pressable key={item.id} accessibilityRole="button" accessibilityState={{ selected: active }} onPress={() => void simulation.setScenario(item.id)} style={({ pressed }) => [styles.simulationChip, { backgroundColor: active ? colors.primary : colors.surface, borderColor: active ? colors.primary : colors.border }, pressed && styles.pressed]}>
+                  <Text style={[styles.simulationChipText, { color: active ? "#FFFFFF" : colors.foreground }]}>{item.label}</Text>
+                </Pressable>
+              );
+            })}
+          </View>
+          <Text style={[styles.testHint, { color: colors.muted }]}>{WEATHER_SCENARIOS.find((item) => item.id === simulation.scenario)?.hint}</Text>
+        </View>
+      )}
       <View style={[styles.reminderCard, { backgroundColor: colors.surface, borderColor: colors.border }]}>
         <View style={styles.reminderCardHeader}>
           <View style={styles.reminderCardCopy}><Text style={[styles.sectionEyebrow, { color: colors.terracotta }]}>RAPPELS CONTEXTUELS</Text><Text style={[styles.reminderCardTitle, { color: colors.foreground }]}>Seulement quand c’est utile</Text><Text style={[styles.reminderCardText, { color: colors.muted }]}>Balco croise la météo et ton dernier geste.</Text></View>
@@ -293,6 +314,9 @@ const styles = StyleSheet.create({
   reminderCard: { borderRadius: 21, borderWidth: 1, padding: 15, marginBottom: 25, gap: 14 },
   reminderCardHeader: { flexDirection: "row", alignItems: "center", gap: 12 },
   reminderCardCopy: { flex: 1 },
+  simulationChips: { flexDirection: "row", flexWrap: "wrap", gap: 8, marginTop: 12 },
+  simulationChip: { borderRadius: 14, borderWidth: 1, paddingHorizontal: 12, paddingVertical: 8 },
+  simulationChipText: { fontSize: 12, fontWeight: "800" },
   testRow: { marginTop: 12, gap: 6 },
   testButton: { alignSelf: "flex-start", borderWidth: 1, borderRadius: 12, paddingHorizontal: 12, paddingVertical: 8 },
   testButtonText: { fontSize: 12, fontWeight: "800" },

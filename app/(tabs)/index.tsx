@@ -34,6 +34,9 @@ import { effortLabel, recommendPlants } from "@/lib/plants/catalog";
 import { addSnooze, eventForReminder, planGroupedNotification, withoutSnoozed, type ReminderSnooze } from "@/lib/reminders/reminder-actions";
 import { decideReminders, type ReminderDecision } from "@/lib/reminders/reminder-engine";
 import { groupReminders, selectGroups, type ReminderGroup } from "@/lib/reminders/reminder-groups";
+import { useWeatherSimulation } from "@/hooks/use-weather-simulation";
+import { notificationsUnavailableReason } from "@/lib/notifications/module";
+import { scenarioLabel } from "@/lib/weather/simulation";
 import {
   cancelBalcoReminderNotifications,
   defaultLocalReminderSettings,
@@ -42,6 +45,7 @@ import {
   saveLocalReminderSettings,
   saveReminderSnoozes,
   scheduleLocalReminder,
+  sendReminderPreview,
   subscribeReminderSettings,
   subscribeReminderSnoozes,
   type LocalReminderSettings,
@@ -61,6 +65,9 @@ export default function HomeScreen() {
   const [reminderSettingsLoaded, setReminderSettingsLoaded] = useState(false);
   const [isSchedulingReminder, setIsSchedulingReminder] = useState(false);
   const { weather, weatherSnapshot, isLoading, refresh } = useLocalWeather();
+  const simulation = useWeatherSimulation();
+  const [previewStatus, setPreviewStatus] = useState<"idle" | "sent" | "denied">("idle");
+  useEffect(() => setPreviewStatus("idle"), [simulation.scenario]);
 
   // Recharge l'heure et les réglages (modifiables depuis le profil) à chaque retour sur l'écran.
   useFocusEffect(useCallback(() => {
@@ -189,6 +196,25 @@ export default function HomeScreen() {
           </LinearGradient>
         </FadeIn>
 
+        {simulation.scenario !== "none" && (
+          <View style={[styles.simulationBanner, { backgroundColor: colors.cream, borderColor: colors.terracotta }]}>
+            <Text style={[styles.simulationTitle, { color: colors.foreground }]}>🧪 Simulation : {scenarioLabel(simulation.scenario).toLowerCase()}</Text>
+            <Text style={[styles.simulationText, { color: colors.muted }]}>{weather.isFallback ? "La météo réelle n’a pas encore chargé : la simulation s’appliquera dès qu’elle sera là." : visibleReminders.length === 0 ? "Aucune alerte pour ce scénario : vérifie tes plantes et leurs derniers arrosages (voir l’aide dans Moi)." : "Les alertes ci-dessous sont simulées. Seule la notification d’aperçu part sur le téléphone."}</Text>
+            <View style={styles.simulationActions}>
+              {notificationsUnavailableReason === null && visibleReminders.length > 0 && (
+                <Pressable accessibilityRole="button" onPress={() => void sendReminderPreview(visibleReminders[0]).then((result) => setPreviewStatus(result === "sent" ? "sent" : "denied"))} style={({ pressed }) => [styles.simulationButton, { backgroundColor: colors.primary }, pressed && styles.pressed]}>
+                  <Text style={styles.simulationButtonText}>Me notifier dans 5 s</Text>
+                </Pressable>
+              )}
+              <Pressable accessibilityRole="button" onPress={() => void simulation.setScenario("none")} style={({ pressed }) => [styles.simulationButton, { borderColor: colors.border, borderWidth: 1 }, pressed && styles.pressed]}>
+                <Text style={[styles.simulationButtonText, { color: colors.primary }]}>Arrêter la simulation</Text>
+              </Pressable>
+            </View>
+            {previewStatus === "sent" && <Text style={[styles.simulationText, { color: colors.muted }]}>Envoyée : verrouille ton téléphone pour la voir arriver, puis essaie ses boutons.</Text>}
+            {previewStatus === "denied" && <Text style={[styles.simulationText, { color: colors.error }]}>Les notifications sont bloquées : autorise-les pour Balco dans les réglages du téléphone.</Text>}
+          </View>
+        )}
+
         {visibleReminders.length > 0 && <FadeIn delay={120} style={styles.reminderWrapper}>
           {visibleReminders.map((group) => <ContextualReminderCard key={group.key} decision={group} onComplete={() => void completeReminder(group)} onSnooze={(_, kind) => void snoozeReminders(group.decisions, kind)} />)}
           <View style={styles.reminderSettingsRow}>
@@ -278,6 +304,12 @@ const styles = StyleSheet.create({
   heroBottom: { flexDirection: "row", justifyContent: "space-between", alignItems: "flex-end", marginTop: 19 },
   heroDate: { color: "rgba(255,255,255,0.45)", fontSize: 9, letterSpacing: 1, fontWeight: "800" },
   heroArrow: { color: "#D5E96B", fontSize: 25 },
+  simulationBanner: { borderRadius: 18, borderWidth: 1, borderStyle: "dashed", padding: 14, gap: 6 },
+  simulationTitle: { fontSize: 14, fontWeight: "800" },
+  simulationText: { fontSize: 12, lineHeight: 17 },
+  simulationActions: { flexDirection: "row", flexWrap: "wrap", gap: 8, marginTop: 2 },
+  simulationButton: { borderRadius: 12, paddingHorizontal: 12, paddingVertical: 8 },
+  simulationButtonText: { color: "#FFFFFF", fontSize: 12, fontWeight: "800" },
   reminderWrapper: { marginTop: -2, gap: 10 },
   reminderSettingsRow: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: 10, paddingHorizontal: 4, marginTop: 8 },
   reminderSettingsText: { flex: 1, fontSize: 11, lineHeight: 16 },

@@ -19,7 +19,8 @@
         "buildType": "apk"
       },
       "env": {
-        "EXPO_PUBLIC_API_BASE_URL": "https://cautious-broccoli-q7x6wq46pxp434pj-3000.app.github.dev"
+        "EXPO_PUBLIC_API_BASE_URL": "https://cautious-broccoli-q7x6wq46pxp434pj-3000.app.github.dev",
+        "EXPO_PUBLIC_WEATHER_SIMULATION": "1"
       },
       "pnpm": "9.12.0",
       "node": "20.19.4"

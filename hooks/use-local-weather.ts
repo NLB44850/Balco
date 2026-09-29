@@ -11,6 +11,9 @@ import {
   type ReminderSettings,
   type WeatherSnapshot,
 } from "@/lib/reminders/reminder-engine";
+import { applyWeatherScenario, scenarioLabel } from "@/lib/weather/simulation";
+
+import { useWeatherSimulation } from "./use-weather-simulation";
 
 export type LocalWeather = {
   city: string;
@@ -308,20 +311,29 @@ export function useLocalWeather(options: UseLocalWeatherOptions = {}) {
     }
   }, [isPreferenceLoaded, loadForecast, preference, requestDeviceLocation]);
 
+  // Version de test : la météo réelle est remplacée par le scénario choisi dans le profil.
+  const { scenario } = useWeatherSimulation();
+  const realWeather = weather;
+  const simulated = useMemo<LocalWeather>(() => {
+    if (scenario === "none" || realWeather.isFallback) return realWeather;
+    const snapshot = applyWeatherScenario(realWeather.snapshot, scenario);
+    return { ...realWeather, snapshot, weatherCode: snapshot.current.weatherCode, temperature: snapshot.current.temperatureC, apparentTemperature: snapshot.current.apparentTemperatureC, summary: `Simulation : ${scenarioLabel(scenario).toLowerCase()}` };
+  }, [realWeather, scenario]);
+
   const reminderDecision = useMemo<ReminderDecision | null>(() => {
-    if (!options.plant || weather.isFallback) return null;
+    if (!options.plant || simulated.isFallback) return null;
     return decideReminder({
       plant: options.plant,
       history: options.history ?? [],
-      weather: weather.snapshot,
+      weather: simulated.snapshot,
       settings: options.reminderSettings,
       lastReminderAt: options.lastReminderAt,
     });
-  }, [options.history, options.lastReminderAt, options.plant, options.reminderSettings, weather.isFallback, weather.snapshot]);
+  }, [options.history, options.lastReminderAt, options.plant, options.reminderSettings, simulated.isFallback, simulated.snapshot]);
 
   return {
-    weather,
-    weatherSnapshot: weather.snapshot,
+    weather: simulated,
+    weatherSnapshot: simulated.snapshot,
     reminderDecision,
     isLoading,
     error,
