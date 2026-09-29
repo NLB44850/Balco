@@ -90,7 +90,7 @@ describe.skipIf(!TEST_DATABASE_URL)("AI scanner and assistant (fake Messages API
     db = (await (await import("../server/db")).getDb())!;
     const { syncGarden } = await import("../server/reminders");
     await syncGarden(userId, {
-      profile: { firstName: "Léa", balcony: { sunlight: "sunny", space: "balcony" } },
+      profile: { firstName: "Léa", balcony: { experience: "beginner", sunlight: "sunny", space: "balcony" } },
       location: { city: "Lyon", latitude: 45.76, longitude: 4.84, timezone: "Europe/Paris" },
       plants: [{ id: "basil-1", catalogId: "basil", nickname: "Basilic cuisine", addedAt: new Date().toISOString(), updatedAt: new Date().toISOString() }],
       events: [{ id: "e1", plantId: "basil-1", type: "watering", completedAt: new Date(Date.now() - 2 * 86_400_000).toISOString(), source: "daily_task" }],
@@ -105,7 +105,7 @@ describe.skipIf(!TEST_DATABASE_URL)("AI scanner and assistant (fake Messages API
 
   afterAll(async () => {
     const { inArray } = await import("drizzle-orm");
-    for (const table of [schema.aiRequests, schema.reminderPlants, schema.maintenanceEvents, schema.reminderProfiles]) {
+    for (const table of [schema.aiRequests, schema.reminderPlants, schema.maintenanceEvents, schema.reminderProfiles, schema.noraMemories]) {
       await db.delete(table).where(inArray(table.userId, [userId, plusUserId]));
     }
     claude.setAnthropicClient(null);
@@ -192,6 +192,48 @@ describe.skipIf(!TEST_DATABASE_URL)("AI scanner and assistant (fake Messages API
       expect(body.messages.at(-1)).toEqual({ role: "user", content: "message 14" });
       expect(body).toMatchObject({ cache_control: { type: "ephemeral" }, output_config: { effort: "low" }, fallbacks: "default" });
       expect(body.system[1].text).toContain("Léa");
+    });
+
+    it("remembers what the person tells, and forgets it on request or when contradicted", async () => {
+      const noraReply = (reply: object): Reply => ({ body: message([thinking, { type: "text", text: JSON.stringify({ remember: [], forget: [], ...reply }) }]) });
+      expect(await caller().ai.memory()).toEqual({ level: "beginner", preferences: [], notes: [] });
+
+      nextReplies = [noraReply({ answer: "Attention, la menthe plaît aux chats !", remember: ["A un chat qui grignote les feuilles."] })];
+      const first = await caller().ai.ask({ messages: [{ role: "user", content: "Mon chat mange mes plantes" }] });
+      expect(first.answer).toBe("Attention, la menthe plaît aux chats !");
+      expect(first.remembered).toMatchObject([{ text: "A un chat qui grignote les feuilles" }]);
+      expect(requests[0].body.output_config.format.schema.required).toEqual(["answer", "remember", "forget"]);
+      const noteId = first.remembered[0].id;
+
+      nextReplies = [noraReply({ answer: "D'accord, c'est noté.", forget: [noteId, "inconnu"] })];
+      const second = await caller().ai.ask({ messages: [{ role: "user", content: "En fait je n'ai plus de chat" }] });
+      const context = requests[1].body.system.map((block: { text: string }) => block.text).join("\n");
+      expect(context).toContain(`[${noteId}] A un chat qui grignote les feuilles`);
+      expect(context).toContain("débute");
+      expect(context).toContain("arrosage 1 fois, dernière fois il y a 2 j");
+      expect(second.forgotten).toMatchObject([{ id: noteId }]);
+      expect(second.remembered).toEqual([]);
+      expect((await caller().ai.memory()).notes).toEqual([]);
+    });
+
+    it("follows the experience from settings, saves preferences, and erases what Nora learned", async () => {
+      const { syncGarden } = await import("../server/reminders");
+      await syncGarden(userId, { profile: { balcony: { experience: "experienced", sunlight: "sunny", space: "balcony" } }, plants: [], events: [], deletedEventIds: [] });
+      const updated = await caller().ai.updateMemory({ preferences: ["pets", "short"] });
+      expect(updated).toMatchObject({ level: "experienced", preferences: ["pets", "short"] });
+      await expect(caller().ai.updateMemory({ preferences: ["not-a-preference"] })).rejects.toMatchObject({ code: "BAD_REQUEST" });
+
+      nextReplies = [{ body: message([{ type: "text", text: JSON.stringify({ answer: "Noté.", remember: ["Part en vacances en août", "Aime les tomates anciennes"], forget: [] }) }]) }];
+      await caller().ai.ask({ messages: [{ role: "user", content: "Je pars en août et j'adore les tomates anciennes" }] });
+      const context = requests[0].body.system[1].text as string;
+      expect(context).toContain("expérience");
+      expect(context).toContain("animal de compagnie");
+      const notes = (await caller().ai.memory()).notes;
+      expect(notes).toHaveLength(2);
+
+      expect((await caller().ai.forget({ noteId: notes[0].id })).notes.map((note) => note.text)).toEqual(["Aime les tomates anciennes"]);
+      const cleared = await caller().ai.forget({});
+      expect(cleared).toEqual({ level: "experienced", preferences: ["pets", "short"], notes: [] });
     });
 
     it("refuses a conversation that does not end with a question", async () => {

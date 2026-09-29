@@ -34,7 +34,8 @@ Tout se passe dans son GitHub Codespace (pas de Docker sur son PC).
 ## Vérifier avant de pousser (dans la session Claude)
 
 - `pnpm -s check`, `pnpm -s lint`, puis `TEST_DATABASE_URL=mysql://balco:balco@localhost:3306/balco_cal npx vitest run`
-  (MariaDB locale : `service mariadb start` si elle s'est arrêtée ; 271 tests à ce jour). Dans un conteneur
+  (MariaDB locale : `service mariadb start` si elle s'est arrêtée, `apt-get install -y mariadb-server` si elle manque,
+  puis `DATABASE_URL=… npx drizzle-kit migrate` ; 280 tests à ce jour). Dans un conteneur
   neuf : `apt-get install -y mariadb-server`, `service mariadb start`, créer la base `balco_cal` et l'utilisateur
   `balco`/`balco`, puis `pnpm -s build && DATABASE_URL=mysql://balco:balco@localhost:3306/balco_cal node dist/migrate.mjs`.
 - `npx expo export --platform android` pour s'assurer que le bundle Android se construit.
@@ -92,13 +93,19 @@ Fait (validé sur son téléphone) :
   `components/today/balcony-sky.tsx`) pour rester visibles par temps couvert, pluie ou la nuit.
   Catalogue : « Voir mon balcon » dans une barre sous la liste (pas en surimpression).
 
+Livré, à valider sur son téléphone :
+- **Priorité 3, Nora qui se souvient** : carte « Nora se souvient de toi » dans Nora (feuille
+  `components/nora/memory-sheet.tsx`) : niveau (= l'expérience de l'onboarding, la même que dans
+  Réglages), 9 préférences à cocher, faits retenus en discutant avec « Oublier » / « Tout oublier ».
+  Nora répond en JSON `{ answer, remember, forget }` (`server/ai/claude.ts`) ; ce qu'elle retient
+  s'affiche sous sa réponse. Faits et préférences : table `nora_memories` (`server/ai/memory-store.ts`,
+  logique pure `lib/ai/memory.ts`). Contexte : tout l'historique résumé plante par plante
+  (`summarizeHistory` dans `server/ai/context.ts`). Question prête « Fais le point sur mes plantes ».
+  Il n'existe pas encore de geste « engrais » : Nora ne peut pas dire « pas fertilisé depuis 3 semaines ».
+
 À faire, dans l'ordre :
-1. **Prochaine étape : priorité 3, Nora qui se souvient** (niveau, préférences, historique complet :
-   « Tu n'as pas fertilisé tes tomates depuis trois semaines »). Serveur : `server/ai/`, écran
-   `app/(tabs)/assistant.tsx`. Le niveau et les envies existent déjà (réponses de l'onboarding,
-   modifiables dans Réglages) ; aujourd'hui seuls les 8 derniers gestes sont transmis à Nora.
-2. Priorité 4, progression (bilan hebdomadaire, progression par plante).
-3. Priorité 5, mode vacances.
-4. À la publication : notifications serveur sur Android (Firebase/FCM) ; synchroniser les reports
+1. Priorité 4, progression (bilan hebdomadaire, progression par plante).
+2. Priorité 5, mode vacances.
+3. À la publication : notifications serveur sur Android (Firebase/FCM) ; synchroniser les reports
    (« Dans 3 h ») avec le serveur ; envoyer les photos des plantes sur le serveur (stockage d'images)
    pour les retrouver sur un autre téléphone.

@@ -11,6 +11,8 @@ export function quickQuestions(plants: ResolvedPlant[], now = new Date(), max = 
   const month = (now.getMonth() + 1) as Month;
   const season = seasonName(now);
   const questions: string[] = [];
+  // Nora connaît tout l'historique : elle dit ce qui a été fait, et ce qui a pu être oublié.
+  if (plants.length > 0) questions.push("Fais le point sur mes plantes");
   const harvest = plants.find(({ entry }) => entry.harvestMonths.includes(month));
   if (harvest) questions.push(`Comment bien récolter ${harvest.entry.label} ?`);
   const frail = plants.find(({ entry }) => entry.care.frostSensitive);

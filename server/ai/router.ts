@@ -4,7 +4,9 @@ import { z } from "zod";
 
 import { protectedProcedure, router } from "../_core/trpc";
 import { AiBadResponseError, AiRefusedError, AiUnavailableError, aiAvailable, askNora, diagnosePlant, type ChatTurn, type ImageMediaType } from "./claude";
-import { describeGarden, loadGardenFacts } from "./context";
+import { NORA_PREFERENCES } from "../../lib/ai/memory";
+import { describeGarden, loadGardenFacts, loadMemory } from "./context";
+import { forgetNotes, learnFromAnswer, updatePreferences } from "./memory-store";
 import { planOf, QuotaExceededError, quotaStatus, reserve, settle, type AiKind } from "./quotas";
 
 /** Limite de l'API pour une image ; l'app envoie des photos réduites bien plus légères. */
@@ -89,6 +91,23 @@ export const aiRouter = router({
     const history = trimHistory(input.messages);
     if (history.length === 0 || history[history.length - 1].role !== "user") throw new TRPCError({ code: "BAD_REQUEST", message: "La conversation doit se terminer par une question." });
     const garden = describeGarden(await loadGardenFacts(ctx.user.id));
-    return withQuota(ctx.user, "chat", () => askNora(history, garden));
+    const { remember, forget, ...result } = await withQuota(ctx.user, "chat", () => askNora(history, garden));
+    // La réponse compte plus que la mémoire : un souci d'enregistrement ne la fait pas perdre.
+    const learned = await learnFromAnswer(ctx.user.id, remember, forget).catch((error: unknown) => {
+      console.warn("[ai] memory not saved", error instanceof Error ? error.message : error);
+      return { added: [], forgotten: [] };
+    });
+    return { ...result, remembered: learned.added, forgotten: learned.forgotten };
   }),
+
+  /** Ce que Nora sait de la personne : affiché, modifiable et effaçable dans l'écran Nora. */
+  memory: protectedProcedure.query(({ ctx }) => loadMemory(ctx.user.id)),
+
+  updateMemory: protectedProcedure
+    .input(z.object({ preferences: z.array(z.enum(NORA_PREFERENCES.map((preference) => preference.id) as [string, ...string[]])).max(NORA_PREFERENCES.length) }))
+    .mutation(({ ctx, input }) => updatePreferences(ctx.user.id, input.preferences)),
+
+  forget: protectedProcedure
+    .input(z.object({ noteId: z.string().min(1).max(32).optional() }))
+    .mutation(({ ctx, input }) => forgetNotes(ctx.user.id, input.noteId)),
 });

@@ -163,28 +163,59 @@ Privilégie les gestes simples et les solutions naturelles. Ne recommande aucun 
 
 Si la question n'a rien à voir avec les plantes, le jardinage ou la nature en ville, réponds en une phrase et ramène gentiment la conversation vers le balcon.
 
-Écris du texte simple : pas de Markdown (ni titres, ni gras), l'application ne l'affiche pas.`;
+Écris du texte simple : pas de Markdown (ni titres, ni gras), l'application ne l'affiche pas.
+
+Tu connais la personne. Plus bas figurent son niveau, ses préférences, ce que tu as retenu de vos échanges et tout l'historique de ses gestes dans Balco. Adapte la longueur et le vocabulaire à son niveau et respecte ses préférences sans les rappeler à chaque fois. Sers-toi de l'historique pour des remarques précises quand elles aident (« Ton basilic n'a pas été taillé depuis 25 jours »), sans faire de reproche ni tout énumérer. Un geste « jamais noté » a peut-être été fait sans être coché : présente-le comme une question, pas comme un oubli.
+
+Ta réponse est un objet JSON :
+- answer : ta réponse à la personne.
+- remember : ce que la personne vient de t'apprendre sur elle, sa situation ou ses goûts et qui restera utile plus tard (« A un chat qui mange les feuilles », « Part en vacances en août », « N'aime pas la coriandre »). Une phrase courte à la troisième personne par fait, au plus 2, rien de ce qui est déjà retenu ni de ce que l'application sait déjà (plantes, ville, gestes). Liste vide le plus souvent.
+- forget : identifiants (entre crochets) des faits retenus que la personne vient de contredire ou demande d'oublier. Liste vide sinon.`;
 
 export type ChatTurn = { role: "user" | "assistant"; content: string };
 
-export async function askNora(history: ChatTurn[], gardenDescription: string): Promise<{ answer: string; usage: Usage }> {
+const CHAT_JSON_SCHEMA = {
+  type: "object",
+  additionalProperties: false,
+  required: ["answer", "remember", "forget"],
+  properties: {
+    answer: { type: "string" },
+    remember: { type: "array", items: { type: "string" }, description: "Au plus 2 faits nouveaux sur la personne" },
+    forget: { type: "array", items: { type: "string" }, description: "Identifiants des faits retenus devenus faux" },
+  },
+} as const;
+
+const chatSchema = z.object({ answer: z.string(), remember: z.array(z.string()), forget: z.array(z.string()) });
+
+export type NoraReply = { answer: string; remember: string[]; forget: string[] };
+
+export async function askNora(history: ChatTurn[], gardenDescription: string): Promise<NoraReply & { usage: Usage }> {
   const message = await getClient().beta.messages.create({
     model: ENV.aiModel,
     max_tokens: MAX_TOKENS,
     betas: [FALLBACK_BETA],
     fallbacks: "default",
     thinking: { type: "adaptive" },
-    output_config: { effort: "low" },
+    output_config: { effort: "low", format: { type: "json_schema", schema: CHAT_JSON_SCHEMA } },
     // Met en cache tout le préfixe (instructions + conversation) : les questions suivantes coûtent moins.
     cache_control: { type: "ephemeral" },
     system: [
       { type: "text", text: CHAT_SYSTEM },
-      { type: "text", text: `Ce que l'on sait du balcon de la personne :\n${gardenDescription}` },
+      { type: "text", text: `Ce que l'on sait de la personne et de son balcon :\n${gardenDescription}` },
     ],
     messages: history.map((turn) => ({ role: turn.role, content: turn.content })),
   });
   const usage = usageOf(message);
-  const answer = textOf(message);
-  if (!answer) throw new AiBadResponseError("empty answer");
-  return { answer, usage };
+  const text = textOf(message);
+  let reply: NoraReply;
+  try {
+    const parsed = chatSchema.parse(JSON.parse(text));
+    reply = { answer: parsed.answer.trim(), remember: parsed.remember.slice(0, 2), forget: parsed.forget };
+  } catch {
+    // Un texte simple reste une réponse valable : seule la mémoire est perdue.
+    if (!text || text.startsWith("{")) throw new AiBadResponseError("invalid answer");
+    reply = { answer: text, remember: [], forget: [] };
+  }
+  if (!reply.answer) throw new AiBadResponseError("empty answer");
+  return { ...reply, usage };
 }

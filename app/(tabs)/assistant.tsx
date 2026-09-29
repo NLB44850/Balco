@@ -6,16 +6,21 @@ import { Text, TextInput } from "@/components/ui/typography";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { LightScreen } from "@/components/light-screen";
+import { MemorySheet, memorySummary } from "@/components/nora/memory-sheet";
 import { ScreenHeader } from "@/components/screen-header";
 import { glass } from "@/components/ui/glass";
 import { useColors } from "@/hooks/use-colors";
+import { isNoraLevel, type NoraMemoryView } from "@/lib/ai/memory";
 import { quickQuestions } from "@/lib/ai/quick-questions";
 import { quotaLabel } from "@/lib/ai/quota-text";
 import { useGarden } from "@/lib/garden/garden-context";
 import { trpc } from "@/lib/trpc";
 
-/** « notice » : message de l'app (erreur, quota), affiché mais jamais envoyé à Nora. */
-type Message = { id: string; from: "bot" | "user" | "notice"; text: string; time: string };
+/**
+ * « notice » : message de l'app (erreur, quota) ; « memory » : ce que Nora vient de retenir ou
+ * d'oublier. Affichés, mais jamais renvoyés à Nora.
+ */
+type Message = { id: string; from: "bot" | "user" | "notice" | "memory"; text: string; time: string; noteId?: string };
 
 const HISTORY_STORAGE_KEY = "balco.assistant.history.v1";
 const MAX_STORED_MESSAGES = 40;
@@ -28,12 +33,19 @@ export default function AssistantScreen() {
   const colors = useColors();
   const router = useRouter();
   const insets = useSafeAreaInsets();
-  const { account, profile, resolvedPlants } = useGarden();
+  const { account, profile, resolvedPlants, onboarding, updateOnboarding } = useGarden();
   // Des questions prêtes, tirées de tes plantes et de la saison : rien à écrire.
   const questions = useMemo(() => quickQuestions(resolvedPlants), [resolvedPlants]);
   const utils = trpc.useUtils();
   const status = trpc.ai.status.useQuery(undefined, { enabled: account.signedIn, retry: false });
+  const memory = trpc.ai.memory.useQuery(undefined, { enabled: account.signedIn, retry: false });
   const ask = trpc.ai.ask.useMutation({ onSuccess: () => void utils.ai.status.invalidate() });
+  const setMemory = (view: NoraMemoryView) => utils.ai.memory.setData(undefined, view);
+  const updateMemory = trpc.ai.updateMemory.useMutation({ onSuccess: setMemory, onError: () => void utils.ai.memory.invalidate() });
+  const forget = trpc.ai.forget.useMutation({ onSuccess: setMemory, onError: () => void utils.ai.memory.invalidate() });
+  const [memoryOpen, setMemoryOpen] = useState(false);
+  // Le niveau est l'expérience choisie à l'accueil (modifiable aussi dans Réglages) : une seule source.
+  const memoryView = memory.data ? { ...memory.data, level: isNoraLevel(onboarding?.experience) ? onboarding.experience : memory.data.level } : undefined;
   const [messages, setMessages] = useState<Message[]>([]);
   const [loaded, setLoaded] = useState(false);
   const [draft, setDraft] = useState("");
@@ -75,12 +87,33 @@ export default function AssistantScreen() {
     const next = [...messages, userMessage];
     setMessages(next);
     setDraft("");
-    // Seuls les vrais échanges partent (pas les notices), en commençant par une question.
-    const history = next.filter((message) => message.from !== "notice").map((message) => ({ role: message.from === "user" ? ("user" as const) : ("assistant" as const), content: message.text.slice(0, 2000) }));
+    // Seuls les vrais échanges partent (ni notices ni souvenirs), en commençant par une question.
+    const history = next.filter((message) => message.from === "user" || message.from === "bot").map((message) => ({ role: message.from === "user" ? ("user" as const) : ("assistant" as const), content: message.text.slice(0, 2000) }));
     ask.mutate({ messages: history }, {
-      onSuccess: (result) => setMessages((current) => [...current, { id: `${Date.now()}-bot`, from: "bot", text: result.answer, time: clock() }]),
+      onSuccess: (result) => {
+        const now = Date.now();
+        setMessages((current) => [
+          ...current,
+          { id: `${now}-bot`, from: "bot", text: result.answer, time: clock() },
+          ...result.remembered.map((note): Message => ({ id: `${now}-memory-${note.id}`, from: "memory", text: `Nora a retenu : ${note.text}`, time: "", noteId: note.id })),
+          ...result.forgotten.map((note): Message => ({ id: `${now}-forgot-${note.id}`, from: "memory", text: `Nora a oublié : ${note.text}`, time: "" })),
+        ]);
+        if (result.remembered.length > 0 || result.forgotten.length > 0) void utils.ai.memory.invalidate();
+      },
       onError: (error) => setMessages((current) => [...current, { id: `${Date.now()}-notice`, from: "notice", text: error.message, time: clock() }]),
     });
+  };
+
+  const changePreferences = (preferences: string[]) => {
+    // Retour immédiat : l'écran change tout de suite, le serveur suit.
+    if (memory.data) setMemory({ ...memory.data, preferences });
+    updateMemory.mutate({ preferences });
+  };
+
+  const forgetNote = (noteId?: string) => {
+    if (memory.data) setMemory({ ...memory.data, notes: noteId ? memory.data.notes.filter((note) => note.id !== noteId) : [] });
+    forget.mutate({ noteId });
+    if (noteId) setMessages((current) => current.map((message) => (message.noteId === noteId ? { ...message, text: message.text.replace("Nora a retenu", "Oublié"), noteId: undefined } : message)));
   };
 
   const clearConversation = () => {
@@ -104,6 +137,16 @@ export default function AssistantScreen() {
         </View>
         <Text style={[styles.observeArrow, { color: colors.muted }]}>›</Text>
       </Pressable>
+      {account.signedIn && !unavailable && (
+        <Pressable accessibilityRole="button" onPress={() => setMemoryOpen(true)} style={({ pressed }) => [glass.card, styles.observe, pressed && styles.pressed]}>
+          <View style={[styles.observeIcon, { backgroundColor: colors.leaf }]}><Text style={styles.observeEmoji}>💭</Text></View>
+          <View style={styles.flex}>
+            <Text style={[styles.observeTitle, { color: colors.foreground }]}>Nora se souvient de toi</Text>
+            <Text style={[styles.observeText, { color: colors.muted }]}>{memorySummary(memoryView)}</Text>
+          </View>
+          <Text style={[styles.observeArrow, { color: colors.muted }]}>›</Text>
+        </Pressable>
+      )}
       <Text style={[styles.quickLabel, { color: colors.muted }]}>{resolvedPlants.length > 0 ? "Pour ton balcon, en ce moment" : "Pour commencer"}</Text>
       <FlatList
         data={questions}
@@ -138,7 +181,16 @@ export default function AssistantScreen() {
           ListFooterComponent={footer}
           showsVerticalScrollIndicator={false}
           contentContainerStyle={[styles.content, { paddingTop: insets.top + 14 }]}
-          renderItem={({ item }) => item.from === "notice" ? (
+          renderItem={({ item }) => item.from === "memory" ? (
+            <View style={[glass.soft, styles.memoryRow]}>
+              <Text style={[styles.memoryText, { color: colors.muted }]}>💭 {item.text}</Text>
+              {item.noteId && (
+                <Pressable accessibilityRole="button" hitSlop={8} onPress={() => forgetNote(item.noteId)}>
+                  <Text style={[styles.memoryForget, { color: colors.primary }]}>Oublier</Text>
+                </Pressable>
+              )}
+            </View>
+          ) : item.from === "notice" ? (
             <Text accessibilityRole="alert" style={[styles.notice, { color: colors.warning, backgroundColor: "rgba(255,255,255,0.8)" }]}>{item.text}</Text>
           ) : (
             <View style={[styles.messageRow, item.from === "user" && styles.messageRowUser]}>
@@ -176,6 +228,7 @@ export default function AssistantScreen() {
           </Pressable>
         )}
       </KeyboardAvoidingView>
+      <MemorySheet visible={memoryOpen} onClose={() => setMemoryOpen(false)} memory={memoryView} onLevel={(level) => void updateOnboarding({ experience: level })} onPreferences={changePreferences} onForget={forgetNote} />
     </LightScreen>
   );
 }
@@ -184,7 +237,10 @@ const styles = StyleSheet.create({
   flex: { flex: 1 },
   header: { marginBottom: 14 },
   clearButton: { paddingHorizontal: 6, paddingVertical: 8 },
-  observe: { flexDirection: "row", alignItems: "center", gap: 12, padding: 14, marginBottom: 18 },
+  observe: { flexDirection: "row", alignItems: "center", gap: 12, padding: 14, marginBottom: 12 },
+  memoryRow: { flexDirection: "row", alignItems: "center", gap: 10, paddingHorizontal: 12, paddingVertical: 9, alignSelf: "flex-start", maxWidth: "92%", marginLeft: 32 },
+  memoryText: { flexShrink: 1, fontSize: 13, lineHeight: 18, fontWeight: "600" },
+  memoryForget: { fontSize: 13, fontWeight: "700" },
   observeIcon: { width: 44, height: 44, borderRadius: 22, alignItems: "center", justifyContent: "center" },
   observeEmoji: { fontSize: 20 },
   observeTitle: { fontSize: 16, fontWeight: "700" },
@@ -196,7 +252,7 @@ const styles = StyleSheet.create({
   quota: { fontSize: 12, fontWeight: "600", textAlign: "center", marginBottom: 6, marginHorizontal: 20 },
   loginBar: { borderRadius: 16, paddingVertical: 16, alignItems: "center", marginBottom: 12, marginHorizontal: 20 },
   loginBarText: { color: "#FFFFFF", fontSize: 15, fontWeight: "700" },
-  quickLabel: { fontSize: 13, fontWeight: "600", marginBottom: 2 },
+  quickLabel: { fontSize: 13, fontWeight: "600", marginBottom: 2, marginTop: 6 },
   quickList: { gap: 8, paddingBottom: 8 },
   quickChip: { paddingHorizontal: 13, paddingVertical: 10, maxWidth: 230 },
   quickChipText: { fontSize: 13, lineHeight: 18, fontWeight: "600" },

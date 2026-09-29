@@ -140,6 +140,22 @@ export const devicePushTokens = mysqlTable("device_push_tokens", {
   createdAt: timestamp("createdAt").defaultNow().notNull(),
 }, (table) => ({ tokenUnique: uniqueIndex("device_push_tokens_token_unique").on(table.token), userIndex: index("device_push_tokens_user_index").on(table.userId) }));
 
+/**
+ * Ce que Nora retient de la personne : ses préférences (choisies dans l'app) et les faits appris en
+ * discutant (« j'ai un chat », « je pars en août »). Le niveau est l'expérience de l'accueil
+ * (balconyJson). Une ligne par compte, modifiable et effaçable depuis l'écran Nora.
+ */
+export const noraMemories = mysqlTable("nora_memories", {
+  id: int("id").autoincrement().primaryKey(),
+  userId: int("userId").notNull(),
+  /** Identifiants de préférences (lib/ai/memory.ts), en JSON. */
+  preferencesJson: text("preferencesJson"),
+  /** Faits retenus : [{ id, text, createdAt }], en JSON. */
+  notesJson: text("notesJson"),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+}, (table) => ({ userUnique: uniqueIndex("nora_memories_user_unique").on(table.userId) }));
+
 export type User = typeof users.$inferSelect;
 export type InsertUser = typeof users.$inferInsert;
 export type ReminderProfile = typeof reminderProfiles.$inferSelect;
@@ -149,3 +165,4 @@ export type ReminderDecisionRow = typeof reminderDecisions.$inferSelect;
 export type DevicePushToken = typeof devicePushTokens.$inferSelect;
 export type AuthIdentity = typeof authIdentities.$inferSelect;
 export type AiRequest = typeof aiRequests.$inferSelect;
+export type NoraMemory = typeof noraMemories.$inferSelect;

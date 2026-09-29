@@ -50,6 +50,13 @@
       "when": 1790525319650,
       "tag": "0006_plant_variety",
       "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "5",
+      "when": 1790714438503,
+      "tag": "0007_nora_memory",
+      "breakpoints": true
     }
   ]
 }

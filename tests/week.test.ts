@@ -58,7 +58,8 @@ describe("questions prêtes pour Nora", () => {
   it("part de tes plantes et de la saison", () => {
     const questions = quickQuestions(plants, now).map((question) => question.replace("\u00A0", " "));
     expect(questions).toHaveLength(4);
-    expect(questions[0]).toBe("Comment bien récolter le basilic ?");
+    expect(questions[0]).toBe("Fais le point sur mes plantes");
+    expect(questions[1]).toBe("Comment bien récolter le basilic ?");
     expect(questions).toContain("Comment protéger le basilic du froid ?");
   });
 

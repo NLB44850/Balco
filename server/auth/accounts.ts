@@ -4,6 +4,7 @@ import { createRemoteJWKSet, jwtVerify, type JWTPayload } from "jose";
 
 import {
   aiRequests,
+  noraMemories,
   authIdentities,
   devicePushTokens,
   loginCodes,
@@ -186,7 +187,7 @@ export function availableProviders() {
 export async function deleteAccount(userId: number) {
   const db = await requireDb();
   const identities = await db.select({ subject: authIdentities.subject }).from(authIdentities).where(and(eq(authIdentities.userId, userId), eq(authIdentities.provider, "email")));
-  for (const table of [reminderDecisions, maintenanceEvents, reminderPlants, reminderProfiles, devicePushTokens, aiRequests, authIdentities]) {
+  for (const table of [reminderDecisions, maintenanceEvents, reminderPlants, reminderProfiles, devicePushTokens, aiRequests, noraMemories, authIdentities]) {
     await db.delete(table).where(eq(table.userId, userId));
   }
   if (identities.length > 0) await db.delete(loginCodes).where(inArray(loginCodes.email, identities.map((identity) => identity.subject)));
