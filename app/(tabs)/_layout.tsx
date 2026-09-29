@@ -21,14 +21,14 @@ export default function TabLayout() {
     <Tabs
       screenOptions={{
         headerShown: false,
-        tabBarActiveTintColor: colors.sun,
-        tabBarInactiveTintColor: "#AFC0B2",
-        tabBarLabelStyle: { fontSize: 9, fontWeight: "800", marginBottom: 2, letterSpacing: 0.15 },
-        tabBarStyle: { height: 70 + bottomPadding, paddingTop: 8, paddingBottom: bottomPadding, backgroundColor: colors.foreground, borderTopColor: "#2A4A3B", borderTopWidth: 1, elevation: 0, shadowOpacity: 0 },
+        tabBarActiveTintColor: colors.foreground,
+        tabBarInactiveTintColor: colors.muted,
+        tabBarLabelStyle: { fontSize: 10, fontWeight: "600", marginBottom: 2 },
+        tabBarStyle: { height: 64 + bottomPadding, paddingTop: 6, paddingBottom: bottomPadding, backgroundColor: colors.background, borderTopColor: colors.border, borderTopWidth: 1, elevation: 0, shadowOpacity: 0 },
         tabBarButton: HapticTab,
       }}
     >
-      <Tabs.Screen name="index" options={{ title: "Jardin", tabBarIcon: ({ color }) => <IconSymbol size={22} name="leaf.fill" color={color} /> }} />
+      <Tabs.Screen name="index" options={{ title: "Aujourd’hui", tabBarIcon: ({ color }) => <IconSymbol size={22} name="leaf.fill" color={color} /> }} />
       <Tabs.Screen name="calendar" options={{ title: "Calendrier", tabBarIcon: ({ color }) => <IconSymbol size={22} name="calendar.badge.clock" color={color} /> }} />
       <Tabs.Screen name="assistant" options={{ title: "Nora", tabBarIcon: ({ color }) => <IconSymbol size={22} name="message.fill" color={color} /> }} />
       <Tabs.Screen name="scanner" options={{ title: "Observer", tabBarIcon: ({ color }) => <IconSymbol size={22} name="camera.viewfinder" color={color} /> }} />

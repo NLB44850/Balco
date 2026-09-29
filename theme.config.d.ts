@@ -12,6 +12,8 @@ export const themeColors: {
   cream: { light: string; dark: string };
   leaf: { light: string; dark: string };
   sun: { light: string; dark: string };
+  frost: { light: string; dark: string };
+  frostSoft: { light: string; dark: string };
 };
 
 declare const themeConfig: {

@@ -29,7 +29,6 @@ describe("Balco MVP content", () => {
     expect(readProjectFile("app/welcome.tsx")).toContain("On commence par");
     expect(readProjectFile("app/welcome.tsx")).toContain("BalcoIllustration");
     expect(readProjectFile("components/motion.tsx")).toContain("FadeIn");
-    expect(readProjectFile("app/(tabs)/index.tsx")).toContain("LinearGradient");
     expect(readProjectFile("package.json")).toContain("expo-linear-gradient");
   });
 
@@ -51,18 +50,16 @@ describe("Balco MVP content", () => {
 
     expect(home).toContain("useGarden");
     expect(home).toContain("recommendPlants");
-    expect(home).toContain("Mes idées adaptées");
-    expect(home).toContain("Selon tes réponses d'arrivée");
-    expect(home).toContain("replaceRecommendation");
-    expect(home).toContain("↻ Changer");
-    expect(home).toContain("+ Ajouter");
+    expect(home).toContain("Voir les 73 plantes");
     expect(home).toContain("buildDailySession");
-    expect(home).toContain("toggleSessionTask");
-    expect(home).toContain("Historique d’entretien");
-    expect(home).toContain("ContextualReminderCard");
-    expect(home).toContain("visibleReminder");
-    expect(home).toContain("completeReminder");
-    expect(home).toContain("snoozeReminders");
+    expect(home).toContain("buildTodayList");
+    expect(home).toContain("balconyStatus");
+    expect(home).toContain("BottomSheet");
+    expect(home).toContain("UndoToast");
+    expect(home).toContain("Tes plantes");
+    expect(home).toContain("eventForReminder");
+    expect(home).toContain("addSnooze");
+    expect(readProjectFile("components/today/undo-toast.tsx")).toContain("Annuler");
     expect(readProjectFile("lib/garden/garden-context.tsx")).toContain("balco.garden.plants.v1");
   });
 
@@ -76,7 +73,6 @@ describe("Balco MVP content", () => {
       expect(source).not.toContain("SAISON 01");
       expect(source).not.toContain("22 SEPTEMBRE");
     }
-    expect(home).toContain("formatLongDate");
     expect(profile).toContain("computeBadges");
     expect(profile).not.toMatch(/>12<\/Text>/);
   });

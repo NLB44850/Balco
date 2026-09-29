@@ -264,3 +264,10 @@ L'ordre suit la priorité fixée par le porteur du projet. Chaque étape est val
 4. Premiers défis communautaires.
 
 **En parallèle, pour la rentabilité** : achats intégrés Balco+ quand l'usage est validé (voir le point 10).
+
+**Refonte visuelle (septembre 2026)** : écrans plus sobres, sans rien retirer. Trois règles : moins d'efforts, clarté visuelle, retour immédiat.
+
+1. ✅ Accueil « Aujourd’hui » : une seule liste à cocher (alertes météo, gestes du jour, gestes de saison), l'état du balcon en une ligne, le détail dans une feuille qui monte du bas, un message « Annuler » après chaque geste. Nouvelle base : fond blanc, un seul vert de marque, barre du bas claire.
+2. ⬜ 4 onglets (Observer rejoint Nora, « Moi » passe par l'avatar) et nouvelle base sur les autres écrans.
+3. ⬜ Mon balcon et fiche plante avec photos.
+4. ⬜ Saisons, Nora et Moi.
