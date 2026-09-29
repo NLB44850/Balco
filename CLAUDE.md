@@ -74,8 +74,6 @@ Fait (validé sur son téléphone) :
   pastilles, prochain geste en un bouton, tes photos, historique). Photos gardées **sur l'appareil
   seulement** (`lib/garden/photos*.ts`, `photo-files.ts` / `photo-files.web.ts`) ; sans photo, l'emoji
   de la plante sur fond vert pâle (`components/plant-picture.tsx`).
-
-Livré, à valider sur son téléphone :
 - **Refonte étape 4** : écran « Ma semaine » (`app/week.tsx`, logique `lib/garden/week.ts` : 7 jours,
   gestes, récoltes, photos, plante la plus soignée), ouvert par « Voir ma semaine » sur « Tout est
   fait » (Aujourd'hui, Saisons) et depuis Moi. Saisons en liste à cocher avec feuille du bas et
@@ -92,9 +90,13 @@ Livré, à valider sur son téléphone :
   « Annuler », fiche du catalogue dans la feuille du bas, bouton « Voir mon balcon » fixe.
 - Filigrane du balcon : les ombres gardent une force minimale (`SHADOW_FLOOR` dans
   `components/today/balcony-sky.tsx`) pour rester visibles par temps couvert, pluie ou la nuit.
+  Catalogue : « Voir mon balcon » dans une barre sous la liste (pas en surimpression).
 
 À faire, dans l'ordre :
-1. Priorité 3, Nora qui se souvient (niveau, préférences, historique complet).
+1. **Prochaine étape : priorité 3, Nora qui se souvient** (niveau, préférences, historique complet :
+   « Tu n'as pas fertilisé tes tomates depuis trois semaines »). Serveur : `server/ai/`, écran
+   `app/(tabs)/assistant.tsx`. Le niveau et les envies existent déjà (réponses de l'onboarding,
+   modifiables dans Réglages) ; aujourd'hui seuls les 8 derniers gestes sont transmis à Nora.
 2. Priorité 4, progression (bilan hebdomadaire, progression par plante).
 3. Priorité 5, mode vacances.
 4. À la publication : notifications serveur sur Android (Firebase/FCM) ; synchroniser les reports
