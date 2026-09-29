@@ -126,6 +126,12 @@ docker compose down
 docker compose -f docker-compose.yml -f docker-compose.codespaces.yml up -d --build
 ```
 
+Pour la suite, une seule commande fait tout (nettoyage du cache Docker, qui s'abîme souvent quand le Codespace s'arrête, démarrage, attente du serveur, port public) :
+
+```bash
+bash scripts/codespace-demarrer.sh
+```
+
 Ouvre ensuite le port 3000 depuis l'onglet « Ports ». Les codes de connexion s'affichent avec `docker compose logs app | grep "login code"`.
 
 ### Version de test Android (APK, sans Play Store)
