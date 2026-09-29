@@ -37,6 +37,8 @@ import { groupReminders, selectGroups, type ReminderGroup } from "@/lib/reminder
 import { useWeatherSimulation } from "@/hooks/use-weather-simulation";
 import { notificationsUnavailableReason } from "@/lib/notifications/module";
 import { scenarioLabel } from "@/lib/weather/simulation";
+import { seasonalToDo } from "@/lib/plants/calendar";
+import { climateZoneFor } from "@/lib/plants/climate";
 import {
   cancelBalcoReminderNotifications,
   defaultLocalReminderSettings,
@@ -51,7 +53,7 @@ import {
   type LocalReminderSettings,
 } from "@/lib/reminders/local-notifications";
 
-const TASK_TYPE_LABELS: Record<string, string> = { watering: "ARROSAGE", observation: "OBSERVATION", pruning: "ENTRETIEN", protection: "PROTECTION", harvest: "RÉCOLTE" };
+const TASK_TYPE_LABELS: Record<string, string> = { watering: "ARROSAGE", observation: "OBSERVATION", pruning: "ENTRETIEN", protection: "PROTECTION", harvest: "RÉCOLTE", repotting: "REMPOTAGE" };
 
 export default function HomeScreen() {
   const colors = useColors();
@@ -102,6 +104,11 @@ export default function HomeScreen() {
   }, [reportLocation, weather.city, weather.isFallback, weather.latitude, weather.longitude]);
 
   const session = useMemo(() => buildDailySession(resolvedPlants, events, now), [events, now, resolvedPlants]);
+  // Gestes de saison du calendrier (semer, planter, rempoter) pas encore notés ce mois-ci.
+  const seasonal = useMemo(() => {
+    const climate = weather.isFallback ? null : climateZoneFor(weather.latitude, weather.longitude, weatherSnapshot.elevationM);
+    return seasonalToDo(resolvedPlants.map((resolved) => ({ id: resolved.plant.id, entry: resolved.entry, displayName: plantDisplayName(resolved) })), events, now, { climate });
+  }, [events, now, resolvedPlants, weather.isFallback, weather.latitude, weather.longitude, weatherSnapshot.elevationM]);
   const doneCount = session.filter((item) => item.done).length;
   const stats = useMemo(() => computeStats(resolvedPlants, events, now), [events, now, resolvedPlants]);
   const progress = useMemo(() => computeProgress(stats, computeBadges(stats)), [stats]);
@@ -255,6 +262,17 @@ export default function HomeScreen() {
           );
         })}
 
+        {seasonal.length > 0 && (
+          <FadeIn delay={220}>
+            <Pressable accessibilityRole="button" onPress={() => router.push("/(tabs)/calendar")} style={({ pressed }) => [styles.seasonalCard, { backgroundColor: colors.leaf }, pressed && styles.pressed]}>
+              <Text style={[styles.seasonalOverline, { color: colors.primary }]}>CE MOIS-CI AU CALENDRIER</Text>
+              {seasonal.slice(0, 3).map((activity) => <Text key={activity.key} style={[styles.seasonalItem, { color: colors.foreground }]}>{activity.entry.emoji}  {activity.title}</Text>)}
+              {seasonal.length > 3 && <Text style={[styles.seasonalItem, { color: colors.muted }]}>et {seasonal.length - 3} autre{seasonal.length - 3 > 1 ? "s" : ""}…</Text>}
+              <Text style={[styles.seasonalLink, { color: colors.primary }]}>Voir le calendrier  →</Text>
+            </Pressable>
+          </FadeIn>
+        )}
+
         <FadeIn delay={230}>
           <View style={[styles.impactCard, { backgroundColor: colors.foreground }]}><View style={styles.impactTop}><View><Text style={styles.impactLabel}>NIVEAU {progress.level} · {progress.levelTitle.toUpperCase()}</Text><Text style={styles.impactTitle}>Ton balcon respire avec toi.</Text></View><Text style={[styles.impactScore, { color: colors.sun }]}>{progress.pointsInLevel}<Text style={styles.impactOutOf}>/100</Text></Text></View><View style={styles.progressTrack}><View style={[styles.progressFill, { width: `${Math.max(progress.pointsInLevel, 2)}%`, backgroundColor: colors.sun }]} /></View><Text style={styles.impactCaption}>{`Plus que ${progress.pointsToNext} points avant le niveau ${progress.level + 1} · +${POINTS_PER_GESTURE} par geste validé`}</Text></View>
         </FadeIn>
@@ -304,6 +322,10 @@ const styles = StyleSheet.create({
   heroBottom: { flexDirection: "row", justifyContent: "space-between", alignItems: "flex-end", marginTop: 19 },
   heroDate: { color: "rgba(255,255,255,0.45)", fontSize: 9, letterSpacing: 1, fontWeight: "800" },
   heroArrow: { color: "#D5E96B", fontSize: 25 },
+  seasonalCard: { borderRadius: 20, padding: 15, gap: 6 },
+  seasonalOverline: { fontSize: 9, letterSpacing: 1.05, fontWeight: "800" },
+  seasonalItem: { fontSize: 14, fontWeight: "700" },
+  seasonalLink: { fontSize: 12, fontWeight: "800", marginTop: 2 },
   simulationBanner: { borderRadius: 18, borderWidth: 1, borderStyle: "dashed", padding: 14, gap: 6 },
   simulationTitle: { fontSize: 14, fontWeight: "800" },
   simulationText: { fontSize: 12, lineHeight: 17 },

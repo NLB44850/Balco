@@ -9,7 +9,7 @@
  *   4. urgence depuis le dernier entretien (arrosage, chaleur)
  */
 
-export type MaintenanceTaskType = "watering" | "observation" | "pruning" | "protection" | "harvest";
+export type MaintenanceTaskType = "watering" | "observation" | "pruning" | "protection" | "harvest" | "repotting";
 
 export type MaintenanceEvent = {
   id: string;
@@ -41,6 +41,8 @@ export type WeatherSnapshot = {
   city: string;
   latitude: number;
   longitude: number;
+  /** Altitude du point météo (Open-Meteo), pour reconnaître un climat de montagne. */
+  elevationM?: number;
   current: {
     temperatureC: number;
     apparentTemperatureC: number;

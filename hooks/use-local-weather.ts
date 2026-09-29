@@ -50,6 +50,7 @@ type UseLocalWeatherOptions = {
 };
 
 type OpenMeteoPayload = {
+  elevation?: number;
   current?: {
     time?: string;
     temperature_2m?: number;
@@ -114,6 +115,7 @@ function buildSnapshot(payload: OpenMeteoPayload, city: string, latitude: number
     city,
     latitude,
     longitude,
+    elevationM: typeof payload.elevation === "number" ? payload.elevation : undefined,
     current: {
       temperatureC: Number(current.temperature_2m ?? 0),
       apparentTemperatureC: Number(current.apparent_temperature ?? current.temperature_2m ?? 0),

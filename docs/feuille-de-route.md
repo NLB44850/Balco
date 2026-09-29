@@ -181,11 +181,11 @@ Très cohérent avec la promesse écologique.
 | Élément | État | Ce qui existe / ce qui manque |
 |---|---|---|
 | Semis, plantation, récolte | ✅ | Pour les 73 plantes du catalogue |
-| Rempotage | ⬜ | Absent du catalogue |
-| Adaptation au climat local | ⬜ | Mois calés sur la France tempérée ; pas encore de décalage selon la région |
-| Vue mensuelle / saisonnière | 🟡 | Vue par mois, pas de vue par saison |
-| Alertes gel / chaleur | 🟡 | Présentes dans les rappels, pas dans le calendrier |
-| Lien avec les tâches du jour | 🟡 | Actions possibles depuis le calendrier ; à unifier avec la session du jour |
+| Rempotage | ✅ | Mois de rempotage des 24 vivaces (mars–avril par défaut, exceptions comme l'ail des ours en automne), nouveau geste « Rempotage » dans l'historique |
+| Adaptation au climat local | ✅ | Climat déduit de la ville et de l'altitude (méditerranéen, océanique, tempéré, continental, montagne) : semis et plantations des plantes frileuses un mois plus tôt dans le Midi, un mois plus tard en montagne ; date habituelle des dernières gelées |
+| Vue mensuelle / saisonnière | ✅ | « Par mois » ou « Par saison », en commençant par la saison en cours |
+| Alertes gel / chaleur | ✅ | Alertes météo du moment (gel, orage, vent, chaleur, pluie) en haut du calendrier, regroupées par cause |
+| Lien avec les tâches du jour | ✅ | Un entretien coché dans le calendrier l'est aussi sur l'accueil ; semis, plantations et rempotages se notent une fois par mois, et l'accueil rappelle ceux du mois pas encore faits |
 | Suggestions adaptées au balcon | ✅ | Recommandations selon l'exposition, la place et les objectifs |
 
 ### 5. Progression et motivation

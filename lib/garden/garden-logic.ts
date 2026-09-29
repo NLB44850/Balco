@@ -131,6 +131,7 @@ export const EVENT_TYPE_LABELS: Record<MaintenanceTaskType, { label: string; ico
   pruning: { label: "Taille", icon: "✂️" },
   protection: { label: "Protection", icon: "🛡️" },
   harvest: { label: "Récolte", icon: "🧺" },
+  repotting: { label: "Rempotage", icon: "🪴" },
 };
 
 export type HistoryDay = { key: string; label: string; events: MaintenanceEvent[] };

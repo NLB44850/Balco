@@ -63,6 +63,8 @@ export type CatalogPlant = {
   sowMonths: Month[];
   plantMonths: Month[];
   harvestMonths: Month[];
+  /** Mois de rempotage des vivaces (terreau neuf, pot un peu plus grand) ; vide pour les annuelles. */
+  repotMonths: Month[];
   harvestTip: string;
   care: CareThresholds;
   tasks: CareTask[];
@@ -139,12 +141,14 @@ function customTask(task: Omit<CareTask, "doneTitle" | "doneText"> & Partial<Pic
   return { doneTitle: "Geste fait, journée gagnée.", doneText: "Ta plante te remerciera dans quelques jours.", ...task };
 }
 
-type PlantInput = Omit<CatalogPlant, "tasks" | "varieties"> & { varieties?: PlantVariety[]; extraTasks?: CareTask[]; wateringMonths?: Month[]; wateringInstruction?: string };
+type PlantInput = Omit<CatalogPlant, "tasks" | "varieties" | "repotMonths"> & { varieties?: PlantVariety[]; repotMonths?: Month[]; extraTasks?: CareTask[]; wateringMonths?: Month[]; wateringInstruction?: string };
 
-function plant({ extraTasks = [], wateringMonths, wateringInstruction, varieties, ...data }: PlantInput): CatalogPlant {
+function plant({ extraTasks = [], wateringMonths, wateringInstruction, varieties, repotMonths, ...data }: PlantInput): CatalogPlant {
   const activeMonths = wateringMonths ?? GROWING_SEASON;
   return {
     ...data,
+    // Une vivace se rempote à la reprise de végétation, avant la pousse de printemps.
+    repotMonths: repotMonths ?? (data.perennial ? [3, 4] : []),
     varieties: varieties ?? PLANT_VARIETIES[data.id] ?? [],
     tasks: [
       wateringTask(data.label, activeMonths, wateringInstruction),
@@ -359,7 +363,7 @@ export const PLANT_CATALOG: CatalogPlant[] = [
     ],
   }),
   plant({
-    id: "wild-garlic", name: "Ail des ours", label: "l’ail des ours", emoji: "🐻", category: "aromatic",
+    id: "wild-garlic", name: "Ail des ours", repotMonths: [9, 10], label: "l’ail des ours", emoji: "🐻", category: "aromatic",
     sunlight: ["shade", "partial"], minSpace: "planter", difficulty: "medium", perennial: true, melliferous: true, goals: ["aromatics"], potLiters: 8,
     pitch: "Le pesto du printemps pousse… à l’ombre : l’allié idéal des balcons orientés nord.",
     sowMonths: [9, 10], plantMonths: [9, 10, 11], harvestMonths: [3, 4, 5],
@@ -973,7 +977,7 @@ export const PLANT_CATALOG: CatalogPlant[] = [
     ],
   }),
   plant({
-    id: "lemon-tree", name: "Citronnier", label: "le citronnier", emoji: "🍋", category: "small-fruit",
+    id: "lemon-tree", name: "Citronnier", repotMonths: [4, 5], label: "le citronnier", emoji: "🍋", category: "small-fruit",
     sunlight: ["sunny"], minSpace: "balcony", difficulty: "medium", perennial: true, melliferous: true, goals: [], potLiters: 30,
     pitch: "Des fleurs au parfum enivrant et des citrons presque toute l’année, à condition de l’abriter l’hiver.",
     sowMonths: [], plantMonths: [4, 5], harvestMonths: [11, 12, 1, 2, 3],
