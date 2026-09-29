@@ -1,151 +1,221 @@
+/**
+ * L'accueil de la première ouverture, sur la lumière du balcon. On commence par faire
+ * connaissance (prénom facultatif), puis une question par écran : un toucher suffit, l'écran
+ * suivant arrive tout seul. À la fin, Balco propose tes premières plantes, déjà cochées :
+ * « Créer mon balcon » et tu arrives sur Aujourd'hui avec tes gestes du jour.
+ */
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { useRef, useState } from "react";
-import { Animated, Pressable, ScrollView, StyleSheet, View } from "react-native";
-import { Text } from "@/components/ui/typography";
-import { LinearGradient } from "expo-linear-gradient";
 import { Redirect, useRouter } from "expo-router";
+import { useMemo, useRef, useState } from "react";
+import { Pressable, ScrollView, StyleSheet, View } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 
-import { BalcoIllustration } from "@/components/balco-illustration";
-import { FadeIn, PopIn } from "@/components/motion";
-import { ScreenContainer } from "@/components/screen-container";
+import { LightScreen } from "@/components/light-screen";
+import { FadeIn } from "@/components/motion";
+import { glass } from "@/components/ui/glass";
+import { IconSymbol } from "@/components/ui/icon-symbol";
+import { Text, TextInput } from "@/components/ui/typography";
 import { useColors } from "@/hooks/use-colors";
-import { useGarden } from "@/lib/garden/garden-context";
+import { ONBOARDING_STORAGE_KEY, useGarden } from "@/lib/garden/garden-context";
+import { EXPERIENCE_OPTIONS, GOAL_OPTIONS, SPACE_OPTIONS, SUNLIGHT_OPTIONS, type OnboardingOption } from "@/lib/garden/onboarding";
+import { recommendPlants, type OnboardingAnswers } from "@/lib/plants/catalog";
 
-const ONBOARDING_STORAGE_KEY = "balco.onboarding.preferences.v1";
-const experiences = [
-  { id: "beginner", icon: "🌱", title: "Je débute", text: "J'ai besoin d'être guidé pas à pas." },
-  { id: "curious", icon: "🪴", title: "Je me lance", text: "J'ai déjà quelques plantes à la maison." },
-  { id: "experienced", icon: "🌿", title: "J'ai déjà un potager", text: "Je veux mieux organiser mes cultures." },
-] as const;
-const sunlight = [
-  { id: "shade", icon: "☁", title: "Plutôt ombragé", text: "Moins de 3 h de soleil direct." },
-  { id: "partial", icon: "◐", title: "Mi-ombre", text: "Entre 3 et 6 h de soleil direct." },
-  { id: "sunny", icon: "☀", title: "Très ensoleillé", text: "Plus de 6 h de soleil direct." },
-] as const;
-const spaces = [
-  { id: "windowsill", icon: "▱", title: "Un rebord de fenêtre", text: "Quelques pots compacts, près de la lumière." },
-  { id: "planter", icon: "▰", title: "Une ou deux jardinières", text: "Un espace étroit mais plein de potentiel." },
-  { id: "balcony", icon: "⌂", title: "Un petit balcon", text: "De quoi créer un vrai micro-potager." },
-  { id: "terrace", icon: "▦", title: "Une terrasse", text: "Plus de place pour varier les cultures." },
-] as const;
-const goals = [
-  { id: "tomatoes", icon: "🍅", title: "Tomates cerises", text: "Du soleil et du goût à récolter." },
-  { id: "aromatics", icon: "🌿", title: "Basilic & menthe", text: "Des aromatiques pour la cuisine." },
-  { id: "bees", icon: "🐝", title: "Fleurs pour les abeilles", text: "Accueillir les pollinisateurs en ville." },
-  { id: "zero-waste", icon: "♻", title: "Moins de gaspillage", text: "Composter, récupérer et arroser mieux." },
-] as const;
+type Question = { title: string; subtitle: string; options: OnboardingOption[]; multiple?: boolean };
+
+/** Les quatre questions ; l'écran 0 (bienvenue) et le dernier (tes plantes) les encadrent. */
+const QUESTIONS: Question[] = [
+  { title: "Tu jardines déjà ?", subtitle: "Pas de jargon ici. Balco s'adapte à ton expérience, sans pression.", options: EXPERIENCE_OPTIONS },
+  { title: "Combien de soleil reçoit ton balcon ?", subtitle: "Une estimation suffit : tes conseils seront plus justes.", options: SUNLIGHT_OPTIONS },
+  { title: "Quel espace veux-tu faire pousser ?", subtitle: "Même un rebord de fenêtre peut devenir un petit potager.", options: SPACE_OPTIONS },
+  { title: "Qu'aimerais-tu cultiver ?", subtitle: "Choisis tout ce qui te donne envie.", options: GOAL_OPTIONS, multiple: true },
+];
+const PLANTS_STEP = QUESTIONS.length + 1;
+/** Le temps de voir son choix coché avant de passer à la question suivante. */
+const ADVANCE_MS = 280;
 
 export default function OnboardingScreen() {
   const colors = useColors();
   const router = useRouter();
+  const insets = useSafeAreaInsets();
   const garden = useGarden();
-  const press = useRef(new Animated.Value(1)).current;
   const [step, setStep] = useState(0);
-  const [experience, setExperience] = useState<string | null>(null);
-  const [sunlightChoice, setSunlightChoice] = useState<string | null>(null);
-  const [spaceChoice, setSpaceChoice] = useState<string | null>(null);
-  const [goalChoices, setGoalChoices] = useState<string[]>([]);
+  const [firstName, setFirstName] = useState("");
+  const [answers, setAnswers] = useState<{ experience?: string; sunlight?: string; space?: string; goals: string[] }>({ goals: [] });
+  const [picked, setPicked] = useState<string[] | null>(null);
+  const [saving, setSaving] = useState(false);
+  const advanceTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  const finish = async () => {
-    await AsyncStorage.setItem(ONBOARDING_STORAGE_KEY, JSON.stringify({ experience, sunlight: sunlightChoice, space: spaceChoice, goals: goalChoices, completedAt: new Date().toISOString() }));
+  const onboardingAnswers: OnboardingAnswers = useMemo(() => ({ experience: answers.experience, sunlight: answers.sunlight, space: answers.space, goals: answers.goals }), [answers]);
+  const suggestions = useMemo(() => recommendPlants(onboardingAnswers, { month: new Date().getMonth() + 1 }).slice(0, 6), [onboardingAnswers]);
+  // Les trois premières idées sont cochées d'office : moins de touchers pour démarrer.
+  const chosen = (picked ?? suggestions.slice(0, 3).map((entry) => entry.id)).filter((id) => suggestions.some((entry) => entry.id === id));
+
+  const question = step >= 1 && step <= QUESTIONS.length ? QUESTIONS[step - 1] : null;
+  const keys = ["experience", "sunlight", "space"] as const;
+  const isSelected = (id: string) => (step === 4 ? answers.goals.includes(id) : answers[keys[step - 1]] === id);
+
+  const choose = (id: string) => {
+    if (step === 4) {
+      setAnswers((current) => ({ ...current, goals: current.goals.includes(id) ? current.goals.filter((goal) => goal !== id) : [...current.goals, id] }));
+      return;
+    }
+    setAnswers((current) => ({ ...current, [keys[step - 1]]: id }));
+    if (advanceTimer.current) clearTimeout(advanceTimer.current);
+    advanceTimer.current = setTimeout(() => setStep((current) => current + 1), ADVANCE_MS);
+  };
+
+  const back = () => {
+    if (advanceTimer.current) clearTimeout(advanceTimer.current);
+    setStep((current) => Math.max(0, current - 1));
+  };
+
+  const saveName = async () => {
+    const name = firstName.trim();
+    if (name) await garden.updateProfile({ firstName: name });
+  };
+
+  const finish = async (withPlants: boolean) => {
+    setSaving(true);
+    await saveName();
+    if (withPlants) for (const id of chosen) await garden.addPlant(id);
+    await AsyncStorage.setItem(ONBOARDING_STORAGE_KEY, JSON.stringify({ ...onboardingAnswers, completedAt: new Date().toISOString() }));
     await garden.reloadOnboarding();
     router.replace("/(tabs)");
   };
 
-  const next = () => {
-    if (step < 3) {
-      setStep((current) => current + 1);
-      return;
-    }
-    Animated.sequence([
-      Animated.timing(press, { toValue: 0.97, duration: 90, useNativeDriver: true }),
-      Animated.timing(press, { toValue: 1, duration: 140, useNativeDriver: true }),
-    ]).start(() => void finish());
-  };
-
   const skip = async () => {
+    await saveName();
     await AsyncStorage.setItem(ONBOARDING_STORAGE_KEY, JSON.stringify({ skipped: true, completedAt: new Date().toISOString() }));
     await garden.reloadOnboarding();
     router.replace("/(tabs)");
   };
-
-  const selected = step === 0 ? experience : step === 1 ? sunlightChoice : spaceChoice;
-  const options = step === 0 ? experiences : step === 1 ? sunlight : step === 2 ? spaces : goals;
-  const isSelected = (id: string) => step === 3 ? goalChoices.includes(id) : selected === id;
-  const chooseOption = (id: string) => {
-    if (step === 0) setExperience(id);
-    else if (step === 1) setSunlightChoice(id);
-    else if (step === 2) setSpaceChoice(id);
-    else setGoalChoices((current) => current.includes(id) ? current.filter((item) => item !== id) : [...current, id]);
-  };
-  const canContinue = step === 3 ? goalChoices.length > 0 : Boolean(selected);
-  const progress = `${((step + 1) / 4) * 100}%` as `${number}%`;
-  const titles = ["On commence par\nfaire connaissance.", "Combien de soleil\nreçoit ton balcon ?", "Quel espace veux-tu\nfaire pousser ?", "Qu'aimerais-tu\ncultiver ou protéger ?"];
-  const subtitles = ["Pas de jargon ici. Balco s'adapte à ton expérience, sans pression.", "Une estimation suffit : tes conseils de culture seront plus justes.", "Même un rebord de fenêtre peut devenir un petit écosystème.", "Choisis tout ce qui te donne envie. Balco construira ton premier plan de culture."];
-  const captions = ["Un potager à ton rythme.", "Chaque balcon a son propre climat.", "Un coin de nature, juste là.", "Des choix qui ont du goût."];
 
   // Onboarding déjà fait : on ne repose pas les questions à chaque lancement.
   if (!garden.loaded) return null;
   if (garden.onboarding) return <Redirect href="/(tabs)" />;
 
   return (
-    <ScreenContainer className="px-5" edges={["top", "left", "right", "bottom"]}>
-      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.content}>
-        <FadeIn delay={80} style={styles.logoRow}>
-          <View style={[styles.logoMark, { backgroundColor: colors.primary }]}><Text style={styles.logoText}>b</Text></View>
-          <View><Text style={[styles.logoName, { color: colors.foreground }]}>balco</Text><Text style={[styles.logoTag, { color: colors.muted }]}>MON POTAGER POUR LES PETITS ESPACES</Text></View>
-        </FadeIn>
+    <LightScreen bottom>
+      <ScrollView keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false} contentContainerStyle={[styles.content, { paddingTop: insets.top + 16 }]}>
+        {step > 0 && (
+          <View style={styles.topBar}>
+            <Pressable accessibilityRole="button" accessibilityLabel="Revenir à l'étape précédente" hitSlop={10} onPress={back} style={({ pressed }) => [styles.back, pressed && styles.pressed]}>
+              <IconSymbol name="chevron.left" size={26} color={colors.foreground} />
+            </Pressable>
+            <View style={styles.progress} accessibilityLabel={`Étape ${step} sur ${PLANTS_STEP}`}>
+              {Array.from({ length: PLANTS_STEP }, (_, index) => (
+                <View key={index} style={[styles.progressSegment, { backgroundColor: index < step ? colors.primary : "rgba(18,22,20,0.1)" }]} />
+              ))}
+            </View>
+          </View>
+        )}
 
-        <View style={styles.progressRow}><Text style={[styles.progressLabel, { color: colors.terracotta }]}>POUR PERSONNALISER TON BALCON</Text><Text style={[styles.progressCount, { color: colors.muted }]}>{step + 1} / 4</Text></View>
-        <View style={[styles.progressTrack, { backgroundColor: colors.leaf }]}><View style={[styles.progressFill, { width: progress, backgroundColor: colors.terracotta }]} /></View>
+        {step === 0 && (
+          <FadeIn style={styles.welcome}>
+            <View style={[styles.logo, { backgroundColor: colors.primary }]}><Text style={styles.logoText}>🌱</Text></View>
+            <Text style={[styles.title, styles.bigTitle, { color: colors.foreground }]}>On commence par faire connaissance.</Text>
+            <Text style={[styles.subtitle, { color: colors.muted }]}>Balco te dit quoi faire, au bon moment, pour tes propres plantes. Quatre petites questions, et ton balcon est prêt.</Text>
+            <View style={[glass.card, styles.nameCard]}>
+              <Text style={[styles.label, { color: colors.foreground }]}>Ton prénom <Text style={{ color: colors.muted, fontWeight: "500" }}>(facultatif)</Text></Text>
+              <TextInput value={firstName} onChangeText={setFirstName} onSubmitEditing={() => setStep(1)} placeholder="Pour que Balco te dise bonjour" placeholderTextColor={colors.muted} maxLength={30} returnKeyType="next" style={[styles.input, { color: colors.foreground, borderColor: colors.border }]} />
+            </View>
+            <Pressable accessibilityRole="button" onPress={() => setStep(1)} style={({ pressed }) => [styles.cta, { backgroundColor: colors.primary }, pressed && styles.pressed]}>
+              <Text style={styles.ctaText}>C’est parti</Text>
+            </Pressable>
+            <Pressable accessibilityRole="button" onPress={() => void skip()} style={({ pressed }) => [styles.ghost, pressed && styles.pressed]}>
+              <Text style={[styles.ghostText, { color: colors.muted }]}>Je regarderai plus tard</Text>
+            </Pressable>
+          </FadeIn>
+        )}
 
-        <FadeIn key={step} delay={100} style={styles.heroCopy}><Text style={[styles.title, { color: colors.foreground }]}>{titles[step]}</Text><Text style={[styles.subtitle, { color: colors.muted }]}>{subtitles[step]}</Text></FadeIn>
+        {question && (
+          <FadeIn key={step} style={styles.step}>
+            <Text style={[styles.title, { color: colors.foreground }]}>{question.title}</Text>
+            <Text style={[styles.subtitle, { color: colors.muted }]}>{question.subtitle}</Text>
+            <View style={styles.options}>
+              {question.options.map((option) => {
+                const active = isSelected(option.id);
+                return (
+                  <Pressable key={option.id} accessibilityRole={question.multiple ? "checkbox" : "radio"} accessibilityState={{ checked: active }} onPress={() => choose(option.id)} style={({ pressed }) => [glass.card, styles.option, active && { borderColor: colors.primary, borderWidth: 2, backgroundColor: "rgba(227,241,232,0.92)" }, pressed && styles.pressed]}>
+                    <View style={[styles.optionIcon, { backgroundColor: active ? "#FFFFFF" : colors.leaf }]}><Text style={styles.optionEmoji}>{option.icon}</Text></View>
+                    <View style={styles.flex}>
+                      <Text style={[styles.optionTitle, { color: colors.foreground }]}>{option.title}</Text>
+                      <Text style={[styles.optionText, { color: colors.muted }]}>{option.text}</Text>
+                    </View>
+                    <View style={[styles.check, { borderColor: active ? colors.primary : "rgba(18,22,20,0.22)", backgroundColor: active ? colors.primary : "transparent" }]}>{active && <Text style={styles.checkMark}>✓</Text>}</View>
+                  </Pressable>
+                );
+              })}
+            </View>
+            {question.multiple && (
+              <Pressable accessibilityRole="button" onPress={() => setStep(PLANTS_STEP)} style={({ pressed }) => [styles.cta, { backgroundColor: colors.primary }, pressed && styles.pressed]}>
+                <Text style={styles.ctaText}>{answers.goals.length > 0 ? "Continuer" : "Passer cette question"}</Text>
+              </Pressable>
+            )}
+          </FadeIn>
+        )}
 
-        <PopIn key={`illustration-${step}`} delay={180} style={styles.illustrationCard}><LinearGradient colors={[colors.leaf, colors.cream]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={styles.illustrationGradient}><View style={[styles.sparkle, { backgroundColor: colors.surface }]}><Text style={{ color: colors.terracotta }}>✦</Text></View><BalcoIllustration /><View style={[styles.illustrationCaption, { backgroundColor: "rgba(255,255,255,0.66)" }]}><Text style={[styles.captionText, { color: colors.foreground }]}>{captions[step]}</Text></View></LinearGradient></PopIn>
-
-        <View style={styles.optionsList}>{options.map((option) => { const active = isSelected(option.id); return <Pressable key={option.id} onPress={() => chooseOption(option.id)} style={({ pressed }) => [styles.optionCard, { backgroundColor: active ? colors.foreground : colors.surface, borderColor: active ? colors.foreground : colors.border }, pressed && styles.pressed]}><View style={[styles.optionIcon, { backgroundColor: active ? "rgba(213,233,107,0.18)" : colors.leaf }]}><Text style={styles.optionIconText}>{option.icon}</Text></View><View style={styles.optionCopy}><Text style={[styles.optionTitle, { color: active ? "#FFF" : colors.foreground }]}>{option.title}</Text><Text style={[styles.optionText, { color: active ? "rgba(255,255,255,0.66)" : colors.muted }]}>{option.text}</Text></View><View style={[styles.radio, { borderColor: active ? colors.sun : colors.border, backgroundColor: active ? colors.sun : "transparent" }]}>{active && <Text style={[styles.radioCheck, { color: colors.foreground }]}>✓</Text>}</View></Pressable>; })}</View>
-        {step === 3 && <Text style={[styles.multiHint, { color: colors.muted }]}>{goalChoices.length > 0 ? `${goalChoices.length} préférence${goalChoices.length > 1 ? "s" : ""} sélectionnée${goalChoices.length > 1 ? "s" : ""}` : "Tu peux choisir plusieurs réponses"}</Text>}
-
-        <Animated.View style={{ transform: [{ scale: press }], marginTop: 7 }}><Pressable disabled={!canContinue} onPress={next} style={({ pressed }) => [styles.startButton, { backgroundColor: canContinue ? colors.terracotta : colors.border }, pressed && styles.pressed]}><Text style={styles.startButtonText}>{step === 3 ? "Créer mon balcon  →" : "Continuer  →"}</Text></Pressable></Animated.View>
-        <Pressable onPress={() => step === 0 ? void skip() : setStep((current) => current - 1)} style={({ pressed }) => [styles.skipButton, pressed && styles.pressed]}><Text style={[styles.skipText, { color: colors.muted }]}>{step === 0 ? "Je regarderai plus tard" : "← Revenir à l'étape précédente"}</Text></Pressable>
+        {step === PLANTS_STEP && (
+          <FadeIn style={styles.step}>
+            <Text style={[styles.title, { color: colors.foreground }]}>Tes premières plantes</Text>
+            <Text style={[styles.subtitle, { color: colors.muted }]}>Choisies pour ton balcon et la saison. Garde celles qui te plaisent : tu pourras en ajouter d’autres à tout moment.</Text>
+            <View style={[glass.card, styles.plants]}>
+              {suggestions.map((entry, index) => {
+                const active = chosen.includes(entry.id);
+                return (
+                  <Pressable key={entry.id} accessibilityRole="checkbox" accessibilityState={{ checked: active }} onPress={() => setPicked(active ? chosen.filter((id) => id !== entry.id) : [...chosen, entry.id])} style={({ pressed }) => [styles.plant, index < suggestions.length - 1 && glass.line, pressed && styles.pressed]}>
+                    <View style={[styles.plantIcon, { backgroundColor: colors.leaf }]}><Text style={styles.plantEmoji}>{entry.emoji}</Text></View>
+                    <View style={styles.flex}>
+                      <Text style={[styles.optionTitle, { color: colors.foreground }]}>{entry.name}</Text>
+                      <Text style={[styles.optionText, { color: colors.muted }]} numberOfLines={2}>{entry.pitch}</Text>
+                    </View>
+                    <View style={[styles.check, { borderColor: active ? colors.primary : "rgba(18,22,20,0.22)", backgroundColor: active ? colors.primary : "transparent" }]}>{active && <Text style={styles.checkMark}>✓</Text>}</View>
+                  </Pressable>
+                );
+              })}
+            </View>
+            <Pressable accessibilityRole="button" disabled={saving} onPress={() => void finish(true)} style={({ pressed }) => [styles.cta, { backgroundColor: colors.primary }, pressed && styles.pressed]}>
+              <Text style={styles.ctaText}>{saving ? "Un instant…" : chosen.length > 0 ? `Créer mon balcon · ${chosen.length} plante${chosen.length > 1 ? "s" : ""}` : "Créer mon balcon"}</Text>
+            </Pressable>
+          </FadeIn>
+        )}
       </ScrollView>
-    </ScreenContainer>
+    </LightScreen>
   );
 }
 
 const styles = StyleSheet.create({
-  content: { flexGrow: 1, paddingTop: 18, paddingBottom: 14 },
-  logoRow: { flexDirection: "row", alignItems: "center", gap: 10 },
-  logoMark: { width: 36, height: 36, borderRadius: 13, alignItems: "center", justifyContent: "center", transform: [{ rotate: "-8deg" }] },
-  logoText: { color: "#FFFFFF", fontSize: 24, fontWeight: "800", fontStyle: "italic" },
-  logoName: { fontSize: 20, fontWeight: "800", letterSpacing: -0.5 },
-  logoTag: { fontSize: 8, letterSpacing: 0.8, marginTop: 1 },
-  progressRow: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginTop: 34 },
-  progressLabel: { fontSize: 9, fontWeight: "800", letterSpacing: 1.1 },
-  progressCount: { fontSize: 10, fontWeight: "800" },
-  progressTrack: { height: 5, borderRadius: 3, marginTop: 9, overflow: "hidden" },
-  progressFill: { height: 5, borderRadius: 3 },
-  heroCopy: { marginTop: 23 },
-  title: { fontSize: 31, lineHeight: 34, fontWeight: "800", letterSpacing: -1 },
-  subtitle: { fontSize: 13, lineHeight: 19, maxWidth: 320, marginTop: 11 },
-  illustrationCard: { marginTop: 18, borderRadius: 25, overflow: "hidden", shadowColor: "#C56D52", shadowOpacity: 0.13, shadowRadius: 16, shadowOffset: { width: 0, height: 8 }, elevation: 3 },
-  illustrationGradient: { height: 145, alignItems: "center", justifyContent: "center", position: "relative" },
-  sparkle: { position: "absolute", top: 13, right: 16, width: 28, height: 28, borderRadius: 14, alignItems: "center", justifyContent: "center" },
-  illustrationCaption: { position: "absolute", bottom: 10, left: 14, right: 14, borderRadius: 11, paddingVertical: 7, alignItems: "center" },
-  captionText: { fontSize: 10, fontWeight: "800" },
-  optionsList: { gap: 9, marginTop: 17 },
-  optionCard: { minHeight: 67, borderRadius: 17, borderWidth: 1, padding: 10, flexDirection: "row", alignItems: "center", gap: 11 },
-  optionIcon: { width: 42, height: 42, borderRadius: 14, alignItems: "center", justifyContent: "center" },
-  optionIconText: { fontSize: 20 },
-  optionCopy: { flex: 1 },
-  optionTitle: { fontSize: 13, fontWeight: "800" },
-  optionText: { fontSize: 10, lineHeight: 14, marginTop: 3 },
-  radio: { width: 21, height: 21, borderWidth: 1.5, borderRadius: 11, alignItems: "center", justifyContent: "center" },
-  radioCheck: { fontSize: 13, fontWeight: "900" },
-  multiHint: { fontSize: 10, fontWeight: "700", textAlign: "center", marginTop: 10 },
-  startButton: { borderRadius: 17, paddingVertical: 15, alignItems: "center", shadowColor: "#CF765B", shadowOpacity: 0.2, shadowRadius: 12, shadowOffset: { width: 0, height: 6 }, elevation: 3 },
-  startButtonText: { color: "#FFFFFF", fontSize: 14, fontWeight: "800" },
-  skipButton: { alignItems: "center", paddingVertical: 11 },
-  skipText: { fontSize: 11, fontWeight: "700" },
-  pressed: { opacity: 0.78, transform: [{ scale: 0.98 }] },
+  content: { paddingHorizontal: 20, paddingBottom: 32, gap: 18, flexGrow: 1 },
+  flex: { flex: 1 },
+  topBar: { flexDirection: "row", alignItems: "center", gap: 12 },
+  back: { marginLeft: -8, width: 34, height: 40, alignItems: "center", justifyContent: "center" },
+  progress: { flex: 1, flexDirection: "row", gap: 6 },
+  progressSegment: { flex: 1, height: 5, borderRadius: 3 },
+  welcome: { flex: 1, justifyContent: "center", gap: 16, paddingVertical: 20 },
+  logo: { width: 56, height: 56, borderRadius: 28, alignItems: "center", justifyContent: "center" },
+  logoText: { fontSize: 28 },
+  step: { gap: 14 },
+  title: { fontSize: 28, lineHeight: 33, fontWeight: "800", letterSpacing: -0.8 },
+  bigTitle: { fontSize: 34, lineHeight: 39, letterSpacing: -1 },
+  subtitle: { fontSize: 15, lineHeight: 22 },
+  nameCard: { padding: 16, gap: 10 },
+  label: { fontSize: 14, fontWeight: "700" },
+  input: { borderWidth: 1, borderRadius: 12, paddingHorizontal: 12, paddingVertical: 11, fontSize: 16, backgroundColor: "#FFFFFF" },
+  options: { gap: 10, marginTop: 4 },
+  option: { flexDirection: "row", alignItems: "center", gap: 12, padding: 14, minHeight: 74 },
+  optionIcon: { width: 46, height: 46, borderRadius: 14, alignItems: "center", justifyContent: "center" },
+  optionEmoji: { fontSize: 22 },
+  optionTitle: { fontSize: 16, fontWeight: "700" },
+  optionText: { fontSize: 13, lineHeight: 18, marginTop: 2 },
+  check: { width: 26, height: 26, borderRadius: 13, borderWidth: 2, alignItems: "center", justifyContent: "center" },
+  checkMark: { color: "#FFFFFF", fontSize: 13, fontWeight: "800" },
+  plants: { paddingHorizontal: 14 },
+  plant: { flexDirection: "row", alignItems: "center", gap: 12, paddingVertical: 12 },
+  plantIcon: { width: 46, height: 46, borderRadius: 23, alignItems: "center", justifyContent: "center" },
+  plantEmoji: { fontSize: 23 },
+  cta: { borderRadius: 16, paddingVertical: 16, alignItems: "center", marginTop: 4 },
+  ctaText: { color: "#FFFFFF", fontSize: 16, fontWeight: "700" },
+  ghost: { alignItems: "center", paddingVertical: 10 },
+  ghostText: { fontSize: 14, fontWeight: "600" },
+  pressed: { opacity: 0.8, transform: [{ scale: 0.98 }] },
 });

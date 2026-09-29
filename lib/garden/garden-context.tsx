@@ -78,6 +78,8 @@ type GardenContextValue = {
   removeEvent: (eventId: string) => Promise<void>;
   updateProfile: (patch: Partial<UserProfile>) => Promise<void>;
   reloadOnboarding: () => Promise<void>;
+  /** Change une réponse de l'accueil (exposition, espace, envies…) depuis les réglages. */
+  updateOnboarding: (patch: Partial<OnboardingAnswers>) => Promise<void>;
   reportLocation: (location: SyncLocation) => void;
   signIn: () => Promise<void>;
   signOut: () => Promise<void>;
@@ -347,6 +349,11 @@ export function GardenProvider({ children }: { children: ReactNode }) {
     queue(markProfileDirty);
   }, [queue]);
 
+  const updateOnboarding = useCallback(async (patch: Partial<OnboardingAnswers>) => {
+    await saveOnboarding({ ...(onboardingRef.current ?? {}), ...patch, skipped: false });
+    queue(markProfileDirty);
+  }, [queue, saveOnboarding]);
+
   const reportLocation = useCallback((location: SyncLocation) => {
     const changed = locationChanged(locationRef.current, location);
     locationRef.current = location;
@@ -415,8 +422,8 @@ export function GardenProvider({ children }: { children: ReactNode }) {
   }), [auth.isAuthenticated, auth.loading, auth.user?.email, auth.user?.name, lastSyncedAt, serverPush, syncStatus]);
 
   const value = useMemo<GardenContextValue>(
-    () => ({ loaded, plants, resolvedPlants, events, profile, onboarding, account, addPlant, removePlant, renamePlant, setPlantVariety, logEvent, removeEvent, updateProfile, reloadOnboarding, reportLocation, signIn, signOut, syncNow, refreshAccount, completeSignIn, deleteAccount }),
-    [loaded, plants, resolvedPlants, events, profile, onboarding, account, addPlant, removePlant, renamePlant, setPlantVariety, logEvent, removeEvent, updateProfile, reloadOnboarding, reportLocation, signIn, signOut, syncNow, refreshAccount, completeSignIn, deleteAccount],
+    () => ({ loaded, plants, resolvedPlants, events, profile, onboarding, account, addPlant, removePlant, renamePlant, setPlantVariety, logEvent, removeEvent, updateProfile, reloadOnboarding, updateOnboarding, reportLocation, signIn, signOut, syncNow, refreshAccount, completeSignIn, deleteAccount }),
+    [loaded, plants, resolvedPlants, events, profile, onboarding, account, addPlant, removePlant, renamePlant, setPlantVariety, logEvent, removeEvent, updateProfile, reloadOnboarding, updateOnboarding, reportLocation, signIn, signOut, syncNow, refreshAccount, completeSignIn, deleteAccount],
   );
 
   return <GardenContext.Provider value={value}>{children}</GardenContext.Provider>;

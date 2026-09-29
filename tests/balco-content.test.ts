@@ -27,13 +27,14 @@ describe("Balco MVP content", () => {
 
   it("includes the warmer modern layer requested for the second iteration", () => {
     expect(readProjectFile("app/welcome.tsx")).toContain("On commence par");
-    expect(readProjectFile("app/welcome.tsx")).toContain("BalcoIllustration");
+    expect(readProjectFile("app/welcome.tsx")).toContain("LightScreen");
     expect(readProjectFile("components/motion.tsx")).toContain("FadeIn");
     expect(readProjectFile("package.json")).toContain("expo-linear-gradient");
   });
 
   it("defines the personalized four-step onboarding", () => {
-    const onboarding = readProjectFile("app/welcome.tsx");
+    // Les réponses possibles sont partagées avec Réglages (lib/garden/onboarding.ts).
+    const onboarding = readProjectFile("app/welcome.tsx") + readProjectFile("lib/garden/onboarding.ts") + readProjectFile("lib/garden/garden-context.tsx");
 
     expect(onboarding).toContain("Je débute");
     expect(onboarding).toContain("Combien de soleil");
@@ -149,7 +150,9 @@ describe("Balco MVP content", () => {
   });
 
   it("exposes reminder preferences and per-plant activation", () => {
-    const profile = readProjectFile("app/(tabs)/profile.tsx");
+    // Les réglages ont leur propre écran, ouvert depuis Moi.
+    expect(readProjectFile("app/(tabs)/profile.tsx")).toContain('push("/settings")');
+    const profile = readProjectFile("app/settings.tsx");
     expect(profile).toContain("Rappels contextuels");
     expect(profile).toContain("Seulement quand c’est utile");
     expect(profile).toContain("Plage calme");

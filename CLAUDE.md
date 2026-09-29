@@ -80,7 +80,13 @@ Livré, à valider sur son téléphone :
   gestes, récoltes, photos, plante la plus soignée), ouvert par « Voir ma semaine » sur « Tout est
   fait » (Aujourd'hui, Saisons) et depuis Moi. Saisons en liste à cocher avec feuille du bas et
   « Annuler » (seul le mois en cours se coche). Nora : questions prêtes tirées des plantes et de la
-  saison (`lib/ai/quick-questions.ts`). Moi : « Ma semaine » et niveau en haut, badges, puis réglages.
+  saison (`lib/ai/quick-questions.ts`). Moi : « Ma semaine », niveau et badges seulement.
+- **Réglages à part** (`app/settings.tsx`, roue crantée de Moi) : prénom, expérience, soleil, espace,
+  envies (en pastilles, enregistrés tout de suite via `updateOnboarding`), rappels, sauvegarde, compte,
+  simulation météo.
+- **Onboarding refait** (`app/welcome.tsx`, choix dans `lib/garden/onboarding.ts`) : lumière du
+  balcon, prénom facultatif, une question par écran qui avance toute seule, puis « Tes premières
+  plantes » (3 cochées d'office) et « Créer mon balcon ».
 
 À faire, dans l'ordre :
 1. Priorité 3, Nora qui se souvient (niveau, préférences, historique complet).
