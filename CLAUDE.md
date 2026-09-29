@@ -77,7 +77,7 @@ Livré, à valider sur son téléphone :
   un bouton « C'est fait » avec « Annuler », tes photos, historique photos + gestes, renommer / retirer
   en bas). Photos gardées **sur l'appareil seulement** (`lib/garden/photos*.ts`, `photo-files.ts` pour
   le téléphone, `photo-files.web.ts` pour le web) ; la photo d'un diagnostic de Nora rejoint la fiche.
-  Sans photo : l'ombre peinte de la plante (`components/plant-picture.tsx`), plus d'emoji.
+  Sans photo : l'emoji de la plante sur fond vert pâle (`components/plant-picture.tsx`).
 
 À faire, dans l'ordre :
 1. **Refonte étape 4** : Saisons, Nora et Moi sur le même modèle (écran « Tout est fait » avec

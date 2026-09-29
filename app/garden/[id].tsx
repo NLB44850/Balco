@@ -115,9 +115,10 @@ export default function PlantScreen() {
     <View style={[styles.screen, { backgroundColor: colors.background }]}>
       <ScrollView ref={scrollRef} showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: insets.bottom + 40 }}>
         {/* La photo d'abord. */}
-        <PlantPicture resolved={resolved} photo={shown} style={{ height: heroHeight }}>
+        <PlantPicture resolved={resolved} photo={shown} hideEmoji style={{ height: heroHeight }}>
           {!shown && (
             <View style={[styles.heroEmpty, { paddingTop: insets.top }]}>
+              <Text style={styles.heroEmoji}>{entry.emoji}</Text>
               <Text style={[styles.heroEmptyText, { color: colors.primary }]}>Pas encore de photo de {name}</Text>
               <Pressable accessibilityRole="button" onPress={() => capture.ask(plant.id, name)} style={({ pressed }) => [styles.heroCta, { backgroundColor: colors.primary }, pressed && styles.pressed]}>
                 <IconSymbol name="camera.fill" size={18} color="#FFFFFF" />
@@ -308,6 +309,7 @@ const styles = StyleSheet.create({
   screen: { flex: 1 },
   missing: { padding: 20, gap: 12 },
   heroEmpty: { ...StyleSheet.absoluteFillObject, alignItems: "center", justifyContent: "center", gap: 14 },
+  heroEmoji: { fontSize: 96, lineHeight: 120 },
   heroEmptyText: { fontSize: 15, fontWeight: "600" },
   heroCta: { flexDirection: "row", alignItems: "center", gap: 8, borderRadius: 999, paddingHorizontal: 20, paddingVertical: 13 },
   heroCtaText: { color: "#FFFFFF", fontSize: 16, fontWeight: "700" },
