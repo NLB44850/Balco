@@ -1,6 +1,6 @@
 /**
- * La scène du haut de l'accueil : le ciel au-dessus du balcon selon l'heure et la météo
- * (couleurs, soleil ou lune, nuages, pluie ou flocons, force du vent). Logique pure.
+ * La lumière sur le balcon selon l'heure et la météo : couleur du fond, force et teinte des
+ * ombres, sens du soleil, pluie ou flocons, force du vent. Logique pure.
  */
 import type { WeatherSnapshot } from "../reminders/reminder-engine";
 
@@ -10,14 +10,20 @@ export type SkyWeather = "clear" | "partly" | "cloudy" | "rain" | "storm" | "sno
 export type SkyScene = {
   mood: SkyMood;
   weather: SkyWeather;
-  /** Du haut du ciel vers le bas ; la dernière couleur rejoint le fond blanc de l'écran. */
-  gradient: [string, string, string];
-  body: "sun" | "moon" | null;
-  stars: boolean;
-  clouds: number;
-  cloudTone: "white" | "grey" | "dark";
+  /** Le fond, du haut vers le bas : la lumière qui tombe sur le balcon. */
+  background: [string, string, string];
+  /** La couleur des ombres (chaude le jour, bleutée au clair de lune). */
+  shadowTint: string;
+  /** 0 = pas d'ombre (ciel couvert), 1 = plein soleil. */
+  shadow: number;
+  /** Nuages de passage : les ombres s'effacent puis reviennent. */
+  passingClouds: boolean;
+  /** L'après-midi, le soleil vient de l'autre côté : les ombres penchent dans l'autre sens. */
+  mirrored: boolean;
+  /** Ombres plus longues quand le soleil est bas. */
+  lowSun: boolean;
   particles: "rain" | "snow" | null;
-  /** 0 = air calme, 1 = gros coup de vent : amplitude du balancement des plantes. */
+  /** 0 = air calme, 1 = gros coup de vent : amplitude du balancement des feuillages. */
   wind: number;
   flash: boolean;
 };
@@ -43,43 +49,43 @@ export function skyWeather(snapshot: WeatherSnapshot): SkyWeather {
   return "clear";
 }
 
-// Des ciels pâles : le décor reste en filigrane derrière le texte, de jour comme de nuit.
-const DAY: Record<SkyWeather, [string, string]> = {
-  clear: ["#D6ECFA", "#EEF7FD"],
-  partly: ["#DCEDF7", "#F0F7FB"],
-  cloudy: ["#E1E7EC", "#F2F5F7"],
-  rain: ["#D5DDE5", "#EDF1F4"],
-  storm: ["#C3CBD5", "#E6EAEE"],
-  snow: ["#E2EAF2", "#F3F6FA"],
-  frost: ["#DDEBF8", "#F1F7FC"],
-  heat: ["#FFE4C2", "#FFF4E6"],
+type Light = { background: [string, string, string]; shadowTint: string; shadow: number };
+
+const DAYLIGHT: Record<SkyWeather, Light> = {
+  clear: { background: ["#FFF6E6", "#FBF8F2", "#F5F3EE"], shadowTint: "#2E3A2C", shadow: 1 },
+  partly: { background: ["#FDF6EA", "#FAF8F3", "#F4F3EF"], shadowTint: "#2E3A2C", shadow: 0.9 },
+  heat: { background: ["#FFEBCF", "#FFF4E6", "#F8F1E6"], shadowTint: "#3A3222", shadow: 1.15 },
+  frost: { background: ["#F1F6FB", "#F7F9FB", "#F1F3F5"], shadowTint: "#26364A", shadow: 0.85 },
+  cloudy: { background: ["#F0F1F2", "#F5F5F4", "#EFEFED"], shadowTint: "#2E3A2C", shadow: 0.18 },
+  rain: { background: ["#E7EBEF", "#F0F2F4", "#ECEEF0"], shadowTint: "#2A3440", shadow: 0.1 },
+  storm: { background: ["#DDE2E8", "#EBEEF1", "#E8EAED"], shadowTint: "#2A3440", shadow: 0.06 },
+  snow: { background: ["#EDF1F6", "#F5F7FA", "#F0F2F5"], shadowTint: "#2A3440", shadow: 0.12 },
 };
 
-function gradientFor(mood: SkyMood, weather: SkyWeather): [string, string, string] {
-  const grey = weather === "rain" || weather === "storm" || weather === "cloudy";
-  if (mood === "night") return grey ? ["#D3D8E2", "#EAECF1", "#FFFFFF"] : ["#D5DBEE", "#ECEEF7", "#FFFFFF"];
-  if (mood === "dawn") return grey ? ["#E6E7EC", "#F4F1EF", "#FFFFFF"] : ["#FCE3D6", "#FEF1EA", "#FFFFFF"];
-  if (mood === "evening") return grey ? ["#E0DCE3", "#F3EEEE", "#FFFFFF"] : ["#FFDCC2", "#FFEEE3", "#FFFFFF"];
-  const [top, middle] = DAY[weather];
-  return [top, middle, "#FFFFFF"];
+function lightFor(mood: SkyMood, weather: SkyWeather): Light {
+  const day = DAYLIGHT[weather];
+  const covered = day.shadow < 0.5;
+  if (mood === "night") return { background: ["#E6E9F3", "#EEF0F6", "#ECEEF3"], shadowTint: "#1E2A4A", shadow: covered ? 0.05 : 0.5 };
+  if (mood === "dawn") return covered ? day : { background: ["#FCE8DA", "#FBF4EE", "#F5F2EE"], shadowTint: "#46322A", shadow: day.shadow * 0.8 };
+  if (mood === "evening") return covered ? day : { background: ["#FFE0C7", "#FBF0E6", "#F4EFEA"], shadowTint: "#4A2F22", shadow: day.shadow * 0.9 };
+  return day;
 }
 
 export function skyScene(snapshot: WeatherSnapshot, now: Date, isFallback = false): SkyScene {
   const mood = skyMood(now);
-  // Tant que la vraie météo n'est pas là, on montre un ciel neutre plutôt qu'une météo inventée.
+  // Tant que la vraie météo n'est pas là, on montre un temps doux plutôt qu'une météo inventée.
   const weather: SkyWeather = isFallback ? "partly" : skyWeather(snapshot);
   const gusts = isFallback ? 0 : snapshot.next12h.windGustKmhMax;
   const wind = Math.min(1, Math.max(0.15, (gusts - 10) / 60));
-  const covered = weather === "rain" || weather === "storm" || weather === "cloudy" || weather === "snow";
+  const light = lightFor(mood, weather);
   return {
     mood,
     weather,
-    gradient: gradientFor(mood, weather),
-    body: covered ? null : mood === "night" ? "moon" : "sun",
-    stars: mood === "night" && !covered,
-    clouds: weather === "clear" || weather === "heat" || weather === "frost" ? 1 : weather === "partly" ? 2 : 3,
-    cloudTone: weather === "storm" ? "dark" : covered ? "grey" : "white",
-    particles: weather === "rain" || weather === "storm" ? "rain" : weather === "snow" || weather === "frost" ? "snow" : null,
+    ...light,
+    passingClouds: weather === "partly" && light.shadow > 0.3,
+    mirrored: now.getHours() >= 13,
+    lowSun: mood === "dawn" || mood === "evening",
+    particles: weather === "rain" || weather === "storm" ? "rain" : weather === "snow" ? "snow" : null,
     wind: weather === "storm" ? Math.max(wind, 0.7) : wind,
     flash: weather === "storm",
   };

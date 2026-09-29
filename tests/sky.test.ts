@@ -31,17 +31,29 @@ describe("sky scene", () => {
     expect(skyWeather({ ...base, current: { ...base.current, weatherCode: 3 } })).toBe("cloudy");
   });
 
-  it("draws rain, snowflakes, the moon and stronger sway when it should", () => {
-    const rain = skyScene(applyWeatherScenario(base, "rain", at(12)), at(12));
+  it("casts strong shadows in the sun and almost none under rain", () => {
+    const sunny = skyScene(base, at(11));
+    const rain = skyScene(applyWeatherScenario(base, "rain", at(11)), at(11));
+    expect(sunny.shadow).toBe(1);
+    expect(rain.shadow).toBeLessThan(0.2);
     expect(rain.particles).toBe("rain");
-    expect(rain.body).toBeNull();
-    expect(skyScene(applyWeatherScenario(base, "frost", at(12)), at(12)).particles).toBe("snow");
+    expect(skyScene(applyWeatherScenario(base, "storm", at(11)), at(11)).flash).toBe(true);
+  });
+
+  it("turns the shadows with the sun and tints them blue by moonlight", () => {
+    expect(skyScene(base, at(10)).mirrored).toBe(false);
+    expect(skyScene(base, at(16)).mirrored).toBe(true);
+    expect(skyScene(base, at(19)).lowSun).toBe(true);
     const night = skyScene(base, at(23));
-    expect(night).toMatchObject({ body: "moon", stars: true });
-    expect(skyScene(base, at(13))).toMatchObject({ body: "sun", stars: false });
+    expect(night.shadowTint).toBe("#1E2A4A");
+    expect(night.shadow).toBeLessThan(1);
+  });
+
+  it("lets passing clouds dim the shadows and the wind sway the leaves", () => {
+    const partly = { ...base, current: { ...base.current, weatherCode: 2 } };
+    expect(skyScene(partly, at(11)).passingClouds).toBe(true);
     const windy = skyScene(applyWeatherScenario(base, "wind", at(12)), at(12));
     expect(windy.wind).toBeGreaterThan(skyScene(base, at(12)).wind);
-    expect(skyScene(applyWeatherScenario(base, "storm", at(12)), at(12)).flash).toBe(true);
   });
 
   it("stays neutral until the real weather has loaded", () => {
