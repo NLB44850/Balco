@@ -75,7 +75,7 @@ export default function AddPlantScreen() {
 
   return (
     <LightScreen>
-      <ScrollView showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled" contentContainerStyle={[styles.content, { paddingTop: insets.top + 14, paddingBottom: insets.bottom + (plants.length > 0 ? 110 : 40) }]}>
+      <ScrollView style={styles.flex} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled" contentContainerStyle={[styles.content, { paddingTop: insets.top + 14, paddingBottom: plants.length > 0 ? 20 : insets.bottom + 40 }]}>
         <ScreenHeader back title="Ajouter une plante" subtitle={`${PLANT_CATALOG.length} plantes pour le balcon`} />
 
         <View style={[glass.card, styles.search]}>
@@ -126,8 +126,9 @@ export default function AddPlantScreen() {
         )}
       </ScrollView>
 
+      {/* Une barre sous la liste (pas par-dessus) : le bouton reste en bas et ne cache aucune plante. */}
       {plants.length > 0 && (
-        <View style={[styles.footer, { paddingBottom: insets.bottom + 14 }]}>
+        <View style={[styles.footer, { paddingBottom: insets.bottom + 12, borderTopColor: colors.border }]}>
           <Pressable accessibilityRole="button" onPress={() => router.dismissTo("/(tabs)/balcony")} style={({ pressed }) => [styles.doneButton, { backgroundColor: colors.foreground }, pressed && styles.pressed]}>
             <Text style={[styles.doneText, { color: colors.background }]}>Voir mon balcon · {plants.length} plante{plants.length > 1 ? "s" : ""}</Text>
           </Pressable>
@@ -189,8 +190,8 @@ const styles = StyleSheet.create({
   meta: { fontSize: 13, marginTop: 1 },
   add: { width: 38, height: 38, borderRadius: 19, alignItems: "center", justifyContent: "center" },
   addText: { fontSize: 22, fontWeight: "700", marginTop: -2 },
-  footer: { position: "absolute", left: 20, right: 20, bottom: 0 },
-  doneButton: { borderRadius: 16, paddingVertical: 15, alignItems: "center", shadowColor: "#000", shadowOpacity: 0.15, shadowRadius: 12, shadowOffset: { width: 0, height: 4 }, elevation: 4 },
+  footer: { paddingHorizontal: 20, paddingTop: 12, backgroundColor: "rgba(255,255,255,0.92)", borderTopWidth: StyleSheet.hairlineWidth },
+  doneButton: { borderRadius: 16, paddingVertical: 15, alignItems: "center" },
   doneText: { fontSize: 15, fontWeight: "700" },
   sheet: { gap: 12 },
   sheetTop: { flexDirection: "row", alignItems: "center", gap: 12 },
