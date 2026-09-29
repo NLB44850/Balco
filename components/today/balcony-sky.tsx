@@ -89,6 +89,8 @@ function parallax(scrollY: Animated.Value, distance: number) {
 }
 
 const STILL = new Animated.Value(0);
+/** Force minimale des ombres (ciel couvert, pluie, nuit) : assez pour garder le balcon en filigrane. */
+const SHADOW_FLOOR = 0.6;
 
 export function BalconySky({ scene, quiet = false, pots = [], topInset, scrollY = STILL }: Props) {
   const reduce = useReduceMotion();
@@ -115,13 +117,14 @@ export function BalconySky({ scene, quiet = false, pots = [], topInset, scrollY 
     return Array.from({ length: count }, (_, index) => ({ x: random[index] * width, phase: random[count + index], pick: random[count * 2 + index] }));
   }, [scene.particles, width]);
 
-  const s = scene.shadow * (quiet ? 0.7 : 1);
+  // Le filigrane reste toujours visible : plus marqué au soleil, jamais effacé par les nuages ou la nuit.
+  const s = Math.max(scene.shadow, SHADOW_FLOOR) * (quiet ? 0.85 : 1);
   const flip = scene.mirrored ? -1 : 1;
   const stretch = scene.lowSun ? 1.12 : 1;
   const angle = 1.2 + scene.wind * 3;
   const tint = { tintColor: scene.shadowTint };
   // Des nuages de passage : toutes les ombres pâlissent puis reviennent, doucement.
-  const shade = scene.passingClouds && animate ? swing(clouds, 1, 0.35) : 1;
+  const shade = scene.passingClouds && animate ? swing(clouds, 1, 0.6) : 1;
   const leavesWidth = width * 1.25;
   const railWidth = width * 1.15;
   const plantSize = Math.min(210, width * 0.52);

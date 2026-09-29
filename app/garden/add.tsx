@@ -1,10 +1,20 @@
-import { useRouter } from "expo-router";
-import { useMemo, useState } from "react";
-import { Platform, Pressable, ScrollView, StyleSheet, View } from "react-native";
-import { Text, TextInput } from "@/components/ui/typography";
+/**
+ * Le catalogue : ajouter une plante en un toucher. Une recherche, les plantes adaptées à ton balcon
+ * d'abord, les familles en pastilles. Le « + » ajoute tout de suite (avec « Annuler ») ; toucher la
+ * ligne ouvre la fiche du catalogue dans la feuille du bas (variétés, calendrier, pot).
+ */
 import * as Haptics from "expo-haptics";
+import { useRouter } from "expo-router";
+import { useCallback, useMemo, useRef, useState } from "react";
+import { Platform, Pressable, ScrollView, StyleSheet, View } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 
-import { ScreenContainer } from "@/components/screen-container";
+import { LightScreen } from "@/components/light-screen";
+import { ScreenHeader } from "@/components/screen-header";
+import { BottomSheet } from "@/components/today/bottom-sheet";
+import { UndoToast, type ToastMessage } from "@/components/today/undo-toast";
+import { glass } from "@/components/ui/glass";
+import { Text, TextInput } from "@/components/ui/typography";
 import { useColors } from "@/hooks/use-colors";
 import { useGarden } from "@/lib/garden/garden-context";
 import {
@@ -14,6 +24,7 @@ import {
   SUNLIGHT_LABELS,
   effortLabel,
   formatMonthRange,
+  getCatalogPlant,
   recommendPlants,
   searchCatalog,
   type PlantCategory,
@@ -26,11 +37,16 @@ const categories = Object.keys(CATEGORY_LABELS) as PlantCategory[];
 export default function AddPlantScreen() {
   const colors = useColors();
   const router = useRouter();
-  const { plants, onboarding, addPlant } = useGarden();
+  const insets = useSafeAreaInsets();
+  const { plants, onboarding, addPlant, removePlant } = useGarden();
   const [query, setQuery] = useState("");
   const [category, setCategory] = useState<PlantCategory | undefined>(undefined);
   const hasBalconyInfo = Boolean(onboarding && !onboarding.skipped && (onboarding.sunlight || onboarding.space));
   const [onlyFitting, setOnlyFitting] = useState(hasBalconyInfo);
+  const [sheetId, setSheetId] = useState<string | null>(null);
+  const [toast, setToast] = useState<ToastMessage | null>(null);
+  const toastId = useRef(0);
+  const hideToast = useCallback(() => setToast(null), []);
 
   const countByCatalogId = useMemo(() => {
     const counts = new Map<string, number>();
@@ -45,110 +61,147 @@ export default function AddPlantScreen() {
   }, [category, onboarding, onlyFitting, query]);
 
   const fitLabel = hasBalconyInfo
-    ? [onboarding?.sunlight && SUNLIGHT_LABELS[onboarding.sunlight as Sunlight], onboarding?.space && SPACE_LABELS[onboarding.space as SpaceSize]].filter(Boolean).join(" · ")
+    ? [onboarding?.sunlight && SUNLIGHT_LABELS[onboarding.sunlight as Sunlight], onboarding?.space && SPACE_LABELS[onboarding.space as SpaceSize]].filter(Boolean).join(" · ").toLowerCase()
     : null;
+  const sheetEntry = sheetId ? getCatalogPlant(sheetId) : undefined;
 
   const add = async (catalogId: string) => {
-    await addPlant(catalogId);
-    if (Platform.OS !== "web") await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+    const entry = getCatalogPlant(catalogId);
+    const created = await addPlant(catalogId);
+    if (Platform.OS !== "web") void Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => undefined);
+    toastId.current += 1;
+    setToast({ id: toastId.current, text: `Ajouté à ton balcon : ${entry?.name ?? "ta plante"}`, onUndo: () => void removePlant(created.id) });
   };
 
   return (
-    <ScreenContainer edges={["top", "left", "right", "bottom"]}>
-      <ScrollView showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled" contentContainerStyle={styles.content}>
-        <View style={styles.header}>
-          <Pressable accessibilityRole="button" accessibilityLabel="Retour" onPress={() => (router.canGoBack() ? router.back() : router.replace("/(tabs)/balcony"))} style={({ pressed }) => [styles.backButton, { borderColor: colors.border }, pressed && styles.pressed]}>
-            <Text style={[styles.backText, { color: colors.foreground }]}>‹</Text>
-          </Pressable>
-          <View style={styles.headerCopy}>
-            <Text style={[styles.overline, { color: colors.terracotta }]}>CATALOGUE · {PLANT_CATALOG.length} PLANTES</Text>
-            <Text style={[styles.title, { color: colors.foreground }]}>Ajouter une plante</Text>
-          </View>
+    <LightScreen>
+      <ScrollView showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled" contentContainerStyle={[styles.content, { paddingTop: insets.top + 14, paddingBottom: insets.bottom + (plants.length > 0 ? 110 : 40) }]}>
+        <ScreenHeader back title="Ajouter une plante" subtitle={`${PLANT_CATALOG.length} plantes pour le balcon`} />
+
+        <View style={[glass.card, styles.search]}>
+          <Text style={styles.searchIcon}>🔎</Text>
+          <TextInput value={query} onChangeText={setQuery} placeholder="Basilic, fraisier, lavande…" placeholderTextColor={colors.muted} returnKeyType="search" autoCorrect={false} accessibilityLabel="Rechercher une plante" style={[styles.searchInput, { color: colors.foreground }]} />
+          {query.length > 0 && <Pressable accessibilityRole="button" accessibilityLabel="Effacer la recherche" hitSlop={8} onPress={() => setQuery("")}><Text style={[styles.clear, { color: colors.muted }]}>×</Text></Pressable>}
         </View>
 
-        <TextInput value={query} onChangeText={setQuery} placeholder="Rechercher : basilic, fraisier…" placeholderTextColor={colors.muted} returnKeyType="search" style={[styles.search, { borderColor: colors.border, backgroundColor: colors.surface, color: colors.foreground }]} />
-
-        {hasBalconyInfo && (
-          <Pressable onPress={() => setOnlyFitting((value) => !value)} style={({ pressed }) => [styles.fitToggle, { backgroundColor: onlyFitting ? colors.leaf : colors.cream }, pressed && styles.pressed]}>
-            <Text style={[styles.fitText, { color: colors.primary }]}>{onlyFitting ? "✓" : "○"} Adaptées à mon balcon{fitLabel ? ` (${fitLabel.toLowerCase()})` : ""}</Text>
-          </Pressable>
-        )}
-
         <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.chips}>
+          {hasBalconyInfo && (
+            <Pressable accessibilityRole="button" accessibilityState={{ selected: onlyFitting }} onPress={() => setOnlyFitting((value) => !value)} style={({ pressed }) => [styles.chip, onlyFitting ? { backgroundColor: colors.primary } : glass.soft, pressed && styles.pressed]}>
+              <Text style={[styles.chipText, { color: onlyFitting ? "#FFFFFF" : colors.foreground }]}>{onlyFitting ? "✓ " : ""}Pour mon balcon</Text>
+            </Pressable>
+          )}
           {[undefined, ...categories].map((value) => {
             const active = category === value;
             return (
-              <Pressable key={value ?? "all"} onPress={() => setCategory(value)} style={({ pressed }) => [styles.chip, { borderColor: active ? colors.foreground : colors.border, backgroundColor: active ? colors.foreground : colors.surface }, pressed && styles.pressed]}>
-                <Text style={[styles.chipText, { color: active ? colors.sun : colors.foreground }]}>{value ? CATEGORY_LABELS[value] : "Toutes"}</Text>
+              <Pressable key={value ?? "all"} accessibilityRole="button" accessibilityState={{ selected: active }} onPress={() => setCategory(value)} style={({ pressed }) => [styles.chip, active ? { backgroundColor: colors.foreground } : glass.soft, pressed && styles.pressed]}>
+                <Text style={[styles.chipText, { color: active ? "#FFFFFF" : colors.foreground }]}>{value ? CATEGORY_LABELS[value] : "Toutes"}</Text>
               </Pressable>
             );
           })}
         </ScrollView>
 
+        {onlyFitting && fitLabel && <Text style={[styles.hint, { color: colors.muted }]}>Les plus adaptées d’abord : {fitLabel}, et la saison.</Text>}
         {results.length === 0 && <Text style={[styles.empty, { color: colors.muted }]}>Aucune plante ne correspond. Essaie un autre mot ou retire un filtre.</Text>}
 
-        {results.map((entry) => {
-          const owned = countByCatalogId.get(entry.id) ?? 0;
-          return (
-            <View key={entry.id} style={[styles.card, { backgroundColor: colors.surface, borderColor: colors.border }]}>
-              <View style={styles.cardTop}>
-                <View style={[styles.emojiBubble, { backgroundColor: colors.leaf }]}><Text style={styles.emoji}>{entry.emoji}</Text></View>
-                <View style={styles.cardCopy}>
-                  <Text style={[styles.name, { color: colors.foreground }]}>{entry.name}</Text>
-                  <Text style={[styles.effort, { color: colors.primary }]}>{effortLabel(entry)}</Text>
+        {results.length > 0 && (
+          <View style={[glass.card, styles.list]}>
+            {results.map((entry, index) => {
+              const owned = countByCatalogId.get(entry.id) ?? 0;
+              return (
+                <View key={entry.id} style={[styles.row, index < results.length - 1 && glass.line]}>
+                  <Pressable accessibilityRole="button" accessibilityLabel={`${entry.name}, voir le détail`} onPress={() => setSheetId(entry.id)} style={({ pressed }) => [styles.rowMain, pressed && styles.pressed]}>
+                    <View style={[styles.bubble, { backgroundColor: colors.leaf }]}><Text style={styles.emoji}>{entry.emoji}</Text></View>
+                    <View style={styles.flex}>
+                      <Text style={[styles.name, { color: colors.foreground }]} numberOfLines={1}>{entry.name}</Text>
+                      <Text style={[styles.meta, { color: owned ? colors.primary : colors.muted }]} numberOfLines={1}>{owned ? `✓ Sur ton balcon${owned > 1 ? ` (${owned})` : ""}` : effortLabel(entry)}</Text>
+                    </View>
+                  </Pressable>
+                  <Pressable accessibilityRole="button" accessibilityLabel={`Ajouter ${entry.name}`} hitSlop={8} onPress={() => void add(entry.id)} style={({ pressed }) => [styles.add, { backgroundColor: owned ? colors.leaf : colors.primary }, pressed && styles.pressed]}>
+                    <Text style={[styles.addText, { color: owned ? colors.primary : "#FFFFFF" }]}>+</Text>
+                  </Pressable>
                 </View>
-                <Pressable accessibilityRole="button" accessibilityLabel={`Ajouter ${entry.name}`} onPress={() => void add(entry.id)} style={({ pressed }) => [styles.addButton, { backgroundColor: owned ? colors.leaf : colors.terracotta }, pressed && styles.pressed]}>
-                  <Text style={[styles.addText, { color: owned ? colors.primary : "#FFFFFF" }]}>{owned ? `✓ ${owned} · +1` : "+ Ajouter"}</Text>
-                </Pressable>
-              </View>
-              <Text style={[styles.pitch, { color: colors.muted }]}>{entry.pitch}</Text>
-              {entry.varieties.length > 0 && <Text style={[styles.facts, { color: colors.foreground }]}>Variétés conseillées : {entry.varieties.map((variety) => variety.name).join(", ")}</Text>}
-              <Text style={[styles.facts, { color: colors.muted }]}>
-                {entry.sowMonths.length > 0 ? `Semis : ${formatMonthRange(entry.sowMonths)} · ` : ""}
-                {entry.plantMonths.length > 0 ? `Plantation : ${formatMonthRange(entry.plantMonths)} · ` : ""}
-                Récolte : {formatMonthRange(entry.harvestMonths)} · Pot ≥ {entry.potLiters} L{entry.melliferous ? " · 🐝" : ""}
-              </Text>
-            </View>
-          );
-        })}
-
-        {plants.length > 0 && (
-          <Pressable onPress={() => router.dismissTo("/(tabs)/balcony")} style={({ pressed }) => [styles.doneButton, { backgroundColor: colors.foreground }, pressed && styles.pressed]}>
-            <Text style={[styles.doneText, { color: colors.sun }]}>Voir mon balcon ({plants.length})</Text>
-          </Pressable>
+              );
+            })}
+          </View>
         )}
       </ScrollView>
-    </ScreenContainer>
+
+      {plants.length > 0 && (
+        <View style={[styles.footer, { paddingBottom: insets.bottom + 14 }]}>
+          <Pressable accessibilityRole="button" onPress={() => router.dismissTo("/(tabs)/balcony")} style={({ pressed }) => [styles.doneButton, { backgroundColor: colors.foreground }, pressed && styles.pressed]}>
+            <Text style={[styles.doneText, { color: colors.background }]}>Voir mon balcon · {plants.length} plante{plants.length > 1 ? "s" : ""}</Text>
+          </Pressable>
+        </View>
+      )}
+
+      <BottomSheet visible={sheetEntry !== undefined} onClose={() => setSheetId(null)}>
+        {sheetEntry && (
+          <View style={styles.sheet}>
+            <View style={styles.sheetTop}>
+              <View style={[styles.sheetBubble, { backgroundColor: colors.leaf }]}><Text style={styles.sheetEmoji}>{sheetEntry.emoji}</Text></View>
+              <View style={styles.flex}>
+                <Text style={[styles.sheetTitle, { color: colors.foreground }]}>{sheetEntry.name}</Text>
+                <Text style={[styles.meta, { color: colors.primary }]}>{CATEGORY_LABELS[sheetEntry.category]} · {effortLabel(sheetEntry)}</Text>
+              </View>
+            </View>
+            <Text style={[styles.sheetBody, { color: colors.muted }]}>{sheetEntry.pitch}</Text>
+            <View style={styles.facts}>
+              {[
+                sheetEntry.sowMonths.length > 0 ? `🌱  Semis : ${formatMonthRange(sheetEntry.sowMonths)}` : null,
+                sheetEntry.plantMonths.length > 0 ? `🪴  Plantation : ${formatMonthRange(sheetEntry.plantMonths)}` : null,
+                `🧺  Récolte : ${formatMonthRange(sheetEntry.harvestMonths)}`,
+                `🪣  Pot d’au moins ${sheetEntry.potLiters} L`,
+                sheetEntry.melliferous ? "🐝  Aimée des abeilles" : null,
+              ].filter(Boolean).map((fact) => (
+                <View key={fact} style={[styles.fact, { backgroundColor: colors.surface }]}><Text style={[styles.factText, { color: colors.foreground }]}>{fact}</Text></View>
+              ))}
+            </View>
+            {sheetEntry.varieties.length > 0 && <Text style={[styles.meta, { color: colors.muted }]}>Variétés conseillées : {sheetEntry.varieties.map((variety) => variety.name).join(", ")}</Text>}
+            <Pressable accessibilityRole="button" onPress={() => { const id = sheetEntry.id; setSheetId(null); void add(id); }} style={({ pressed }) => [styles.cta, { backgroundColor: colors.primary }, pressed && styles.pressed]}>
+              <Text style={styles.ctaText}>{countByCatalogId.get(sheetEntry.id) ? "En ajouter une autre" : "Ajouter à mon balcon"}</Text>
+            </Pressable>
+          </View>
+        )}
+      </BottomSheet>
+      <UndoToast message={toast} onDone={hideToast} bottom={insets.bottom + (plants.length > 0 ? 86 : 16)} />
+    </LightScreen>
   );
 }
 
 const styles = StyleSheet.create({
-  content: { paddingHorizontal: 20, paddingTop: 17, paddingBottom: 40, gap: 12 },
-  header: { flexDirection: "row", alignItems: "center", gap: 12, marginBottom: 4 },
-  backButton: { width: 40, height: 40, borderRadius: 14, borderWidth: 1, alignItems: "center", justifyContent: "center" },
-  backText: { fontSize: 26, fontWeight: "700", marginTop: -3 },
-  headerCopy: { flex: 1 },
-  overline: { fontSize: 9, letterSpacing: 1.05, fontWeight: "800" },
-  title: { fontSize: 27, fontWeight: "800", letterSpacing: -0.7, marginTop: 3 },
-  search: { borderWidth: 1, borderRadius: 16, paddingHorizontal: 14, paddingVertical: 12, fontSize: 14 },
-  fitToggle: { borderRadius: 14, paddingHorizontal: 13, paddingVertical: 10, alignSelf: "flex-start" },
-  fitText: { fontSize: 12, fontWeight: "800" },
-  chips: { gap: 7, paddingRight: 20 },
-  chip: { borderWidth: 1, borderRadius: 14, paddingHorizontal: 12, paddingVertical: 8 },
-  chipText: { fontSize: 12, fontWeight: "800" },
-  empty: { fontSize: 13, lineHeight: 19, paddingVertical: 20, textAlign: "center" },
-  card: { borderRadius: 20, borderWidth: 1, padding: 14, gap: 8 },
-  cardTop: { flexDirection: "row", alignItems: "center", gap: 12 },
-  emojiBubble: { width: 44, height: 44, borderRadius: 14, alignItems: "center", justifyContent: "center" },
+  content: { paddingHorizontal: 20, gap: 14 },
+  flex: { flex: 1 },
+  search: { flexDirection: "row", alignItems: "center", gap: 10, paddingHorizontal: 14, minHeight: 52 },
+  searchIcon: { fontSize: 16 },
+  searchInput: { flex: 1, fontSize: 16, paddingVertical: 12 },
+  clear: { fontSize: 24, paddingHorizontal: 4 },
+  chips: { gap: 8, paddingVertical: 2 },
+  chip: { borderRadius: 999, paddingHorizontal: 14, paddingVertical: 9 },
+  chipText: { fontSize: 13, fontWeight: "600" },
+  hint: { fontSize: 13, lineHeight: 18, marginTop: -4 },
+  empty: { fontSize: 14, lineHeight: 20, paddingVertical: 20, textAlign: "center" },
+  list: { paddingHorizontal: 14 },
+  row: { flexDirection: "row", alignItems: "center", gap: 10, paddingVertical: 10 },
+  rowMain: { flex: 1, flexDirection: "row", alignItems: "center", gap: 12 },
+  bubble: { width: 46, height: 46, borderRadius: 23, alignItems: "center", justifyContent: "center" },
   emoji: { fontSize: 23 },
-  cardCopy: { flex: 1 },
-  name: { fontSize: 15, fontWeight: "800" },
-  effort: { fontSize: 11, fontWeight: "700", marginTop: 2 },
-  addButton: { borderRadius: 12, paddingHorizontal: 11, paddingVertical: 8 },
-  addText: { fontSize: 12, fontWeight: "800" },
-  pitch: { fontSize: 12, lineHeight: 17 },
-  facts: { fontSize: 11, lineHeight: 16 },
-  doneButton: { borderRadius: 18, paddingVertical: 15, alignItems: "center", marginTop: 6 },
-  doneText: { fontSize: 14, fontWeight: "800" },
-  pressed: { opacity: 0.75, transform: [{ scale: 0.98 }] },
+  name: { fontSize: 16, fontWeight: "700" },
+  meta: { fontSize: 13, marginTop: 1 },
+  add: { width: 38, height: 38, borderRadius: 19, alignItems: "center", justifyContent: "center" },
+  addText: { fontSize: 22, fontWeight: "700", marginTop: -2 },
+  footer: { position: "absolute", left: 20, right: 20, bottom: 0 },
+  doneButton: { borderRadius: 16, paddingVertical: 15, alignItems: "center", shadowColor: "#000", shadowOpacity: 0.15, shadowRadius: 12, shadowOffset: { width: 0, height: 4 }, elevation: 4 },
+  doneText: { fontSize: 15, fontWeight: "700" },
+  sheet: { gap: 12 },
+  sheetTop: { flexDirection: "row", alignItems: "center", gap: 12 },
+  sheetBubble: { width: 56, height: 56, borderRadius: 28, alignItems: "center", justifyContent: "center" },
+  sheetEmoji: { fontSize: 28 },
+  sheetTitle: { fontSize: 22, fontWeight: "800", letterSpacing: -0.4 },
+  sheetBody: { fontSize: 15, lineHeight: 22 },
+  facts: { flexDirection: "row", flexWrap: "wrap", gap: 8 },
+  fact: { borderRadius: 999, paddingHorizontal: 12, paddingVertical: 7 },
+  factText: { fontSize: 13, fontWeight: "600" },
+  cta: { borderRadius: 14, paddingVertical: 15, alignItems: "center", marginTop: 4 },
+  ctaText: { color: "#FFFFFF", fontSize: 16, fontWeight: "700" },
+  pressed: { opacity: 0.78, transform: [{ scale: 0.97 }] },
 });

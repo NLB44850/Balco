@@ -87,6 +87,11 @@ Livré, à valider sur son téléphone :
 - **Onboarding refait** (`app/welcome.tsx`, choix dans `lib/garden/onboarding.ts`) : lumière du
   balcon, prénom facultatif, une question par écran qui avance toute seule, puis « Tes premières
   plantes » (3 cochées d'office) et « Créer mon balcon ».
+- **Connexion** (`app/login.tsx`) et **catalogue** (`app/garden/add.tsx`) au même style : lumière du
+  balcon, code en 6 cases (connexion dès le 6ᵉ chiffre) ; catalogue en liste avec « + » immédiat et
+  « Annuler », fiche du catalogue dans la feuille du bas, bouton « Voir mon balcon » fixe.
+- Filigrane du balcon : les ombres gardent une force minimale (`SHADOW_FLOOR` dans
+  `components/today/balcony-sky.tsx`) pour rester visibles par temps couvert, pluie ou la nuit.
 
 À faire, dans l'ordre :
 1. Priorité 3, Nora qui se souvient (niveau, préférences, historique complet).

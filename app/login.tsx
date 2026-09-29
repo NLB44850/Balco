@@ -4,10 +4,14 @@ import * as Crypto from "expo-crypto";
 import { useRouter } from "expo-router";
 import * as WebBrowser from "expo-web-browser";
 import { useEffect, useRef, useState } from "react";
-import { ActivityIndicator, KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, View } from "react-native";
+import { ActivityIndicator, KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, View, type TextInput as RNTextInput } from "react-native";
 import { Text, TextInput } from "@/components/ui/typography";
 
-import { ScreenContainer } from "@/components/screen-container";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
+
+import { LightScreen } from "@/components/light-screen";
+import { glass } from "@/components/ui/glass";
+import { IconSymbol } from "@/components/ui/icon-symbol";
 import { useColors } from "@/hooks/use-colors";
 import type { SignInResult } from "@/hooks/use-auth";
 import { useGarden } from "@/lib/garden/garden-context";
@@ -44,6 +48,8 @@ export default function LoginScreen() {
   const [resendIn, setResendIn] = useState(0);
   const [appleAvailable, setAppleAvailable] = useState(false);
   const submittedCode = useRef<string | null>(null);
+  const codeInput = useRef<RNTextInput>(null);
+  const insets = useSafeAreaInsets();
 
   useEffect(() => {
     if (Platform.OS === "ios") void AppleAuthentication.isAvailableAsync().then(setAppleAvailable);
@@ -124,67 +130,91 @@ export default function LoginScreen() {
   const showGoogle = googleConfiguredHere && providers.data?.google;
 
   return (
-    <ScreenContainer edges={["top", "left", "right", "bottom"]}>
+    <LightScreen bottom>
       <KeyboardAvoidingView behavior={Platform.OS === "ios" ? "padding" : undefined} style={styles.flex}>
-        <ScrollView keyboardShouldPersistTaps="handled" contentContainerStyle={styles.content}>
+        <ScrollView keyboardShouldPersistTaps="handled" contentContainerStyle={[styles.content, { paddingTop: insets.top + 12 }]}>
           <View style={styles.header}>
-            <Text style={[styles.overline, { color: colors.terracotta }]}>MON COMPTE BALCO</Text>
-            <Pressable accessibilityRole="button" accessibilityLabel="Fermer" onPress={close} style={({ pressed }) => [styles.closeButton, { borderColor: colors.border }, pressed && styles.pressed]}>
+            {step === "code" ? (
+              <Pressable accessibilityRole="button" accessibilityLabel="Changer d’adresse" hitSlop={8} onPress={() => { setStep("email"); setError(null); }} style={({ pressed }) => [styles.round, pressed && styles.pressed]}>
+                <IconSymbol name="chevron.left" size={24} color={colors.foreground} />
+              </Pressable>
+            ) : <View />}
+            <Pressable accessibilityRole="button" accessibilityLabel="Fermer" hitSlop={8} onPress={close} style={({ pressed }) => [styles.round, pressed && styles.pressed]}>
               <Text style={[styles.closeText, { color: colors.foreground }]}>×</Text>
             </Pressable>
           </View>
+
+          <View style={[styles.badge, { backgroundColor: colors.leaf }]}><Text style={styles.badgeEmoji}>{step === "email" ? "🪴" : "✉️"}</Text></View>
 
           {step === "email" ? (
             <>
               <Text style={[styles.title, { color: colors.foreground }]}>Retrouve ton balcon partout.</Text>
               <Text style={[styles.subtitle, { color: colors.muted }]}>Pas de mot de passe : on t’envoie un code par e-mail. Tes plantes et ton historique te suivront sur tous tes téléphones.</Text>
-              <TextInput
-                value={email}
-                onChangeText={setEmail}
-                onSubmitEditing={() => emailValid && void sendCode()}
-                placeholder="ton@adresse.fr"
-                placeholderTextColor={colors.muted}
-                keyboardType="email-address"
-                autoCapitalize="none"
-                autoCorrect={false}
-                autoComplete="email"
-                textContentType="emailAddress"
-                returnKeyType="send"
-                accessibilityLabel="Adresse e-mail"
-                style={[styles.input, { borderColor: colors.border, backgroundColor: colors.surface, color: colors.foreground }]}
-              />
-              <Pressable disabled={!emailValid || busy} onPress={() => void sendCode()} style={({ pressed }) => [styles.primaryButton, { backgroundColor: emailValid ? colors.terracotta : colors.border }, pressed && styles.pressed]}>
-                {busy ? <ActivityIndicator color="#FFFFFF" /> : <Text style={styles.primaryText}>Recevoir un code</Text>}
+              <View style={[glass.card, styles.field]}>
+                <Text style={[styles.label, { color: colors.foreground }]}>Ton adresse e-mail</Text>
+                <TextInput
+                  value={email}
+                  onChangeText={(value) => { setEmail(value); setError(null); }}
+                  onSubmitEditing={() => emailValid && void sendCode()}
+                  placeholder="ton@adresse.fr"
+                  placeholderTextColor={colors.muted}
+                  keyboardType="email-address"
+                  autoCapitalize="none"
+                  autoCorrect={false}
+                  autoComplete="email"
+                  textContentType="emailAddress"
+                  returnKeyType="send"
+                  autoFocus
+                  accessibilityLabel="Adresse e-mail"
+                  style={[styles.input, { borderColor: emailValid ? colors.primary : colors.border, color: colors.foreground }]}
+                />
+              </View>
+              <Pressable accessibilityRole="button" disabled={!emailValid || busy} onPress={() => void sendCode()} style={({ pressed }) => [styles.primaryButton, { backgroundColor: emailValid ? colors.primary : "rgba(18,22,20,0.12)" }, pressed && styles.pressed]}>
+                {busy ? <ActivityIndicator color="#FFFFFF" /> : <Text style={[styles.primaryText, !emailValid && { color: colors.muted }]}>Recevoir mon code</Text>}
               </Pressable>
             </>
           ) : (
             <>
-              <Text style={[styles.title, { color: colors.foreground }]}>Vérifie tes e-mails.</Text>
-              <Text style={[styles.subtitle, { color: colors.muted }]}>Un code à 6 chiffres vient de partir vers {email.trim()}. Il est valable 10 minutes.</Text>
-              <TextInput
-                value={code}
-                onChangeText={onCodeChange}
-                placeholder="123456"
-                placeholderTextColor={colors.muted}
-                keyboardType="number-pad"
-                autoComplete="one-time-code"
-                textContentType="oneTimeCode"
-                maxLength={6}
-                autoFocus
-                accessibilityLabel="Code reçu par e-mail"
-                style={[styles.input, styles.codeInput, { borderColor: colors.border, backgroundColor: colors.surface, color: colors.foreground }]}
-              />
-              <Pressable disabled={code.length !== 6 || busy} onPress={() => verifyCode(code)} style={({ pressed }) => [styles.primaryButton, { backgroundColor: code.length === 6 ? colors.terracotta : colors.border }, pressed && styles.pressed]}>
-                {busy ? <ActivityIndicator color="#FFFFFF" /> : <Text style={styles.primaryText}>Me connecter</Text>}
+              <Text style={[styles.title, { color: colors.foreground }]}>Regarde tes e-mails.</Text>
+              <Text style={[styles.subtitle, { color: colors.muted }]}>Un code à 6 chiffres vient de partir vers <Text style={{ color: colors.foreground, fontWeight: "700" }}>{email.trim()}</Text>. Il est valable 10 minutes. Pense aux indésirables s’il n’arrive pas.</Text>
+              {/* Six cases qui se remplissent au fur et à mesure ; le vrai champ est dessous, invisible. */}
+              <Pressable accessibilityRole="none" onPress={() => codeInput.current?.focus()} style={styles.codeRow}>
+                {Array.from({ length: 6 }, (_, index) => {
+                  const digit = code[index];
+                  const current = index === code.length && !busy;
+                  return (
+                    <View key={index} style={[glass.card, styles.codeBox, { borderColor: current ? colors.primary : digit ? "rgba(31,122,77,0.35)" : "rgba(18,22,20,0.12)", borderWidth: current ? 2 : 1 }]}>
+                      <Text style={[styles.codeDigit, { color: colors.foreground }]}>{digit ?? ""}</Text>
+                    </View>
+                  );
+                })}
+                <TextInput
+                  ref={codeInput}
+                  value={code}
+                  onChangeText={onCodeChange}
+                  keyboardType="number-pad"
+                  autoComplete="one-time-code"
+                  textContentType="oneTimeCode"
+                  maxLength={6}
+                  autoFocus
+                  caretHidden
+                  accessibilityLabel="Code reçu par e-mail"
+                  style={styles.hiddenInput}
+                />
               </Pressable>
+              {busy ? (
+                <View style={styles.checking}><ActivityIndicator color={colors.primary} /><Text style={[styles.subtitle, { color: colors.muted }]}>Vérification…</Text></View>
+              ) : (
+                <Text style={[styles.hint, { color: colors.muted }]}>La connexion se fait dès le 6ᵉ chiffre.</Text>
+              )}
               <View style={styles.linksRow}>
-                <Pressable disabled={resendIn > 0 || busy} onPress={() => void sendCode()}><Text style={[styles.link, { color: resendIn > 0 ? colors.muted : colors.primary }]}>{resendIn > 0 ? `Renvoyer le code (${resendIn} s)` : "Renvoyer le code"}</Text></Pressable>
-                <Pressable onPress={() => { setStep("email"); setError(null); }}><Text style={[styles.link, { color: colors.primary }]}>Changer d’adresse</Text></Pressable>
+                <Pressable accessibilityRole="button" disabled={resendIn > 0 || busy} onPress={() => void sendCode()} hitSlop={6}><Text style={[styles.link, { color: resendIn > 0 ? colors.muted : colors.primary }]}>{resendIn > 0 ? `Renvoyer le code (${resendIn} s)` : "Renvoyer le code"}</Text></Pressable>
+                <Pressable accessibilityRole="button" onPress={() => { setStep("email"); setError(null); }} hitSlop={6}><Text style={[styles.link, { color: colors.primary }]}>Changer d’adresse</Text></Pressable>
               </View>
             </>
           )}
 
-          {error && <Text accessibilityRole="alert" style={[styles.error, { color: colors.error }]}>{error}</Text>}
+          {error && <Text accessibilityRole="alert" style={[styles.error, { color: colors.error, backgroundColor: "rgba(255,255,255,0.85)" }]}>{error}</Text>}
 
           {step === "email" && (showApple || showGoogle) && (
             <>
@@ -202,10 +232,10 @@ export default function LoginScreen() {
             </>
           )}
 
-          <Text style={[styles.legal, { color: colors.muted }]}>En continuant, tu acceptes que Balco conserve ton adresse e-mail et les données de ton balcon pour les synchroniser. Tu peux supprimer ton compte à tout moment depuis ton profil.</Text>
+          <Text style={[styles.legal, { color: colors.muted }]}>En continuant, tu acceptes que Balco conserve ton adresse e-mail et les données de ton balcon pour les synchroniser. Tu peux supprimer ton compte à tout moment depuis Réglages.</Text>
         </ScrollView>
       </KeyboardAvoidingView>
-    </ScreenContainer>
+    </LightScreen>
   );
 }
 
@@ -224,7 +254,7 @@ function GoogleButton({ disabled, onToken }: { disabled: boolean; onToken: (idTo
   }, [onToken, response]);
 
   return (
-    <Pressable disabled={!request || disabled} onPress={() => void promptAsync()} style={({ pressed }) => [styles.googleButton, { borderColor: colors.border, backgroundColor: colors.surface }, pressed && styles.pressed]}>
+    <Pressable accessibilityRole="button" disabled={!request || disabled} onPress={() => void promptAsync()} style={({ pressed }) => [glass.card, styles.googleButton, { borderColor: colors.border }, pressed && styles.pressed]}>
       <Text style={styles.googleG}>G</Text>
       <Text style={[styles.googleText, { color: colors.foreground }]}>Continuer avec Google</Text>
     </Pressable>
@@ -233,27 +263,35 @@ function GoogleButton({ disabled, onToken }: { disabled: boolean; onToken: (idTo
 
 const styles = StyleSheet.create({
   flex: { flex: 1 },
-  content: { paddingHorizontal: 22, paddingTop: 18, paddingBottom: 40, gap: 14 },
-  header: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginBottom: 6 },
-  overline: { fontSize: 9, letterSpacing: 1.1, fontWeight: "800" },
-  closeButton: { width: 38, height: 38, borderRadius: 19, borderWidth: 1, alignItems: "center", justifyContent: "center" },
-  closeText: { fontSize: 22, marginTop: -2 },
-  title: { fontSize: 28, lineHeight: 32, fontWeight: "800", letterSpacing: -0.7 },
-  subtitle: { fontSize: 14, lineHeight: 20 },
-  input: { borderWidth: 1, borderRadius: 16, paddingHorizontal: 15, paddingVertical: 14, fontSize: 16, marginTop: 6 },
-  codeInput: { fontSize: 26, letterSpacing: 8, textAlign: "center", fontWeight: "800" },
-  primaryButton: { borderRadius: 16, paddingVertical: 15, alignItems: "center", minHeight: 50, justifyContent: "center" },
-  primaryText: { color: "#FFFFFF", fontSize: 15, fontWeight: "800" },
-  linksRow: { flexDirection: "row", justifyContent: "space-between" },
-  link: { fontSize: 13, fontWeight: "800" },
-  error: { fontSize: 13, fontWeight: "700", lineHeight: 18 },
+  content: { paddingHorizontal: 20, paddingBottom: 40, gap: 14 },
+  header: { flexDirection: "row", alignItems: "center", justifyContent: "space-between" },
+  round: { width: 40, height: 40, borderRadius: 20, alignItems: "center", justifyContent: "center", backgroundColor: "rgba(255,255,255,0.8)" },
+  closeText: { fontSize: 24, marginTop: -2 },
+  badge: { width: 56, height: 56, borderRadius: 28, alignItems: "center", justifyContent: "center", marginTop: 12 },
+  badgeEmoji: { fontSize: 26 },
+  title: { fontSize: 30, lineHeight: 35, fontWeight: "800", letterSpacing: -0.8 },
+  subtitle: { fontSize: 15, lineHeight: 22 },
+  field: { padding: 15, gap: 8, marginTop: 4 },
+  label: { fontSize: 14, fontWeight: "700" },
+  input: { borderWidth: 1, borderRadius: 12, paddingHorizontal: 13, paddingVertical: 12, fontSize: 17, backgroundColor: "#FFFFFF" },
+  codeRow: { flexDirection: "row", justifyContent: "space-between", gap: 8, marginTop: 6 },
+  codeBox: { flex: 1, height: 60, borderRadius: 14, alignItems: "center", justifyContent: "center" },
+  codeDigit: { fontSize: 26, fontWeight: "800" },
+  hiddenInput: { position: "absolute", left: 0, right: 0, top: 0, bottom: 0, opacity: 0.02, color: "transparent" },
+  checking: { flexDirection: "row", alignItems: "center", gap: 10 },
+  hint: { fontSize: 13 },
+  primaryButton: { borderRadius: 16, paddingVertical: 15, alignItems: "center", minHeight: 52, justifyContent: "center" },
+  primaryText: { color: "#FFFFFF", fontSize: 16, fontWeight: "700" },
+  linksRow: { flexDirection: "row", justifyContent: "space-between", marginTop: 4 },
+  link: { fontSize: 14, fontWeight: "700" },
+  error: { fontSize: 14, fontWeight: "600", lineHeight: 20, borderRadius: 12, padding: 12, overflow: "hidden" },
   dividerRow: { flexDirection: "row", alignItems: "center", gap: 10, marginVertical: 4 },
   divider: { flex: 1, height: 1 },
-  dividerText: { fontSize: 12, fontWeight: "700" },
-  appleButton: { height: 50, width: "100%" },
-  googleButton: { flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 10, borderWidth: 1, borderRadius: 16, height: 50 },
+  dividerText: { fontSize: 13, fontWeight: "600" },
+  appleButton: { height: 52, width: "100%" },
+  googleButton: { flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 10, height: 52, borderRadius: 16 },
   googleG: { fontSize: 18, fontWeight: "900", color: "#4285F4" },
   googleText: { fontSize: 15, fontWeight: "700" },
-  legal: { fontSize: 11, lineHeight: 16, marginTop: 10 },
+  legal: { fontSize: 12, lineHeight: 17, marginTop: 10 },
   pressed: { opacity: 0.78, transform: [{ scale: 0.98 }] },
 });
