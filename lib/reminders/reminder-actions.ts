@@ -4,6 +4,7 @@
  */
 import { dayKey } from "../garden/garden-logic";
 import type { MaintenanceEvent, ReminderDecision } from "./reminder-engine";
+import { groupReminders, type ReminderGroup } from "./reminder-groups";
 
 /** « later » : on en reparle dans quelques heures ; « skip » : plus rien aujourd'hui. */
 export type ReminderResponse = "done" | "later" | "skip";
@@ -98,4 +99,16 @@ export function eventForReminder(decision: DecisionRef & Pick<ReminderDecision, 
     source: "reminder",
     note: decision.title,
   };
+}
+
+/**
+ * L'alerte à envoyer pour la notification prévue : le conseil choisi et tous ceux de même cause météo
+ * encore d'actualité à cette heure-là (une seule notification « gel » pour toutes les plantes).
+ */
+export function planGroupedNotification(decisions: ReminderDecision[], snoozes: ReminderSnooze[], timing: ReminderTiming, now: Date): { group: ReminderGroup; date: Date } | null {
+  const plan = planNotification(decisions, snoozes, timing, now);
+  if (!plan) return null;
+  const awake = withoutSnoozed(decisions, snoozes, plan.date);
+  const group = groupReminders(awake.includes(plan.decision) ? awake : [plan.decision, ...awake]).find((candidate) => candidate.decisions.includes(plan.decision));
+  return group ? { group, date: plan.date } : null;
 }

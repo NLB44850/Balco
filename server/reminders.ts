@@ -9,6 +9,7 @@ import {
   type ReminderDecision,
   type WeatherSnapshot,
 } from "../lib/reminders/reminder-engine";
+import { groupReminders, selectGroups } from "../lib/reminders/reminder-groups";
 import {
   devicePushTokens,
   maintenanceEvents,
@@ -321,8 +322,8 @@ export async function recalculateUserReminders(userId: number, now = new Date(),
       return resolved ? careProfileFor(resolved) : parseJson<PlantCareProfile>(plant.profileJson, { plantId: plant.plantId, displayName: plant.displayName, wateringIntervalHours: 48, rainSkipMm: 2, heatThresholdC: 28, frostThresholdC: 3, windThresholdKmh: 35 });
     });
   const decisions = decideReminders(profiles.map((plant) => ({ plant, history, weather, settings, now })));
-  const normal = decisions.filter((decision) => decision.priority === "normal").slice(0, settings.maxNormalRemindersPerDay);
-  const selected = [...decisions.filter((decision) => decision.priority !== "normal"), ...normal];
+  // Une alerte par cause météo : la limite de conseils ordinaires compte des alertes, pas des plantes.
+  const selected = selectGroups(groupReminders(decisions), settings.maxNormalRemindersPerDay).flatMap((group) => group.decisions);
   const scheduledFor = nextScheduledDate(now, settings, location.timezone);
   const keys = selected.map((decision) => decisionKey(decision, location.timezone, now));
 
@@ -393,33 +394,51 @@ export async function dispatchDueReminderNotifications(now = new Date()) {
   let sent = 0;
   let skipped = 0;
   let deactivatedTokens = 0;
-  for (const decision of due) {
-    const tokens = await db.select().from(devicePushTokens).where(and(eq(devicePushTokens.userId, decision.userId), eq(devicePushTokens.active, 1)));
-    const parsed = parseJson<ReminderDecision | null>(decision.payload, null);
-    if (!parsed || tokens.length === 0) {
-      skipped += 1;
+  // Les décisions d'un même utilisateur et d'une même cause météo partent en une seule notification.
+  const byUser = new Map<number, typeof due>();
+  for (const row of due) byUser.set(row.userId, [...(byUser.get(row.userId) ?? []), row]);
+
+  for (const [userId, rows] of byUser) {
+    const tokens = await db.select().from(devicePushTokens).where(and(eq(devicePushTokens.userId, userId), eq(devicePushTokens.active, 1)));
+    const parsedRows = rows.map((row) => ({ row, parsed: parseJson<ReminderDecision | null>(row.payload, null) }));
+    const valid = parsedRows.filter((item): item is { row: (typeof rows)[number]; parsed: ReminderDecision } => item.parsed !== null);
+    skipped += rows.length - valid.length;
+    if (tokens.length === 0) {
+      skipped += valid.length;
       continue;
     }
-    const response = await fetch(EXPO_PUSH_URL, {
-      method: "POST",
-      headers: { "content-type": "application/json", accept: "application/json" },
-      body: JSON.stringify(tokens.map((token) => ({ to: token.token, title: parsed.title, body: parsed.body.slice(0, 120), data: { source: "balco-reminder", url: "/", plantId: parsed.plantId, taskType: parsed.taskType, action: parsed.action, title: parsed.title, decisionId: decision.decisionKey, validUntil: parsed.validUntil }, sound: "default", channelId: "balco-reminders", categoryId: parsed.action === "skip" ? "balco-reminder-info" : "balco-reminder" }))),
-    });
-    if (!response.ok) {
-      skipped += 1;
-      continue;
+    const rowOf = new Map(valid.map((item) => [item.parsed, item.row]));
+    for (const group of groupReminders(valid.map((item) => item.parsed))) {
+      const groupRows = group.decisions.map((decision) => rowOf.get(decision)!);
+      const response = await fetch(EXPO_PUSH_URL, {
+        method: "POST",
+        headers: { "content-type": "application/json", accept: "application/json" },
+        body: JSON.stringify(tokens.map((token) => ({
+          to: token.token,
+          title: group.title,
+          body: group.body.slice(0, 120),
+          data: { source: "balco-reminder", url: "/", plantId: group.plantId, plantIds: group.decisions.map((decision) => decision.plantId), taskType: group.taskType, action: group.action, title: group.title, decisionId: groupRows[0].decisionKey, validUntil: group.validUntil },
+          sound: "default",
+          channelId: "balco-reminders",
+          categoryId: group.action === "skip" ? "balco-reminder-info" : "balco-reminder",
+        }))),
+      });
+      if (!response.ok) {
+        skipped += groupRows.length;
+        continue;
+      }
+      // Les tickets arrivent dans l'ordre des messages : un token désinstallé est désactivé pour ne plus être sollicité.
+      const tickets = ((await response.json().catch(() => ({}))) as { data?: ExpoPushTicket[] }).data ?? [];
+      const deadTokens = tokens.filter((_, index) => tickets[index]?.details?.error === "DeviceNotRegistered").map((token) => token.token);
+      if (deadTokens.length > 0) {
+        await db.update(devicePushTokens).set({ active: 0 }).where(inArray(devicePushTokens.token, deadTokens));
+        deactivatedTokens += deadTokens.length;
+      }
+      if (tickets.some((ticket) => ticket?.status === "ok")) {
+        await db.update(reminderDecisions).set({ status: "sent", sentAt: now }).where(inArray(reminderDecisions.id, groupRows.map((row) => row.id)));
+        sent += 1;
+      } else skipped += groupRows.length;
     }
-    // Les tickets arrivent dans l'ordre des messages : un token désinstallé est désactivé pour ne plus être sollicité.
-    const tickets = ((await response.json().catch(() => ({}))) as { data?: ExpoPushTicket[] }).data ?? [];
-    const deadTokens = tokens.filter((_, index) => tickets[index]?.details?.error === "DeviceNotRegistered").map((token) => token.token);
-    if (deadTokens.length > 0) {
-      await db.update(devicePushTokens).set({ active: 0 }).where(inArray(devicePushTokens.token, deadTokens));
-      deactivatedTokens += deadTokens.length;
-    }
-    if (tickets.some((ticket) => ticket?.status === "ok")) {
-      await db.update(reminderDecisions).set({ status: "sent", sentAt: now }).where(eq(reminderDecisions.id, decision.id));
-      sent += 1;
-    } else skipped += 1;
   }
   return { sent, skipped, deactivatedTokens };
 }

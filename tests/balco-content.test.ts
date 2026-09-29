@@ -159,14 +159,13 @@ describe("Balco MVP content", () => {
 
   it("supports grouped reminders for several garden plants", () => {
     const home = readProjectFile("app/(tabs)/index.tsx");
-    const grouped = readProjectFile("components/grouped-reminder-card.tsx");
+    const card = readProjectFile("components/contextual-reminder-card.tsx");
     expect(home).toContain("reminderDecisions");
-    expect(home).toContain("GroupedReminderCard");
+    expect(home).toContain("groupReminders");
     expect(home).toContain("decideReminders");
-    expect(grouped).toContain("CONSEILS POUR TON BALCON");
-    expect(grouped).toContain("onComplete");
-    expect(grouped).toContain("onSnooze");
-    expect(grouped).toContain("Pas aujourd’hui");
+    expect(card).toContain("onComplete");
+    expect(card).toContain("onSnooze");
+    expect(card).toContain("Pas aujourd’hui");
   });
 
   it("keeps the Balco nature palette in the theme tokens", () => {

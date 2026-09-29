@@ -5,7 +5,6 @@ import * as Haptics from "expo-haptics";
 import { LinearGradient } from "expo-linear-gradient";
 
 import { ContextualReminderCard } from "@/components/contextual-reminder-card";
-import { GroupedReminderCard } from "@/components/grouped-reminder-card";
 import { FadeIn, PopIn } from "@/components/motion";
 import { ScreenContainer } from "@/components/screen-container";
 import { useLocalWeather } from "@/hooks/use-local-weather";
@@ -32,8 +31,9 @@ import {
   type SessionTask,
 } from "@/lib/garden/garden-logic";
 import { effortLabel, recommendPlants } from "@/lib/plants/catalog";
-import { addSnooze, eventForReminder, planNotification, withoutSnoozed, type ReminderSnooze } from "@/lib/reminders/reminder-actions";
+import { addSnooze, eventForReminder, planGroupedNotification, withoutSnoozed, type ReminderSnooze } from "@/lib/reminders/reminder-actions";
 import { decideReminders, type ReminderDecision } from "@/lib/reminders/reminder-engine";
+import { groupReminders, selectGroups, type ReminderGroup } from "@/lib/reminders/reminder-groups";
 import {
   cancelBalcoReminderNotifications,
   defaultLocalReminderSettings,
@@ -115,17 +115,16 @@ export default function HomeScreen() {
     if (!reminderSettingsLoaded || weather.isFallback) return [];
     const settings = { enabled: reminderSettings.enabled, skipWateringWhenRainExpected: reminderSettings.skipWateringWhenRainExpected, maxNormalRemindersPerDay: reminderSettings.maxNormalRemindersPerDay };
     const decisions = decideReminders(reminderPlants.map((resolved) => ({ plant: careProfileFor(resolved), history: events, weather: weatherSnapshot, settings })));
-    // Toutes les alertes urgentes, puis au plus N conseils normaux (cf. spec §6).
-    const normal = decisions.filter((decision) => decision.priority === "normal").slice(0, reminderSettings.maxNormalRemindersPerDay);
-    return [...decisions.filter((decision) => decision.priority !== "normal"), ...normal];
+    // Une alerte par cause météo ; toutes les alertes importantes, puis au plus N conseils ordinaires (cf. spec §6).
+    return selectGroups(groupReminders(decisions), reminderSettings.maxNormalRemindersPerDay).flatMap((group) => group.decisions);
   }, [events, reminderPlants, reminderSettings, reminderSettingsLoaded, weather.isFallback, weatherSnapshot]);
-  const visibleReminders = useMemo(() => withoutSnoozed(reminderDecisions, snoozes, new Date()), [reminderDecisions, snoozes]);
+  const visibleReminders = useMemo(() => groupReminders(withoutSnoozed(reminderDecisions, snoozes, new Date())), [reminderDecisions, snoozes]);
 
   // Une seule notification programmée : le prochain conseil utile, à l'heure préférée ou au réveil d'un « Dans 3 h ».
   useEffect(() => {
     if (!reminderSettingsLoaded || !snoozesLoaded || !reminderSettings.enabled || weather.isFallback) return;
-    const plan = planNotification(reminderDecisions, snoozes, reminderSettings, new Date());
-    if (plan) void scheduleLocalReminder(plan.decision, reminderSettings, plan.date);
+    const plan = planGroupedNotification(reminderDecisions, snoozes, reminderSettings, new Date());
+    if (plan) void scheduleLocalReminder(plan.group, reminderSettings, plan.date);
     else void cancelBalcoReminderNotifications();
   }, [reminderDecisions, reminderSettings, reminderSettingsLoaded, snoozes, snoozesLoaded, weather.isFallback]);
 
@@ -135,10 +134,12 @@ export default function HomeScreen() {
     if (Platform.OS !== "web") await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
   };
 
-  const completeReminder = async (decision: ReminderDecision) => {
-    await logEvent(eventForReminder(decision, new Date()));
+  /** « Fait » sur une alerte : le geste est noté pour chaque plante concernée. */
+  const completeReminder = async (group: ReminderGroup) => {
+    const now = new Date();
+    for (const decision of group.decisions) await logEvent(eventForReminder(decision, now));
     // Une alerte gel reste vraie après avoir protégé le pot : on ne la remontre pas avant demain.
-    await snoozeReminders([decision], "skip");
+    await snoozeReminders(group.decisions, "skip");
     if (Platform.OS !== "web") await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
   };
 
@@ -154,8 +155,8 @@ export default function HomeScreen() {
     const nextSettings = { ...reminderSettings, enabled: true };
     setReminderSettings(nextSettings);
     await saveLocalReminderSettings(nextSettings);
-    const plan = planNotification(reminderDecisions, snoozes, nextSettings, new Date());
-    if (plan) await scheduleLocalReminder(plan.decision, nextSettings, plan.date);
+    const plan = planGroupedNotification(reminderDecisions, snoozes, nextSettings, new Date());
+    if (plan) await scheduleLocalReminder(plan.group, nextSettings, plan.date);
     setIsSchedulingReminder(false);
   };
 
@@ -189,7 +190,7 @@ export default function HomeScreen() {
         </FadeIn>
 
         {visibleReminders.length > 0 && <FadeIn delay={120} style={styles.reminderWrapper}>
-          {visibleReminders.length > 1 ? <GroupedReminderCard decisions={visibleReminders} onComplete={(decision) => void completeReminder(decision)} onSnooze={(decisions, kind) => void snoozeReminders(decisions, kind)} /> : <ContextualReminderCard decision={visibleReminders[0]} onComplete={(decision) => void completeReminder(decision)} onSnooze={(decision, kind) => void snoozeReminders([decision], kind)} />}
+          {visibleReminders.map((group) => <ContextualReminderCard key={group.key} decision={group} onComplete={() => void completeReminder(group)} onSnooze={(_, kind) => void snoozeReminders(group.decisions, kind)} />)}
           <View style={styles.reminderSettingsRow}>
             <Text style={[styles.reminderSettingsText, { color: colors.muted }]}>
               {reminderSettings.enabled ? `Rappel local actif à ${String(reminderSettings.preferredHour).padStart(2, "0")} h ${String(reminderSettings.preferredMinute).padStart(2, "0")}` : "Recevoir ce conseil au bon moment"}
@@ -277,7 +278,7 @@ const styles = StyleSheet.create({
   heroBottom: { flexDirection: "row", justifyContent: "space-between", alignItems: "flex-end", marginTop: 19 },
   heroDate: { color: "rgba(255,255,255,0.45)", fontSize: 9, letterSpacing: 1, fontWeight: "800" },
   heroArrow: { color: "#D5E96B", fontSize: 25 },
-  reminderWrapper: { marginTop: -2 },
+  reminderWrapper: { marginTop: -2, gap: 10 },
   reminderSettingsRow: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: 10, paddingHorizontal: 4, marginTop: 8 },
   reminderSettingsText: { flex: 1, fontSize: 11, lineHeight: 16 },
   reminderSettingsButton: { borderRadius: 11, paddingHorizontal: 12, paddingVertical: 8 },

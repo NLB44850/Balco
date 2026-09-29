@@ -178,6 +178,27 @@ describe.skipIf(!TEST_DATABASE_URL)("garden sync and server reminders (MySQL)", 
     expect(pushRequests).toHaveLength(0);
   });
 
+  it("groups the same weather alert for several plants into a single notification", async () => {
+    const nextDay = new Date(NOW.getTime() + 24 * 3600_000);
+    await reminders.syncGarden(userId, { ...emptyPush(), plants: [{ id: "pepper-a", catalogId: "sweet-pepper", addedAt: hoursAgo(48), updatedAt: hoursAgo(1) }] });
+    forecast = { minTemp: -3 };
+    await reminders.recalculateUserReminders(userId, nextDay);
+    const frost = (await decisions()).filter((row) => row.status === "pending" && row.priority === "urgent");
+    expect(frost.map((row) => row.plantId).sort()).toEqual(["basil-a", "pepper-a"]);
+
+    pushRequests.length = 0;
+    const result = await reminders.dispatchDueReminderNotifications(new Date(nextDay.getTime() + 60_000));
+    expect(result.sent).toBe(1);
+    expect(pushRequests).toHaveLength(1);
+    const message = pushRequests[0][0] as unknown as { title: string; body: string; data: { plantIds: string[] }; categoryId: string };
+    expect(message.title).toBe("Gel cette nuit : protège 2 plantes");
+    // basil-a porte le surnom « Basilic cuisine » donné plus haut.
+    expect(message.body).toContain("Basilic cuisine et le poivron");
+    expect(message.data.plantIds.sort()).toEqual(["basil-a", "pepper-a"]);
+    expect(message.categoryId).toBe("balco-reminder");
+    expect((await decisions()).filter((row) => row.plantId !== "tomato-a" && row.priority === "urgent" && row.status === "pending")).toHaveLength(0);
+  });
+
   it("stays silent for users who never shared a real location or disabled reminders", async () => {
     await reminders.syncGarden(otherUserId, { ...emptyPush(), settings: SETTINGS, plants: [{ id: "basil-b", catalogId: "basil", addedAt: hoursAgo(240), updatedAt: hoursAgo(240) }], events: [{ id: "b-1", plantId: "basil-b", type: "watering", completedAt: hoursAgo(72), source: "manual" }] });
     expect(await reminders.recalculateUserReminders(otherUserId, NOW)).toMatchObject({ status: "skipped", reason: "no_location" });

@@ -152,7 +152,7 @@ Très cohérent avec la promesse écologique.
 | Message explicatif | ✅ | « N'arrose pas les tomates cerises aujourd'hui : 8 mm de pluie sont prévus dans les 12 prochaines heures », avec la raison sous le conseil |
 | Notifications par plante | 🟡 | Locales dans l'app et envoi par le serveur, choix des plantes concernées, bouton « Envoyer une notification de test ». **Validation sur un vrai téléphone en cours** ; l'envoi serveur sur Android attend la configuration Firebase |
 | Reporter / ignorer / confirmer | ✅ | « Fait ✓ », « Dans 3 h » (jamais pendant la plage calme) et « Pas aujourd'hui », sur la carte de l'accueil et dans la notification. La mise en sommeil reste sur le téléphone (pas encore transmise au serveur) |
-| Limiter les rappels | ✅ | Plafond par jour, plage calme, délai de 24 h entre deux rappels |
+| Limiter les rappels | ✅ | Plafond par jour, plage calme, délai de 24 h entre deux rappels. Une même alerte météo (pluie, gel, orage, vent, chaleur) est regroupée en une seule carte et une seule notification pour toutes les plantes |
 
 ### 2. Assistant IA (Nora)
 

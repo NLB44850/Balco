@@ -72,8 +72,17 @@ export type ReminderSettings = {
 
 export type ReminderPriority = "normal" | "important" | "urgent";
 
+/** Cause d'un conseil : les causes météo sont communes à toutes les plantes et se regroupent en une seule alerte. */
+export type ReminderCause = "storm" | "frost" | "wind" | "rain" | "heat" | "thirst";
+
 export type ReminderDecision = {
   plantId: string;
+  /** Absents des décisions enregistrées avant le regroupement des alertes. */
+  cause?: ReminderCause;
+  /** Nom de la plante avec son article (« le basilic »), pour composer une alerte groupée. */
+  plantLabel?: string;
+  /** Valeur météo en cause : mm de pluie, °C, km/h. */
+  value?: number;
   taskType: MaintenanceTaskType;
   priority: ReminderPriority;
   action: "do" | "skip" | "protect" | "observe";
@@ -152,7 +161,7 @@ function toLabel(label: string) {
   return `à ${label}`;
 }
 
-type DraftDecision = Omit<ReminderDecision, "plantId" | "validUntil" | "weatherFetchedAt">;
+type DraftDecision = Omit<ReminderDecision, "plantId" | "plantLabel" | "validUntil" | "weatherFetchedAt">;
 
 function safetyDecision(plant: PlantCareProfile, weather: WeatherSnapshot): DraftDecision | null {
   if (!allows(plant, "protection")) return null;
@@ -165,6 +174,7 @@ function safetyDecision(plant: PlantCareProfile, weather: WeatherSnapshot): Draf
       taskType: "protection",
       priority: "urgent",
       action: "protect",
+      cause: "storm",
       title: `Orage : mets ${name} à l’abri`,
       body: "Un orage arrive sur ton balcon. Rentre les pots mobiles depuis l’intérieur, sans sortir sur le balcon.",
       reason: `Code météo orage (${weather.current.weatherCode}).`,
@@ -177,6 +187,8 @@ function safetyDecision(plant: PlantCareProfile, weather: WeatherSnapshot): Draf
       taskType: "protection",
       priority: hardFrost ? "urgent" : "important",
       action: "protect",
+      cause: "frost",
+      value: round(minTemp),
       title: hardFrost ? `Gel cette nuit : protège ${name}` : `Nuit fraîche : protège ${name}`,
       body: `Jusqu’à ${round(minTemp)} °C cette nuit. Avant ce soir, rapproche le pot du mur ou couvre-le d’un voile d’hivernage.`,
       reason: `Minimum prévu ${round(minTemp)} °C, seuil de la plante ${plant.frostThresholdC} °C.`,
@@ -189,6 +201,8 @@ function safetyDecision(plant: PlantCareProfile, weather: WeatherSnapshot): Draf
       taskType: "protection",
       priority: strong ? "urgent" : "important",
       action: "protect",
+      cause: "wind",
+      value: Math.round(gust),
       title: strong ? `Vent fort : mets ${name} à l’abri` : `Coup de vent : vérifie ${name}`,
       body: strong
         ? `Rafales jusqu’à ${Math.round(gust)} km/h. Rentre les contenants mobiles ou cale-les contre le mur.`
@@ -226,6 +240,8 @@ function wateringDecision(
       taskType: "observation",
       priority: "normal",
       action: "skip",
+      cause: "rain",
+      value: round(rainMm),
       title: `N’arrose pas ${name} aujourd’hui`,
       body: `${round(rainMm)} mm de pluie sont prévus dans les 12 prochaines heures. Pot à l’abri de la pluie ? Touche quand même la terre.`,
       reason: `Pluie prévue ${round(rainMm)} mm (seuil ${plant.rainSkipMm} mm), probabilité max ${Math.round(weather.next12h.precipitationProbabilityMax)} %.`,
@@ -237,6 +253,8 @@ function wateringDecision(
       taskType: "watering",
       priority: "important",
       action: "observe",
+      cause: "heat",
+      value: Math.round(maxTemp),
       title: `${Math.round(maxTemp)} °C aujourd’hui : pense ${toLabel(name)}`,
       body: `Dernier arrosage il y a ${formatElapsed(elapsed)}. Touche la terre ce soir ou demain tôt, et arrose au pied si elle est sèche.`,
       reason: `Maximum ${Math.round(maxTemp)} °C (seuil ${plant.heatThresholdC} °C), dernier arrosage il y a ${formatElapsed(elapsed)}.`,
@@ -248,6 +266,7 @@ function wateringDecision(
       taskType: "watering",
       priority: "normal",
       action: "observe",
+      cause: "thirst",
       title: `Arrose ${name} si la terre est sèche`,
       body: `Dernier arrosage il y a ${formatElapsed(elapsed)} et pas de pluie prévue : arrose si la terre est sèche sur 2 cm.`,
       reason: `Délai de ${plant.wateringIntervalHours} h dépassé, ${round(rainMm)} mm prévus d’ici 12 h.`,
@@ -280,6 +299,7 @@ export function decideReminder({ plant, history, weather, settings = {}, lastRem
   return {
     ...draft,
     plantId: plant.plantId,
+    plantLabel: plant.label ?? plant.displayName,
     body: clampBody(draft.body),
     validUntil: new Date(now.getTime() + DECISION_VALIDITY_HOURS * HOUR_MS).toISOString(),
     weatherFetchedAt: weather.fetchedAt,

@@ -51,11 +51,14 @@ export function ReminderNotificationResponder() {
       const isReminder = data.source === "balco-reminder" && data.plantId && data.taskType;
 
       if (isReminder && (action === REMINDER_ACTIONS.done || action === REMINDER_ACTIONS.later || action === REMINDER_ACTIONS.skip)) {
-        const decision = { plantId: data.plantId!, taskType: data.taskType!, action: data.action ?? "observe", title: data.title ?? "" };
-        if (action === REMINDER_ACTIONS.done) await logEvent(eventForReminder(decision, now));
+        // Une alerte groupée (gel, pluie…) concerne plusieurs plantes : la réponse vaut pour chacune.
+        const plantIds = data.plantIds?.length ? data.plantIds : [data.plantId!];
+        const decisions = plantIds.map((plantId) => ({ plantId, taskType: data.taskType!, action: data.action ?? "observe", title: data.title ?? "" }));
+        if (action === REMINDER_ACTIONS.done) for (const decision of decisions) await logEvent(eventForReminder(decision, now));
         const settings = await loadLocalReminderSettings();
-        const snoozes = await loadReminderSnoozes();
-        await saveReminderSnoozes(addSnooze(snoozes, decision, action === REMINDER_ACTIONS.later ? "later" : "skip", settings, now));
+        const kind = action === REMINDER_ACTIONS.later ? "later" : "skip";
+        const snoozes = decisions.reduce((current, decision) => addSnooze(current, decision, kind, settings, now), await loadReminderSnoozes());
+        await saveReminderSnoozes(snoozes);
       }
 
       await notifications.dismissNotificationAsync(response.notification.request.identifier).catch(() => undefined);

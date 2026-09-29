@@ -4,6 +4,7 @@ import { Platform } from "react-native";
 import { Notifications } from "@/lib/notifications/module";
 import type { ReminderSnooze } from "@/lib/reminders/reminder-actions";
 import type { ReminderDecision } from "@/lib/reminders/reminder-engine";
+import type { ReminderGroup } from "@/lib/reminders/reminder-groups";
 
 export const REMINDER_SETTINGS_STORAGE_KEY = "balco.reminder.settings.v1";
 export const REMINDER_DECISIONS_STORAGE_KEY = "balco.reminder.decisions.v1";
@@ -19,6 +20,8 @@ export const REMINDER_ACTIONS = { done: "done", later: "later", skip: "skip" } a
 export type ReminderNotificationData = {
   source: "balco-reminder" | "balco-test";
   plantId?: string;
+  /** Toutes les plantes d'une alerte groupée (gel, pluie…) ; à défaut, plantId seul. */
+  plantIds?: string[];
   taskType?: ReminderDecision["taskType"];
   action?: ReminderDecision["action"];
   title?: string;
@@ -166,8 +169,8 @@ export async function cancelBalcoReminderNotifications() {
   );
 }
 
-/** Programme LA notification de rappel (une seule à la fois), à la date choisie par planNotification. */
-export async function scheduleLocalReminder(decision: ReminderDecision, settings: LocalReminderSettings, triggerDate: Date) {
+/** Programme LA notification de rappel (une seule à la fois), à la date choisie par planGroupedNotification. */
+export async function scheduleLocalReminder(decision: ReminderGroup, settings: LocalReminderSettings, triggerDate: Date) {
   if (!Notifications || !settings.enabled) return null;
   if (await isServerPushActive()) {
     await cancelBalcoReminderNotifications();
@@ -189,6 +192,7 @@ export async function scheduleLocalReminder(decision: ReminderDecision, settings
         source: "balco-reminder",
         url: "/",
         plantId: decision.plantId,
+        plantIds: decision.decisions.map((item) => item.plantId),
         taskType: decision.taskType,
         action: decision.action,
         title: decision.title,

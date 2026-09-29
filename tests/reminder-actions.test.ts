@@ -4,6 +4,7 @@ import {
   addSnooze,
   eventForReminder,
   nextPreferredDate,
+  planGroupedNotification,
   planNotification,
   snoozeUntil,
   withoutSnoozed,
@@ -107,5 +108,22 @@ describe("geste enregistré par « Fait »", () => {
       note: "Arrose basilic si la terre est sèche",
     });
     expect(eventForReminder(decision("basilic", { action: "skip", taskType: "observation" }), now).type).toBe("observation");
+  });
+});
+
+describe("notification groupée", () => {
+  it("envoie une seule notification pour la même alerte météo sur plusieurs plantes", () => {
+    const rain = (plantId: string, plantLabel: string) => decision(plantId, { action: "skip", taskType: "observation", cause: "rain", value: 8, plantLabel, title: `N’arrose pas ${plantLabel} aujourd’hui` });
+    const plan = planGroupedNotification([rain("basil", "le basilic"), rain("mint", "la menthe")], [], timing, at(28, 10));
+    expect(plan?.group.decisions.map((item) => item.plantId)).toEqual(["basil", "mint"]);
+    expect(plan?.group.title).toBe("N’arrose pas tes plantes aujourd’hui");
+    expect(plan?.date).toEqual(at(28, 18, 30));
+  });
+
+  it("n'inclut pas une plante mise en sommeil jusqu'après l'heure de la notification", () => {
+    const rain = (plantId: string) => decision(plantId, { action: "skip", taskType: "observation", cause: "rain", value: 8, plantLabel: plantId });
+    const snoozes = addSnooze([], rain("mint"), "skip", timing, at(28, 10));
+    const plan = planGroupedNotification([rain("basil"), rain("mint")], snoozes, timing, at(28, 10));
+    expect(plan?.group.decisions.map((item) => item.plantId)).toEqual(["basil"]);
   });
 });
