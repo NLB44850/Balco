@@ -290,6 +290,9 @@ export default function HomeScreen() {
                 ? `${status.doneToday} geste${status.doneToday > 1 ? "s" : ""} aujourd’hui${streak > 1 ? ` · ${streak} jours de suite` : ""}. Balco te préviendra si la météo change.`
                 : "Tes plantes n’ont besoin de rien. Balco te préviendra si la météo change."}
             </Text>
+            <Pressable accessibilityRole="button" onPress={() => router.push("/week")} style={({ pressed }) => [styles.pill, styles.weekButton, { backgroundColor: colors.primary }, pressed && styles.pressed]}>
+              <Text style={[styles.pillText, { color: "#FFFFFF" }]}>Voir ma semaine</Text>
+            </Pressable>
           </FadeIn>
         )}
 
@@ -448,6 +451,7 @@ const styles = StyleSheet.create({
   allDone: { alignItems: "center", gap: 6, paddingVertical: 10 },
   allDoneIcon: { fontSize: 40 },
   allDoneTitle: { fontSize: 20, fontWeight: "800", textAlign: "center", letterSpacing: -0.3 },
+  weekButton: { marginTop: 8, paddingHorizontal: 18, paddingVertical: 11 },
   allDoneText: { fontSize: 14, lineHeight: 20, textAlign: "center" },
   remindersRow: { flexDirection: "row", alignItems: "center", gap: 12 },
   flex: { flex: 1 },

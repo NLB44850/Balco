@@ -39,7 +39,7 @@ export function PlantPicture({ resolved, photo, style, hideEmoji, children }: Pr
       ) : (
         !hideEmoji && side > 0 && (
           <View style={styles.center} pointerEvents="none">
-            <Text style={{ fontSize: Math.round(side * 0.42), lineHeight: Math.round(side * 0.56) }} accessibilityElementsHidden importantForAccessibility="no">{resolved.entry.emoji}</Text>
+            <Text style={{ fontSize: Math.round(side * 0.5), lineHeight: Math.round(side * 0.64) }} accessibilityElementsHidden importantForAccessibility="no">{resolved.entry.emoji}</Text>
           </View>
         )
       )}

@@ -23,6 +23,9 @@ export type CalendarActivity = {
   months?: Month[];
 };
 
+/** Le type de geste, écrit simplement (sans capitales), pour les écrans. */
+export const ACTIVITY_KIND_LABELS: Record<CalendarActivityKind, string> = { sow: "Semis", plant: "Plantation", repot: "Rempotage", harvest: "Récolte", care: "Entretien" };
+
 export type CalendarSubject = { id: string; entry: CatalogPlant; displayName: string };
 export type CalendarOptions = { climate?: ClimateInfo | null };
 

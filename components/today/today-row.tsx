@@ -11,7 +11,8 @@ type TodayRowProps = {
   title: string;
   subtitle: string;
   done: boolean;
-  onToggle: () => void;
+  /** Absent : ligne à lire seulement (mois à venir), avec une flèche vers le détail. */
+  onToggle?: () => void;
   onOpen: () => void;
   checkLabel?: string;
   /** La photo de la plante concernée, à la place de l'icône quand il y en a une. */
@@ -48,11 +49,15 @@ export function TodayRow({ icon, tone, title, subtitle, done, onToggle, onOpen, 
           <Text style={[styles.subtitle, { color: alert && !done ? toneColor : colors.muted }, alert && !done && styles.subtitleStrong]} numberOfLines={1}>{subtitle}</Text>
         </View>
       </Pressable>
-      <Pressable accessibilityRole="checkbox" accessibilityState={{ checked: done }} accessibilityLabel={checkLabel ?? (done ? "Annuler ce geste" : "Marquer comme fait")} onPress={onToggle} hitSlop={12} style={styles.checkZone}>
-        <Animated.View style={[styles.check, { borderColor: done ? colors.primary : "rgba(18,22,20,0.22)", backgroundColor: done ? colors.primary : "rgba(255,255,255,0.6)", transform: [{ scale }] }]}>
-          {done && <Text style={styles.checkMark}>✓</Text>}
-        </Animated.View>
-      </Pressable>
+      {onToggle ? (
+        <Pressable accessibilityRole="checkbox" accessibilityState={{ checked: done }} accessibilityLabel={checkLabel ?? (done ? "Annuler ce geste" : "Marquer comme fait")} onPress={onToggle} hitSlop={12} style={styles.checkZone}>
+          <Animated.View style={[styles.check, { borderColor: done ? colors.primary : "rgba(18,22,20,0.22)", backgroundColor: done ? colors.primary : "rgba(255,255,255,0.6)", transform: [{ scale }] }]}>
+            {done && <Text style={styles.checkMark}>✓</Text>}
+          </Animated.View>
+        </Pressable>
+      ) : (
+        <Text style={[styles.chevron, { color: colors.muted }]}>›</Text>
+      )}
     </View>
   );
 }
@@ -69,6 +74,7 @@ const styles = StyleSheet.create({
   subtitleStrong: { fontWeight: "600" },
   checkZone: { paddingLeft: 12 },
   check: { width: 30, height: 30, borderRadius: 15, borderWidth: 2, alignItems: "center", justifyContent: "center" },
+  chevron: { fontSize: 24, fontWeight: "300", paddingLeft: 12 },
   checkMark: { color: "#FFFFFF", fontSize: 15, fontWeight: "800" },
   pressed: { opacity: 0.6 },
 });

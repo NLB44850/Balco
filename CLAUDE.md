@@ -34,7 +34,7 @@ Tout se passe dans son GitHub Codespace (pas de Docker sur son PC).
 ## Vérifier avant de pousser (dans la session Claude)
 
 - `pnpm -s check`, `pnpm -s lint`, puis `TEST_DATABASE_URL=mysql://balco:balco@localhost:3306/balco_cal npx vitest run`
-  (MariaDB locale : `service mariadb start` si elle s'est arrêtée ; 266 tests à ce jour). Dans un conteneur
+  (MariaDB locale : `service mariadb start` si elle s'est arrêtée ; 271 tests à ce jour). Dans un conteneur
   neuf : `apt-get install -y mariadb-server`, `service mariadb start`, créer la base `balco_cal` et l'utilisateur
   `balco`/`balco`, puis `pnpm -s build && DATABASE_URL=mysql://balco:balco@localhost:3306/balco_cal node dist/migrate.mjs`.
 - `npx expo export --platform android` pour s'assurer que le bundle Android se construit.
@@ -70,21 +70,22 @@ Fait (validé sur son téléphone) :
 - Calendrier local (priorité 2) : rempotage, climat de la ville, alertes, vue par saison.
 - Refonte étape 1 (accueil en liste à cocher, feuille de détail, « Annuler », fond lumineux) et
   étape 2 (4 onglets, même style partout, police Onest).
+- Refonte étape 3 : Balcon en grille de cartes photo, fiche plante « photo d'abord » (photo datée,
+  pastilles, prochain geste en un bouton, tes photos, historique). Photos gardées **sur l'appareil
+  seulement** (`lib/garden/photos*.ts`, `photo-files.ts` / `photo-files.web.ts`) ; sans photo, l'emoji
+  de la plante sur fond vert pâle (`components/plant-picture.tsx`).
 
 Livré, à valider sur son téléphone :
-- **Refonte étape 3** : Balcon en grille de cartes photo (point d'état, geste du jour, « Ta photo »),
-  fiche plante « photo d'abord » (photo datée, pastilles soleil / pot / depuis quand, prochain geste en
-  un bouton « C'est fait » avec « Annuler », tes photos, historique photos + gestes, renommer / retirer
-  en bas). Photos gardées **sur l'appareil seulement** (`lib/garden/photos*.ts`, `photo-files.ts` pour
-  le téléphone, `photo-files.web.ts` pour le web) ; la photo d'un diagnostic de Nora rejoint la fiche.
-  Sans photo : l'emoji de la plante sur fond vert pâle (`components/plant-picture.tsx`).
+- **Refonte étape 4** : écran « Ma semaine » (`app/week.tsx`, logique `lib/garden/week.ts` : 7 jours,
+  gestes, récoltes, photos, plante la plus soignée), ouvert par « Voir ma semaine » sur « Tout est
+  fait » (Aujourd'hui, Saisons) et depuis Moi. Saisons en liste à cocher avec feuille du bas et
+  « Annuler » (seul le mois en cours se coche). Nora : questions prêtes tirées des plantes et de la
+  saison (`lib/ai/quick-questions.ts`). Moi : « Ma semaine » et niveau en haut, badges, puis réglages.
 
 À faire, dans l'ordre :
-1. **Refonte étape 4** : Saisons, Nora et Moi sur le même modèle (écran « Tout est fait » avec
-   « Voir ma semaine », bilan).
-2. Priorité 3, Nora qui se souvient (niveau, préférences, historique complet).
-3. Priorité 4, progression (bilan hebdomadaire, progression par plante).
-4. Priorité 5, mode vacances.
-5. À la publication : notifications serveur sur Android (Firebase/FCM) ; synchroniser les reports
+1. Priorité 3, Nora qui se souvient (niveau, préférences, historique complet).
+2. Priorité 4, progression (bilan hebdomadaire, progression par plante).
+3. Priorité 5, mode vacances.
+4. À la publication : notifications serveur sur Android (Firebase/FCM) ; synchroniser les reports
    (« Dans 3 h ») avec le serveur ; envoyer les photos des plantes sur le serveur (stockage d'images)
    pour les retrouver sur un autre téléphone.

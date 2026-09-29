@@ -1,6 +1,6 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useRouter } from "expo-router";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { FlatList, KeyboardAvoidingView, Platform, Pressable, StyleSheet, View } from "react-native";
 import { Text, TextInput } from "@/components/ui/typography";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -9,6 +9,7 @@ import { LightScreen } from "@/components/light-screen";
 import { ScreenHeader } from "@/components/screen-header";
 import { glass } from "@/components/ui/glass";
 import { useColors } from "@/hooks/use-colors";
+import { quickQuestions } from "@/lib/ai/quick-questions";
 import { quotaLabel } from "@/lib/ai/quota-text";
 import { useGarden } from "@/lib/garden/garden-context";
 import { trpc } from "@/lib/trpc";
@@ -19,12 +20,6 @@ type Message = { id: string; from: "bot" | "user" | "notice"; text: string; time
 const HISTORY_STORAGE_KEY = "balco.assistant.history.v1";
 const MAX_STORED_MESSAGES = 40;
 
-const quickQuestions = [
-  "Quoi planter en avril sur mon balcon ?",
-  "Pourquoi les feuilles jaunissent ?",
-  "Comment économiser l'eau ?",
-];
-
 function clock(date = new Date()) {
   return `${String(date.getHours()).padStart(2, "0")}:${String(date.getMinutes()).padStart(2, "0")}`;
 }
@@ -33,7 +28,9 @@ export default function AssistantScreen() {
   const colors = useColors();
   const router = useRouter();
   const insets = useSafeAreaInsets();
-  const { account, profile } = useGarden();
+  const { account, profile, resolvedPlants } = useGarden();
+  // Des questions prêtes, tirées de tes plantes et de la saison : rien à écrire.
+  const questions = useMemo(() => quickQuestions(resolvedPlants), [resolvedPlants]);
   const utils = trpc.useUtils();
   const status = trpc.ai.status.useQuery(undefined, { enabled: account.signedIn, retry: false });
   const ask = trpc.ai.ask.useMutation({ onSuccess: () => void utils.ai.status.invalidate() });
@@ -95,7 +92,7 @@ export default function AssistantScreen() {
     <>
       <ScreenHeader
         title="Nora"
-        subtitle={unavailable ? "Ta coach balcon · bientôt disponible" : "Ta coach balcon, qui connaît tes plantes"}
+        subtitle={unavailable ? "Ta coach balcon · bientôt disponible" : resolvedPlants.length > 0 ? `Ta coach, qui connaît tes ${resolvedPlants.length > 1 ? `${resolvedPlants.length} plantes` : "plante"}` : "Ta coach balcon"}
         right={messages.length > 0 ? <Pressable accessibilityRole="button" accessibilityLabel="Effacer la conversation" hitSlop={8} onPress={clearConversation} style={({ pressed }) => [styles.clearButton, pressed && styles.pressed]}><Text style={[styles.clearText, { color: colors.muted }]}>Effacer</Text></Pressable> : undefined}
         style={styles.header}
       />
@@ -107,9 +104,9 @@ export default function AssistantScreen() {
         </View>
         <Text style={[styles.observeArrow, { color: colors.muted }]}>›</Text>
       </Pressable>
-      <Text style={[styles.quickLabel, { color: colors.muted }]}>Pour commencer</Text>
+      <Text style={[styles.quickLabel, { color: colors.muted }]}>{resolvedPlants.length > 0 ? "Pour ton balcon, en ce moment" : "Pour commencer"}</Text>
       <FlatList
-        data={quickQuestions}
+        data={questions}
         horizontal
         showsHorizontalScrollIndicator={false}
         keyExtractor={(item) => item}
