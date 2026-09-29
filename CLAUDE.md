@@ -34,7 +34,9 @@ Tout se passe dans son GitHub Codespace (pas de Docker sur son PC).
 ## Vérifier avant de pousser (dans la session Claude)
 
 - `pnpm -s check`, `pnpm -s lint`, puis `TEST_DATABASE_URL=mysql://balco:balco@localhost:3306/balco_cal npx vitest run`
-  (MariaDB locale : `service mariadb start` si elle s'est arrêtée ; 258 tests à ce jour).
+  (MariaDB locale : `service mariadb start` si elle s'est arrêtée ; 266 tests à ce jour). Dans un conteneur
+  neuf : `apt-get install -y mariadb-server`, `service mariadb start`, créer la base `balco_cal` et l'utilisateur
+  `balco`/`balco`, puis `pnpm -s build && DATABASE_URL=mysql://balco:balco@localhost:3306/balco_cal node dist/migrate.mjs`.
 - `npx expo export --platform android` pour s'assurer que le bundle Android se construit.
 - Rendu web : `npx expo export --platform web`, serveur `node dist/standalone/index.mjs` avec
   `WEB_DIR`, faux Open-Meteo et Playwright (Chromium dans `/opt/pw-browsers/chromium`). Attention :
@@ -69,14 +71,20 @@ Fait (validé sur son téléphone) :
 - Refonte étape 1 (accueil en liste à cocher, feuille de détail, « Annuler », fond lumineux) et
   étape 2 (4 onglets, même style partout, police Onest).
 
+Livré, à valider sur son téléphone :
+- **Refonte étape 3** : Balcon en grille de cartes photo (point d'état, geste du jour, « Ta photo »),
+  fiche plante « photo d'abord » (photo datée, pastilles soleil / pot / depuis quand, prochain geste en
+  un bouton « C'est fait » avec « Annuler », tes photos, historique photos + gestes, renommer / retirer
+  en bas). Photos gardées **sur l'appareil seulement** (`lib/garden/photos*.ts`, `photo-files.ts` pour
+  le téléphone, `photo-files.web.ts` pour le web) ; la photo d'un diagnostic de Nora rejoint la fiche.
+  Sans photo : l'ombre peinte de la plante (`components/plant-picture.tsx`), plus d'emoji.
+
 À faire, dans l'ordre :
-1. **Refonte étape 3** : Balcon et fiche plante « photo d'abord » (comme une annonce Airbnb : ta
-   photo datée, pastilles soleil / pot / depuis combien de temps, le prochain geste en un bouton,
-   l'historique dessous) ; tes photos à la place des emojis ; point de couleur d'état.
-2. **Refonte étape 4** : Saisons, Nora et Moi sur le même modèle (écran « Tout est fait » avec
+1. **Refonte étape 4** : Saisons, Nora et Moi sur le même modèle (écran « Tout est fait » avec
    « Voir ma semaine », bilan).
-3. Priorité 3, Nora qui se souvient (niveau, préférences, historique complet).
-4. Priorité 4, progression (bilan hebdomadaire, progression par plante).
-5. Priorité 5, mode vacances.
-6. À la publication : notifications serveur sur Android (Firebase/FCM) ; synchroniser les reports
-   (« Dans 3 h ») avec le serveur.
+2. Priorité 3, Nora qui se souvient (niveau, préférences, historique complet).
+3. Priorité 4, progression (bilan hebdomadaire, progression par plante).
+4. Priorité 5, mode vacances.
+5. À la publication : notifications serveur sur Android (Firebase/FCM) ; synchroniser les reports
+   (« Dans 3 h ») avec le serveur ; envoyer les photos des plantes sur le serveur (stockage d'images)
+   pour les retrouver sur un autre téléphone.

@@ -12,6 +12,7 @@ import { useColors } from "@/hooks/use-colors";
 import { pickPlantPhoto, type PreparedPhoto } from "@/lib/ai/photo";
 import { quotaLabel } from "@/lib/ai/quota-text";
 import { useGarden } from "@/lib/garden/garden-context";
+import { usePlantPhotos } from "@/lib/garden/photos-context";
 import { getCatalogPlant } from "@/lib/plants/catalog";
 import { trpc } from "@/lib/trpc";
 import type { AppRouter } from "@/server/routers";
@@ -38,6 +39,7 @@ export default function ScannerScreen() {
   const colors = useColors();
   const router = useRouter();
   const { account, resolvedPlants, addPlant, logEvent } = useGarden();
+  const { addPhoto } = usePlantPhotos();
   const status = trpc.ai.status.useQuery(undefined, { enabled: account.signedIn, retry: false });
   const utils = trpc.useUtils();
   const diagnose = trpc.ai.diagnose.useMutation({ onSuccess: () => void utils.ai.status.invalidate() });
@@ -81,6 +83,8 @@ export default function ScannerScreen() {
   const saveObservation = async () => {
     if (!owned || !diagnosis) return;
     await logEvent({ id: `scan:${owned.plant.id}:${Date.now()}`, plantId: owned.plant.id, type: "observation", completedAt: new Date().toISOString(), source: "manual", note: scannerNote(diagnosis) });
+    // La photo rejoint le journal de la plante : on la verra grandir (et guérir) photo après photo.
+    if (photo) await addPhoto(owned.plant.id, photo, "scanner").catch((error) => console.warn("[scanner] photo not kept", error));
     setSavedNote(true);
   };
 
@@ -142,7 +146,7 @@ export default function ScannerScreen() {
             ) : (
               <>
                 <View style={styles.resultHeader}>
-                  <View style={[styles.resultIcon, { backgroundColor: colors.leaf }]}><Text style={styles.resultEmoji}>{entry?.emoji ?? HEALTH[diagnosis.health].emoji}</Text></View>
+                  {photo ? <Image source={{ uri: photo.uri }} style={styles.resultIcon} accessibilityIgnoresInvertColors /> : <View style={[styles.resultIcon, { backgroundColor: colors.leaf }]}><Text style={styles.resultEmoji}>{HEALTH[diagnosis.health].emoji}</Text></View>}
                   <View style={styles.resultTitleWrap}>
                     <Text style={[styles.resultKicker, { color: diagnosis.health === "healthy" ? colors.success : diagnosis.health === "sick" ? colors.warning : colors.primary }]}>{HEALTH[diagnosis.health].label}</Text>
                     <Text style={[styles.resultTitle, { color: colors.foreground }]}>{diagnosis.commonName || "Plante non identifiée"}</Text>
@@ -179,7 +183,7 @@ export default function ScannerScreen() {
                   <Pressable accessibilityRole="button" onPress={() => router.push({ pathname: "/garden/[id]", params: { id: owned.plant.id } })} style={({ pressed }) => [pressed && styles.pressed]}><Text style={[styles.historyLink, { color: colors.primary }]}>Voir l’historique de {owned.plant.nickname || owned.entry.name.toLowerCase()}  ›</Text></Pressable>
                 )}
                 {owned && (
-                  <Pressable disabled={savedNote} onPress={() => void saveObservation()} style={({ pressed }) => [styles.inlineButton, { backgroundColor: savedNote ? colors.leaf : colors.primary }, pressed && styles.pressed]}><Text style={[styles.inlineButtonText, savedNote && { color: colors.primary }]}>{savedNote ? "✓ Noté dans l’historique" : `Noter ce diagnostic pour ${owned.plant.nickname || owned.entry.name}`}</Text></Pressable>
+                  <Pressable disabled={savedNote} onPress={() => void saveObservation()} style={({ pressed }) => [styles.inlineButton, { backgroundColor: savedNote ? colors.leaf : colors.primary }, pressed && styles.pressed]}><Text style={[styles.inlineButtonText, savedNote && { color: colors.primary }]}>{savedNote ? "✓ Noté dans sa fiche" : `Noter le diagnostic et la photo pour ${owned.plant.nickname || owned.entry.name}`}</Text></Pressable>
                 )}
               </>
             )}

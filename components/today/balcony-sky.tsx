@@ -9,8 +9,9 @@
 import { useFocusEffect } from "expo-router";
 import { LinearGradient } from "expo-linear-gradient";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { AccessibilityInfo, Animated, Easing, StyleSheet, View, type ImageSourcePropType, type LayoutChangeEvent } from "react-native";
+import { AccessibilityInfo, Animated, Easing, StyleSheet, View, type LayoutChangeEvent } from "react-native";
 
+import { PLANT_SHADOWS as PLANTS } from "@/components/plant-shadows";
 import type { PotShape, SkyScene } from "@/lib/garden/sky";
 
 /** La liste garde cette marge en bas pour finir au-dessus des plantes en pot. */
@@ -20,14 +21,6 @@ const LEAVES_NEAR = require("@/assets/images/balcony/leaves-near.png");
 const LEAVES_FAR = require("@/assets/images/balcony/leaves-far.png");
 const RAILING = require("@/assets/images/balcony/railing.png");
 const DROPS = [require("@/assets/images/balcony/drop-small.png"), require("@/assets/images/balcony/drop-medium.png"), require("@/assets/images/balcony/drop-large.png")];
-const PLANTS: Record<PotShape, ImageSourcePropType> = {
-  bush: require("@/assets/images/balcony/plant-bush.png"),
-  tall: require("@/assets/images/balcony/plant-tall.png"),
-  flower: require("@/assets/images/balcony/plant-flower.png"),
-  leafy: require("@/assets/images/balcony/plant-leafy.png"),
-  berry: require("@/assets/images/balcony/plant-berry.png"),
-  sprout: require("@/assets/images/balcony/plant-sprout.png"),
-};
 /** Dans l'image d'une plante (carrée), le pot est centré à 200/560 et son pied à 90 % de la hauteur. */
 const POT_CENTER = 200 / 560;
 const POT_FOOT = 0.9;

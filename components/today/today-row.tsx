@@ -14,10 +14,15 @@ type TodayRowProps = {
   onToggle: () => void;
   onOpen: () => void;
   checkLabel?: string;
+  /** La photo de la plante concernée, à la place de l'icône quand il y en a une. */
+  picture?: React.ReactNode;
 };
 
 /** Une ligne de la liste du jour : toucher la ligne ouvre le détail, toucher le rond valide le geste. */
-export function TodayRow({ icon, tone, title, subtitle, done, onToggle, onOpen, checkLabel }: TodayRowProps) {
+/** Le cadre de la photo passée dans `picture` : même taille que l'icône. */
+export const TODAY_ROW_PICTURE = { width: 40, height: 40, borderRadius: 12 } as const;
+
+export function TodayRow({ icon, tone, title, subtitle, done, onToggle, onOpen, checkLabel, picture }: TodayRowProps) {
   const colors = useColors();
   const scale = useRef(new Animated.Value(1)).current;
   const wasDone = useRef(done);
@@ -37,7 +42,7 @@ export function TodayRow({ icon, tone, title, subtitle, done, onToggle, onOpen, 
   return (
     <View style={[styles.row, { borderBottomColor: colors.border }]}>
       <Pressable accessibilityRole="button" accessibilityLabel={`${title}, détail`} onPress={onOpen} style={({ pressed }) => [styles.main, pressed && styles.pressed]}>
-        <View style={[styles.icon, { backgroundColor: alert ? colors.frostSoft : colors.surface }]}><Text style={[styles.iconText, alert && { color: toneColor }]}>{icon}</Text></View>
+        {picture ?? <View style={[styles.icon, { backgroundColor: alert ? colors.frostSoft : colors.surface }]}><Text style={[styles.iconText, alert && { color: toneColor }]}>{icon}</Text></View>}
         <View style={styles.copy}>
           <Text style={[styles.title, { color: done ? colors.muted : colors.foreground }, done && styles.doneTitle]} numberOfLines={2}>{title}</Text>
           <Text style={[styles.subtitle, { color: alert && !done ? toneColor : colors.muted }, alert && !done && styles.subtitleStrong]} numberOfLines={1}>{subtitle}</Text>

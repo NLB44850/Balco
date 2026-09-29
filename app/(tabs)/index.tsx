@@ -9,13 +9,15 @@ import { FadeIn } from "@/components/motion";
 import { ScreenContainer } from "@/components/screen-container";
 import { ScreenHeader } from "@/components/screen-header";
 import { BALCONY_FLOOR_HEIGHT, BalconySky } from "@/components/today/balcony-sky";
+import { PlantPicture } from "@/components/plant-picture";
 import { BottomSheet } from "@/components/today/bottom-sheet";
-import { TodayRow } from "@/components/today/today-row";
+import { TODAY_ROW_PICTURE, TodayRow } from "@/components/today/today-row";
 import { UndoToast, type ToastMessage } from "@/components/today/undo-toast";
 import { useLocalWeather } from "@/hooks/use-local-weather";
 import { useColors } from "@/hooks/use-colors";
 import { useWeatherSimulation } from "@/hooks/use-weather-simulation";
 import { useGarden } from "@/lib/garden/garden-context";
+import { usePlantPhotos } from "@/lib/garden/photos-context";
 import {
   POINTS_PER_GESTURE,
   buildDailySession,
@@ -63,6 +65,7 @@ export default function HomeScreen() {
   const colors = useColors();
   const router = useRouter();
   const { loaded, resolvedPlants, events, onboarding, addPlant, logEvent, removeEvent, reportLocation } = useGarden();
+  const { covers } = usePlantPhotos();
   const [now, setNow] = useState(() => new Date());
   const [snoozes, setSnoozes] = useState<ReminderSnooze[]>([]);
   const [snoozesLoaded, setSnoozesLoaded] = useState(false);
@@ -232,6 +235,12 @@ export default function HomeScreen() {
     ? weather.city
     : `${weather.city} · ${Math.round(weatherSnapshot.current.temperatureC)}° maintenant · ${Math.round(weatherSnapshot.today.temperatureMinC)}° au plus bas`;
   const hasPlants = resolvedPlants.length > 0;
+  // Un geste de saison pour une plante du balcon : sa photo plutôt que son emoji, quand il y en a une.
+  const seasonPicture = (item: TodayItem) => {
+    if (item.kind !== "season" || !covers.has(item.activity.subjectId)) return undefined;
+    const resolved = resolvedPlants.find(({ plant }) => plant.id === item.activity.subjectId);
+    return resolved ? <PlantPicture resolved={resolved} style={TODAY_ROW_PICTURE} /> : undefined;
+  };
 
   return (
     <ScreenContainer edges={["left", "right"]}>
@@ -295,6 +304,7 @@ export default function HomeScreen() {
                 subtitle={item.done ? doneSubtitle(item, events) : item.subtitle}
                 done={item.done}
                 checkLabel={item.kind === "alert" && item.group.action === "skip" ? "Compris" : undefined}
+                picture={seasonPicture(item)}
                 onToggle={() => void toggleItem(item)}
                 onOpen={() => setSheetKey(item.key)}
               />
@@ -323,8 +333,8 @@ export default function HomeScreen() {
                 const dot = plantDots.get(resolved.plant.id) ?? (tone === "good" ? colors.primary : tone === "watch" ? colors.warning : colors.border);
                 return (
                   <Pressable key={resolved.plant.id} accessibilityRole="button" accessibilityLabel={plantDisplayName(resolved)} onPress={() => router.push({ pathname: "/garden/[id]", params: { id: resolved.plant.id } })} style={({ pressed }) => [styles.plant, pressed && styles.pressed]}>
-                    <View style={[styles.plantBubble, { backgroundColor: colors.leaf }]}>
-                      <Text style={styles.plantEmoji}>{resolved.entry.emoji}</Text>
+                    <View>
+                      <PlantPicture resolved={resolved} style={styles.plantBubble} />
                       <View style={[styles.plantDot, { backgroundColor: dot, borderColor: colors.background }]} />
                     </View>
                     <Text style={[styles.plantName, { color: colors.foreground }]} numberOfLines={1}>{plantDisplayName(resolved)}</Text>

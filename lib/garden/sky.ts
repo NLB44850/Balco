@@ -119,8 +119,13 @@ const SHAPES: Record<string, PotShape> = {
   "small-fruit": "berry",
 };
 
+/** La silhouette peinte qui correspond à une famille de plantes. */
+export function potShapeFor(category: string): PotShape {
+  return SHAPES[category] ?? "bush";
+}
+
 /** Un pot par plante sur la rambarde (5 au plus) ; une pousse seule quand le balcon est vide. */
 export function potsFor(categories: string[], max = 5): PotShape[] {
   if (categories.length === 0) return ["sprout"];
-  return categories.slice(0, max).map((category) => SHAPES[category] ?? "bush");
+  return categories.slice(0, max).map(potShapeFor);
 }

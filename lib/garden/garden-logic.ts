@@ -149,7 +149,7 @@ export function historyByDay(events: MaintenanceEvent[], plantId: string, now = 
   return days;
 }
 
-function historyDayLabel(date: Date, now: Date) {
+export function historyDayLabel(date: Date, now: Date) {
   const days = daysBetween(date, now);
   if (days <= 0) return "Aujourd’hui";
   if (days === 1) return "Hier";

@@ -173,7 +173,7 @@ Très cohérent avec la promesse écologique.
 | Problèmes fréquents | ✅ | État de santé, observations, gestes conseillés |
 | Niveau de confiance | ✅ | Élevée / moyenne / faible |
 | Solutions naturelles | ✅ | Rubrique « Solution naturelle » |
-| Suivi avec plusieurs photos | ⬜ | Les photos ne sont pas conservées. Seul le diagnostic est noté dans l'historique |
+| Suivi avec plusieurs photos | 🟡 | La photo d'un diagnostic noté rejoint la fiche de la plante, avec ses autres photos (sur l'appareil seulement) |
 | Avertissement si incertain | ✅ | « Diagnostic incertain », conseil d'aller voir un professionnel |
 
 ### 4. Calendrier local
@@ -204,11 +204,11 @@ Très cohérent avec la promesse écologique.
 
 | Élément | État | Ce qui existe / ce qui manque |
 |---|---|---|
-| Cartes des plantes | ✅ | Écran « Mon balcon » |
+| Cartes des plantes | ✅ | Écran « Balcon » en grandes cartes photo : point de couleur d'état, geste du jour |
 | Emplacement par plante | ⬜ | Seule l'exposition du balcon entier est connue |
 | Exposition par plante | ⬜ | Idem |
-| Taille du pot | 🟡 | Pot conseillé affiché ; celui de l'utilisateur n'est pas enregistré |
-| Photo personnelle | ⬜ | À faire |
+| Taille du pot | 🟡 | Pot conseillé affiché en pastille sur la fiche ; celui de l'utilisateur n'est pas enregistré |
+| Photo personnelle | 🟡 | Journal photo par plante (24 photos au plus), la plus récente en couverture sur Balcon et sur la fiche. Gardé sur l'appareil : pas encore envoyé au serveur |
 | Stade : semis, croissance, floraison, récolte | ⬜ | À faire |
 | Réorganisation virtuelle | ⬜ | À faire |
 
@@ -269,5 +269,5 @@ L'ordre suit la priorité fixée par le porteur du projet. Chaque étape est val
 
 1. ✅ Accueil « Aujourd’hui », sur fond de lumière du balcon (ombres de la rambarde et des plantes, animées selon l'heure et la météo) : une seule liste à cocher (alertes météo, gestes du jour, gestes de saison), l'état du balcon en une ligne, le détail dans une feuille qui monte du bas, un message « Annuler » après chaque geste. Nouvelle base : fond blanc, un seul vert de marque, barre du bas claire.
 2. ✅ 4 onglets : Aujourd’hui, Balcon, Saisons, Nora. « Moi » s'ouvre depuis l'avatar, « Observer » depuis Nora et Balcon. La lumière du balcon (ombres de feuillage selon l'heure et la météo) et les cartes en verre sur tous les écrans.
-3. ⬜ Mon balcon et fiche plante avec photos.
+3. 🟡 Balcon et fiche plante « photo d'abord » (livré, à valider sur téléphone) : cartes photo avec point d'état et geste du jour ; fiche avec ta photo datée en grand, pastilles soleil / pot / depuis quand, le prochain geste en un bouton, tes photos et l'historique jour par jour ; renommer et retirer en bas de la fiche. Tes photos remplacent les emojis (l'ombre peinte de la plante tant qu'il n'y en a pas).
 4. ⬜ Saisons, Nora et Moi.

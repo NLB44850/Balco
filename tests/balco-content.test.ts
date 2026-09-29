@@ -87,7 +87,9 @@ describe("Balco MVP content", () => {
   });
 
   it("lets users manage their plants from the catalog", () => {
-    expect(readProjectFile("app/(tabs)/balcony.tsx")).toContain("removePlant");
+    // Renommer et retirer se font en bas de la fiche plante ; Balcon ouvre la fiche et ajoute une photo.
+    expect(readProjectFile("app/garden/[id].tsx")).toContain("removePlant");
+    expect(readProjectFile("app/(tabs)/balcony.tsx")).toContain("usePlantPhotoCapture");
     expect(readProjectFile("app/garden/add.tsx")).toContain("searchCatalog");
     expect(readProjectFile("app/_layout.tsx")).toContain("GardenProvider");
     expect(readProjectFile("app/welcome.tsx")).toContain("Redirect");

@@ -21,6 +21,7 @@ const MAPPING = {
   checklist: "checklist",
   "camera.macro": "local-florist",
   "chevron.left": "chevron-left",
+  "camera.fill": "photo-camera",
 } as IconMapping;
 
 export function IconSymbol({
