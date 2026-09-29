@@ -2,9 +2,12 @@ import { useFocusEffect, useRouter } from "expo-router";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Platform, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 import * as Haptics from "expo-haptics";
+import { setStatusBarStyle } from "expo-status-bar";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { FadeIn } from "@/components/motion";
 import { ScreenContainer } from "@/components/screen-container";
+import { BalconySky } from "@/components/today/balcony-sky";
 import { BottomSheet } from "@/components/today/bottom-sheet";
 import { TodayRow } from "@/components/today/today-row";
 import { UndoToast, type ToastMessage } from "@/components/today/undo-toast";
@@ -22,6 +25,7 @@ import {
   plantStatus,
   streakDays,
 } from "@/lib/garden/garden-logic";
+import { potsFor, skyScene } from "@/lib/garden/sky";
 import { balconyStatus, buildTodayList, doneSubtitle, type TodayItem } from "@/lib/garden/today";
 import { notificationsUnavailableReason } from "@/lib/notifications/module";
 import { eventForActivity, seasonalToDo } from "@/lib/plants/calendar";
@@ -68,6 +72,14 @@ export default function HomeScreen() {
   const toastId = useRef(0);
   const { weather, weatherSnapshot } = useLocalWeather();
   const simulation = useWeatherSimulation();
+  const insets = useSafeAreaInsets();
+  const sky = useMemo(() => skyScene(weatherSnapshot, now, weather.isFallback), [now, weather.isFallback, weatherSnapshot]);
+  const pots = useMemo(() => potsFor(resolvedPlants.map((resolved) => resolved.entry.category)), [resolvedPlants]);
+  // La barre d'état (heure, batterie) passe en clair sur le ciel de nuit, et revient en sombre ailleurs.
+  useFocusEffect(useCallback(() => {
+    setStatusBarStyle(sky.ink === "light" ? "light" : "dark");
+    return () => setStatusBarStyle("dark");
+  }, [sky.ink]));
   const [previewStatus, setPreviewStatus] = useState<"idle" | "sent" | "denied">("idle");
   useEffect(() => setPreviewStatus("idle"), [simulation.scenario]);
 
@@ -224,17 +236,21 @@ export default function HomeScreen() {
   const hasPlants = resolvedPlants.length > 0;
 
   return (
-    <ScreenContainer edges={["top", "left", "right"]}>
+    <ScreenContainer edges={["left", "right"]}>
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.content}>
-        <View style={styles.header}>
-          <View style={styles.headerCopy}>
-            <Text style={[styles.title, { color: colors.foreground }]}>Aujourd’hui</Text>
-            <Text style={[styles.meta, { color: colors.muted }]} numberOfLines={1}>{metaLine}</Text>
+        <BalconySky scene={sky} pots={pots} topInset={insets.top}>
+          <View style={styles.header}>
+            <View style={styles.headerCopy}>
+              <Text style={[styles.title, { color: sky.ink === "light" ? "#FFFFFF" : colors.foreground }]}>Aujourd’hui</Text>
+              <Text style={[styles.meta, { color: sky.ink === "light" ? "rgba(255,255,255,0.78)" : colors.muted }]} numberOfLines={1}>{metaLine}</Text>
+            </View>
+            <Pressable accessibilityRole="button" accessibilityLabel="Mon profil" onPress={() => router.push("/(tabs)/profile")} style={({ pressed }) => [styles.avatar, { backgroundColor: colors.primary }, pressed && styles.pressed]}>
+              <Text style={styles.avatarText}>{userInitials ?? "🌱"}</Text>
+            </Pressable>
           </View>
-          <Pressable accessibilityRole="button" accessibilityLabel="Mon profil" onPress={() => router.push("/(tabs)/profile")} style={({ pressed }) => [styles.avatar, { backgroundColor: colors.primary }, pressed && styles.pressed]}>
-            <Text style={styles.avatarText}>{userInitials ?? "🌱"}</Text>
-          </Pressable>
-        </View>
+        </BalconySky>
+
+        <View style={styles.body}>
 
         {simulation.scenario !== "none" && (
           <View style={[styles.simulation, { backgroundColor: colors.surface }]}>
@@ -350,6 +366,7 @@ export default function HomeScreen() {
             </Pressable>
           </FadeIn>
         )}
+        </View>
       </ScrollView>
 
       <BottomSheet visible={sheetItem !== null} onClose={closeSheet}>
@@ -411,8 +428,9 @@ function SheetContent({ item, events, onToggle, onSnooze, onOpenPlant, onOpenCal
 }
 
 const styles = StyleSheet.create({
-  content: { paddingHorizontal: 20, paddingTop: 14, paddingBottom: 110, gap: 18 },
-  header: { flexDirection: "row", alignItems: "center", gap: 12 },
+  content: { paddingBottom: 110 },
+  body: { paddingHorizontal: 20, paddingTop: 4, gap: 18 },
+  header: { flexDirection: "row", alignItems: "center", gap: 12, paddingHorizontal: 20, paddingTop: 14 },
   headerCopy: { flex: 1, gap: 2 },
   title: { fontSize: 32, fontWeight: "800", letterSpacing: -1 },
   meta: { fontSize: 14 },

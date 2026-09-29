@@ -14,17 +14,17 @@ const plants = resolvePlants([
 ]);
 const watered: MaintenanceEvent[] = plants.map(({ plant }) => ({ id: `w-${plant.id}`, plantId: plant.id, type: "watering", completedAt: new Date(2026, 8, 26, 9).toISOString(), source: "manual" }));
 
-function weather(minTemp: number): WeatherSnapshot {
+function weather(minTemp: number, rainMm = 0): WeatherSnapshot {
   return {
     fetchedAt: now.toISOString(), timezone: "Europe/Paris", city: "Nantes", latitude: 47.2, longitude: -1.55,
     current: { temperatureC: 12, apparentTemperatureC: 11, weatherCode: 1 },
-    next12h: { precipitationMm: 0, precipitationProbabilityMax: 5, windGustKmhMax: 10 },
+    next12h: { precipitationMm: rainMm, precipitationProbabilityMax: rainMm ? 90 : 5, windGustKmhMax: 10 },
     today: { precipitationMm: 0, temperatureMinC: minTemp, temperatureMaxC: 14, windGustKmhMax: 10 },
   };
 }
 
-function list(minTemp: number, events = watered) {
-  const groups = groupReminders(decideReminders(plants.map((resolved) => ({ plant: careProfileFor(resolved), history: events, weather: weather(minTemp), settings: { enabled: true }, now }))));
+function list(minTemp: number, events = watered, rainMm = 0) {
+  const groups = groupReminders(decideReminders(plants.map((resolved) => ({ plant: careProfileFor(resolved), history: events, weather: weather(minTemp, rainMm), settings: { enabled: true }, now }))));
   const session = buildDailySession(plants, events, now);
   const subjects = plants.map((resolved) => ({ id: resolved.plant.id, entry: resolved.entry, displayName: resolved.entry.name }));
   return { items: buildTodayList({ groups, session, seasonal: seasonalToDo(subjects, events, now) }), session };
@@ -41,6 +41,12 @@ describe("liste « Aujourd'hui »", () => {
     const titles = items.map((item) => item.title);
     expect(titles.filter((title) => title.toLowerCase().includes("arrose le basilic"))).toHaveLength(1);
     expect(items.find((item) => item.title === "Arrose le basilic si la terre est sèche")?.kind).toBe("alert");
+  });
+
+  it("ne propose pas d'arroser quand l'alerte pluie dit de ne pas le faire", () => {
+    const { items } = list(12, watered, 8);
+    expect(items[0]).toMatchObject({ kind: "alert", tone: "rain" });
+    expect(items.filter((item) => item.kind === "task" && item.task.task.type === "watering")).toHaveLength(0);
   });
 
   it("ajoute les gestes de saison du mois", () => {

@@ -58,14 +58,16 @@ function alertSubtitle(group: ReminderGroup) {
 }
 
 export function buildTodayList({ groups, session, seasonal }: { groups: ReminderGroup[]; session: SessionTask[]; seasonal: CalendarActivity[] }): TodayItem[] {
-  // Une alerte de soif remplace le geste d'arrosage générique de la même plante.
+  // Une alerte de soif remplace le geste d'arrosage générique de la même plante, et quand la pluie
+  // arrive on ne dit pas « arrose le basilic » juste sous « n'arrose pas aujourd'hui ».
   const thirsty = new Set(groups.filter((group) => group.cause === "thirst").flatMap((group) => group.decisions.map((decision) => decision.plantId)));
+  const rainComing = groups.some((group) => group.cause === "rain");
   const alerts: TodayItem[] = groups.map((group) => {
     const look = ALERT_LOOK[group.cause ?? "thirst"] ?? ALERT_LOOK.thirst;
     return { kind: "alert", key: `alert:${group.key}`, ...look, title: group.title, subtitle: alertSubtitle(group), done: false, group };
   });
   const tasks: TodayItem[] = session
-    .filter((item) => !(item.task.type === "watering" && thirsty.has(item.resolved.plant.id)))
+    .filter((item) => !(item.task.type === "watering" && !item.done && (rainComing || thirsty.has(item.resolved.plant.id))))
     .map((item) => ({
       kind: "task",
       key: `task:${item.eventId}`,
