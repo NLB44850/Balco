@@ -43,7 +43,7 @@ export function TodayRow({ icon, tone, title, subtitle, done, onToggle, onOpen, 
         </View>
       </Pressable>
       <Pressable accessibilityRole="checkbox" accessibilityState={{ checked: done }} accessibilityLabel={checkLabel ?? (done ? "Annuler ce geste" : "Marquer comme fait")} onPress={onToggle} hitSlop={12} style={styles.checkZone}>
-        <Animated.View style={[styles.check, { borderColor: done ? colors.primary : colors.border, backgroundColor: done ? colors.primary : "transparent", transform: [{ scale }] }]}>
+        <Animated.View style={[styles.check, { borderColor: done ? colors.primary : "rgba(18,22,20,0.22)", backgroundColor: done ? colors.primary : "rgba(255,255,255,0.6)", transform: [{ scale }] }]}>
           {done && <Text style={styles.checkMark}>✓</Text>}
         </Animated.View>
       </Pressable>

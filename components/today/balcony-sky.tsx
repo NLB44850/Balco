@@ -1,33 +1,23 @@
 /**
- * Le haut de l'accueil : ton balcon vu de dehors. Le ciel suit l'heure et la météo
- * (pluie, flocons, orage, soleil, lune) et chaque plante a son pot sur la rambarde,
- * qui se balance plus fort quand il y a du vent. Animations lentes, arrêtées quand
- * l'écran n'est pas affiché ou quand le téléphone demande de réduire les animations.
+ * Le décor de l'accueil, en filigrane derrière tout l'écran : ton balcon vu de dehors.
+ * Le ciel suit l'heure et la météo (pluie, flocons, orage, soleil, lune), la rambarde et
+ * un pot par plante restent posés en bas de l'écran, et la liste défile par-dessus.
+ * Les nuages et le soleil remontent plus lentement que la liste (effet de profondeur).
+ * Animations lentes, arrêtées hors de l'écran ou si le téléphone demande moins d'animations.
  */
 import { useFocusEffect } from "expo-router";
 import { LinearGradient } from "expo-linear-gradient";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import {
-  AccessibilityInfo,
-  Animated,
-  Easing,
-  StyleSheet,
-  View,
-  useWindowDimensions,
-} from "react-native";
+import { AccessibilityInfo, Animated, Easing, StyleSheet, View, type LayoutChangeEvent } from "react-native";
 import Svg, { Circle, Ellipse, Line, Path, Rect } from "react-native-svg";
 
 import type { PotShape, SkyScene } from "@/lib/garden/sky";
 
-const SCENE_HEIGHT = 132;
-const RAILING_HEIGHT = 62;
+const RAILING_HEIGHT = 58;
+/** Hauteur du balcon posé en bas de l'écran : la liste garde cette marge pour finir au-dessus. */
+export const BALCONY_FLOOR_HEIGHT = 96;
 
-type Props = {
-  scene: SkyScene;
-  pots: PotShape[];
-  topInset: number;
-  children: React.ReactNode;
-};
+type Props = { scene: SkyScene; pots: PotShape[]; topInset: number; scrollY: Animated.Value };
 
 function useReduceMotion() {
   const [reduce, setReduce] = useState(false);
@@ -36,10 +26,7 @@ function useReduceMotion() {
     AccessibilityInfo.isReduceMotionEnabled()
       .then((value) => active && setReduce(value))
       .catch(() => undefined);
-    const subscription = AccessibilityInfo.addEventListener(
-      "reduceMotionChanged",
-      setReduce,
-    );
+    const subscription = AccessibilityInfo.addEventListener("reduceMotionChanged", setReduce);
     return () => {
       active = false;
       subscription.remove();
@@ -49,24 +36,13 @@ function useReduceMotion() {
 }
 
 /** Une valeur qui va de 0 à 1 en boucle, seulement pendant que l'écran est affiché. */
-function useLoop(
-  duration: number,
-  enabled: boolean,
-  easing: (value: number) => number = Easing.linear,
-) {
+function useLoop(duration: number, enabled: boolean, easing: (value: number) => number = Easing.linear) {
   const value = useRef(new Animated.Value(0)).current;
   useFocusEffect(
     useCallback(() => {
       if (!enabled) return undefined;
       value.setValue(0);
-      const loop = Animated.loop(
-        Animated.timing(value, {
-          toValue: 1,
-          duration,
-          easing,
-          useNativeDriver: true,
-        }),
-      );
+      const loop = Animated.loop(Animated.timing(value, { toValue: 1, duration, easing, useNativeDriver: true }));
       loop.start();
       return () => loop.stop();
     }, [duration, easing, enabled, value]),
@@ -88,354 +64,142 @@ function seeded(count: number, seed: number) {
   });
 }
 
-export function BalconySky({ scene, pots, topInset, children }: Props) {
-  const { width } = useWindowDimensions();
+function parallax(scrollY: Animated.Value, distance: number) {
+  return scrollY.interpolate({ inputRange: [0, 1200], outputRange: [0, -distance], extrapolate: "clamp" });
+}
+
+export function BalconySky({ scene, pots, topInset, scrollY }: Props) {
   const reduce = useReduceMotion();
   const animate = !reduce;
-  const [contentHeight, setContentHeight] = useState(80);
-  const height = topInset + contentHeight + SCENE_HEIGHT;
+  const [size, setSize] = useState({ width: 390, height: 760 });
+  const { width, height } = size;
+  const onLayout = (event: LayoutChangeEvent) => {
+    const { width: nextWidth, height: nextHeight } = event.nativeEvent.layout;
+    if (nextWidth !== width || nextHeight !== height) setSize({ width: nextWidth, height: nextHeight });
+  };
 
-  const drift = useLoop(Math.round(70000 / (0.6 + scene.wind)), animate);
-  const fall = useLoop(
-    scene.particles === "snow" ? 9000 : 1100,
-    animate && scene.particles !== null,
-  );
-  const sway = useLoop(
-    Math.round(3600 / (0.55 + scene.wind * 0.8)),
-    animate,
-    Easing.inOut(Easing.sin),
-  );
+  const drift = useLoop(Math.round(90000 / (0.6 + scene.wind)), animate);
+  const fall = useLoop(scene.particles === "snow" ? 14000 : 1800, animate && scene.particles !== null);
+  const sway = useLoop(Math.round(3600 / (0.55 + scene.wind * 0.8)), animate, Easing.inOut(Easing.sin));
   const twinkle = useLoop(4200, animate && scene.stars);
-  const pulse = useLoop(
-    5200,
-    animate && scene.body === "sun",
-    Easing.inOut(Easing.sin),
-  );
+  const pulse = useLoop(5200, animate && scene.body === "sun", Easing.inOut(Easing.sin));
   const flash = useLoop(6500, animate && scene.flash);
 
   const stars = useMemo(() => {
-    const random = seeded(28, 7);
-    return Array.from({ length: 14 }, (_, index) => ({
-      x: random[index * 2] * width,
-      y: topInset + 6 + random[index * 2 + 1] * (contentHeight + 30),
-      phase: random[(index * 5) % 28],
-      size: index % 4 === 0 ? 3 : 2,
-    }));
-  }, [contentHeight, topInset, width]);
+    const random = seeded(42, 7);
+    return Array.from({ length: 14 }, (_, index) => ({ x: random[index] * width, y: topInset + random[14 + index] * height * 0.55, phase: random[28 + index], size: index % 4 === 0 ? 4 : 3 }));
+  }, [height, topInset, width]);
   const drops = useMemo(() => {
-    const count = scene.particles === "snow" ? 16 : 22;
+    const count = scene.particles === "snow" ? 22 : 30;
     const random = seeded(count * 3, scene.particles === "snow" ? 11 : 3);
-    return Array.from({ length: count }, (_, index) => ({
-      x: random[index] * width,
-      phase: random[count + index],
-      size: 3 + random[count * 2 + index] * 3,
-    }));
+    return Array.from({ length: count }, (_, index) => ({ x: random[index] * width, phase: random[count + index], size: 3 + random[count * 2 + index] * 3 }));
   }, [scene.particles, width]);
 
-  const cloudFill =
-    scene.cloudTone === "dark"
-      ? "#7E8A99"
-      : scene.cloudTone === "grey"
-        ? "#EEF1F4"
-        : "#FFFFFF";
-  const cloudOpacity =
-    scene.mood === "night" ? 0.35 : scene.cloudTone === "white" ? 0.9 : 0.85;
-  const sunSize = scene.weather === "heat" ? 64 : 46;
-  const sunX = width * 0.64;
-  const sunY = topInset + contentHeight + 12;
+  const night = scene.mood === "night";
+  const cloudFill = scene.cloudTone === "dark" ? "#8E99A8" : scene.cloudTone === "grey" ? "#E4E9EE" : "#FFFFFF";
+  const sunSize = scene.weather === "heat" ? 70 : 52;
+  const sunX = width * 0.66;
+  const sunY = topInset + 20;
   const swayDegrees = 2 + scene.wind * 9;
-  const railColor = scene.mood === "night" ? "#2C3A52" : "#35503F";
+  const railColor = night ? "#4A5675" : "#35503F";
+  const sunShift = parallax(scrollY, 260);
+  const cloudShift = parallax(scrollY, 160);
 
   return (
-    <View style={{ height }}>
-      <View
-        style={StyleSheet.absoluteFill}
-        pointerEvents="none"
-        accessibilityElementsHidden
-        importantForAccessibility="no-hide-descendants"
-      >
-        <LinearGradient
-          colors={scene.gradient}
-          locations={[0, 0.62, 1]}
-          style={StyleSheet.absoluteFill}
-        />
+    <View style={StyleSheet.absoluteFill} onLayout={onLayout} pointerEvents="none" accessibilityElementsHidden importantForAccessibility="no-hide-descendants">
+      <LinearGradient colors={scene.gradient} locations={[0, 0.45, 1]} style={StyleSheet.absoluteFill} />
 
-        {scene.stars &&
-          stars.map((star, index) => (
+      {scene.stars && (
+        <Animated.View style={[StyleSheet.absoluteFill, { transform: [{ translateY: sunShift }] }]}>
+          {stars.map((star, index) => (
             <Animated.View
               key={`star-${index}`}
-              style={[
-                styles.star,
-                {
-                  left: star.x,
-                  top: star.y,
-                  width: star.size,
-                  height: star.size,
-                  borderRadius: star.size,
-                  opacity: animate
-                    ? phased(twinkle, star.phase).interpolate({
-                        inputRange: [0, 0.5, 1],
-                        outputRange: [0.25, 1, 0.25],
-                      })
-                    : 0.7,
-                },
-              ]}
+              style={[styles.star, { left: star.x, top: star.y, width: star.size, height: star.size, borderRadius: star.size, opacity: animate ? phased(twinkle, star.phase).interpolate({ inputRange: [0, 0.5, 1], outputRange: [0.2, 0.75, 0.2] }) : 0.5 }]}
             />
           ))}
+        </Animated.View>
+      )}
 
-        {scene.body === "sun" && (
-          <View
-            style={{
-              position: "absolute",
-              left: sunX - sunSize,
-              top: sunY - sunSize / 2,
-              width: sunSize * 2,
-              height: sunSize * 2,
-              alignItems: "center",
-              justifyContent: "center",
-            }}
-          >
+      {scene.body === "sun" && (
+        <Animated.View style={{ position: "absolute", left: sunX - sunSize, top: sunY - sunSize / 2, width: sunSize * 2, height: sunSize * 2, alignItems: "center", justifyContent: "center", opacity: 0.75, transform: [{ translateY: sunShift }] }}>
+          <Animated.View style={[styles.halo, { width: sunSize * 1.9, height: sunSize * 1.9, borderRadius: sunSize, backgroundColor: scene.weather === "heat" ? "#FFC47D" : "#FFEAB0", transform: [{ scale: animate ? pulse.interpolate({ inputRange: [0, 0.5, 1], outputRange: [0.92, 1.08, 0.92] }) : 1 }] }]} />
+          <View style={{ width: sunSize, height: sunSize, borderRadius: sunSize / 2, backgroundColor: scene.weather === "heat" ? "#FFB45A" : scene.mood === "evening" ? "#FFC194" : "#FFDD85" }} />
+        </Animated.View>
+      )}
+
+      {scene.body === "moon" && (
+        <Animated.View style={{ position: "absolute", left: sunX - 24, top: sunY, opacity: 0.8, transform: [{ translateY: sunShift }] }}>
+          <Svg width={48} height={48}>
+            <Path d="M32 6a18 18 0 1 0 9 32A15 15 0 0 1 32 6z" fill="#B7C0DC" />
+          </Svg>
+        </Animated.View>
+      )}
+
+      {Array.from({ length: scene.clouds + 1 }, (_, index) => {
+        const phase = [0.15, 0.55, 0.85, 0.35][index];
+        const top = topInset + [0.02, 0.2, 0.38, 0.55][index] * height;
+        const scale = [1, 0.8, 1.25, 0.9][index];
+        return (
+          <Animated.View key={`cloud-${index}`} style={{ position: "absolute", top, left: 0, opacity: night ? 0.45 : 0.8, transform: [{ translateY: cloudShift }, { translateX: animate ? phased(drift, phase).interpolate({ inputRange: [0, 1], outputRange: [-150, width + 20] }) : phase * width }, { scale }] }}>
+            <Svg width={120} height={48}>
+              <Circle cx={34} cy={30} r={16} fill={cloudFill} />
+              <Circle cx={58} cy={22} r={20} fill={cloudFill} />
+              <Circle cx={84} cy={30} r={15} fill={cloudFill} />
+              <Rect x={20} y={30} width={80} height={16} rx={8} fill={cloudFill} />
+            </Svg>
+          </Animated.View>
+        );
+      })}
+
+      {scene.particles &&
+        drops.map((drop, index) => {
+          const progress = animate ? phased(fall, drop.phase) : null;
+          const snow = scene.particles === "snow";
+          return (
             <Animated.View
+              key={`drop-${index}`}
               style={[
-                styles.halo,
+                snow ? { width: drop.size, height: drop.size, borderRadius: drop.size, backgroundColor: night ? "#C7CEE4" : "#FFFFFF", opacity: 0.95 } : { width: 1.6, height: 12, borderRadius: 1, backgroundColor: "#7F97B0", opacity: 0.4 },
                 {
-                  width: sunSize * 1.9,
-                  height: sunSize * 1.9,
-                  borderRadius: sunSize,
-                  backgroundColor:
-                    scene.weather === "heat" ? "#FFB35C" : "#FFE39A",
+                  position: "absolute",
+                  left: drop.x,
+                  top: 0,
                   transform: [
-                    {
-                      scale: animate
-                        ? pulse.interpolate({
-                            inputRange: [0, 0.5, 1],
-                            outputRange: [0.92, 1.08, 0.92],
-                          })
-                        : 1,
-                    },
+                    { translateY: progress ? progress.interpolate({ inputRange: [0, 1], outputRange: [-20, height - BALCONY_FLOOR_HEIGHT + 20] }) : drop.phase * (height - BALCONY_FLOOR_HEIGHT) },
+                    { translateX: progress && snow ? progress.interpolate({ inputRange: [0, 0.25, 0.5, 0.75, 1], outputRange: [0, 8, 0, -8, 0] }) : 0 },
+                    { rotate: snow ? "0deg" : `${Math.round(scene.wind * 18)}deg` },
                   ],
                 },
               ]}
             />
-            <View
-              style={{
-                width: sunSize,
-                height: sunSize,
-                borderRadius: sunSize / 2,
-                backgroundColor:
-                  scene.weather === "heat"
-                    ? "#FFA83D"
-                    : scene.mood === "evening"
-                      ? "#FFB27A"
-                      : "#FFD66B",
-              }}
-            />
-          </View>
-        )}
-
-        {scene.body === "moon" && (
-          <Svg
-            width={44}
-            height={44}
-            style={{ position: "absolute", left: sunX - 22, top: sunY - 4 }}
-          >
-            <Path d="M30 6a17 17 0 1 0 8 30A14 14 0 0 1 30 6z" fill="#F4EBCF" />
-          </Svg>
-        )}
-
-        {Array.from({ length: scene.clouds }, (_, index) => {
-          const phase = [0.15, 0.55, 0.85][index];
-          const top =
-            topInset +
-            [4, 34, 18][index] +
-            (index === 2 ? contentHeight * 0.3 : 0);
-          const scale = [1, 0.75, 1.2][index];
-          return (
-            <Animated.View
-              key={`cloud-${index}`}
-              style={{
-                position: "absolute",
-                top,
-                left: 0,
-                opacity: cloudOpacity,
-                transform: [
-                  {
-                    translateX: animate
-                      ? phased(drift, phase).interpolate({
-                          inputRange: [0, 1],
-                          outputRange: [-140, width + 20],
-                        })
-                      : phase * width,
-                  },
-                  { scale },
-                ],
-              }}
-            >
-              <Svg width={120} height={48}>
-                <Circle cx={34} cy={30} r={16} fill={cloudFill} />
-                <Circle cx={58} cy={22} r={20} fill={cloudFill} />
-                <Circle cx={84} cy={30} r={15} fill={cloudFill} />
-                <Rect
-                  x={20}
-                  y={30}
-                  width={80}
-                  height={16}
-                  rx={8}
-                  fill={cloudFill}
-                />
-              </Svg>
-            </Animated.View>
           );
         })}
 
-        {scene.particles &&
-          drops.map((drop, index) => {
-            const progress = animate ? phased(fall, drop.phase) : null;
-            const snow = scene.particles === "snow";
-            return (
-              <Animated.View
-                key={`drop-${index}`}
-                style={[
-                  snow
-                    ? {
-                        width: drop.size,
-                        height: drop.size,
-                        borderRadius: drop.size,
-                        backgroundColor: "#FFFFFF",
-                        opacity: 0.95,
-                      }
-                    : {
-                        width: 1.6,
-                        height: 11,
-                        borderRadius: 1,
-                        backgroundColor:
-                          scene.mood === "night" ? "#9FB2D1" : "#6F8AA6",
-                        opacity: 0.6,
-                      },
-                  {
-                    position: "absolute",
-                    left: drop.x,
-                    top: 0,
-                    transform: [
-                      {
-                        translateY: progress
-                          ? progress.interpolate({
-                              inputRange: [0, 1],
-                              outputRange: [topInset - 20, height - 30],
-                            })
-                          : topInset + drop.phase * (height - topInset - 40),
-                      },
-                      {
-                        translateX:
-                          progress && snow
-                            ? progress.interpolate({
-                                inputRange: [0, 0.25, 0.5, 0.75, 1],
-                                outputRange: [0, 6, 0, -6, 0],
-                              })
-                            : 0,
-                      },
-                      {
-                        rotate: snow
-                          ? "0deg"
-                          : `${Math.round(scene.wind * 18)}deg`,
-                      },
-                    ],
-                  },
-                ]}
-              />
-            );
-          })}
+      {scene.flash && animate && (
+        <Animated.View style={[StyleSheet.absoluteFill, { backgroundColor: "#FFFFFF", opacity: flash.interpolate({ inputRange: [0, 0.9, 0.915, 0.93, 0.95, 0.97, 1], outputRange: [0, 0, 0.5, 0.1, 0.35, 0, 0] }) }]} />
+      )}
 
-        {scene.flash && animate && (
-          <Animated.View
-            style={[
-              StyleSheet.absoluteFill,
-              {
-                backgroundColor: "#FFFFFF",
-                opacity: flash.interpolate({
-                  inputRange: [0, 0.9, 0.915, 0.93, 0.95, 0.97, 1],
-                  outputRange: [0, 0, 0.55, 0.1, 0.4, 0, 0],
-                }),
-              },
-            ]}
-          />
-        )}
-
-        <Svg
-          width={width}
-          height={RAILING_HEIGHT}
-          style={{ position: "absolute", left: 0, bottom: 10 }}
-        >
-          <Rect
-            x={0}
-            y={4}
-            width={width}
-            height={5}
-            rx={2.5}
-            fill={railColor}
-            opacity={0.55}
-          />
+      <View style={[styles.floor, { height: BALCONY_FLOOR_HEIGHT }]}>
+        <Svg width={width} height={RAILING_HEIGHT} style={{ position: "absolute", left: 0, bottom: 8, opacity: 0.55 }}>
+          <Rect x={0} y={4} width={width} height={5} rx={2.5} fill={railColor} opacity={0.55} />
           {Array.from({ length: Math.ceil(width / 18) }, (_, index) => (
-            <Line
-              key={`bar-${index}`}
-              x1={9 + index * 18}
-              y1={9}
-              x2={9 + index * 18}
-              y2={RAILING_HEIGHT - 6}
-              stroke={railColor}
-              strokeWidth={2}
-              opacity={0.3}
-            />
+            <Line key={`bar-${index}`} x1={9 + index * 18} y1={9} x2={9 + index * 18} y2={RAILING_HEIGHT - 6} stroke={railColor} strokeWidth={2} opacity={0.3} />
           ))}
-          <Rect
-            x={0}
-            y={RAILING_HEIGHT - 8}
-            width={width}
-            height={4}
-            rx={2}
-            fill={railColor}
-            opacity={0.4}
-          />
+          <Rect x={0} y={RAILING_HEIGHT - 8} width={width} height={4} rx={2} fill={railColor} opacity={0.4} />
         </Svg>
-
         {pots.map((shape, index) => {
           const slot = (index + 0.5) / pots.length;
-          const left =
-            pots.length === 1
-              ? width * 0.22
-              : width * (0.08 + slot * 0.84) - 28;
+          const left = pots.length === 1 ? width * 0.22 : width * (0.08 + slot * 0.84) - 28;
           const phase = (index * 0.37) % 1;
           return (
-            <View
-              key={`pot-${index}`}
-              style={{
-                position: "absolute",
-                left,
-                bottom: 6,
-                width: 56,
-                alignItems: "center",
-              }}
-            >
+            <View key={`pot-${index}`} style={{ position: "absolute", left, bottom: 4, width: 56, alignItems: "center", opacity: 0.6 }}>
               <Animated.View
                 style={{
                   width: 56,
                   height: 58,
                   marginBottom: -4,
                   transformOrigin: "bottom",
-                  transform: [
-                    {
-                      rotate: animate
-                        ? phased(sway, phase).interpolate({
-                            inputRange: [0, 0.5, 1],
-                            outputRange: [
-                              `${-swayDegrees}deg`,
-                              `${swayDegrees}deg`,
-                              `${-swayDegrees}deg`,
-                            ],
-                          })
-                        : "0deg",
-                    },
-                  ],
+                  transform: [{ rotate: animate ? phased(sway, phase).interpolate({ inputRange: [0, 0.5, 1], outputRange: [`${-swayDegrees}deg`, `${swayDegrees}deg`, `${-swayDegrees}deg`] }) : "0deg" }],
                 }}
               >
                 <Foliage shape={shape} />
@@ -443,28 +207,15 @@ export function BalconySky({ scene, pots, topInset, children }: Props) {
               <Svg width={40} height={30}>
                 <Rect x={1} y={0} width={38} height={7} rx={2} fill="#B9582E" />
                 <Path d="M4 7 H36 L32 30 H8 Z" fill="#D2642A" />
-                <Path
-                  d="M8 12 H33"
-                  stroke="#E07E4D"
-                  strokeWidth={1.5}
-                  opacity={0.6}
-                />
+                <Path d="M8 12 H33" stroke="#E07E4D" strokeWidth={1.5} opacity={0.6} />
               </Svg>
             </View>
           );
         })}
       </View>
 
-      <View
-        style={{ paddingTop: topInset }}
-        onLayout={(event) =>
-          setContentHeight(
-            Math.round(event.nativeEvent.layout.height - topInset),
-          )
-        }
-      >
-        {children}
-      </View>
+      {/* Sous l'heure et la batterie, la liste disparaît derrière le ciel au lieu de passer dessous. */}
+      <View style={[styles.statusStrip, { height: topInset, backgroundColor: scene.gradient[0] }]} />
     </View>
   );
 }
@@ -622,6 +373,8 @@ function Foliage({ shape }: { shape: PotShape }) {
 }
 
 const styles = StyleSheet.create({
-  star: { position: "absolute", backgroundColor: "#FFFFFF" },
+  star: { position: "absolute", backgroundColor: "#8C98C2" },
   halo: { position: "absolute", opacity: 0.45 },
+  floor: { position: "absolute", left: 0, right: 0, bottom: 0 },
+  statusStrip: { position: "absolute", top: 0, left: 0, right: 0 },
 });

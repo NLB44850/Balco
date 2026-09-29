@@ -1,13 +1,12 @@
 import { useFocusEffect, useRouter } from "expo-router";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { Platform, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
+import { Animated, Platform, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 import * as Haptics from "expo-haptics";
-import { setStatusBarStyle } from "expo-status-bar";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { FadeIn } from "@/components/motion";
 import { ScreenContainer } from "@/components/screen-container";
-import { BalconySky } from "@/components/today/balcony-sky";
+import { BALCONY_FLOOR_HEIGHT, BalconySky } from "@/components/today/balcony-sky";
 import { BottomSheet } from "@/components/today/bottom-sheet";
 import { TodayRow } from "@/components/today/today-row";
 import { UndoToast, type ToastMessage } from "@/components/today/undo-toast";
@@ -75,11 +74,7 @@ export default function HomeScreen() {
   const insets = useSafeAreaInsets();
   const sky = useMemo(() => skyScene(weatherSnapshot, now, weather.isFallback), [now, weather.isFallback, weatherSnapshot]);
   const pots = useMemo(() => potsFor(resolvedPlants.map((resolved) => resolved.entry.category)), [resolvedPlants]);
-  // La barre d'état (heure, batterie) passe en clair sur le ciel de nuit, et revient en sombre ailleurs.
-  useFocusEffect(useCallback(() => {
-    setStatusBarStyle(sky.ink === "light" ? "light" : "dark");
-    return () => setStatusBarStyle("dark");
-  }, [sky.ink]));
+  const scrollY = useRef(new Animated.Value(0)).current;
   const [previewStatus, setPreviewStatus] = useState<"idle" | "sent" | "denied">("idle");
   useEffect(() => setPreviewStatus("idle"), [simulation.scenario]);
 
@@ -237,18 +232,22 @@ export default function HomeScreen() {
 
   return (
     <ScreenContainer edges={["left", "right"]}>
-      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.content}>
-        <BalconySky scene={sky} pots={pots} topInset={insets.top}>
-          <View style={styles.header}>
-            <View style={styles.headerCopy}>
-              <Text style={[styles.title, { color: sky.ink === "light" ? "#FFFFFF" : colors.foreground }]}>Aujourd’hui</Text>
-              <Text style={[styles.meta, { color: sky.ink === "light" ? "rgba(255,255,255,0.78)" : colors.muted }]} numberOfLines={1}>{metaLine}</Text>
-            </View>
-            <Pressable accessibilityRole="button" accessibilityLabel="Mon profil" onPress={() => router.push("/(tabs)/profile")} style={({ pressed }) => [styles.avatar, { backgroundColor: colors.primary }, pressed && styles.pressed]}>
-              <Text style={styles.avatarText}>{userInitials ?? "🌱"}</Text>
-            </Pressable>
+      <BalconySky scene={sky} pots={pots} topInset={insets.top} scrollY={scrollY} />
+      <Animated.ScrollView
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={[styles.content, { paddingBottom: BALCONY_FLOOR_HEIGHT + 40 }]}
+        scrollEventThrottle={16}
+        onScroll={Animated.event([{ nativeEvent: { contentOffset: { y: scrollY } } }], { useNativeDriver: true })}
+      >
+        <View style={[styles.header, { paddingTop: insets.top + 14 }]}>
+          <View style={styles.headerCopy}>
+            <Text style={[styles.title, { color: colors.foreground }]}>Aujourd’hui</Text>
+            <Text style={[styles.meta, { color: colors.muted }]} numberOfLines={1}>{metaLine}</Text>
           </View>
-        </BalconySky>
+          <Pressable accessibilityRole="button" accessibilityLabel="Mon profil" onPress={() => router.push("/(tabs)/profile")} style={({ pressed }) => [styles.avatar, { backgroundColor: colors.primary }, pressed && styles.pressed]}>
+            <Text style={styles.avatarText}>{userInitials ?? "🌱"}</Text>
+          </Pressable>
+        </View>
 
         <View style={styles.body}>
 
@@ -272,7 +271,7 @@ export default function HomeScreen() {
         )}
 
         {loaded && hasPlants && (
-          <Pressable accessibilityRole="button" accessibilityLabel={`Ton balcon, ${status.label}`} onPress={() => router.push("/garden")} style={({ pressed }) => [styles.status, { backgroundColor: colors.surface }, pressed && styles.pressed]}>
+          <Pressable accessibilityRole="button" accessibilityLabel={`Ton balcon, ${status.label}`} onPress={() => router.push("/garden")} style={({ pressed }) => [styles.status, styles.glass, pressed && styles.pressed]}>
             <Text style={[styles.statusText, { color: colors.foreground }]}>Ton balcon <Text style={{ color: colors.muted, fontWeight: "500" }}>· {status.label}</Text></Text>
             <View style={[styles.track, { backgroundColor: colors.border }]}><View style={[styles.fill, { width: `${Math.max(status.progress, 0.04) * 100}%`, backgroundColor: colors.primary }]} /></View>
           </Pressable>
@@ -367,7 +366,7 @@ export default function HomeScreen() {
           </FadeIn>
         )}
         </View>
-      </ScrollView>
+      </Animated.ScrollView>
 
       <BottomSheet visible={sheetItem !== null} onClose={closeSheet}>
         {sheetItem && <SheetContent item={sheetItem} events={events} onClose={closeSheet} onToggle={() => { closeSheet(); void toggleItem(sheetItem); }} onSnooze={(kind) => { closeSheet(); if (sheetItem.kind === "alert") void snoozeAlert(sheetItem.group, kind); }} onOpenPlant={(id) => { closeSheet(); router.push({ pathname: "/garden/[id]", params: { id } }); }} onOpenCalendar={() => { closeSheet(); router.push("/(tabs)/calendar"); }} />}
@@ -428,9 +427,10 @@ function SheetContent({ item, events, onToggle, onSnooze, onOpenPlant, onOpenCal
 }
 
 const styles = StyleSheet.create({
-  content: { paddingBottom: 110 },
-  body: { paddingHorizontal: 20, paddingTop: 4, gap: 18 },
-  header: { flexDirection: "row", alignItems: "center", gap: 12, paddingHorizontal: 20, paddingTop: 14 },
+  content: { gap: 18 },
+  body: { paddingHorizontal: 20, gap: 18 },
+  glass: { backgroundColor: "rgba(255,255,255,0.72)" },
+  header: { flexDirection: "row", alignItems: "center", gap: 12, paddingHorizontal: 20 },
   headerCopy: { flex: 1, gap: 2 },
   title: { fontSize: 32, fontWeight: "800", letterSpacing: -1 },
   meta: { fontSize: 14 },

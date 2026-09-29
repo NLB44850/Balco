@@ -12,8 +12,6 @@ export type SkyScene = {
   weather: SkyWeather;
   /** Du haut du ciel vers le bas ; la dernière couleur rejoint le fond blanc de l'écran. */
   gradient: [string, string, string];
-  /** Couleur du texte posé sur le ciel. */
-  ink: "dark" | "light";
   body: "sun" | "moon" | null;
   stars: boolean;
   clouds: number;
@@ -45,22 +43,23 @@ export function skyWeather(snapshot: WeatherSnapshot): SkyWeather {
   return "clear";
 }
 
+// Des ciels pâles : le décor reste en filigrane derrière le texte, de jour comme de nuit.
 const DAY: Record<SkyWeather, [string, string]> = {
-  clear: ["#BFE3F8", "#E4F3FC"],
-  partly: ["#C9E4F4", "#E8F3FA"],
-  cloudy: ["#D5DEE6", "#EBF0F4"],
-  rain: ["#B9C6D2", "#E1E8EE"],
-  storm: ["#98A5B5", "#D6DCE3"],
-  snow: ["#D9E4EE", "#EEF3F8"],
-  frost: ["#D3E6F6", "#EDF5FC"],
-  heat: ["#FFD8A8", "#FFEFD9"],
+  clear: ["#D6ECFA", "#EEF7FD"],
+  partly: ["#DCEDF7", "#F0F7FB"],
+  cloudy: ["#E1E7EC", "#F2F5F7"],
+  rain: ["#D5DDE5", "#EDF1F4"],
+  storm: ["#C3CBD5", "#E6EAEE"],
+  snow: ["#E2EAF2", "#F3F6FA"],
+  frost: ["#DDEBF8", "#F1F7FC"],
+  heat: ["#FFE4C2", "#FFF4E6"],
 };
 
 function gradientFor(mood: SkyMood, weather: SkyWeather): [string, string, string] {
   const grey = weather === "rain" || weather === "storm" || weather === "cloudy";
-  if (mood === "night") return grey ? ["#232C3D", "#48546A", "#FFFFFF"] : ["#16213D", "#3B4C75", "#FFFFFF"];
-  if (mood === "dawn") return grey ? ["#D9DCE3", "#F1EBE8", "#FFFFFF"] : ["#FBD9C9", "#FDEDE3", "#FFFFFF"];
-  if (mood === "evening") return grey ? ["#C9C4CF", "#EDE3E3", "#FFFFFF"] : ["#FFC9A3", "#FDE4D6", "#FFFFFF"];
+  if (mood === "night") return grey ? ["#D3D8E2", "#EAECF1", "#FFFFFF"] : ["#D5DBEE", "#ECEEF7", "#FFFFFF"];
+  if (mood === "dawn") return grey ? ["#E6E7EC", "#F4F1EF", "#FFFFFF"] : ["#FCE3D6", "#FEF1EA", "#FFFFFF"];
+  if (mood === "evening") return grey ? ["#E0DCE3", "#F3EEEE", "#FFFFFF"] : ["#FFDCC2", "#FFEEE3", "#FFFFFF"];
   const [top, middle] = DAY[weather];
   return [top, middle, "#FFFFFF"];
 }
@@ -76,7 +75,6 @@ export function skyScene(snapshot: WeatherSnapshot, now: Date, isFallback = fals
     mood,
     weather,
     gradient: gradientFor(mood, weather),
-    ink: mood === "night" ? "light" : "dark",
     body: covered ? null : mood === "night" ? "moon" : "sun",
     stars: mood === "night" && !covered,
     clouds: weather === "clear" || weather === "heat" || weather === "frost" ? 1 : weather === "partly" ? 2 : 3,

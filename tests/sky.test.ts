@@ -37,8 +37,8 @@ describe("sky scene", () => {
     expect(rain.body).toBeNull();
     expect(skyScene(applyWeatherScenario(base, "frost", at(12)), at(12)).particles).toBe("snow");
     const night = skyScene(base, at(23));
-    expect(night).toMatchObject({ body: "moon", stars: true, ink: "light" });
-    expect(skyScene(base, at(13))).toMatchObject({ body: "sun", stars: false, ink: "dark" });
+    expect(night).toMatchObject({ body: "moon", stars: true });
+    expect(skyScene(base, at(13))).toMatchObject({ body: "sun", stars: false });
     const windy = skyScene(applyWeatherScenario(base, "wind", at(12)), at(12));
     expect(windy.wind).toBeGreaterThan(skyScene(base, at(12)).wind);
     expect(skyScene(applyWeatherScenario(base, "storm", at(12)), at(12)).flash).toBe(true);
