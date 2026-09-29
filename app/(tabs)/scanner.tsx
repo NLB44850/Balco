@@ -2,7 +2,11 @@ import { useRouter } from "expo-router";
 import { useState } from "react";
 import { ActivityIndicator, Image, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 
-import { ScreenContainer } from "@/components/screen-container";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
+
+import { LightScreen } from "@/components/light-screen";
+import { ScreenHeader } from "@/components/screen-header";
+import { glass } from "@/components/ui/glass";
 import { useColors } from "@/hooks/use-colors";
 import { pickPlantPhoto, type PreparedPhoto } from "@/lib/ai/photo";
 import { quotaLabel } from "@/lib/ai/quota-text";
@@ -29,6 +33,7 @@ function scannerNote(diagnosis: Diagnosis) {
 }
 
 export default function ScannerScreen() {
+  const insets = useSafeAreaInsets();
   const colors = useColors();
   const router = useRouter();
   const { account, resolvedPlants, addPlant, logEvent } = useGarden();
@@ -82,17 +87,10 @@ export default function ScannerScreen() {
   const frameLabel = diagnose.isPending ? "ANALYSE EN COURS" : photo ? "PHOTO PRÊTE" : "PRÊT À SCANNER";
 
   return (
-    <ScreenContainer className="px-5" edges={["top", "left", "right"]}>
-      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.content}>
-        <View style={styles.header}>
-          <View>
-            <Text style={[styles.eyebrow, { color: colors.terracotta }]}>OBSERVE, COMPRENDS, AGIS</Text>
-            <Text style={[styles.title, { color: colors.foreground }]}>Scanner IA</Text>
-          </View>
-          <View style={[styles.aiPill, { backgroundColor: colors.leaf }]}><Text style={[styles.aiPillText, { color: colors.primary }]}>IA ✦</Text></View>
-        </View>
-        <Text style={[styles.subtitle, { color: colors.muted }]}>Une photo pour identifier une pousse ou prendre soin d’une feuille malade.</Text>
-        {account.signedIn && scan && <Text style={[styles.quota, { color: noScansLeft ? colors.terracotta : colors.primary }]}>{quotaLabel(scan)}</Text>}
+    <LightScreen>
+      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={[styles.content, { paddingTop: insets.top + 14 }]}>
+        <ScreenHeader back title="Observer" subtitle="Une photo, et Nora te dit quoi faire" style={{ marginBottom: 14 }} />
+        {account.signedIn && scan && <Text style={[styles.quota, { color: noScansLeft ? colors.warning : colors.primary }]}>{quotaLabel(scan)}</Text>}
 
         <View style={styles.cameraFrame}>
           {photo && <Image source={{ uri: photo.uri }} style={StyleSheet.absoluteFill} resizeMode="cover" accessibilityLabel="Photo à analyser" />}
@@ -111,30 +109,30 @@ export default function ScannerScreen() {
           <View style={styles.cameraBottomRow}>
             <Pressable disabled={!canScan || diagnose.isPending} onPress={() => void choose("library")} accessibilityLabel="Choisir dans la galerie" style={({ pressed }) => [styles.galleryButton, !canScan && styles.disabled, pressed && styles.pressed]}><Text style={styles.galleryIcon}>▧</Text></Pressable>
             {photo && !diagnose.isPending && !diagnosis ? (
-              <Pressable onPress={analyze} accessibilityRole="button" style={({ pressed }) => [styles.analyzeButton, { backgroundColor: colors.terracotta }, pressed && styles.pressed]}><Text style={styles.analyzeText}>Analyser</Text></Pressable>
+              <Pressable onPress={analyze} accessibilityRole="button" style={({ pressed }) => [styles.analyzeButton, { backgroundColor: colors.primary }, pressed && styles.pressed]}><Text style={styles.analyzeText}>Analyser</Text></Pressable>
             ) : (
-              <Pressable disabled={!canScan || diagnose.isPending} onPress={() => void choose("camera")} accessibilityRole="button" accessibilityLabel="Prendre une photo" style={({ pressed }) => [styles.shutterOuter, !canScan && styles.disabled, pressed && styles.pressed]}><View style={[styles.shutterInner, { backgroundColor: colors.terracotta }]} /></Pressable>
+              <Pressable disabled={!canScan || diagnose.isPending} onPress={() => void choose("camera")} accessibilityRole="button" accessibilityLabel="Prendre une photo" style={({ pressed }) => [styles.shutterOuter, !canScan && styles.disabled, pressed && styles.pressed]}><View style={[styles.shutterInner, { backgroundColor: colors.primary }]} /></Pressable>
             )}
             <View style={styles.flashButton} />
           </View>
         </View>
 
-        {notice && <Text style={[styles.notice, { color: colors.terracotta }]}>{notice}</Text>}
+        {notice && <Text style={[styles.notice, { color: colors.warning }]}>{notice}</Text>}
         {diagnose.error && <Text accessibilityRole="alert" style={[styles.notice, { color: colors.error }]}>{diagnose.error.message}</Text>}
 
         {!account.signedIn ? (
-          <View style={[styles.helperCard, { backgroundColor: colors.cream }]}>
+          <View style={[glass.soft, styles.helperCard]}>
             <Text style={styles.helperIcon}>✦</Text>
             <View style={styles.helperCopy}>
               <Text style={[styles.helperTitle, { color: colors.foreground }]}>3 analyses offertes chaque mois.</Text>
               <Text style={[styles.helperText, { color: colors.muted }]}>Crée ton compte gratuit pour identifier tes plantes et savoir quoi faire quand une feuille jaunit.</Text>
-              <Pressable onPress={() => router.push("/login")} style={({ pressed }) => [styles.inlineButton, { backgroundColor: colors.terracotta }, pressed && styles.pressed]}><Text style={styles.inlineButtonText}>Se connecter</Text></Pressable>
+              <Pressable onPress={() => router.push("/login")} style={({ pressed }) => [styles.inlineButton, { backgroundColor: colors.primary }, pressed && styles.pressed]}><Text style={styles.inlineButtonText}>Se connecter</Text></Pressable>
             </View>
           </View>
         ) : status.data?.available === false ? (
-          <View style={[styles.helperCard, { backgroundColor: colors.cream }]}><Text style={styles.helperIcon}>✦</Text><View style={styles.helperCopy}><Text style={[styles.helperTitle, { color: colors.foreground }]}>Le scanner arrive bientôt.</Text><Text style={[styles.helperText, { color: colors.muted }]}>Il sera disponible dans une prochaine mise à jour.</Text></View></View>
+          <View style={[glass.soft, styles.helperCard]}><Text style={styles.helperIcon}>✦</Text><View style={styles.helperCopy}><Text style={[styles.helperTitle, { color: colors.foreground }]}>Le scanner arrive bientôt.</Text><Text style={[styles.helperText, { color: colors.muted }]}>Il sera disponible dans une prochaine mise à jour.</Text></View></View>
         ) : diagnosis ? (
-          <View style={[styles.resultCard, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+          <View style={[glass.card, styles.resultCard]}>
             {!diagnosis.isPlant ? (
               <>
                 <Text style={[styles.resultTitle, { color: colors.foreground }]}>Je ne vois pas de plante sur cette photo.</Text>
@@ -145,7 +143,7 @@ export default function ScannerScreen() {
                 <View style={styles.resultHeader}>
                   <View style={[styles.resultIcon, { backgroundColor: colors.leaf }]}><Text style={styles.resultEmoji}>{entry?.emoji ?? HEALTH[diagnosis.health].emoji}</Text></View>
                   <View style={styles.resultTitleWrap}>
-                    <Text style={[styles.resultKicker, { color: diagnosis.health === "healthy" ? colors.success : diagnosis.health === "sick" ? colors.terracotta : colors.primary }]}>{HEALTH[diagnosis.health].label}</Text>
+                    <Text style={[styles.resultKicker, { color: diagnosis.health === "healthy" ? colors.success : diagnosis.health === "sick" ? colors.warning : colors.primary }]}>{HEALTH[diagnosis.health].label}</Text>
                     <Text style={[styles.resultTitle, { color: colors.foreground }]}>{diagnosis.commonName || "Plante non identifiée"}</Text>
                     {!!diagnosis.scientificName && <Text style={[styles.scientific, { color: colors.muted }]}>{diagnosis.scientificName}</Text>}
                   </View>
@@ -167,14 +165,14 @@ export default function ScannerScreen() {
                   </View>
                 )}
                 {!!diagnosis.naturalRemedy && (
-                  <View style={[styles.naturalSolution, { backgroundColor: colors.cream }]}>
-                    <Text style={[styles.solutionTitle, { color: colors.terracotta }]}>SOLUTION NATURELLE</Text>
+                  <View style={[styles.naturalSolution, { backgroundColor: colors.leaf }]}>
+                    <Text style={[styles.solutionTitle, { color: colors.primary }]}>Solution naturelle</Text>
                     <Text style={[styles.solutionText, { color: colors.foreground }]}>{diagnosis.naturalRemedy}</Text>
                   </View>
                 )}
-                {diagnosis.seeExpert && <Text style={[styles.expert, { color: colors.terracotta }]}>Ce problème mérite un œil expert : montre ta plante (ou cette photo) en jardinerie.</Text>}
+                {diagnosis.seeExpert && <Text style={[styles.expert, { color: colors.warning }]}>Ce problème mérite un œil expert : montre ta plante (ou cette photo) en jardinerie.</Text>}
                 {entry && !owned && (
-                  <Pressable onPress={() => void addPlant(entry.id)} style={({ pressed }) => [styles.inlineButton, { backgroundColor: colors.terracotta }, pressed && styles.pressed]}><Text style={styles.inlineButtonText}>+ Ajouter {entry.name.toLowerCase()} à mon balcon</Text></Pressable>
+                  <Pressable onPress={() => void addPlant(entry.id)} style={({ pressed }) => [styles.inlineButton, { backgroundColor: colors.primary }, pressed && styles.pressed]}><Text style={styles.inlineButtonText}>+ Ajouter {entry.name.toLowerCase()} à mon balcon</Text></Pressable>
                 )}
                 {owned && savedNote && (
                   <Pressable accessibilityRole="button" onPress={() => router.push({ pathname: "/garden/[id]", params: { id: owned.plant.id } })} style={({ pressed }) => [pressed && styles.pressed]}><Text style={[styles.historyLink, { color: colors.primary }]}>Voir l’historique de {owned.plant.nickname || owned.entry.name.toLowerCase()}  ›</Text></Pressable>
@@ -188,18 +186,18 @@ export default function ScannerScreen() {
             <Text style={[styles.disclaimer, { color: colors.muted }]}>Diagnostic indicatif généré par une IA : en cas de doute, demande conseil en jardinerie.</Text>
           </View>
         ) : (
-          <View style={[styles.helperCard, { backgroundColor: colors.cream }]}>
+          <View style={[glass.soft, styles.helperCard]}>
             <Text style={styles.helperIcon}>✦</Text>
             <View style={styles.helperCopy}><Text style={[styles.helperTitle, { color: colors.foreground }]}>{noScansLeft ? "Tes analyses du mois sont utilisées." : "Pas besoin d’être expert."}</Text><Text style={[styles.helperText, { color: colors.muted }]}>{noScansLeft ? "En attendant, pose tes questions à Nora ou observe tes feuilles de près : dessous, tiges et terre." : "Balco privilégie toujours les soins naturels et les gestes qui respectent le vivant. Pour un bon diagnostic : une photo nette, en lumière naturelle, avec la feuille abîmée bien visible."}</Text></View>
           </View>
         )}
       </ScrollView>
-    </ScreenContainer>
+    </LightScreen>
   );
 }
 
 const styles = StyleSheet.create({
-  content: { paddingTop: 16, paddingBottom: 30 },
+  content: { paddingHorizontal: 20, paddingBottom: 30 },
   flex: { flex: 1 },
   quota: { fontSize: 11, fontWeight: "800", marginTop: 8 },
   photoShade: { backgroundColor: "rgba(20,53,43,0.28)" },
@@ -221,12 +219,6 @@ const styles = StyleSheet.create({
   actionDetail: { fontSize: 12, lineHeight: 17, marginTop: 2 },
   expert: { fontSize: 12, lineHeight: 18, fontWeight: "700", marginTop: 12 },
   disclaimer: { fontSize: 10, lineHeight: 14, marginTop: 10, textAlign: "center" },
-  header: { flexDirection: "row", alignItems: "flex-end", justifyContent: "space-between" },
-  eyebrow: { fontSize: 10, fontWeight: "800", letterSpacing: 1.15 },
-  title: { fontSize: 29, lineHeight: 34, fontWeight: "800", letterSpacing: -0.8, marginTop: 4 },
-  aiPill: { paddingHorizontal: 11, paddingVertical: 8, borderRadius: 14 },
-  aiPillText: { fontSize: 11, fontWeight: "800", letterSpacing: 0.4 },
-  subtitle: { fontSize: 13, lineHeight: 19, marginTop: 8, maxWidth: 320 },
   cameraFrame: { height: 390, borderRadius: 28, backgroundColor: "#20372C", marginTop: 19, padding: 17, overflow: "hidden", shadowColor: "#2E6B4D", shadowOpacity: 0.18, shadowRadius: 18, shadowOffset: { width: 0, height: 9 }, elevation: 4 },
   cameraTopRow: { flexDirection: "row", justifyContent: "space-between", alignItems: "center" },
   livePill: { flexDirection: "row", alignItems: "center", gap: 6, backgroundColor: "rgba(255,255,255,0.12)", borderRadius: 10, paddingHorizontal: 9, paddingVertical: 6 },

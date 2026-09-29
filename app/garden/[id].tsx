@@ -18,7 +18,7 @@ export default function PlantScreen() {
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
   const now = new Date();
   const resolved = resolvedPlants.find((item) => item.plant.id === id);
-  const back = () => (router.canGoBack() ? router.back() : router.replace("/garden"));
+  const back = () => (router.canGoBack() ? router.back() : router.replace("/(tabs)/balcony"));
 
   const header = (overline: string, title: string) => (
     <View style={styles.header}>

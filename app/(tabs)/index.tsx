@@ -6,6 +6,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { FadeIn } from "@/components/motion";
 import { ScreenContainer } from "@/components/screen-container";
+import { ScreenHeader } from "@/components/screen-header";
 import { BALCONY_FLOOR_HEIGHT, BalconySky } from "@/components/today/balcony-sky";
 import { BottomSheet } from "@/components/today/bottom-sheet";
 import { TodayRow } from "@/components/today/today-row";
@@ -19,12 +20,12 @@ import {
   buildDailySession,
   careProfileFor,
   eventForSessionTask,
-  initials,
   plantDisplayName,
   plantStatus,
   streakDays,
 } from "@/lib/garden/garden-logic";
 import { potsFor, skyScene } from "@/lib/garden/sky";
+import { publishSky } from "@/lib/garden/sky-store";
 import { balconyStatus, buildTodayList, doneSubtitle, type TodayItem } from "@/lib/garden/today";
 import { notificationsUnavailableReason } from "@/lib/notifications/module";
 import { eventForActivity, seasonalToDo } from "@/lib/plants/calendar";
@@ -60,7 +61,7 @@ const haptic = () => {
 export default function HomeScreen() {
   const colors = useColors();
   const router = useRouter();
-  const { loaded, resolvedPlants, events, profile, onboarding, addPlant, logEvent, removeEvent, reportLocation } = useGarden();
+  const { loaded, resolvedPlants, events, onboarding, addPlant, logEvent, removeEvent, reportLocation } = useGarden();
   const [now, setNow] = useState(() => new Date());
   const [snoozes, setSnoozes] = useState<ReminderSnooze[]>([]);
   const [snoozesLoaded, setSnoozesLoaded] = useState(false);
@@ -75,6 +76,8 @@ export default function HomeScreen() {
   const sky = useMemo(() => skyScene(weatherSnapshot, now, weather.isFallback), [now, weather.isFallback, weatherSnapshot]);
   const pots = useMemo(() => potsFor(resolvedPlants.map((resolved) => resolved.entry.category)), [resolvedPlants]);
   const scrollY = useRef(new Animated.Value(0)).current;
+  // Les autres onglets reprennent cette lumière pour leur fond.
+  useEffect(() => publishSky(sky), [sky]);
   const [previewStatus, setPreviewStatus] = useState<"idle" | "sent" | "denied">("idle");
   useEffect(() => setPreviewStatus("idle"), [simulation.scenario]);
 
@@ -223,7 +226,6 @@ export default function HomeScreen() {
   };
 
   const closeSheet = () => setSheetKey(null);
-  const userInitials = initials(profile.firstName);
   const evening = now.getHours() >= 17;
   const metaLine = weather.isFallback
     ? weather.city
@@ -239,15 +241,7 @@ export default function HomeScreen() {
         scrollEventThrottle={16}
         onScroll={Animated.event([{ nativeEvent: { contentOffset: { y: scrollY } } }], { useNativeDriver: true })}
       >
-        <View style={[styles.header, { paddingTop: insets.top + 14 }]}>
-          <View style={styles.headerCopy}>
-            <Text style={[styles.title, { color: colors.foreground }]}>Aujourd’hui</Text>
-            <Text style={[styles.meta, { color: colors.muted }]} numberOfLines={1}>{metaLine}</Text>
-          </View>
-          <Pressable accessibilityRole="button" accessibilityLabel="Mon profil" onPress={() => router.push("/(tabs)/profile")} style={({ pressed }) => [styles.avatar, { backgroundColor: colors.primary }, pressed && styles.pressed]}>
-            <Text style={styles.avatarText}>{userInitials ?? "🌱"}</Text>
-          </Pressable>
-        </View>
+        <ScreenHeader title="Aujourd’hui" subtitle={metaLine} style={{ paddingTop: insets.top + 14, paddingHorizontal: 20 }} />
 
         <View style={styles.body}>
 
@@ -271,7 +265,7 @@ export default function HomeScreen() {
         )}
 
         {loaded && hasPlants && (
-          <Pressable accessibilityRole="button" accessibilityLabel={`Ton balcon, ${status.label}`} onPress={() => router.push("/garden")} style={({ pressed }) => [styles.status, styles.glass, pressed && styles.pressed]}>
+          <Pressable accessibilityRole="button" accessibilityLabel={`Ton balcon, ${status.label}`} onPress={() => router.push("/(tabs)/balcony")} style={({ pressed }) => [styles.status, styles.glass, pressed && styles.pressed]}>
             <Text style={[styles.statusText, { color: colors.foreground }]}>Ton balcon <Text style={{ color: colors.muted, fontWeight: "500" }}>· {status.label}</Text></Text>
             <View style={[styles.track, { backgroundColor: colors.border }]}><View style={[styles.fill, { width: `${Math.max(status.progress, 0.04) * 100}%`, backgroundColor: colors.primary }]} /></View>
           </Pressable>
@@ -320,7 +314,7 @@ export default function HomeScreen() {
           <View style={styles.shelf}>
             <View style={styles.shelfHead}>
               <Text style={[styles.sectionTitle, { color: colors.foreground }]}>Tes plantes</Text>
-              <Pressable accessibilityRole="button" onPress={() => router.push("/garden")} hitSlop={8}><Text style={[styles.link, { color: colors.primary }]}>Tout voir</Text></Pressable>
+              <Pressable accessibilityRole="button" onPress={() => router.push("/(tabs)/balcony")} hitSlop={8}><Text style={[styles.link, { color: colors.primary }]}>Tout voir</Text></Pressable>
             </View>
             <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.shelfRow}>
               {resolvedPlants.map((resolved) => {
@@ -430,12 +424,6 @@ const styles = StyleSheet.create({
   content: { gap: 18 },
   body: { paddingHorizontal: 20, gap: 18 },
   glass: { backgroundColor: "rgba(255,255,255,0.72)" },
-  header: { flexDirection: "row", alignItems: "center", gap: 12, paddingHorizontal: 20 },
-  headerCopy: { flex: 1, gap: 2 },
-  title: { fontSize: 32, fontWeight: "800", letterSpacing: -1 },
-  meta: { fontSize: 14 },
-  avatar: { width: 40, height: 40, borderRadius: 20, alignItems: "center", justifyContent: "center" },
-  avatarText: { color: "#FFFFFF", fontWeight: "700", fontSize: 14 },
   simulation: { borderRadius: 16, padding: 14, gap: 6 },
   simulationTitle: { fontSize: 14, fontWeight: "700" },
   small: { fontSize: 13, lineHeight: 18 },

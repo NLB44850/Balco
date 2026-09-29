@@ -21,7 +21,7 @@ describe("Balco MVP content", () => {
   it("contains the requested gardening prototype content", () => {
     expect(readProjectFile("lib/plants/catalog.ts")).toContain("arrose ${label} si besoin");
     expect(readProjectFile("app/(tabs)/assistant.tsx")).toContain("Quoi planter en avril");
-    expect(readProjectFile("app/(tabs)/scanner.tsx")).toContain("SOLUTION NATURELLE");
+    expect(readProjectFile("app/(tabs)/scanner.tsx")).toContain("Solution naturelle");
     expect(readProjectFile("lib/garden/garden-logic.ts")).toContain("Ami des Abeilles");
   });
 
@@ -77,8 +77,17 @@ describe("Balco MVP content", () => {
     expect(profile).not.toMatch(/>12<\/Text>/);
   });
 
+  it("keeps four tabs, with Moi behind the avatar and Observer inside Nora", () => {
+    const layout = readProjectFile("app/(tabs)/_layout.tsx");
+    expect(layout.match(/tabBarIcon/g)).toHaveLength(4);
+    expect(layout).toContain('name="profile" options={{ href: null');
+    expect(layout).toContain('name="scanner" options={{ href: null');
+    expect(readProjectFile("components/screen-header.tsx")).toContain('push("/(tabs)/profile")');
+    expect(readProjectFile("app/(tabs)/assistant.tsx")).toContain('push("/(tabs)/scanner")');
+  });
+
   it("lets users manage their plants from the catalog", () => {
-    expect(readProjectFile("app/garden/index.tsx")).toContain("removePlant");
+    expect(readProjectFile("app/(tabs)/balcony.tsx")).toContain("removePlant");
     expect(readProjectFile("app/garden/add.tsx")).toContain("searchCatalog");
     expect(readProjectFile("app/_layout.tsx")).toContain("GardenProvider");
     expect(readProjectFile("app/welcome.tsx")).toContain("Redirect");
@@ -87,12 +96,13 @@ describe("Balco MVP content", () => {
   it("includes a personalized cultivation calendar", () => {
     const calendar = readProjectFile("app/(tabs)/calendar.tsx");
 
-    expect(calendar).toContain("TON CLIMAT LOCAL · EN DIRECT");
+    expect(calendar).toContain("Ton climat, en direct");
     expect(calendar).toContain("calendarActivities");
     expect(calendar).toContain("selectedMonth");
     expect(calendar).toContain("Noter comme fait");
     expect(calendar).toContain("+ Ajouter à mon balcon");
     expect(readProjectFile("app/(tabs)/_layout.tsx")).toContain('name="calendar"');
+    expect(readProjectFile("app/(tabs)/_layout.tsx")).toContain('title: "Saisons"');
   });
 
   it("includes live weather and foreground geolocation", () => {
@@ -138,7 +148,7 @@ describe("Balco MVP content", () => {
 
   it("exposes reminder preferences and per-plant activation", () => {
     const profile = readProjectFile("app/(tabs)/profile.tsx");
-    expect(profile).toContain("RAPPELS CONTEXTUELS");
+    expect(profile).toContain("Rappels contextuels");
     expect(profile).toContain("Seulement quand c’est utile");
     expect(profile).toContain("Plage calme");
     expect(profile).toContain("quietStartHour");

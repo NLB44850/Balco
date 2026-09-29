@@ -18,6 +18,9 @@ const MAPPING = {
   "paperplane.fill": "send",
   "chevron.left.forwardslash.chevron.right": "code",
   "chevron.right": "chevron-right",
+  checklist: "checklist",
+  "camera.macro": "local-florist",
+  "chevron.left": "chevron-left",
 } as IconMapping;
 
 export function IconSymbol({

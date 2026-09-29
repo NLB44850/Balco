@@ -17,22 +17,25 @@ export default function TabLayout() {
   if (!loaded) return null;
   if (!onboarding) return <Redirect href="/welcome" />;
 
+  // Quatre onglets. « Moi » s'ouvre depuis l'avatar en haut de chaque écran,
+  // et « Observer » (le scanner) depuis Nora et depuis la fiche d'une plante.
   return (
     <Tabs
       screenOptions={{
         headerShown: false,
-        tabBarActiveTintColor: colors.foreground,
+        tabBarActiveTintColor: colors.primary,
         tabBarInactiveTintColor: colors.muted,
-        tabBarLabelStyle: { fontSize: 10, fontWeight: "600", marginBottom: 2 },
-        tabBarStyle: { height: 64 + bottomPadding, paddingTop: 6, paddingBottom: bottomPadding, backgroundColor: colors.background, borderTopColor: colors.border, borderTopWidth: 1, elevation: 0, shadowOpacity: 0 },
+        tabBarLabelStyle: { fontSize: 11, fontWeight: "600", marginBottom: 2 },
+        tabBarStyle: { height: 64 + bottomPadding, paddingTop: 6, paddingBottom: bottomPadding, backgroundColor: "rgba(255,255,255,0.96)", borderTopColor: colors.border, borderTopWidth: 1, elevation: 0, shadowOpacity: 0 },
         tabBarButton: HapticTab,
       }}
     >
-      <Tabs.Screen name="index" options={{ title: "Aujourd’hui", tabBarIcon: ({ color }) => <IconSymbol size={22} name="leaf.fill" color={color} /> }} />
-      <Tabs.Screen name="calendar" options={{ title: "Calendrier", tabBarIcon: ({ color }) => <IconSymbol size={22} name="calendar.badge.clock" color={color} /> }} />
-      <Tabs.Screen name="assistant" options={{ title: "Nora", tabBarIcon: ({ color }) => <IconSymbol size={22} name="message.fill" color={color} /> }} />
-      <Tabs.Screen name="scanner" options={{ title: "Observer", tabBarIcon: ({ color }) => <IconSymbol size={22} name="camera.viewfinder" color={color} /> }} />
-      <Tabs.Screen name="profile" options={{ title: "Moi", tabBarIcon: ({ color }) => <IconSymbol size={22} name="person.crop.circle" color={color} /> }} />
+      <Tabs.Screen name="index" options={{ title: "Aujourd’hui", tabBarIcon: ({ color }) => <IconSymbol size={24} name="checklist" color={color} /> }} />
+      <Tabs.Screen name="balcony" options={{ title: "Balcon", tabBarIcon: ({ color }) => <IconSymbol size={24} name="camera.macro" color={color} /> }} />
+      <Tabs.Screen name="calendar" options={{ title: "Saisons", tabBarIcon: ({ color }) => <IconSymbol size={24} name="calendar.badge.clock" color={color} /> }} />
+      <Tabs.Screen name="assistant" options={{ title: "Nora", tabBarIcon: ({ color }) => <IconSymbol size={24} name="message.fill" color={color} /> }} />
+      <Tabs.Screen name="scanner" options={{ href: null, tabBarStyle: { display: "none" } }} />
+      <Tabs.Screen name="profile" options={{ href: null, tabBarStyle: { display: "none" } }} />
     </Tabs>
   );
 }

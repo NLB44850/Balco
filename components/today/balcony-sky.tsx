@@ -32,7 +32,14 @@ const PLANTS: Record<PotShape, ImageSourcePropType> = {
 const POT_CENTER = 200 / 560;
 const POT_FOOT = 0.9;
 
-type Props = { scene: SkyScene; pots: PotShape[]; topInset: number; scrollY: Animated.Value };
+type Props = {
+  scene: SkyScene;
+  /** Écrans autres que l'accueil : seulement la lumière et le feuillage, plus discrets. */
+  quiet?: boolean;
+  pots?: PotShape[];
+  topInset: number;
+  scrollY?: Animated.Value;
+};
 
 function useReduceMotion() {
   const [reduce, setReduce] = useState(false);
@@ -88,7 +95,9 @@ function parallax(scrollY: Animated.Value, distance: number) {
   return scrollY.interpolate({ inputRange: [0, 1200], outputRange: [0, -distance], extrapolate: "clamp" });
 }
 
-export function BalconySky({ scene, pots, topInset, scrollY }: Props) {
+const STILL = new Animated.Value(0);
+
+export function BalconySky({ scene, quiet = false, pots = [], topInset, scrollY = STILL }: Props) {
   const reduce = useReduceMotion();
   const animate = !reduce;
   const [size, setSize] = useState({ width: 390, height: 760 });
@@ -103,8 +112,9 @@ export function BalconySky({ scene, pots, topInset, scrollY }: Props) {
   const swayFar = useLoop(Math.round(breeze * 1.45), animate, Easing.inOut(Easing.sin));
   const drift = useLoop(24000, animate, Easing.inOut(Easing.sin));
   const clouds = useLoop(21000, animate && scene.passingClouds, Easing.inOut(Easing.quad));
-  const fall = useLoop(scene.particles === "snow" ? 16000 : 30000, animate && scene.particles !== null);
-  const flash = useLoop(7000, animate && scene.flash);
+  const particles = quiet ? null : scene.particles;
+  const fall = useLoop(particles === "snow" ? 16000 : 30000, animate && particles !== null);
+  const flash = useLoop(7000, animate && scene.flash && !quiet);
 
   const drops = useMemo(() => {
     const count = scene.particles === "snow" ? 24 : 16;
@@ -112,7 +122,7 @@ export function BalconySky({ scene, pots, topInset, scrollY }: Props) {
     return Array.from({ length: count }, (_, index) => ({ x: random[index] * width, phase: random[count + index], pick: random[count * 2 + index] }));
   }, [scene.particles, width]);
 
-  const s = scene.shadow;
+  const s = scene.shadow * (quiet ? 0.7 : 1);
   const flip = scene.mirrored ? -1 : 1;
   const stretch = scene.lowSun ? 1.12 : 1;
   const angle = 1.2 + scene.wind * 3;
@@ -148,6 +158,7 @@ export function BalconySky({ scene, pots, topInset, scrollY }: Props) {
         />
 
         {/* L'ombre de la rambarde glisse très lentement, comme le soleil qui tourne. */}
+        {!quiet && (
         <Animated.Image
           source={RAILING}
           resizeMode="stretch"
@@ -164,6 +175,7 @@ export function BalconySky({ scene, pots, topInset, scrollY }: Props) {
             },
           ]}
         />
+        )}
 
         {pots.map((shape, index) => {
           const slot = (index + 0.5) / pots.length;
@@ -209,7 +221,7 @@ export function BalconySky({ scene, pots, topInset, scrollY }: Props) {
         />
       </Animated.View>
 
-      {scene.particles === "rain" &&
+      {particles === "rain" &&
         drops.map((drop, index) => {
           const dropSize = 8 + Math.round(drop.pick * 14);
           const source = DROPS[drop.pick < 0.45 ? 0 : drop.pick < 0.85 ? 1 : 2];
@@ -231,7 +243,7 @@ export function BalconySky({ scene, pots, topInset, scrollY }: Props) {
           );
         })}
 
-      {scene.particles === "snow" &&
+      {particles === "snow" &&
         drops.map((drop, index) => {
           const flake = 3 + drop.pick * 4;
           const progress = animate ? phased(fall, drop.phase) : null;
@@ -256,7 +268,7 @@ export function BalconySky({ scene, pots, topInset, scrollY }: Props) {
           );
         })}
 
-      {scene.flash && animate && (
+      {scene.flash && animate && !quiet && (
         <Animated.View style={[StyleSheet.absoluteFill, { backgroundColor: "#FFFFFF", opacity: flash.interpolate({ inputRange: [0, 0.9, 0.915, 0.93, 0.95, 0.97, 1], outputRange: [0, 0, 0.6, 0.1, 0.45, 0, 0] }) }]} />
       )}
 

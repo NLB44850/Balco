@@ -56,7 +56,7 @@ export default function AddPlantScreen() {
     <ScreenContainer edges={["top", "left", "right", "bottom"]}>
       <ScrollView showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled" contentContainerStyle={styles.content}>
         <View style={styles.header}>
-          <Pressable accessibilityRole="button" accessibilityLabel="Retour" onPress={() => (router.canGoBack() ? router.back() : router.replace("/garden"))} style={({ pressed }) => [styles.backButton, { borderColor: colors.border }, pressed && styles.pressed]}>
+          <Pressable accessibilityRole="button" accessibilityLabel="Retour" onPress={() => (router.canGoBack() ? router.back() : router.replace("/(tabs)/balcony"))} style={({ pressed }) => [styles.backButton, { borderColor: colors.border }, pressed && styles.pressed]}>
             <Text style={[styles.backText, { color: colors.foreground }]}>‹</Text>
           </Pressable>
           <View style={styles.headerCopy}>
@@ -112,7 +112,7 @@ export default function AddPlantScreen() {
         })}
 
         {plants.length > 0 && (
-          <Pressable onPress={() => router.dismissTo("/garden")} style={({ pressed }) => [styles.doneButton, { backgroundColor: colors.foreground }, pressed && styles.pressed]}>
+          <Pressable onPress={() => router.dismissTo("/(tabs)/balcony")} style={({ pressed }) => [styles.doneButton, { backgroundColor: colors.foreground }, pressed && styles.pressed]}>
             <Text style={[styles.doneText, { color: colors.sun }]}>Voir mon balcon ({plants.length})</Text>
           </Pressable>
         )}

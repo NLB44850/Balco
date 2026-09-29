@@ -91,6 +91,23 @@ export function skyScene(snapshot: WeatherSnapshot, now: Date, isFallback = fals
   };
 }
 
+// Une météo neutre pour les écrans qui n'ont pas encore la vraie : seule l'heure compte.
+const NEUTRAL: WeatherSnapshot = {
+  fetchedAt: new Date(0).toISOString(),
+  timezone: "Europe/Paris",
+  city: "",
+  latitude: 0,
+  longitude: 0,
+  current: { temperatureC: 15, apparentTemperatureC: 15, weatherCode: 2 },
+  next12h: { precipitationMm: 0, precipitationProbabilityMax: 0, windGustKmhMax: 0 },
+  today: { precipitationMm: 0, temperatureMinC: 10, temperatureMaxC: 20, windGustKmhMax: 0 },
+};
+
+/** La lumière du moment quand la météo n'est pas (encore) connue. */
+export function defaultSkyScene(now: Date) {
+  return skyScene(NEUTRAL, now, true);
+}
+
 export type PotShape = "bush" | "flower" | "tall" | "leafy" | "berry" | "sprout";
 
 const SHAPES: Record<string, PotShape> = {
