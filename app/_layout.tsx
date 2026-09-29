@@ -1,5 +1,6 @@
 import "@/global.css";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { Onest_300Light, Onest_400Regular, Onest_500Medium, Onest_600SemiBold, Onest_700Bold, Onest_800ExtraBold, Onest_900Black, useFonts } from "@expo-google-fonts/onest";
 import { Stack } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import { useMemo, useState } from "react";
@@ -49,6 +50,8 @@ export default function RootLayout() {
       }),
   );
   const [trpcClient] = useState(() => createTRPCClient());
+  // La police Onest (maquette « règles d'expérience ») ; en cas d'échec, l'app garde celle du téléphone.
+  const [fontsLoaded, fontError] = useFonts({ Onest_300Light, Onest_400Regular, Onest_500Medium, Onest_600SemiBold, Onest_700Bold, Onest_800ExtraBold, Onest_900Black });
 
   // Ensure minimum 8px padding for top and bottom on mobile
   const providerInitialMetrics = useMemo(() => {
@@ -86,6 +89,9 @@ export default function RootLayout() {
       </trpc.Provider>
     </GestureHandlerRootView>
   );
+
+  // Quelques dixièmes de seconde au lancement : on attend la police pour ne pas voir les textes changer.
+  if (!fontsLoaded && !fontError) return null;
 
   const shouldOverrideSafeArea = Platform.OS === "web";
 

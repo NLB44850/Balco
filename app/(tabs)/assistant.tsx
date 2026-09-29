@@ -1,7 +1,8 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useRouter } from "expo-router";
 import { useEffect, useRef, useState } from "react";
-import { FlatList, KeyboardAvoidingView, Platform, Pressable, StyleSheet, Text, TextInput, View } from "react-native";
+import { FlatList, KeyboardAvoidingView, Platform, Pressable, StyleSheet, View } from "react-native";
+import { Text, TextInput } from "@/components/ui/typography";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { LightScreen } from "@/components/light-screen";

@@ -1,7 +1,8 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useRouter } from "expo-router";
 import { useEffect, useMemo, useState } from "react";
-import { Alert, FlatList, Pressable, StyleSheet, Text, TextInput, View } from "react-native";
+import { Alert, FlatList, Pressable, StyleSheet, View } from "react-native";
+import { Text, TextInput } from "@/components/ui/typography";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { PopIn } from "@/components/motion";

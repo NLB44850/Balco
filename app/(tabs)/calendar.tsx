@@ -1,6 +1,7 @@
 import { useRouter } from "expo-router";
 import { useEffect, useMemo, useState } from "react";
-import { Modal, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from "react-native";
+import { Modal, Pressable, ScrollView, StyleSheet, View } from "react-native";
+import { Text, TextInput } from "@/components/ui/typography";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { FadeIn, PopIn } from "@/components/motion";

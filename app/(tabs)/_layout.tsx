@@ -25,7 +25,7 @@ export default function TabLayout() {
         headerShown: false,
         tabBarActiveTintColor: colors.primary,
         tabBarInactiveTintColor: colors.muted,
-        tabBarLabelStyle: { fontSize: 11, fontWeight: "600", marginBottom: 2 },
+        tabBarLabelStyle: { fontSize: 11, fontFamily: "Onest_600SemiBold", marginBottom: 2 },
         tabBarStyle: { height: 64 + bottomPadding, paddingTop: 6, paddingBottom: bottomPadding, backgroundColor: "rgba(255,255,255,0.96)", borderTopColor: colors.border, borderTopWidth: 1, elevation: 0, shadowOpacity: 0 },
         tabBarButton: HapticTab,
       }}

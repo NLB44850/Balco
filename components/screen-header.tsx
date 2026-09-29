@@ -3,7 +3,8 @@
  * « Moi » (ou un bouton retour sur les écrans secondaires).
  */
 import { useRouter } from "expo-router";
-import { Pressable, StyleSheet, Text, View, type ViewStyle } from "react-native";
+import { Pressable, StyleSheet, View, type ViewStyle } from "react-native";
+import { Text } from "@/components/ui/typography";
 
 import { IconSymbol } from "@/components/ui/icon-symbol";
 import { useColors } from "@/hooks/use-colors";

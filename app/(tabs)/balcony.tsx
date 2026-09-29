@@ -4,7 +4,8 @@
  */
 import { useRouter } from "expo-router";
 import { useState } from "react";
-import { Pressable, ScrollView, StyleSheet, Text, TextInput, View } from "react-native";
+import { Pressable, ScrollView, StyleSheet, View } from "react-native";
+import { Text, TextInput } from "@/components/ui/typography";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { LightScreen } from "@/components/light-screen";

@@ -1,4 +1,5 @@
-import { Pressable, StyleSheet, Text, View } from "react-native";
+import { Pressable, StyleSheet, View } from "react-native";
+import { Text } from "@/components/ui/typography";
 
 import type { ReminderSnooze } from "@/lib/reminders/reminder-actions";
 import type { ReminderDecision } from "@/lib/reminders/reminder-engine";

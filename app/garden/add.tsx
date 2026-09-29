@@ -1,6 +1,7 @@
 import { useRouter } from "expo-router";
 import { useMemo, useState } from "react";
-import { Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from "react-native";
+import { Platform, Pressable, ScrollView, StyleSheet, View } from "react-native";
+import { Text, TextInput } from "@/components/ui/typography";
 import * as Haptics from "expo-haptics";
 
 import { ScreenContainer } from "@/components/screen-container";

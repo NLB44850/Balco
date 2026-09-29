@@ -1,5 +1,6 @@
 import { useEffect, useRef } from "react";
-import { Animated, Pressable, StyleSheet, Text, View } from "react-native";
+import { Animated, Pressable, StyleSheet, View } from "react-native";
+import { Text } from "@/components/ui/typography";
 
 import { useColors } from "@/hooks/use-colors";
 import type { TodayTone } from "@/lib/garden/today";
