@@ -256,8 +256,8 @@ L'ordre suit la priorité fixée par le porteur du projet. Chaque étape est val
 
 **Prochaine version**
 
-1. **Rappels intelligents fiables sur appareil réel** : bouton « notification de test », validation sur un vrai téléphone Android, messages plus explicites, actions « reporter / ignorer / fait » dans l'app et dans la notification, envoi serveur sur Android (Firebase).
-2. **Calendrier local connecté aux tâches** : ajout du rempotage, décalage des dates selon la région, alertes météo dans le calendrier, vue par saison, une seule source pour les tâches du calendrier et de l'accueil.
+1. ✅ **Rappels intelligents fiables sur appareil réel** (reste l'envoi serveur Firebase, à la publication) : bouton « notification de test », validation sur un vrai téléphone Android, messages plus explicites, actions « reporter / ignorer / fait » dans l'app et dans la notification, envoi serveur sur Android (Firebase).
+2. ✅ **Calendrier local connecté aux tâches** : ajout du rempotage, décalage des dates selon la région, alertes météo dans le calendrier, vue par saison, une seule source pour les tâches du calendrier et de l'accueil.
 3. ✅ **Assistant IA qui se souvient** : niveau et préférences de l'utilisateur, faits retenus en discutant, analyse de l'historique complet. (Validé sur téléphone le 30 septembre, avec le geste Engrais.)
 4. ✅ **Progression plus motivante** : bilan hebdomadaire (eau économisée, récoltes à venir), progression par plante, petites victoires fêtées. (Validation sur téléphone en cours.)
 5. ✅ **Mode vacances** : dates d'absence, plan de départ, liste pour un proche, reprise automatique.

@@ -158,3 +158,13 @@ Livré, à valider sur son téléphone :
 6. À la publication : notifications serveur sur Android (Firebase/FCM) ; synchroniser les reports
    (« Dans 3 h ») avec le serveur ; envoyer les photos des plantes sur le serveur (stockage d'images)
    pour les retrouver sur un autre téléphone.
+
+Points à ne pas oublier (à proposer au porteur au bon moment, noté le 30/09) :
+- Encore à valider sur son téléphone : la carte « Sa progression » de la fiche plante et les petites
+  victoires (priorité 4), la mémoire de Nora sur plusieurs jours.
+- La branche `claude/eloquent-gates-g7xc6x` a plus de 60 commits qui ne sont pas sur `main` :
+  proposer une fusion dans `main` (pull request) une fois la todo du 30/09 validée.
+- Avant la publication sur le Play Store : politique de confidentialité et mentions (données du
+  compte, position, photos, questions envoyées à l'IA d'Anthropic), fiche Play Store, compte
+  développeur Google, et prévoir la montée de version d'Expo (SDK 54 vieillit).
+- Coûts : surveiller les heures gratuites du Codespace et la facture Anthropic (quotas IA).
