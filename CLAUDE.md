@@ -28,7 +28,10 @@ Tout se passe dans son GitHub Codespace (pas de Docker sur son PC).
 3. **APK (notifications)** : `rm -f package-lock.json`, `export EXPO_TOKEN=…`, puis
    `EAS_SKIP_AUTO_FINGERPRINT=1 npx eas-cli build --platform android --profile test`. La file d'attente
    EAS gratuite peut durer longtemps : ne pas relancer.
-4. Expo Go ne marche pas : son téléphone a Expo Go SDK 57, le projet est en SDK 54. Et `expo start
+4. **Quotas IA pour tester** (3 analyses et 15 questions par mois en gratuit) : dans le Codespace,
+   `echo "AI_FREE_SCANS_PER_MONTH=30" >> .env` (et `AI_FREE_QUESTIONS_PER_MONTH=100`), puis
+   `bash scripts/codespace-demarrer.sh`. Chaque analyse reste facturée sur sa clé Anthropic.
+5. Expo Go ne marche pas : son téléphone a Expo Go SDK 57, le projet est en SDK 54. Et `expo start
    --tunnel` échoue avec un jeton robot (EXPO_TOKEN aussi présent dans son `.env`).
 
 ## Vérifier avant de pousser (dans la session Claude)
