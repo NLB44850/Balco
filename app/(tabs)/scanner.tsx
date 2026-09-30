@@ -10,6 +10,7 @@ import { ScreenHeader } from "@/components/screen-header";
 import { glass } from "@/components/ui/glass";
 import { IconSymbol } from "@/components/ui/icon-symbol";
 import { useColors } from "@/hooks/use-colors";
+import { takePendingPhoto } from "@/lib/ai/pending-photo";
 import { pickPlantPhoto, type PreparedPhoto } from "@/lib/ai/photo";
 import { quotaLabel } from "@/lib/ai/quota-text";
 import { useGarden } from "@/lib/garden/garden-context";
@@ -92,8 +93,16 @@ export default function ScannerScreen() {
   const restartRef = useRef(restart);
   restartRef.current = restart;
   useFocusEffect(
-    useCallback(() => () => {
-      if (!pending.current) restartRef.current();
+    useCallback(() => {
+      // Photo prise depuis le bouton appareil photo de l'accueil : prête à analyser.
+      const fromHome = takePendingPhoto();
+      if (fromHome) {
+        restartRef.current();
+        setPhoto(fromHome);
+      }
+      return () => {
+        if (!pending.current) restartRef.current();
+      };
     }, []),
   );
 

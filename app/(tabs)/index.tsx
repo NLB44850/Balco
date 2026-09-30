@@ -8,6 +8,8 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { FadeIn } from "@/components/motion";
 import { ScreenContainer } from "@/components/screen-container";
 import { ScreenHeader } from "@/components/screen-header";
+import { glass } from "@/components/ui/glass";
+import { IconSymbol } from "@/components/ui/icon-symbol";
 import { BALCONY_FLOOR_HEIGHT, BalconySky } from "@/components/today/balcony-sky";
 import { CatalogPicture, PlantPicture } from "@/components/plant-picture";
 import { BottomSheet } from "@/components/today/bottom-sheet";
@@ -16,7 +18,10 @@ import { UndoToast, type ToastMessage } from "@/components/today/undo-toast";
 import { useLocalWeather } from "@/hooks/use-local-weather";
 import { useColors } from "@/hooks/use-colors";
 import { useWeatherSimulation } from "@/hooks/use-weather-simulation";
+import { setPendingPhoto } from "@/lib/ai/pending-photo";
+import { pickPlantPhoto } from "@/lib/ai/photo";
 import { useGarden } from "@/lib/garden/garden-context";
+import { trpc } from "@/lib/trpc";
 import { usePlantPhotos } from "@/lib/garden/photos-context";
 import { celebrationFor, formatLiters, litersPerWatering } from "@/lib/garden/progress";
 import {
@@ -65,7 +70,28 @@ const haptic = () => {
 export default function HomeScreen() {
   const colors = useColors();
   const router = useRouter();
-  const { loaded, resolvedPlants, events, onboarding, addPlant, logEvent, removeEvent, reportLocation } = useGarden();
+  const { loaded, resolvedPlants, events, onboarding, account, addPlant, logEvent, removeEvent, reportLocation } = useGarden();
+  const aiStatus = trpc.ai.status.useQuery(undefined, { enabled: account.signedIn, retry: false });
+
+  /**
+   * Le bouton appareil photo : la photo se prend tout de suite, puis Observer l'affiche prête à
+   * analyser. Sans compte, sans analyse restante ou si le service manque, on ouvre simplement
+   * Observer, qui explique pourquoi.
+   */
+  const observe = async () => {
+    const status = aiStatus.data;
+    const canScan = account.signedIn && status?.available !== false && (status?.scan.remaining ?? 1) > 0;
+    if (canScan) {
+      try {
+        const result = await pickPlantPhoto("camera");
+        if (result.status === "canceled") return;
+        if (result.status === "ok") setPendingPhoto(result.photo);
+      } catch {
+        // Photo illisible : Observer s'ouvre quand même, pour en choisir une autre.
+      }
+    }
+    router.push("/(tabs)/scanner");
+  };
   const { covers } = usePlantPhotos();
   const [now, setNow] = useState(() => new Date());
   const [snoozes, setSnoozes] = useState<ReminderSnooze[]>([]);
@@ -264,7 +290,16 @@ export default function HomeScreen() {
         scrollEventThrottle={16}
         onScroll={Animated.event([{ nativeEvent: { contentOffset: { y: scrollY } } }], { useNativeDriver: true })}
       >
-        <ScreenHeader title="Aujourd’hui" subtitle={metaLine} style={{ paddingTop: insets.top + 14, paddingHorizontal: 20 }} />
+        <ScreenHeader
+          title="Aujourd’hui"
+          subtitle={metaLine}
+          right={
+            <Pressable accessibilityRole="button" accessibilityLabel="Observer une plante : prendre une photo" hitSlop={6} onPress={() => void observe()} style={({ pressed }) => [glass.card, styles.cameraButton, pressed && styles.pressed]}>
+              <IconSymbol name="camera.fill" size={19} color={colors.primary} />
+            </Pressable>
+          }
+          style={{ paddingTop: insets.top + 14, paddingHorizontal: 20 }}
+        />
 
         <View style={styles.body}>
 
@@ -448,6 +483,7 @@ function SheetContent({ item, events, onToggle, onSnooze, onOpenPlant, onOpenCal
 }
 
 const styles = StyleSheet.create({
+  cameraButton: { width: 40, height: 40, borderRadius: 20, alignItems: "center", justifyContent: "center" },
   content: { gap: 18 },
   body: { paddingHorizontal: 20, gap: 18 },
   glass: { backgroundColor: "rgba(255,255,255,0.72)" },

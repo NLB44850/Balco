@@ -123,6 +123,11 @@ Livré, à valider sur son téléphone :
   réseau de la session Claude bloque Wikimedia) : candidates, `--encore`, puis `--final` (choix.json).
   Après un `--final`, recompresser en 800 px (qualité ~74) : Wikimedia renvoie des images plus lourdes.
 - Emojis : l'emoji exact de la plante, sinon un emoji végétal générique (plus d'objets sans rapport).
+- **Observer refait** (`app/(tabs)/scanner.tsx`) au style de l'app : zone photo claire, « Prendre une photo » /
+  « Choisir dans ma galerie », conseils en liste, résultat sans majuscules. Repart de zéro quand on quitte
+  l'écran (onglet caché resté monté), sauf analyse en cours. **Bouton appareil photo sur Aujourd'hui** (à
+  côté de l'avatar) : prend la photo tout de suite puis ouvre Observer prêt à analyser (relais
+  `lib/ai/pending-photo.ts`) ; sans compte ou sans analyse restante, ouvre Observer qui explique.
 
 À faire, dans l'ordre :
 1. Priorité 5, mode vacances.
