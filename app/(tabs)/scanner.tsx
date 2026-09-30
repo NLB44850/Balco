@@ -8,6 +8,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { LightScreen } from "@/components/light-screen";
 import { ScreenHeader } from "@/components/screen-header";
 import { glass } from "@/components/ui/glass";
+import { IconSymbol } from "@/components/ui/icon-symbol";
 import { useColors } from "@/hooks/use-colors";
 import { pickPlantPhoto, type PreparedPhoto } from "@/lib/ai/photo";
 import { quotaLabel } from "@/lib/ai/quota-text";
@@ -21,11 +22,13 @@ import type { inferRouterOutputs } from "@trpc/server";
 type Diagnosis = inferRouterOutputs<AppRouter>["ai"]["diagnose"]["diagnosis"];
 
 const HEALTH = {
-  healthy: { label: "EN PLEINE FORME", emoji: "🌿" },
-  needs_attention: { label: "À SURVEILLER", emoji: "🔍" },
-  sick: { label: "BESOIN DE SOINS", emoji: "🩹" },
-  unknown: { label: "DIAGNOSTIC INCERTAIN", emoji: "❔" },
+  healthy: { label: "En pleine forme", tone: "good" },
+  needs_attention: { label: "À surveiller", tone: "watch" },
+  sick: { label: "Besoin de soins", tone: "watch" },
+  unknown: { label: "Diagnostic incertain", tone: "muted" },
 } as const;
+
+const TIPS = ["Une photo nette, sans bouger", "À la lumière du jour, sans flash", "La feuille abîmée bien visible, dessus et dessous"];
 const CONFIDENCE = { high: "Confiance élevée", medium: "Confiance moyenne", low: "Confiance faible" } as const;
 
 /** Ce qui reste dans l'historique de la plante : le constat et les gestes conseillés (500 caractères au plus côté serveur). */
@@ -88,113 +91,169 @@ export default function ScannerScreen() {
     setSavedNote(true);
   };
 
-  const canScan = account.signedIn && status.data?.available !== false && !noScansLeft;
-  const frameLabel = diagnose.isPending ? "ANALYSE EN COURS" : photo ? "PHOTO PRÊTE" : "PRÊT À SCANNER";
+  const busy = diagnose.isPending;
+  const toneColor = (tone: "good" | "watch" | "muted") => (tone === "good" ? colors.primary : tone === "watch" ? colors.warning : colors.muted);
+  const ownedName = owned ? owned.plant.nickname || owned.entry.name : "";
+
+  /** Un message à la place de la prise de vue : pas connecté, pas encore disponible, plus d'analyse ce mois-ci. */
+  const blocker = !account.signedIn
+    ? { title: "3 analyses offertes chaque mois", text: "Crée ton compte gratuit pour reconnaître tes plantes et savoir quoi faire quand une feuille jaunit.", action: { label: "Se connecter", onPress: () => router.push("/login") } }
+    : status.data?.available === false
+      ? { title: "Bientôt disponible", text: "L’analyse des photos arrive dans une prochaine mise à jour." }
+      : noScansLeft && !diagnosis
+        ? { title: "Tes analyses du mois sont utilisées", text: "En attendant, pose ta question à Nora ou regarde tes feuilles de près : le dessous, les tiges et la terre.", action: { label: "Demander à Nora", onPress: () => router.push("/(tabs)/assistant") } }
+        : null;
 
   return (
     <LightScreen>
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={[styles.content, { paddingTop: insets.top + 14 }]}>
-        <ScreenHeader back title="Observer" subtitle="Une photo, et Nora te dit quoi faire" style={{ marginBottom: 14 }} />
-        {account.signedIn && scan && <Text style={[styles.quota, { color: noScansLeft ? colors.warning : colors.primary }]}>{quotaLabel(scan)}</Text>}
+        <ScreenHeader back title="Observer" subtitle={account.signedIn && scan ? quotaLabel(scan) : "Une photo, et Nora te dit quoi faire"} />
 
-        <View style={styles.cameraFrame}>
-          {photo && <Image source={{ uri: photo.uri }} style={StyleSheet.absoluteFill} resizeMode="cover" accessibilityLabel="Photo à analyser" />}
-          {photo && <View style={[StyleSheet.absoluteFill, styles.photoShade]} />}
-          <View style={styles.cameraTopRow}>
-            <View style={styles.livePill}><View style={styles.liveDot} /><Text style={styles.liveText}>{frameLabel}</Text></View>
-            {photo && !diagnose.isPending && <Pressable onPress={restart} accessibilityLabel="Retirer la photo"><Text style={styles.cameraHint}>✕</Text></Pressable>}
-          </View>
-          <View style={styles.focusArea}>
-            <View style={[styles.corner, styles.cornerTL]} /><View style={[styles.corner, styles.cornerTR]} />
-            <View style={[styles.corner, styles.cornerBL]} /><View style={[styles.corner, styles.cornerBR]} />
-            {diagnose.isPending ? <ActivityIndicator size="large" color="#FFFFFF" /> : !photo && <Text style={styles.leafPreview}>🌿</Text>}
-            {!photo && <Text style={styles.focusLabel}>{canScan ? "Photographie une feuille ou la plante entière" : account.signedIn ? " " : "Connecte-toi pour analyser tes plantes"}</Text>}
-            {diagnose.isPending && <Text style={styles.focusLabel}>Nora observe les feuilles…</Text>}
-          </View>
-          <View style={styles.cameraBottomRow}>
-            <Pressable disabled={!canScan || diagnose.isPending} onPress={() => void choose("library")} accessibilityLabel="Choisir dans la galerie" style={({ pressed }) => [styles.galleryButton, !canScan && styles.disabled, pressed && styles.pressed]}><Text style={styles.galleryIcon}>▧</Text></Pressable>
-            {photo && !diagnose.isPending && !diagnosis ? (
-              <Pressable onPress={analyze} accessibilityRole="button" style={({ pressed }) => [styles.analyzeButton, { backgroundColor: colors.primary }, pressed && styles.pressed]}><Text style={styles.analyzeText}>Analyser</Text></Pressable>
-            ) : (
-              <Pressable disabled={!canScan || diagnose.isPending} onPress={() => void choose("camera")} accessibilityRole="button" accessibilityLabel="Prendre une photo" style={({ pressed }) => [styles.shutterOuter, !canScan && styles.disabled, pressed && styles.pressed]}><View style={[styles.shutterInner, { backgroundColor: colors.primary }]} /></Pressable>
+        {blocker ? (
+          <View style={[glass.card, styles.card]}>
+            <Text style={[styles.cardTitle, { color: colors.foreground }]}>{blocker.title}</Text>
+            <Text style={[styles.text, { color: colors.muted }]}>{blocker.text}</Text>
+            {blocker.action && (
+              <Pressable accessibilityRole="button" onPress={blocker.action.onPress} style={({ pressed }) => [styles.primary, { backgroundColor: colors.primary }, pressed && styles.pressed]}>
+                <Text style={styles.primaryText}>{blocker.action.label}</Text>
+              </Pressable>
             )}
-            <View style={styles.flashButton} />
           </View>
-        </View>
+        ) : (
+          !diagnosis && (
+            <View style={[glass.card, styles.card]}>
+              {/* La zone photo : vide, elle ouvre l'appareil photo ; pleine, elle montre la photo à analyser. */}
+              <Pressable accessibilityRole="button" accessibilityLabel={photo ? "Photo à analyser" : "Prendre une photo"} disabled={!!photo || busy} onPress={() => void choose("camera")} style={[styles.shot, !photo && { backgroundColor: colors.leaf, borderColor: "rgba(31,122,77,0.35)", borderStyle: "dashed", borderWidth: 1.5 }]}>
+                {photo ? (
+                  <>
+                    <Image source={{ uri: photo.uri }} style={StyleSheet.absoluteFill} resizeMode="cover" accessibilityIgnoresInvertColors />
+                    {busy && (
+                      <View style={[StyleSheet.absoluteFill, styles.busy]}>
+                        <ActivityIndicator size="large" color="#FFFFFF" />
+                        <Text style={styles.busyText}>Nora observe ta plante…</Text>
+                      </View>
+                    )}
+                    {!busy && (
+                      <Pressable accessibilityRole="button" accessibilityLabel="Retirer la photo" hitSlop={8} onPress={restart} style={({ pressed }) => [styles.remove, pressed && styles.pressed]}>
+                        <IconSymbol name="xmark" size={18} color={colors.foreground} />
+                      </Pressable>
+                    )}
+                  </>
+                ) : (
+                  <>
+                    <View style={[styles.shotIcon, { backgroundColor: colors.primary }]}><IconSymbol name="camera.fill" size={26} color="#FFFFFF" /></View>
+                    <Text style={[styles.shotTitle, { color: colors.foreground }]}>Photographie ta plante</Text>
+                    <Text style={[styles.shotText, { color: colors.muted }]}>La feuille abîmée de près, ou la plante entière pour la reconnaître.</Text>
+                  </>
+                )}
+              </Pressable>
 
-        {notice && <Text style={[styles.notice, { color: colors.warning }]}>{notice}</Text>}
+              {photo ? (
+                <Pressable accessibilityRole="button" disabled={busy} onPress={analyze} style={({ pressed }) => [styles.primary, { backgroundColor: colors.primary }, busy && styles.disabled, pressed && styles.pressed]}>
+                  <Text style={styles.primaryText}>{busy ? "Analyse en cours…" : "Analyser cette photo"}</Text>
+                </Pressable>
+              ) : (
+                <Pressable accessibilityRole="button" onPress={() => void choose("camera")} style={({ pressed }) => [styles.primary, { backgroundColor: colors.primary }, pressed && styles.pressed]}>
+                  <IconSymbol name="camera.fill" size={18} color="#FFFFFF" />
+                  <Text style={styles.primaryText}>Prendre une photo</Text>
+                </Pressable>
+              )}
+              {!busy && (
+                <Pressable accessibilityRole="button" onPress={() => void choose("library")} style={({ pressed }) => [styles.secondary, pressed && styles.pressed]}>
+                  <IconSymbol name="photo.on.rectangle" size={18} color={colors.primary} />
+                  <Text style={[styles.secondaryText, { color: colors.primary }]}>{photo ? "Choisir une autre photo" : "Choisir dans ma galerie"}</Text>
+                </Pressable>
+              )}
+            </View>
+          )
+        )}
+
+        {notice && <Text accessibilityRole="alert" style={[styles.notice, { color: colors.warning }]}>{notice}</Text>}
         {diagnose.error && <Text accessibilityRole="alert" style={[styles.notice, { color: colors.error }]}>{diagnose.error.message}</Text>}
 
-        {!account.signedIn ? (
-          <View style={[glass.soft, styles.helperCard]}>
-            <Text style={styles.helperIcon}>✦</Text>
-            <View style={styles.helperCopy}>
-              <Text style={[styles.helperTitle, { color: colors.foreground }]}>3 analyses offertes chaque mois.</Text>
-              <Text style={[styles.helperText, { color: colors.muted }]}>Crée ton compte gratuit pour identifier tes plantes et savoir quoi faire quand une feuille jaunit.</Text>
-              <Pressable onPress={() => router.push("/login")} style={({ pressed }) => [styles.inlineButton, { backgroundColor: colors.primary }, pressed && styles.pressed]}><Text style={styles.inlineButtonText}>Se connecter</Text></Pressable>
-            </View>
-          </View>
-        ) : status.data?.available === false ? (
-          <View style={[glass.soft, styles.helperCard]}><Text style={styles.helperIcon}>✦</Text><View style={styles.helperCopy}><Text style={[styles.helperTitle, { color: colors.foreground }]}>Le scanner arrive bientôt.</Text><Text style={[styles.helperText, { color: colors.muted }]}>Il sera disponible dans une prochaine mise à jour.</Text></View></View>
-        ) : diagnosis ? (
-          <View style={[glass.card, styles.resultCard]}>
+        {diagnosis ? (
+          <View style={[glass.card, styles.card]}>
             {!diagnosis.isPlant ? (
               <>
-                <Text style={[styles.resultTitle, { color: colors.foreground }]}>Je ne vois pas de plante sur cette photo.</Text>
-                <Text style={[styles.resultDescription, { color: colors.muted }]}>{diagnosis.summary}</Text>
+                <Text style={[styles.cardTitle, { color: colors.foreground }]}>Je ne vois pas de plante sur cette photo</Text>
+                <Text style={[styles.text, { color: colors.muted }]}>{diagnosis.summary}</Text>
               </>
             ) : (
               <>
                 <View style={styles.resultHeader}>
-                  {photo ? <Image source={{ uri: photo.uri }} style={styles.resultIcon} accessibilityIgnoresInvertColors /> : <View style={[styles.resultIcon, { backgroundColor: colors.leaf }]}><Text style={styles.resultEmoji}>{HEALTH[diagnosis.health].emoji}</Text></View>}
-                  <View style={styles.resultTitleWrap}>
-                    <Text style={[styles.resultKicker, { color: diagnosis.health === "healthy" ? colors.success : diagnosis.health === "sick" ? colors.warning : colors.primary }]}>{HEALTH[diagnosis.health].label}</Text>
-                    <Text style={[styles.resultTitle, { color: colors.foreground }]}>{diagnosis.commonName || "Plante non identifiée"}</Text>
+                  {photo && <Image source={{ uri: photo.uri }} style={styles.resultPhoto} accessibilityIgnoresInvertColors />}
+                  <View style={styles.flex}>
+                    <Text style={[styles.resultName, { color: colors.foreground }]}>{diagnosis.commonName || "Plante non identifiée"}</Text>
                     {!!diagnosis.scientificName && <Text style={[styles.scientific, { color: colors.muted }]}>{diagnosis.scientificName}</Text>}
+                    <View style={styles.statusRow}>
+                      <View style={[styles.dot, { backgroundColor: toneColor(HEALTH[diagnosis.health].tone) }]} />
+                      <Text style={[styles.statusText, { color: toneColor(HEALTH[diagnosis.health].tone) }]}>{HEALTH[diagnosis.health].label}</Text>
+                      <Text style={[styles.small, { color: colors.muted }]}>· {CONFIDENCE[diagnosis.confidence]}</Text>
+                    </View>
                   </View>
-                  <Text style={[styles.resultConfidence, { color: diagnosis.confidence === "high" ? colors.success : colors.muted }]}>{CONFIDENCE[diagnosis.confidence]}</Text>
                 </View>
-                <Text style={[styles.resultDescription, { color: colors.foreground }]}>{diagnosis.summary}</Text>
+                <Text style={[styles.text, { color: colors.foreground }]}>{diagnosis.summary}</Text>
                 {diagnosis.observations.length > 0 && (
-                  <View style={styles.list}>{diagnosis.observations.map((observation, index) => <Text key={index} style={[styles.listItem, { color: colors.muted }]}>•  {observation}</Text>)}</View>
+                  <View style={styles.list}>{diagnosis.observations.map((observation, index) => <Text key={index} style={[styles.text, { color: colors.muted }]}>•  {observation}</Text>)}</View>
                 )}
                 {diagnosis.actions.length > 0 && (
-                  <View style={styles.actions}>
-                    <Text style={[styles.solutionTitle, { color: colors.primary }]}>À FAIRE</Text>
+                  <View style={styles.list}>
+                    <Text style={[styles.sectionTitle, { color: colors.foreground }]}>À faire</Text>
                     {diagnosis.actions.map((action, index) => (
                       <View key={index} style={styles.actionRow}>
                         <View style={[styles.actionNumber, { backgroundColor: colors.leaf }]}><Text style={[styles.actionNumberText, { color: colors.primary }]}>{index + 1}</Text></View>
-                        <View style={styles.flex}><Text style={[styles.actionTitle, { color: colors.foreground }]}>{action.title}</Text><Text style={[styles.actionDetail, { color: colors.muted }]}>{action.detail}</Text></View>
+                        <View style={styles.flex}>
+                          <Text style={[styles.actionTitle, { color: colors.foreground }]}>{action.title}</Text>
+                          <Text style={[styles.small, { color: colors.muted }]}>{action.detail}</Text>
+                        </View>
                       </View>
                     ))}
                   </View>
                 )}
                 {!!diagnosis.naturalRemedy && (
-                  <View style={[styles.naturalSolution, { backgroundColor: colors.leaf }]}>
-                    <Text style={[styles.solutionTitle, { color: colors.primary }]}>Solution naturelle</Text>
-                    <Text style={[styles.solutionText, { color: colors.foreground }]}>{diagnosis.naturalRemedy}</Text>
+                  <View style={[styles.remedy, { backgroundColor: colors.leaf }]}>
+                    <Text style={[styles.actionTitle, { color: colors.primary }]}>🌿 Solution naturelle</Text>
+                    <Text style={[styles.text, { color: colors.foreground }]}>{diagnosis.naturalRemedy}</Text>
                   </View>
                 )}
-                {diagnosis.seeExpert && <Text style={[styles.expert, { color: colors.warning }]}>Ce problème mérite un œil expert : montre ta plante (ou cette photo) en jardinerie.</Text>}
+                {diagnosis.seeExpert && <Text style={[styles.text, { color: colors.warning, fontWeight: "600" }]}>Ce problème mérite un œil expert : montre ta plante (ou cette photo) en jardinerie.</Text>}
                 {entry && !owned && (
-                  <Pressable onPress={() => void addPlant(entry.id)} style={({ pressed }) => [styles.inlineButton, { backgroundColor: colors.primary }, pressed && styles.pressed]}><Text style={styles.inlineButtonText}>+ Ajouter {entry.name.toLowerCase()} à mon balcon</Text></Pressable>
-                )}
-                {owned && savedNote && (
-                  <Pressable accessibilityRole="button" onPress={() => router.push({ pathname: "/garden/[id]", params: { id: owned.plant.id } })} style={({ pressed }) => [pressed && styles.pressed]}><Text style={[styles.historyLink, { color: colors.primary }]}>Voir l’historique de {owned.plant.nickname || owned.entry.name.toLowerCase()}  ›</Text></Pressable>
+                  <Pressable accessibilityRole="button" onPress={() => void addPlant(entry.id)} style={({ pressed }) => [styles.primary, { backgroundColor: colors.primary }, pressed && styles.pressed]}>
+                    <Text style={styles.primaryText}>Ajouter {entry.name.toLowerCase()} à mon balcon</Text>
+                  </Pressable>
                 )}
                 {owned && (
-                  <Pressable disabled={savedNote} onPress={() => void saveObservation()} style={({ pressed }) => [styles.inlineButton, { backgroundColor: savedNote ? colors.leaf : colors.primary }, pressed && styles.pressed]}><Text style={[styles.inlineButtonText, savedNote && { color: colors.primary }]}>{savedNote ? "✓ Noté dans sa fiche" : `Noter le diagnostic et la photo pour ${owned.plant.nickname || owned.entry.name}`}</Text></Pressable>
+                  <Pressable accessibilityRole="button" disabled={savedNote} onPress={() => void saveObservation()} style={({ pressed }) => [styles.primary, { backgroundColor: savedNote ? colors.leaf : colors.primary }, pressed && styles.pressed]}>
+                    <Text style={[styles.primaryText, savedNote && { color: colors.primary }]}>{savedNote ? "✓ Noté dans sa fiche" : `Noter dans la fiche de ${ownedName}`}</Text>
+                  </Pressable>
+                )}
+                {owned && savedNote && (
+                  <Pressable accessibilityRole="button" onPress={() => router.push({ pathname: "/garden/[id]", params: { id: owned.plant.id } })} style={({ pressed }) => [styles.secondary, pressed && styles.pressed]}>
+                    <Text style={[styles.secondaryText, { color: colors.primary }]}>Voir la fiche de {ownedName} ›</Text>
+                  </Pressable>
                 )}
               </>
             )}
-            <Pressable onPress={restart} style={({ pressed }) => [styles.rescanButton, { borderColor: colors.border }, pressed && styles.pressed]}><Text style={[styles.rescanText, { color: colors.primary }]}>Scanner une autre plante</Text></Pressable>
-            <Text style={[styles.disclaimer, { color: colors.muted }]}>Diagnostic indicatif généré par une IA : en cas de doute, demande conseil en jardinerie.</Text>
+            <Pressable accessibilityRole="button" onPress={restart} style={({ pressed }) => [styles.outline, { borderColor: colors.border }, pressed && styles.pressed]}>
+              <Text style={[styles.secondaryText, { color: colors.foreground }]}>Observer une autre plante</Text>
+            </Pressable>
+            <Text style={[styles.small, { color: colors.muted, textAlign: "center" }]}>Diagnostic indicatif fait par une IA : en cas de doute, demande conseil en jardinerie.</Text>
           </View>
         ) : (
-          <View style={[glass.soft, styles.helperCard]}>
-            <Text style={styles.helperIcon}>✦</Text>
-            <View style={styles.helperCopy}><Text style={[styles.helperTitle, { color: colors.foreground }]}>{noScansLeft ? "Tes analyses du mois sont utilisées." : "Pas besoin d’être expert."}</Text><Text style={[styles.helperText, { color: colors.muted }]}>{noScansLeft ? "En attendant, pose tes questions à Nora ou observe tes feuilles de près : dessous, tiges et terre." : "Balco privilégie toujours les soins naturels et les gestes qui respectent le vivant. Pour un bon diagnostic : une photo nette, en lumière naturelle, avec la feuille abîmée bien visible."}</Text></View>
-          </View>
+          !blocker && (
+            <View style={styles.tips}>
+              <Text style={[styles.sectionTitle, { color: colors.foreground }]}>Pour un bon diagnostic</Text>
+              <View style={[glass.card, styles.tipsCard]}>
+                {TIPS.map((tip, index) => (
+                  <View key={tip} style={[styles.tipRow, index < TIPS.length - 1 && glass.line]}>
+                    <View style={[styles.tipCheck, { backgroundColor: colors.leaf }]}><Text style={[styles.tipCheckText, { color: colors.primary }]}>✓</Text></View>
+                    <Text style={[styles.text, styles.flex, { color: colors.foreground }]}>{tip}</Text>
+                  </View>
+                ))}
+              </View>
+              <Text style={[styles.small, { color: colors.muted }]}>Nora propose toujours d’abord des gestes simples et des solutions naturelles.</Text>
+            </View>
+          )
         )}
       </ScrollView>
     </LightScreen>
@@ -202,67 +261,44 @@ export default function ScannerScreen() {
 }
 
 const styles = StyleSheet.create({
-  content: { paddingHorizontal: 20, paddingBottom: 30 },
+  content: { paddingHorizontal: 20, paddingBottom: 40, gap: 16 },
   flex: { flex: 1 },
-  quota: { fontSize: 11, fontWeight: "800", marginTop: 8 },
-  photoShade: { backgroundColor: "rgba(20,53,43,0.28)" },
-  disabled: { opacity: 0.4 },
-  analyzeButton: { borderRadius: 22, paddingHorizontal: 28, height: 56, alignItems: "center", justifyContent: "center" },
-  analyzeText: { color: "#FFFFFF", fontSize: 15, fontWeight: "800" },
-  notice: { fontSize: 12, lineHeight: 18, fontWeight: "700", marginTop: 12 },
-  inlineButton: { alignSelf: "flex-start", borderRadius: 13, paddingHorizontal: 14, paddingVertical: 10, marginTop: 12 },
-  historyLink: { fontSize: 13, fontWeight: "800", textAlign: "center", paddingVertical: 4 },
-  inlineButtonText: { color: "#FFFFFF", fontSize: 12, fontWeight: "800" },
-  scientific: { fontSize: 11, fontStyle: "italic", marginTop: 2 },
-  list: { marginTop: 8, gap: 4 },
-  listItem: { fontSize: 12, lineHeight: 18 },
-  actions: { marginTop: 14, gap: 10 },
-  actionRow: { flexDirection: "row", gap: 10 },
-  actionNumber: { width: 24, height: 24, borderRadius: 8, alignItems: "center", justifyContent: "center" },
-  actionNumberText: { fontSize: 12, fontWeight: "800" },
-  actionTitle: { fontSize: 13, fontWeight: "800" },
-  actionDetail: { fontSize: 12, lineHeight: 17, marginTop: 2 },
-  expert: { fontSize: 12, lineHeight: 18, fontWeight: "700", marginTop: 12 },
-  disclaimer: { fontSize: 10, lineHeight: 14, marginTop: 10, textAlign: "center" },
-  cameraFrame: { height: 390, borderRadius: 28, backgroundColor: "#20372C", marginTop: 19, padding: 17, overflow: "hidden", shadowColor: "#2E6B4D", shadowOpacity: 0.18, shadowRadius: 18, shadowOffset: { width: 0, height: 9 }, elevation: 4 },
-  cameraTopRow: { flexDirection: "row", justifyContent: "space-between", alignItems: "center" },
-  livePill: { flexDirection: "row", alignItems: "center", gap: 6, backgroundColor: "rgba(255,255,255,0.12)", borderRadius: 10, paddingHorizontal: 9, paddingVertical: 6 },
-  liveDot: { width: 6, height: 6, borderRadius: 3, backgroundColor: "#E69A7E" },
-  liveText: { color: "rgba(255,255,255,0.8)", fontSize: 8, fontWeight: "800", letterSpacing: 0.9 },
-  cameraHint: { color: "rgba(255,255,255,0.6)", fontSize: 13, fontWeight: "700" },
-  focusArea: { flex: 1, alignItems: "center", justifyContent: "center", position: "relative" },
-  leafPreview: { fontSize: 78, opacity: 0.9, transform: [{ rotate: "-12deg" }] },
-  focusLabel: { color: "rgba(255,255,255,0.74)", fontSize: 11, fontWeight: "700", marginTop: 15 },
-  corner: { position: "absolute", width: 30, height: 30, borderColor: "rgba(255,255,255,0.85)" },
-  cornerTL: { top: 47, left: 17, borderTopWidth: 2, borderLeftWidth: 2, borderTopLeftRadius: 8 },
-  cornerTR: { top: 47, right: 17, borderTopWidth: 2, borderRightWidth: 2, borderTopRightRadius: 8 },
-  cornerBL: { bottom: 47, left: 17, borderBottomWidth: 2, borderLeftWidth: 2, borderBottomLeftRadius: 8 },
-  cornerBR: { bottom: 47, right: 17, borderBottomWidth: 2, borderRightWidth: 2, borderBottomRightRadius: 8 },
-  cameraBottomRow: { flexDirection: "row", alignItems: "center", justifyContent: "space-between" },
-  galleryButton: { width: 40, height: 40, borderRadius: 14, alignItems: "center", justifyContent: "center", backgroundColor: "rgba(255,255,255,0.13)" },
-  galleryIcon: { color: "#FFFFFF", fontSize: 22 },
-  shutterOuter: { width: 68, height: 68, borderRadius: 34, borderWidth: 3, borderColor: "rgba(255,255,255,0.82)", alignItems: "center", justifyContent: "center" },
-  shutterInner: { width: 52, height: 52, borderRadius: 26 },
-  flashButton: { width: 40, height: 40, borderRadius: 14, alignItems: "center", justifyContent: "center", backgroundColor: "rgba(255,255,255,0.13)" },
-  flashIcon: { color: "#FFFFFF", fontSize: 21 },
-  helperCard: { borderRadius: 20, padding: 16, marginTop: 16, flexDirection: "row", gap: 12, alignItems: "flex-start", shadowColor: "#C56D52", shadowOpacity: 0.06, shadowRadius: 10, shadowOffset: { width: 0, height: 4 }, elevation: 1 },
-  helperIcon: { color: "#C56D52", fontSize: 25 },
-  helperCopy: { flex: 1 },
-  helperTitle: { fontSize: 14, fontWeight: "800" },
-  helperText: { fontSize: 12, lineHeight: 18, marginTop: 4 },
-  resultCard: { borderRadius: 22, padding: 16, marginTop: 16, borderWidth: 1 },
-  resultHeader: { flexDirection: "row", alignItems: "center" },
-  resultIcon: { width: 44, height: 44, borderRadius: 14, alignItems: "center", justifyContent: "center" },
-  resultEmoji: { fontSize: 24 },
-  resultTitleWrap: { flex: 1, marginLeft: 11 },
-  resultKicker: { fontSize: 9, fontWeight: "800", letterSpacing: 1 },
-  resultTitle: { fontSize: 15, fontWeight: "800", marginTop: 3 },
-  resultConfidence: { fontSize: 10, fontWeight: "800", maxWidth: 80, textAlign: "right" },
-  resultDescription: { fontSize: 12, lineHeight: 18, marginTop: 13 },
-  naturalSolution: { borderRadius: 14, padding: 12, marginTop: 13 },
-  solutionTitle: { fontSize: 9, fontWeight: "800", letterSpacing: 1 },
-  solutionText: { fontSize: 12, lineHeight: 18, fontWeight: "600", marginTop: 4 },
-  rescanButton: { borderWidth: 1, borderRadius: 13, paddingVertical: 11, alignItems: "center", marginTop: 12 },
-  rescanText: { fontSize: 12, fontWeight: "800" },
+  card: { padding: 16, gap: 12 },
+  cardTitle: { fontSize: 19, fontWeight: "800", letterSpacing: -0.3 },
+  text: { fontSize: 15, lineHeight: 21 },
+  small: { fontSize: 13, lineHeight: 18 },
+  sectionTitle: { fontSize: 19, fontWeight: "800", letterSpacing: -0.3 },
+  shot: { height: 280, borderRadius: 18, overflow: "hidden", alignItems: "center", justifyContent: "center", paddingHorizontal: 24, gap: 8 },
+  shotIcon: { width: 64, height: 64, borderRadius: 32, alignItems: "center", justifyContent: "center", marginBottom: 6 },
+  shotTitle: { fontSize: 18, fontWeight: "800" },
+  shotText: { fontSize: 14, lineHeight: 20, textAlign: "center" },
+  busy: { backgroundColor: "rgba(18,22,20,0.45)", alignItems: "center", justifyContent: "center", gap: 12 },
+  busyText: { color: "#FFFFFF", fontSize: 15, fontWeight: "700" },
+  remove: { position: "absolute", top: 12, right: 12, width: 36, height: 36, borderRadius: 18, alignItems: "center", justifyContent: "center", backgroundColor: "rgba(255,255,255,0.92)" },
+  primary: { flexDirection: "row", gap: 8, borderRadius: 14, paddingVertical: 15, paddingHorizontal: 16, alignItems: "center", justifyContent: "center" },
+  primaryText: { color: "#FFFFFF", fontSize: 16, fontWeight: "700", textAlign: "center" },
+  secondary: { flexDirection: "row", gap: 8, alignItems: "center", justifyContent: "center", paddingVertical: 8 },
+  secondaryText: { fontSize: 15, fontWeight: "700" },
+  outline: { borderWidth: 1, borderRadius: 14, paddingVertical: 13, alignItems: "center" },
+  disabled: { opacity: 0.6 },
+  notice: { fontSize: 14, lineHeight: 20, fontWeight: "600" },
+  tips: { gap: 10 },
+  tipsCard: { paddingHorizontal: 14 },
+  tipRow: { flexDirection: "row", alignItems: "center", gap: 12, paddingVertical: 12 },
+  tipCheck: { width: 28, height: 28, borderRadius: 14, alignItems: "center", justifyContent: "center" },
+  tipCheckText: { fontSize: 14, fontWeight: "800" },
+  resultHeader: { flexDirection: "row", alignItems: "center", gap: 12 },
+  resultPhoto: { width: 64, height: 64, borderRadius: 16 },
+  resultName: { fontSize: 20, fontWeight: "800", letterSpacing: -0.3 },
+  scientific: { fontSize: 13, fontStyle: "italic", marginTop: 1 },
+  statusRow: { flexDirection: "row", alignItems: "center", gap: 6, marginTop: 6, flexWrap: "wrap" },
+  dot: { width: 10, height: 10, borderRadius: 5 },
+  statusText: { fontSize: 14, fontWeight: "700" },
+  list: { gap: 8 },
+  actionRow: { flexDirection: "row", gap: 12 },
+  actionNumber: { width: 28, height: 28, borderRadius: 14, alignItems: "center", justifyContent: "center" },
+  actionNumberText: { fontSize: 14, fontWeight: "800" },
+  actionTitle: { fontSize: 15, fontWeight: "700" },
+  remedy: { borderRadius: 14, padding: 14, gap: 4 },
   pressed: { opacity: 0.78, transform: [{ scale: 0.98 }] },
 });

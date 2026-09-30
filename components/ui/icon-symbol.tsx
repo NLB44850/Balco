@@ -22,6 +22,8 @@ const MAPPING = {
   "camera.macro": "local-florist",
   "chevron.left": "chevron-left",
   "camera.fill": "photo-camera",
+  "photo.on.rectangle": "photo-library",
+  xmark: "close",
 } as IconMapping;
 
 export function IconSymbol({
