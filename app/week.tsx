@@ -18,6 +18,7 @@ import { useColors } from "@/hooks/use-colors";
 import { useGarden } from "@/lib/garden/garden-context";
 import { plantDisplayName } from "@/lib/garden/garden-logic";
 import { usePlantPhotos } from "@/lib/garden/photos-context";
+import { formatLiters } from "@/lib/garden/progress";
 import { comparedToLastWeek, startOfWeek, weekSummary } from "@/lib/garden/week";
 
 const shortDate = (date: Date) => date.toLocaleDateString("fr-FR", { day: "numeric", month: "short" });
@@ -79,6 +80,33 @@ export default function WeekScreen() {
         {summary.weatherTips > 0 && (
           <Text style={[styles.text, { color: colors.muted }]}>🌦  {plural(summary.weatherTips, "conseil")} météo suivi{summary.weatherTips > 1 ? "s" : ""} : tu as agi au bon moment.</Text>
         )}
+        {summary.avoidedWaterings > 0 && (
+          <FadeIn delay={260} style={[glass.card, styles.water]}>
+            <Text style={styles.waterIcon}>💧</Text>
+            <View style={styles.flex}>
+              <Text style={[styles.rowTitle, { color: colors.foreground }]}>≈ {formatLiters(summary.waterSavedLiters)} d’eau économisés</Text>
+              <Text style={[styles.rowText, { color: colors.muted }]}>{plural(summary.avoidedWaterings, "arrosage")} évité{summary.avoidedWaterings > 1 ? "s" : ""} grâce à la pluie.</Text>
+            </View>
+          </FadeIn>
+        )}
+
+        {summary.upcoming.length > 0 && (
+          <View style={styles.section}>
+            <Text style={[styles.sectionTitle, { color: colors.foreground }]}>Tes récoltes à venir</Text>
+            <View style={[glass.card, styles.list]}>
+              {summary.upcoming.map((item, index) => (
+                <Pressable key={item.resolved.plant.id} accessibilityRole="button" onPress={() => router.push({ pathname: "/garden/[id]", params: { id: item.resolved.plant.id } })} style={({ pressed }) => [styles.row, index < summary.upcoming.length - 1 && glass.line, pressed && styles.pressed]}>
+                  <PlantPicture resolved={item.resolved} style={styles.thumb} />
+                  <View style={styles.flex}>
+                    <Text style={[styles.rowTitle, { color: colors.foreground }]} numberOfLines={1}>{plantDisplayName(item.resolved)}</Text>
+                    <Text style={[styles.rowText, { color: item.now ? colors.primary : colors.muted }]}>🧺 {item.label}</Text>
+                  </View>
+                  <Text style={[styles.chevron, { color: colors.muted }]}>›</Text>
+                </Pressable>
+              ))}
+            </View>
+          </View>
+        )}
 
         {summary.plants.length > 0 && (
           <View style={styles.section}>
@@ -127,6 +155,8 @@ const styles = StyleSheet.create({
   tileLabel: { fontSize: 13 },
   tileHint: { fontSize: 12, fontWeight: "700", marginTop: 4 },
   section: { gap: 10 },
+  water: { flexDirection: "row", alignItems: "center", gap: 12, padding: 14 },
+  waterIcon: { fontSize: 24 },
   sectionTitle: { fontSize: 19, fontWeight: "800", letterSpacing: -0.3 },
   list: { paddingHorizontal: 14 },
   row: { flexDirection: "row", alignItems: "center", gap: 12, paddingVertical: 11 },

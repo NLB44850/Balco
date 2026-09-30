@@ -18,6 +18,7 @@ import { useColors } from "@/hooks/use-colors";
 import { useWeatherSimulation } from "@/hooks/use-weather-simulation";
 import { useGarden } from "@/lib/garden/garden-context";
 import { usePlantPhotos } from "@/lib/garden/photos-context";
+import { celebrationFor, formatLiters, litersPerWatering } from "@/lib/garden/progress";
 import {
   POINTS_PER_GESTURE,
   buildDailySession,
@@ -167,6 +168,9 @@ export default function HomeScreen() {
   };
   const hideToast = useCallback(() => setToast(null), []);
 
+  /** Un badge, un niveau, une série ou une première récolte débloqués par ce geste : on le fête. */
+  const cheer = (logged: MaintenanceEvent[]) => celebrationFor(resolvedPlants, events, [...logged, ...events.filter((event) => !logged.some((item) => item.id === event.id))]);
+
   const logAll = async (toLog: MaintenanceEvent[]) => {
     for (const event of toLog) await logEvent(event);
     return () => {
@@ -180,11 +184,18 @@ export default function HomeScreen() {
   const completeAlert = async (group: ReminderGroup) => {
     const previous = snoozes;
     const moment = new Date();
-    const info = group.action === "skip";
-    const undoEvents = info ? () => undefined : await logAll(group.decisions.map((decision) => eventForReminder(decision, moment)));
+    // « N'arrose pas » suivi : l'arrosage évité est noté, pour compter l'eau économisée dans Ma semaine.
+    const skip = group.action === "skip";
+    const logged = group.decisions.map((decision) => eventForReminder(decision, moment));
+    const undoEvents = await logAll(logged);
     await saveReminderSnoozes(group.decisions.reduce((current, decision) => addSnooze(current, decision, "skip", reminderSettings, moment), snoozes));
     haptic();
-    showToast(info ? "Compris, Balco te préviendra s’il le faut" : `C’est noté · +${POINTS_PER_GESTURE * group.decisions.length} points`, () => {
+    const liters = group.decisions.reduce((total, decision) => {
+      const resolved = resolvedPlants.find(({ plant }) => plant.id === decision.plantId);
+      return total + (resolved ? litersPerWatering(resolved) : 0);
+    }, 0);
+    const usual = skip ? `Arrosage évité : ≈ ${formatLiters(Math.round(liters * 10) / 10)} d’eau économisés` : `C’est noté · +${POINTS_PER_GESTURE * group.decisions.length} points`;
+    showToast(cheer(logged) ?? usual, () => {
       undoEvents();
       void saveReminderSnoozes(previous);
     });
@@ -200,18 +211,20 @@ export default function HomeScreen() {
   const toggleItem = async (item: TodayItem) => {
     if (item.kind === "alert") return completeAlert(item.group);
     if (item.kind === "season") {
-      const undo = await logAll([eventForActivity(item.activity, new Date())]);
+      const logged = [eventForActivity(item.activity, new Date())];
+      const undo = await logAll(logged);
       haptic();
-      return showToast(`${item.title} : noté pour ce mois-ci`, undo);
+      return showToast(cheer(logged) ?? `${item.title} : noté pour ce mois-ci`, undo);
     }
     if (item.done) {
       const previous = events.find((event) => event.id === item.task.eventId);
       await removeEvent(item.task.eventId);
       return showToast("Geste retiré de ta journée", previous ? () => void logEvent(previous) : undefined);
     }
-    const undo = await logAll([eventForSessionTask(item.task, new Date())]);
+    const logged = [eventForSessionTask(item.task, new Date())];
+    const undo = await logAll(logged);
     haptic();
-    showToast(`${item.title} : noté · +${POINTS_PER_GESTURE} points`, undo);
+    showToast(cheer(logged) ?? `${item.title} : noté · +${POINTS_PER_GESTURE} points`, undo);
   };
 
   const activateReminders = async () => {

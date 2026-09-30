@@ -21,6 +21,7 @@ import { Text, TextInput } from "@/components/ui/typography";
 import { type CityResult, useLocalWeather } from "@/hooks/use-local-weather";
 import { useColors } from "@/hooks/use-colors";
 import { useGarden } from "@/lib/garden/garden-context";
+import { celebrationFor } from "@/lib/garden/progress";
 import { careProfileFor, plantDisplayName, type ResolvedPlant } from "@/lib/garden/garden-logic";
 import {
   ACTIVITY_KIND_LABELS,
@@ -121,7 +122,8 @@ export default function CalendarScreen() {
       return;
     }
     await logEvent(event);
-    showToast(`${activity.title} : noté`, () => void removeEvent(event.id));
+    const cheer = celebrationFor(resolvedPlants, events, [event, ...events.filter((item) => item.id !== event.id)]);
+    showToast(cheer ?? `${activity.title} : noté`, () => void removeEvent(event.id));
   };
 
   const addIdea = async (activity: CalendarActivity) => {

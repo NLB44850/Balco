@@ -14,6 +14,7 @@ import { usePlantPhotoCapture } from "@/components/photo-source-sheet";
 import { PlantPicture } from "@/components/plant-picture";
 import { ScreenContainer } from "@/components/screen-container";
 import { UndoToast, type ToastMessage } from "@/components/today/undo-toast";
+import { celebrationFor, milestoneDate, plantProgress, sinceLabel } from "@/lib/garden/progress";
 import { IconSymbol } from "@/components/ui/icon-symbol";
 import { Text, TextInput } from "@/components/ui/typography";
 import { useColors } from "@/hooks/use-colors";
@@ -82,6 +83,14 @@ export default function PlantScreen() {
   const shown = plantPhotos.find((photo) => photo.id === shownPhotoId) ?? plantPhotos[0] ?? null;
   const days = journalByDay(events, photos, plant.id, now);
   const count = days.reduce((total, day) => total + day.events.length, 0);
+  const progress = plantProgress(resolved, events, photos, now);
+  const busiestWeek = Math.max(1, ...progress.weeks);
+  const totals = [
+    progress.gestures ? `${progress.gestures} geste${progress.gestures > 1 ? "s" : ""}` : null,
+    progress.waterings ? `${progress.waterings} arrosage${progress.waterings > 1 ? "s" : ""}` : null,
+    progress.harvests ? `${progress.harvests} récolte${progress.harvests > 1 ? "s" : ""}` : null,
+    progress.photos ? `${progress.photos} photo${progress.photos > 1 ? "s" : ""}` : null,
+  ].filter(Boolean).join(" · ");
   const heroHeight = Math.min(Math.round(width * 1.05), 460) + insets.top;
 
   const doGesture = async () => {
@@ -89,7 +98,8 @@ export default function PlantScreen() {
     const event = eventForSessionTask(gesture, new Date());
     await logEvent(event);
     void Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => undefined);
-    showToast(`${gesture.task.doneTitle} +${POINTS_PER_GESTURE} points`, () => void removeEvent(event.id));
+    const cheer = celebrationFor(resolvedPlants, events, [event, ...events.filter((item) => item.id !== event.id)]);
+    showToast(cheer ?? `${gesture.task.doneTitle} +${POINTS_PER_GESTURE} points`, () => void removeEvent(event.id));
   };
 
   const undoGesture = async () => {
@@ -237,6 +247,30 @@ export default function PlantScreen() {
           )}
 
           <View style={styles.section}>
+            <Text style={[styles.sectionTitle, { color: colors.foreground }]}>Sa progression</Text>
+            <View style={[styles.progress, { borderColor: colors.border }]}>
+              <Text style={[styles.stage, { color: colors.primary }]}>{progress.stage.label}</Text>
+              <Text style={[styles.text, { color: colors.muted }]}>{progress.stage.detail}</Text>
+              <Text style={[styles.small, { color: colors.muted }]}>Sur ton balcon {sinceLabel(progress.daysOnBalcony)}{totals ? ` · ${totals}` : ""}</Text>
+              <View style={styles.bars} accessibilityLabel={`Soignée ${progress.activeWeeks} semaine${progress.activeWeeks > 1 ? "s" : ""} sur les 8 dernières`}>
+                {progress.weeks.map((value, index) => (
+                  <View key={index} style={styles.barSlot}>
+                    <View style={[styles.bar, { height: value > 0 ? 8 + (value / busiestWeek) * 40 : 4, backgroundColor: value > 0 ? colors.primary : colors.leaf }]} />
+                  </View>
+                ))}
+              </View>
+              <Text style={[styles.small, { color: colors.muted }]}>{progress.activeWeeks > 0 ? `Soignée ${progress.activeWeeks} semaine${progress.activeWeeks > 1 ? "s" : ""} sur les 8 dernières` : "Les 8 dernières semaines : ses soins s’afficheront ici"}</Text>
+              {progress.milestones.slice(0, 4).map((milestone) => (
+                <View key={milestone.key} style={styles.milestone}>
+                  <Text style={styles.milestoneIcon}>{milestone.icon}</Text>
+                  <Text style={[styles.milestoneText, { color: colors.foreground }]}>{milestone.label}</Text>
+                  <Text style={[styles.small, { color: colors.muted }]}>{milestoneDate(milestone.date, now)}</Text>
+                </View>
+              ))}
+            </View>
+          </View>
+
+          <View style={styles.section}>
             <Text style={[styles.sectionTitle, { color: colors.foreground }]}>Historique{count > 0 ? ` · ${count} geste${count > 1 ? "s" : ""}` : ""}</Text>
             <Text style={[styles.small, { color: colors.muted }]}>Récolte : {formatMonthRange(entry.harvestMonths)}</Text>
             {days.length === 0 && (
@@ -339,6 +373,14 @@ const styles = StyleSheet.create({
   link: { fontSize: 14, fontWeight: "700" },
   smallLink: { fontSize: 12, fontWeight: "700" },
   section: { marginTop: 18, gap: 10 },
+  progress: { borderWidth: 1, borderRadius: 20, padding: 16, gap: 6 },
+  stage: { fontSize: 17, fontWeight: "800" },
+  bars: { flexDirection: "row", alignItems: "flex-end", gap: 6, height: 52, marginTop: 8 },
+  barSlot: { flex: 1, justifyContent: "flex-end" },
+  bar: { borderRadius: 4 },
+  milestone: { flexDirection: "row", alignItems: "center", gap: 10, paddingTop: 6 },
+  milestoneIcon: { fontSize: 17, width: 24, textAlign: "center" },
+  milestoneText: { flex: 1, fontSize: 14, fontWeight: "600" },
   sectionTitle: { fontSize: 19, fontWeight: "800", letterSpacing: -0.3 },
   strip: { gap: 10, paddingRight: 8 },
   thumb: { width: 76, height: 92, borderRadius: 14 },

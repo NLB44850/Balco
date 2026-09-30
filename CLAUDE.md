@@ -35,7 +35,7 @@ Tout se passe dans son GitHub Codespace (pas de Docker sur son PC).
 
 - `pnpm -s check`, `pnpm -s lint`, puis `TEST_DATABASE_URL=mysql://balco:balco@localhost:3306/balco_cal npx vitest run`
   (MariaDB locale : `service mariadb start` si elle s'est arrêtée, `apt-get install -y mariadb-server` si elle manque,
-  puis `DATABASE_URL=… npx drizzle-kit migrate` ; 285 tests à ce jour). Dans un conteneur
+  puis `DATABASE_URL=… npx drizzle-kit migrate` ; 290 tests à ce jour). Dans un conteneur
   neuf : `apt-get install -y mariadb-server`, `service mariadb start`, créer la base `balco_cal` et l'utilisateur
   `balco`/`balco`, puis `pnpm -s build && DATABASE_URL=mysql://balco:balco@localhost:3306/balco_cal node dist/migrate.mjs`.
 - `npx expo export --platform android` pour s'assurer que le bundle Android se construit.
@@ -107,10 +107,15 @@ Livré, à valider sur son téléphone :
   l'accueil seulement quand il est dû (`spacedTaskDue`, compté depuis l'arrivée de la plante), et il
   passe alors avant la rotation ; dans Saisons avec l'étiquette « ENGRAIS » et son rythme ; Nora connaît
   le dernier engrais et le rythme conseillé.
+- **Priorité 4, progression** (logique pure `lib/garden/progress.ts`) : dans Ma semaine, eau
+  économisée (« N'arrose pas » suivis × ~20 % du pot ; sur l'accueil, « Compris » sur une alerte pluie
+  note désormais l'arrosage évité) et récoltes à venir ; carte « Sa progression » dans la fiche plante
+  (stade, 8 semaines en barres, étapes marquantes) ; `celebrationFor` remplace le message après un
+  geste quand il débloque un badge, un niveau, une série ou une première récolte (Aujourd'hui,
+  Saisons, fiche plante).
 
 À faire, dans l'ordre :
-1. Priorité 4, progression (bilan hebdomadaire, progression par plante).
-2. Priorité 5, mode vacances.
-3. À la publication : notifications serveur sur Android (Firebase/FCM) ; synchroniser les reports
+1. Priorité 5, mode vacances.
+2. À la publication : notifications serveur sur Android (Firebase/FCM) ; synchroniser les reports
    (« Dans 3 h ») avec le serveur ; envoyer les photos des plantes sur le serveur (stockage d'images)
    pour les retrouver sur un autre téléphone.

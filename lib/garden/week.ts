@@ -6,6 +6,7 @@
 import type { MaintenanceEvent } from "../reminders/reminder-engine";
 import { dayKey, plantDisplayName, streakDays, type ResolvedPlant } from "./garden-logic";
 import type { PlantPhoto } from "./photos";
+import { upcomingHarvests, waterSaved, type UpcomingHarvest } from "./progress";
 
 const DAY_LETTERS = ["L", "M", "M", "J", "V", "S", "D"];
 
@@ -23,6 +24,11 @@ export type WeekSummary = {
   /** Conseils météo suivis (gestes notés depuis une alerte ou un rappel). */
   weatherTips: number;
   streak: number;
+  /** Arrosages évités grâce à la pluie cette semaine, et l'eau ainsi économisée. */
+  avoidedWaterings: number;
+  waterSavedLiters: number;
+  /** À récolter ce mois-ci, ou dès le mois prochain. */
+  upcoming: UpcomingHarvest[];
   /** Tes plantes, de la plus soignée à la moins soignée cette semaine. */
   plants: WeekPlant[];
   title: string;
@@ -79,6 +85,7 @@ export function weekSummary(plants: ResolvedPlant[], events: MaintenanceEvent[],
   const gestures = thisWeek.length;
   const previousGestures = own.filter((event) => inRange(event.completedAt, previousMonday, monday)).length;
   const activeDays = days.filter((day) => day.gestures > 0).length;
+  const water = waterSaved(plants, own, monday, nextMonday);
   const { title, message } = weekWords({ gestures, previousGestures, activeDays, top: weekPlants[0], plantCount: plants.length });
 
   return {
@@ -90,6 +97,9 @@ export function weekSummary(plants: ResolvedPlant[], events: MaintenanceEvent[],
     photos: weekPhotos.length,
     weatherTips: thisWeek.filter((event) => event.source === "reminder").length,
     streak: streakDays(own, now),
+    avoidedWaterings: water.avoided,
+    waterSavedLiters: water.liters,
+    upcoming: upcomingHarvests(plants, now),
     plants: weekPlants,
     title,
     message,

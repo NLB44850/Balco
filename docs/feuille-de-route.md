@@ -194,11 +194,11 @@ Très cohérent avec la promesse écologique.
 |---|---|---|
 | Historique des gestes | ✅ | Fiche plante, jour par jour |
 | Série de jours consécutifs | ✅ | Affichée dans le profil |
-| Progression par plante | 🟡 | Jauge d'état, pas encore de progression dans le temps |
+| Progression par plante | ✅ | Carte « Sa progression » dans la fiche : stade (s'installe, en croissance, bientôt la récolte, en récolte, au repos, fin de saison), soins des 8 dernières semaines en barres, étapes marquantes (arrivée, 1ʳᵉ récolte, 1ᵉʳ engrais, 10 gestes, 1ʳᵉ photo) |
 | Badges | ✅ | 6 badges |
 | Niveau qui évolue | ✅ | Points et niveaux (« Graine curieuse »…) |
-| Bilan hebdomadaire | 🟡 | Écran « Ma semaine » : jours actifs, gestes (comparés à la semaine d'avant), récoltes, photos, conseils météo suivis, plante par plante. Pas encore d'estimation de l'eau économisée |
-| Animations et retours positifs | 🟡 | Messages après chaque geste, quelques animations |
+| Bilan hebdomadaire | 🟡 | Écran « Ma semaine » : jours actifs, gestes (comparés à la semaine d'avant), récoltes, photos, conseils météo suivis, plante par plante. Eau économisée (arrosages évités grâce à la pluie × environ 20 % du volume du pot) et récoltes à venir (ce mois-ci, puis le mois prochain) |
+| Animations et retours positifs | ✅ | Message après chaque geste ; message de fête quand un geste débloque un badge, un niveau, une série (3, 7, 14, 30… jours) ou la première récolte d'une plante |
 
 ### 6. Gestion visuelle du balcon
 
@@ -253,7 +253,7 @@ L'ordre suit la priorité fixée par le porteur du projet. Chaque étape est val
 1. **Rappels intelligents fiables sur appareil réel** : bouton « notification de test », validation sur un vrai téléphone Android, messages plus explicites, actions « reporter / ignorer / fait » dans l'app et dans la notification, envoi serveur sur Android (Firebase).
 2. **Calendrier local connecté aux tâches** : ajout du rempotage, décalage des dates selon la région, alertes météo dans le calendrier, vue par saison, une seule source pour les tâches du calendrier et de l'accueil.
 3. ✅ **Assistant IA qui se souvient** : niveau et préférences de l'utilisateur, faits retenus en discutant, analyse de l'historique complet. (Validation sur téléphone en cours.)
-4. **Progression plus motivante** : bilan hebdomadaire, progression par plante, retours positifs.
+4. ✅ **Progression plus motivante** : bilan hebdomadaire (eau économisée, récoltes à venir), progression par plante, petites victoires fêtées. (Validation sur téléphone en cours.)
 5. **Mode vacances** : dates d'absence, plan de départ, liste pour un proche, reprise automatique.
 
 **Version suivante**
