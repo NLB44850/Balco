@@ -258,7 +258,7 @@ L'ordre suit la priorité fixée par le porteur du projet. Chaque étape est val
 2. **Calendrier local connecté aux tâches** : ajout du rempotage, décalage des dates selon la région, alertes météo dans le calendrier, vue par saison, une seule source pour les tâches du calendrier et de l'accueil.
 3. ✅ **Assistant IA qui se souvient** : niveau et préférences de l'utilisateur, faits retenus en discutant, analyse de l'historique complet. (Validation sur téléphone en cours.)
 4. ✅ **Progression plus motivante** : bilan hebdomadaire (eau économisée, récoltes à venir), progression par plante, petites victoires fêtées. (Validation sur téléphone en cours.)
-5. ✅ **Mode vacances** : dates d'absence, plan de départ, liste pour un proche, reprise automatique. (Validation sur téléphone en cours.)
+5. ✅ **Mode vacances** : dates d'absence, plan de départ, liste pour un proche, reprise automatique.
 
 **Version suivante**
 

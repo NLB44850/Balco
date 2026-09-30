@@ -96,6 +96,29 @@ Fait (validé sur son téléphone) :
   `components/today/balcony-sky.tsx`) pour rester visibles par temps couvert, pluie ou la nuit.
   Catalogue : « Voir mon balcon » dans une barre sous la liste (pas en surimpression).
 
+- **Photos d'exemple des plantes** (Wikimedia Commons, libres de droits) : `assets/plants/<id>.jpg`
+  (73, ~6 Mo), crédits dans `assets/plants/credits.json`, index généré `components/plant-stock-photos.ts`
+  (`node scripts/photos/generer-index.mjs`). `PlantPicture` montre ta photo, sinon la photo d'exemple,
+  sinon l'emoji ; `CatalogPicture` pour le catalogue, l'accueil et l'onboarding ; fiche plante avec
+  « Photo d'exemple » + « Ajoute ta photo ». Écran `app/credits.tsx` (Réglages → Crédits photos).
+  Téléchargement par `scripts/photos/telecharger-photos.mjs`, **à lancer dans le Codespace** (le
+  réseau de la session Claude bloque Wikimedia) : candidates, `--encore`, puis `--final` (choix.json).
+  Après un `--final`, recompresser en 800 px (qualité ~74) : Wikimedia renvoie des images plus lourdes.
+- Emojis : l'emoji exact de la plante, sinon un emoji végétal générique (plus d'objets sans rapport).
+- **Observer refait** (`app/(tabs)/scanner.tsx`) au style de l'app : zone photo claire, « Prendre une photo » /
+  « Choisir dans ma galerie », conseils en liste, résultat sans majuscules. Repart de zéro quand on quitte
+  l'écran (onglet caché resté monté), sauf analyse en cours. **Bouton appareil photo sur Aujourd'hui** (à
+  côté de l'avatar) : prend la photo tout de suite puis ouvre Observer prêt à analyser (relais
+  `lib/ai/pending-photo.ts`) ; sans compte ou sans analyse restante, ouvre Observer qui explique.
+- **Priorité 5, mode vacances** (`app/vacation.tsx`, logique pure `lib/garden/vacation.ts`, hook
+  `hooks/use-vacation.ts`) : dates en chips + boutons −/+, « Quelqu'un passera arroser ? » ; plan de
+  départ à cocher selon plantes, saison et durée (récolte, paillis, réserve d'eau, soucoupe, gel…) ;
+  liste pour le proche (rythme d'arrosage par plante, message partagé via `Share`, sinon affiché à
+  copier) ou astuces d'humidité. Les dates vivent dans les réglages des rappels (`settings.vacation`,
+  synchronisés, colonne `vacationJson`) : rappels du téléphone et du serveur muets pendant l'absence,
+  notification « Bon retour » le lendemain, carte sur Aujourd'hui (départ / vacances / retour). Entrées :
+  Moi, Réglages → Rappels, carte d'accueil. Nora connaît les dates.
+
 Livré, à valider sur son téléphone :
 - **Priorité 3, Nora qui se souvient** : carte « Nora se souvient de toi » dans Nora (feuille
   `components/nora/memory-sheet.tsx`) : niveau (= l'expérience de l'onboarding, la même que dans
@@ -117,29 +140,6 @@ Livré, à valider sur son téléphone :
   geste quand il débloque un badge, un niveau, une série ou une première récolte (Aujourd'hui,
   Saisons, fiche plante).
 
-- **Photos d'exemple des plantes** (Wikimedia Commons, libres de droits) : `assets/plants/<id>.jpg`
-  (73, ~6 Mo), crédits dans `assets/plants/credits.json`, index généré `components/plant-stock-photos.ts`
-  (`node scripts/photos/generer-index.mjs`). `PlantPicture` montre ta photo, sinon la photo d'exemple,
-  sinon l'emoji ; `CatalogPicture` pour le catalogue, l'accueil et l'onboarding ; fiche plante avec
-  « Photo d'exemple » + « Ajoute ta photo ». Écran `app/credits.tsx` (Réglages → Crédits photos).
-  Téléchargement par `scripts/photos/telecharger-photos.mjs`, **à lancer dans le Codespace** (le
-  réseau de la session Claude bloque Wikimedia) : candidates, `--encore`, puis `--final` (choix.json).
-  Après un `--final`, recompresser en 800 px (qualité ~74) : Wikimedia renvoie des images plus lourdes.
-- Emojis : l'emoji exact de la plante, sinon un emoji végétal générique (plus d'objets sans rapport).
-- **Observer refait** (`app/(tabs)/scanner.tsx`) au style de l'app : zone photo claire, « Prendre une photo » /
-  « Choisir dans ma galerie », conseils en liste, résultat sans majuscules. Repart de zéro quand on quitte
-  l'écran (onglet caché resté monté), sauf analyse en cours. **Bouton appareil photo sur Aujourd'hui** (à
-  côté de l'avatar) : prend la photo tout de suite puis ouvre Observer prêt à analyser (relais
-  `lib/ai/pending-photo.ts`) ; sans compte ou sans analyse restante, ouvre Observer qui explique.
-
-- **Priorité 5, mode vacances** (`app/vacation.tsx`, logique pure `lib/garden/vacation.ts`, hook
-  `hooks/use-vacation.ts`) : dates en chips + boutons −/+, « Quelqu'un passera arroser ? » ; plan de
-  départ à cocher selon plantes, saison et durée (récolte, paillis, réserve d'eau, soucoupe, gel…) ;
-  liste pour le proche (rythme d'arrosage par plante, message partagé via `Share`, sinon affiché à
-  copier) ou astuces d'humidité. Les dates vivent dans les réglages des rappels (`settings.vacation`,
-  synchronisés, colonne `vacationJson`) : rappels du téléphone et du serveur muets pendant l'absence,
-  notification « Bon retour » le lendemain, carte sur Aujourd'hui (départ / vacances / retour). Entrées :
-  Moi, Réglages → Rappels, carte d'accueil. Nora connaît les dates.
 
 À faire, dans l'ordre :
 1. À la publication : notifications serveur sur Android (Firebase/FCM) ; synchroniser les reports
