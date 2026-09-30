@@ -5,6 +5,8 @@
  *
  *   node scripts/photos/telecharger-photos.mjs          → 3 photos candidates par plante (petites),
  *                                                         dans scripts/photos/candidats/ + candidats.json
+ *   node scripts/photos/telecharger-photos.mjs --encore → 3 nouvelles candidates pour les plantes de
+ *                                                         scripts/photos/recherches-bis.json (autre recherche)
  *   node scripts/photos/telecharger-photos.mjs --final  → la photo choisie (scripts/photos/choix.json),
  *                                                         en bonne qualité, dans assets/plants/ + credits.json
  *
@@ -20,6 +22,7 @@ const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../..")
 const CANDIDATES_DIR = path.join(ROOT, "scripts/photos/candidats");
 const CANDIDATES_JSON = path.join(ROOT, "scripts/photos/candidats.json");
 const CHOICES_JSON = path.join(ROOT, "scripts/photos/choix.json");
+const RETRY_JSON = path.join(ROOT, "scripts/photos/recherches-bis.json");
 const FINAL_DIR = path.join(ROOT, "assets/plants");
 const CREDITS_JSON = path.join(FINAL_DIR, "credits.json");
 
@@ -28,7 +31,7 @@ const API = "https://commons.wikimedia.org/w/api.php";
 const USER_AGENT = "BalcoPlantPhotos/1.0 (https://github.com/nlb44850/balco)";
 const CANDIDATES_PER_PLANT = 3;
 const CANDIDATE_WIDTH = 400;
-const FINAL_WIDTH = 1000;
+const FINAL_WIDTH = 800;
 
 /** Identifiant Balco → recherche sur Commons (nom latin, parfois précisé). */
 const PLANTS = {
@@ -215,6 +218,41 @@ async function candidates() {
   if (missing.length) console.log(`Sans photo : ${missing.join(", ")}`);
 }
 
+/** Une autre recherche pour les plantes dont aucune candidate ne convenait : 3 photos de plus (-4, -5, -6). */
+async function again() {
+  const queries = await readJson(RETRY_JSON, null);
+  if (!queries) throw new Error("scripts/photos/recherches-bis.json manquant.");
+  const all = await readJson(CANDIDATES_JSON, {});
+  const entries = Object.entries(queries);
+  let index = 0;
+  for (const [id, query] of entries) {
+    index += 1;
+    const known = all[id] ?? [];
+    if (known.some((file) => file.query === query)) {
+      console.log(`[${index}/${entries.length}] ${id} : déjà fait`);
+      continue;
+    }
+    try {
+      const seen = new Set(known.map((file) => file.title));
+      const found = (await search(query, CANDIDATE_WIDTH)).filter((file) => !seen.has(file.title)).slice(0, CANDIDATES_PER_PLANT);
+      const kept = [];
+      for (const [position, file] of found.entries()) {
+        const name = `${id}-${known.length + position + 1}.jpg`;
+        await fs.writeFile(path.join(CANDIDATES_DIR, name), await fetchWithRetry(file.thumb, false));
+        kept.push({ ...file, file: name, query });
+        await sleep(300);
+      }
+      all[id] = [...known, ...kept];
+      await fs.writeFile(CANDIDATES_JSON, `${JSON.stringify(all, null, 2)}\n`);
+      console.log(`[${index}/${entries.length}] ${id} : ${kept.length} nouvelle(s) photo(s)`);
+    } catch (error) {
+      console.log(`[${index}/${entries.length}] ${id} : échec (${error.message}), relance le script plus tard`);
+    }
+    await sleep(500);
+  }
+  console.log("\nTerminé.");
+}
+
 async function final() {
   const choices = await readJson(CHOICES_JSON, null);
   if (!choices) throw new Error("scripts/photos/choix.json manquant : il est préparé par Claude après la revue des candidates.");
@@ -246,7 +284,7 @@ async function final() {
   console.log("\nTerminé.");
 }
 
-(process.argv.includes("--final") ? final() : candidates()).catch((error) => {
+(process.argv.includes("--final") ? final() : process.argv.includes("--encore") ? again() : candidates()).catch((error) => {
   console.error(error);
   process.exit(1);
 });
