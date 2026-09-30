@@ -1,5 +1,5 @@
-import { useRouter } from "expo-router";
-import { useState } from "react";
+import { useFocusEffect, useRouter } from "expo-router";
+import { useCallback, useRef, useState } from "react";
 import { ActivityIndicator, Image, Pressable, ScrollView, StyleSheet, View } from "react-native";
 import { Text } from "@/components/ui/typography";
 
@@ -80,8 +80,22 @@ export default function ScannerScreen() {
   const restart = () => {
     setPhoto(null);
     setSavedNote(false);
+    setNotice(null);
     diagnose.reset();
   };
+
+  // Observer reste monté en arrière-plan (c'est un onglet caché) : en le quittant, on repart de zéro
+  // pour retrouver la prise de vue au retour. Seule exception, une analyse encore en cours : son
+  // résultat (déjà décompté) attend au retour, et sera effacé en quittant la fois suivante.
+  const pending = useRef(false);
+  pending.current = diagnose.isPending;
+  const restartRef = useRef(restart);
+  restartRef.current = restart;
+  useFocusEffect(
+    useCallback(() => () => {
+      if (!pending.current) restartRef.current();
+    }, []),
+  );
 
   const saveObservation = async () => {
     if (!owned || !diagnosis) return;
