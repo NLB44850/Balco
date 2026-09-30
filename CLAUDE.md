@@ -38,7 +38,7 @@ Tout se passe dans son GitHub Codespace (pas de Docker sur son PC).
 
 - `pnpm -s check`, `pnpm -s lint`, puis `TEST_DATABASE_URL=mysql://balco:balco@localhost:3306/balco_cal npx vitest run`
   (MariaDB locale : `service mariadb start` si elle s'est arrêtée, `apt-get install -y mariadb-server` si elle manque,
-  puis `DATABASE_URL=… npx drizzle-kit migrate` ; 298 tests à ce jour). Dans un conteneur
+  puis `DATABASE_URL=… npx drizzle-kit migrate` ; 301 tests à ce jour). Dans un conteneur
   neuf : `apt-get install -y mariadb-server`, `service mariadb start`, créer la base `balco_cal` et l'utilisateur
   `balco`/`balco`, puis `pnpm -s build && DATABASE_URL=mysql://balco:balco@localhost:3306/balco_cal node dist/migrate.mjs`.
 - `npx expo export --platform android` pour s'assurer que le bundle Android se construit.
@@ -120,6 +120,10 @@ Fait (validé sur son téléphone) :
   Moi, Réglages → Rappels, carte d'accueil. Nora connaît les dates.
 
 Livré, à valider sur son téléphone :
+- (Validé le 30/09 : Nora qui se souvient, la bonne ville, le geste Engrais.)
+- **Alerte pluie sur Aujourd'hui** (corrigée le 30/09) : « N'arrose pas » s'affiche aussi pour une
+  plante jamais arrosée dans l'app ; la liste du jour montre les conseils même notifications coupées
+  (navigateur) ; une fois cochée (« Compris »), l'arrosage n'est plus reproposé ce jour-là.
 - **Priorité 3, Nora qui se souvient** : carte « Nora se souvient de toi » dans Nora (feuille
   `components/nora/memory-sheet.tsx`) : niveau (= l'expérience de l'onboarding, la même que dans
   Réglages), 9 préférences à cocher, faits retenus en discutant avec « Oublier » / « Tout oublier ».
@@ -141,7 +145,16 @@ Livré, à valider sur son téléphone :
   Saisons, fiche plante).
 
 
-À faire, dans l'ordre :
-1. À la publication : notifications serveur sur Android (Firebase/FCM) ; synchroniser les reports
+À faire, dans l'ordre (liste du porteur, 30/09) :
+1. Tester avec lui l'eau économisée (simulation pluie → cocher « N'arrose pas » → toast litres →
+   Ma semaine, bloc 💧).
+2. Corriger les petites victoires (`celebrationFor`, `lib/garden/progress.ts`) : lui demander ce qui
+   ne va pas (message, moment, affichage) avant de modifier.
+3. Vérifier que les alertes météo (gel, chaleur, vent, orage, pluie) fonctionnent et agissent bien
+   sur les gestes (Aujourd'hui, Saisons, notifications), avec la simulation météo.
+4. Nouveau : agrandir le catalogue des plantes (`lib/plants/catalog`, 73 aujourd'hui ; penser aux
+   photos d'exemple via `scripts/photos/`, à lancer dans le Codespace, et aux emojis).
+5. Nouveau : suggestions de plantes selon la saison / le mois (quoi semer ou planter maintenant).
+6. À la publication : notifications serveur sur Android (Firebase/FCM) ; synchroniser les reports
    (« Dans 3 h ») avec le serveur ; envoyer les photos des plantes sur le serveur (stockage d'images)
    pour les retrouver sur un autre téléphone.

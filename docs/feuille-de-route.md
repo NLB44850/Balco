@@ -131,6 +131,8 @@ Très cohérent avec la promesse écologique.
 4. Historique et progression plus motivants
 5. Mode vacances
 
+**Prochaines séances (liste du 30 septembre)** : tester l'eau économisée, corriger les petites victoires, vérifier que les alertes météo agissent bien sur les gestes ; puis agrandir le catalogue des plantes et proposer des suggestions selon la saison et le mois.
+
 **Version suivante**
 
 1. Scanner de plantes réellement fonctionnel
@@ -256,9 +258,11 @@ L'ordre suit la priorité fixée par le porteur du projet. Chaque étape est val
 
 1. **Rappels intelligents fiables sur appareil réel** : bouton « notification de test », validation sur un vrai téléphone Android, messages plus explicites, actions « reporter / ignorer / fait » dans l'app et dans la notification, envoi serveur sur Android (Firebase).
 2. **Calendrier local connecté aux tâches** : ajout du rempotage, décalage des dates selon la région, alertes météo dans le calendrier, vue par saison, une seule source pour les tâches du calendrier et de l'accueil.
-3. ✅ **Assistant IA qui se souvient** : niveau et préférences de l'utilisateur, faits retenus en discutant, analyse de l'historique complet. (Validation sur téléphone en cours.)
+3. ✅ **Assistant IA qui se souvient** : niveau et préférences de l'utilisateur, faits retenus en discutant, analyse de l'historique complet. (Validé sur téléphone le 30 septembre, avec le geste Engrais.)
 4. ✅ **Progression plus motivante** : bilan hebdomadaire (eau économisée, récoltes à venir), progression par plante, petites victoires fêtées. (Validation sur téléphone en cours.)
 5. ✅ **Mode vacances** : dates d'absence, plan de départ, liste pour un proche, reprise automatique.
+
+**Prochaines séances (liste du 30 septembre)** : tester l'eau économisée, corriger les petites victoires, vérifier que les alertes météo agissent bien sur les gestes ; puis agrandir le catalogue des plantes et proposer des suggestions selon la saison et le mois.
 
 **Version suivante**
 
