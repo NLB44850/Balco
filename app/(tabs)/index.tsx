@@ -9,7 +9,7 @@ import { FadeIn } from "@/components/motion";
 import { ScreenContainer } from "@/components/screen-container";
 import { ScreenHeader } from "@/components/screen-header";
 import { BALCONY_FLOOR_HEIGHT, BalconySky } from "@/components/today/balcony-sky";
-import { PlantPicture } from "@/components/plant-picture";
+import { CatalogPicture, PlantPicture } from "@/components/plant-picture";
 import { BottomSheet } from "@/components/today/bottom-sheet";
 import { TODAY_ROW_PICTURE, TodayRow } from "@/components/today/today-row";
 import { UndoToast, type ToastMessage } from "@/components/today/undo-toast";
@@ -371,7 +371,7 @@ export default function HomeScreen() {
             <Text style={[styles.allDoneText, { color: colors.muted, textAlign: "left" }]}>Balco te dira chaque jour le geste utile pour chacune, selon la météo de ta ville.</Text>
             {recommendations.map((entry) => (
               <View key={entry.id} style={[styles.reco, { borderBottomColor: colors.border }]}>
-                <View style={[styles.plantBubble, styles.recoBubble, { backgroundColor: colors.leaf }]}><Text style={styles.plantEmoji}>{entry.emoji}</Text></View>
+                <CatalogPicture entry={entry} style={[styles.plantBubble, styles.recoBubble]} />
                 <View style={styles.flex}>
                   <Text style={[styles.recoName, { color: colors.foreground }]}>{entry.name}</Text>
                   <Text style={[styles.small, { color: colors.muted }]} numberOfLines={2}>{entry.pitch}</Text>

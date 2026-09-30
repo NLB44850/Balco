@@ -85,6 +85,7 @@ export default function RootLayout() {
             <Stack.Screen name="garden/[id]" />
             <Stack.Screen name="week" />
             <Stack.Screen name="settings" />
+            <Stack.Screen name="credits" />
           </Stack>
           <StatusBar style="dark" />
           <ReminderNotificationResponder />

@@ -169,6 +169,10 @@ export default function SettingsScreen() {
             <Text style={[styles.linkText, { color: colors.primary }]}>🪴  Gérer mes plantes</Text>
             <Text style={[styles.linkArrow, { color: colors.muted }]}>›</Text>
           </Pressable>
+          <Pressable accessibilityRole="button" onPress={() => router.push("/credits")} style={({ pressed }) => [styles.linkRow, pressed && styles.pressed]}>
+            <Text style={[styles.linkText, { color: colors.primary }]}>📷  Crédits photos</Text>
+            <Text style={[styles.linkArrow, { color: colors.muted }]}>›</Text>
+          </Pressable>
         </View>
 
         <Text style={[styles.section, { color: colors.foreground }]}>Rappels</Text>

@@ -12,6 +12,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { LightScreen } from "@/components/light-screen";
 import { FadeIn } from "@/components/motion";
+import { CatalogPicture } from "@/components/plant-picture";
 import { glass } from "@/components/ui/glass";
 import { IconSymbol } from "@/components/ui/icon-symbol";
 import { Text, TextInput } from "@/components/ui/typography";
@@ -164,7 +165,7 @@ export default function OnboardingScreen() {
                 const active = chosen.includes(entry.id);
                 return (
                   <Pressable key={entry.id} accessibilityRole="checkbox" accessibilityState={{ checked: active }} onPress={() => setPicked(active ? chosen.filter((id) => id !== entry.id) : [...chosen, entry.id])} style={({ pressed }) => [styles.plant, index < suggestions.length - 1 && glass.line, pressed && styles.pressed]}>
-                    <View style={[styles.plantIcon, { backgroundColor: colors.leaf }]}><Text style={styles.plantEmoji}>{entry.emoji}</Text></View>
+                    <CatalogPicture entry={entry} style={styles.plantIcon} />
                     <View style={styles.flex}>
                       <Text style={[styles.optionTitle, { color: colors.foreground }]}>{entry.name}</Text>
                       <Text style={[styles.optionText, { color: colors.muted }]} numberOfLines={2}>{entry.pitch}</Text>

@@ -35,7 +35,7 @@ Tout se passe dans son GitHub Codespace (pas de Docker sur son PC).
 
 - `pnpm -s check`, `pnpm -s lint`, puis `TEST_DATABASE_URL=mysql://balco:balco@localhost:3306/balco_cal npx vitest run`
   (MariaDB locale : `service mariadb start` si elle s'est arrêtée, `apt-get install -y mariadb-server` si elle manque,
-  puis `DATABASE_URL=… npx drizzle-kit migrate` ; 290 tests à ce jour). Dans un conteneur
+  puis `DATABASE_URL=… npx drizzle-kit migrate` ; 292 tests à ce jour). Dans un conteneur
   neuf : `apt-get install -y mariadb-server`, `service mariadb start`, créer la base `balco_cal` et l'utilisateur
   `balco`/`balco`, puis `pnpm -s build && DATABASE_URL=mysql://balco:balco@localhost:3306/balco_cal node dist/migrate.mjs`.
 - `npx expo export --platform android` pour s'assurer que le bundle Android se construit.
@@ -113,6 +113,16 @@ Livré, à valider sur son téléphone :
   (stade, 8 semaines en barres, étapes marquantes) ; `celebrationFor` remplace le message après un
   geste quand il débloque un badge, un niveau, une série ou une première récolte (Aujourd'hui,
   Saisons, fiche plante).
+
+- **Photos d'exemple des plantes** (Wikimedia Commons, libres de droits) : `assets/plants/<id>.jpg`
+  (73, ~6 Mo), crédits dans `assets/plants/credits.json`, index généré `components/plant-stock-photos.ts`
+  (`node scripts/photos/generer-index.mjs`). `PlantPicture` montre ta photo, sinon la photo d'exemple,
+  sinon l'emoji ; `CatalogPicture` pour le catalogue, l'accueil et l'onboarding ; fiche plante avec
+  « Photo d'exemple » + « Ajoute ta photo ». Écran `app/credits.tsx` (Réglages → Crédits photos).
+  Téléchargement par `scripts/photos/telecharger-photos.mjs`, **à lancer dans le Codespace** (le
+  réseau de la session Claude bloque Wikimedia) : candidates, `--encore`, puis `--final` (choix.json).
+  9 photos sont encore « provisoires » (400 px) : `--final` les remplace en 800 px.
+- Emojis : l'emoji exact de la plante, sinon un emoji végétal générique (plus d'objets sans rapport).
 
 À faire, dans l'ordre :
 1. Priorité 5, mode vacances.

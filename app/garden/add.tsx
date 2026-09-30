@@ -11,6 +11,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { LightScreen } from "@/components/light-screen";
 import { ScreenHeader } from "@/components/screen-header";
+import { CatalogPicture } from "@/components/plant-picture";
 import { BottomSheet } from "@/components/today/bottom-sheet";
 import { UndoToast, type ToastMessage } from "@/components/today/undo-toast";
 import { glass } from "@/components/ui/glass";
@@ -110,7 +111,7 @@ export default function AddPlantScreen() {
               return (
                 <View key={entry.id} style={[styles.row, index < results.length - 1 && glass.line]}>
                   <Pressable accessibilityRole="button" accessibilityLabel={`${entry.name}, voir le détail`} onPress={() => setSheetId(entry.id)} style={({ pressed }) => [styles.rowMain, pressed && styles.pressed]}>
-                    <View style={[styles.bubble, { backgroundColor: colors.leaf }]}><Text style={styles.emoji}>{entry.emoji}</Text></View>
+                    <CatalogPicture entry={entry} style={styles.bubble} />
                     <View style={styles.flex}>
                       <Text style={[styles.name, { color: colors.foreground }]} numberOfLines={1}>{entry.name}</Text>
                       <Text style={[styles.meta, { color: owned ? colors.primary : colors.muted }]} numberOfLines={1}>{owned ? `✓ Sur ton balcon${owned > 1 ? ` (${owned})` : ""}` : effortLabel(entry)}</Text>
@@ -138,8 +139,8 @@ export default function AddPlantScreen() {
       <BottomSheet visible={sheetEntry !== undefined} onClose={() => setSheetId(null)}>
         {sheetEntry && (
           <View style={styles.sheet}>
+            <CatalogPicture entry={sheetEntry} style={styles.sheetPhoto} />
             <View style={styles.sheetTop}>
-              <View style={[styles.sheetBubble, { backgroundColor: colors.leaf }]}><Text style={styles.sheetEmoji}>{sheetEntry.emoji}</Text></View>
               <View style={styles.flex}>
                 <Text style={[styles.sheetTitle, { color: colors.foreground }]}>{sheetEntry.name}</Text>
                 <Text style={[styles.meta, { color: colors.primary }]}>{CATEGORY_LABELS[sheetEntry.category]} · {effortLabel(sheetEntry)}</Text>
@@ -195,8 +196,7 @@ const styles = StyleSheet.create({
   doneText: { fontSize: 15, fontWeight: "700" },
   sheet: { gap: 12 },
   sheetTop: { flexDirection: "row", alignItems: "center", gap: 12 },
-  sheetBubble: { width: 56, height: 56, borderRadius: 28, alignItems: "center", justifyContent: "center" },
-  sheetEmoji: { fontSize: 28 },
+  sheetPhoto: { height: 190, borderRadius: 18 },
   sheetTitle: { fontSize: 22, fontWeight: "800", letterSpacing: -0.4 },
   sheetBody: { fontSize: 15, lineHeight: 22 },
   facts: { flexDirection: "row", flexWrap: "wrap", gap: 8 },

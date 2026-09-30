@@ -11,7 +11,7 @@ import * as Haptics from "expo-haptics";
 
 import { FadeIn } from "@/components/motion";
 import { usePlantPhotoCapture } from "@/components/photo-source-sheet";
-import { PlantPicture } from "@/components/plant-picture";
+import { PlantPicture, stockPhoto } from "@/components/plant-picture";
 import { ScreenContainer } from "@/components/screen-container";
 import { UndoToast, type ToastMessage } from "@/components/today/undo-toast";
 import { celebrationFor, milestoneDate, plantProgress, sinceLabel } from "@/lib/garden/progress";
@@ -126,7 +126,18 @@ export default function PlantScreen() {
       <ScrollView ref={scrollRef} showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: insets.bottom + 40 }}>
         {/* La photo d'abord. */}
         <PlantPicture resolved={resolved} photo={shown} hideEmoji style={{ height: heroHeight }}>
-          {!shown && (
+          {!shown && stockPhoto(entry.id) !== undefined && (
+            <View style={styles.stockBar}>
+              <View style={styles.exampleChip}>
+                <Text style={[styles.dateText, { color: colors.foreground }]}>Photo d’exemple</Text>
+              </View>
+              <Pressable accessibilityRole="button" onPress={() => capture.ask(plant.id, name)} style={({ pressed }) => [styles.heroCta, { backgroundColor: colors.primary }, pressed && styles.pressed]}>
+                <IconSymbol name="camera.fill" size={18} color="#FFFFFF" />
+                <Text style={styles.heroCtaText}>Ajoute ta photo</Text>
+              </Pressable>
+            </View>
+          )}
+          {!shown && stockPhoto(entry.id) === undefined && (
             <View style={[styles.heroEmpty, { paddingTop: insets.top }]}>
               <Text style={styles.heroEmoji}>{entry.emoji}</Text>
               <Text style={[styles.heroEmptyText, { color: colors.primary }]}>Pas encore de photo de {name}</Text>
@@ -349,6 +360,8 @@ const styles = StyleSheet.create({
   heroCtaText: { color: "#FFFFFF", fontSize: 16, fontWeight: "700" },
   heroBar: { position: "absolute", left: 16, right: 16, flexDirection: "row", justifyContent: "space-between" },
   round: { width: 40, height: 40, borderRadius: 20, alignItems: "center", justifyContent: "center", backgroundColor: "rgba(255,255,255,0.92)", shadowColor: "#000", shadowOpacity: 0.12, shadowRadius: 8, shadowOffset: { width: 0, height: 2 }, elevation: 3 },
+  exampleChip: { borderRadius: 999, paddingHorizontal: 12, paddingVertical: 6, backgroundColor: "rgba(255,255,255,0.9)" },
+  stockBar: { position: "absolute", left: 16, right: 16, bottom: 36, flexDirection: "row", alignItems: "center", justifyContent: "space-between" },
   dateChip: { position: "absolute", left: 16, bottom: 36, borderRadius: 999, paddingHorizontal: 12, paddingVertical: 6, backgroundColor: "rgba(255,255,255,0.9)" },
   dateText: { fontSize: 13, fontWeight: "700" },
   body: { marginTop: -22, borderTopLeftRadius: 24, borderTopRightRadius: 24, paddingHorizontal: 20, paddingTop: 22, gap: 10 },

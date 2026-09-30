@@ -114,6 +114,8 @@ const PLANTS = {
 const EXCLUDED_WORDS = /herbarium|herbier|illustration|drawing|köhler|koehler|thomé|botanical|plate|flora|map|distribution|stamp|logo|seed packet|diagram|\.svg|\.gif|\.tif/i;
 const ALLOWED_LICENSE = /^(cc0|public domain|pd|cc by(-sa)? [0-9.]+|cc by(-sa)?)$/i;
 
+/** « User:Dupont », « Dupont (Dupont) I'd appreciate… » → « Dupont » */
+const cleanAuthor = (text) => text.replace(/\s*I'd appreciate.*$/u, "").replace(/^User:/u, "").replace(/^(\S+) \(\1\)$/u, "$1").trim() || "Auteur inconnu";
 const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 const stripHtml = (html = "") => html.replace(/<[^>]+>/g, "").replace(/&amp;/g, "&").replace(/&quot;/g, "\"").replace(/&#039;/g, "'").replace(/\s+/g, " ").trim();
 
@@ -143,7 +145,7 @@ function describe(page) {
     mime: info.mime,
     thumb: info.thumburl,
     page: info.descriptionurl,
-    author: stripHtml(meta.Artist?.value) || "Auteur inconnu",
+    author: cleanAuthor(stripHtml(meta.Artist?.value)),
     license,
     licenseUrl: meta.LicenseUrl?.value ?? "",
   };
@@ -222,6 +224,7 @@ async function candidates() {
 async function again() {
   const queries = await readJson(RETRY_JSON, null);
   if (!queries) throw new Error("scripts/photos/recherches-bis.json manquant.");
+  await fs.mkdir(CANDIDATES_DIR, { recursive: true });
   const all = await readJson(CANDIDATES_JSON, {});
   const entries = Object.entries(queries);
   let index = 0;
@@ -263,7 +266,8 @@ async function final() {
   for (const [id, title] of entries) {
     index += 1;
     const target = path.join(FINAL_DIR, `${id}.jpg`);
-    if (credits[id]?.title === title && (await fs.stat(target).catch(() => null))) {
+    // Une photo provisoire (petite, reprise des candidates) est retéléchargée en bonne qualité.
+    if (credits[id]?.title === title && !credits[id].provisional && (await fs.stat(target).catch(() => null))) {
       console.log(`[${index}/${entries.length}] ${id} : déjà fait`);
       continue;
     }

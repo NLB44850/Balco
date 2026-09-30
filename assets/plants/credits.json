@@ -1,4 +1,11 @@
 {
+  "arugula": {
+    "title": "File:Eruca vesicaria Rocket Herb.jpg",
+    "author": "aomorikuma",
+    "license": "CC BY-SA 3.0",
+    "licenseUrl": "http://creativecommons.org/licenses/by-sa/3.0/",
+    "page": "https://commons.wikimedia.org/wiki/File:Eruca_vesicaria_Rocket_Herb.jpg"
+  },
   "basil": {
     "title": "File:Ocimum basilicum CG NBG LR.jpg",
     "author": "PumpkinSky",
@@ -6,131 +13,41 @@
     "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0",
     "page": "https://commons.wikimedia.org/wiki/File:Ocimum_basilicum_CG_NBG_LR.jpg"
   },
-  "mint": {
-    "title": "File:Mint leaves (Mentha spicata).jpg",
-    "author": "Commonists",
-    "license": "CC BY-SA 4.0",
-    "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0",
-    "page": "https://commons.wikimedia.org/wiki/File:Mint_leaves_(Mentha_spicata).jpg"
-  },
-  "parsley": {
-    "title": "File:Petroselinum crispum 003.JPG",
-    "author": "H. Zell",
-    "license": "CC BY-SA 3.0",
-    "licenseUrl": "https://creativecommons.org/licenses/by-sa/3.0",
-    "page": "https://commons.wikimedia.org/wiki/File:Petroselinum_crispum_003.JPG"
-  },
-  "chives": {
-    "title": "File:Allium schoenoprasum J1.JPG",
-    "author": "Jamain",
-    "license": "CC BY-SA 3.0",
-    "licenseUrl": "https://creativecommons.org/licenses/by-sa/3.0",
-    "page": "https://commons.wikimedia.org/wiki/File:Allium_schoenoprasum_J1.JPG"
-  },
-  "thyme": {
-    "title": "File:Thymian (Thymus vulgaris), Nationalpark Hohe Tauern.jpg",
-    "author": "Naturpuur",
-    "license": "CC BY 4.0",
-    "licenseUrl": "https://creativecommons.org/licenses/by/4.0",
-    "page": "https://commons.wikimedia.org/wiki/File:Thymian_(Thymus_vulgaris),_Nationalpark_Hohe_Tauern.jpg"
-  },
-  "rosemary": {
-    "title": "File:Rosmarinus officinalis133095382.jpg",
-    "author": "THOR",
-    "license": "CC BY 2.0",
-    "licenseUrl": "https://creativecommons.org/licenses/by/2.0",
-    "page": "https://commons.wikimedia.org/wiki/File:Rosmarinus_officinalis133095382.jpg"
-  },
-  "sage": {
-    "title": "File:20260614 Salvia officinalis 02.jpg",
-    "author": "Flocci Nivis",
-    "license": "CC BY 4.0",
-    "licenseUrl": "https://creativecommons.org/licenses/by/4.0",
-    "page": "https://commons.wikimedia.org/wiki/File:20260614_Salvia_officinalis_02.jpg"
-  },
-  "oregano": {
-    "title": "File:Fleurs d'Origan (Origanum vulgare).jpg",
-    "author": "JackyM59",
-    "license": "CC BY-SA 4.0",
-    "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0",
-    "page": "https://commons.wikimedia.org/wiki/File:Fleurs_d%27Origan_(Origanum_vulgare).jpg"
-  },
-  "dill": {
-    "title": "File:Anethum graveolens20090812 475.jpg",
-    "author": "Bff",
-    "license": "CC BY-SA 3.0",
-    "licenseUrl": "https://creativecommons.org/licenses/by-sa/3.0",
-    "page": "https://commons.wikimedia.org/wiki/File:Anethum_graveolens20090812_475.jpg"
-  },
-  "lemon-balm": {
-    "title": "File:Melissa officinalis Bee Balm,Lemon Balm ბარამბო.JPG",
-    "author": "Lazaregagnidze",
-    "license": "CC BY-SA 4.0",
-    "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0",
-    "page": "https://commons.wikimedia.org/wiki/File:Melissa_officinalis_Bee_Balm,Lemon_Balm_%E1%83%91%E1%83%90%E1%83%A0%E1%83%90%E1%83%9B%E1%83%91%E1%83%9D.JPG"
-  },
-  "lemon-verbena": {
-    "title": "File:Aloysia citriodora 002.jpg",
-    "author": "H. Zell",
-    "license": "CC BY-SA 3.0",
-    "licenseUrl": "https://creativecommons.org/licenses/by-sa/3.0",
-    "page": "https://commons.wikimedia.org/wiki/File:Aloysia_citriodora_002.jpg"
-  },
-  "tarragon": {
-    "title": "File:Artemisia dracunculus 2997 6393.jpg",
-    "author": "Joanna Boisse",
-    "license": "CC BY-SA 4.0",
-    "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0",
-    "page": "https://commons.wikimedia.org/wiki/File:Artemisia_dracunculus_2997_6393.jpg"
-  },
-  "chervil": {
-    "title": "File:Kerbel (Anthriscus cerefolium) mit Echter Mehltau (Erysiphe heraclei) Befall, Schlaghecken.jpg",
-    "author": "Schlaghecken Josef",
-    "license": "CC BY 4.0",
-    "licenseUrl": "https://creativecommons.org/licenses/by/4.0",
-    "page": "https://commons.wikimedia.org/wiki/File:Kerbel_(Anthriscus_cerefolium)_mit_Echter_Mehltau_(Erysiphe_heraclei)_Befall,_Schlaghecken.jpg"
-  },
-  "savory": {
-    "title": "File:Satureja montana kz03.jpg",
-    "author": "Krzysztof Ziarnek, Kenraiz",
-    "license": "CC BY-SA 4.0",
-    "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0",
-    "page": "https://commons.wikimedia.org/wiki/File:Satureja_montana_kz03.jpg"
-  },
-  "shiso": {
-    "title": "File:Perilla frutescens' foliage.jpg",
-    "author": "User:Dalgial",
-    "license": "CC BY-SA 3.0",
-    "licenseUrl": "https://creativecommons.org/licenses/by-sa/3.0",
-    "page": "https://commons.wikimedia.org/wiki/File:Perilla_frutescens%27_foliage.jpg"
-  },
-  "lemongrass": {
-    "title": "File:Tanglad (lemongrass, Cymbopogon citratus) - Philippines.jpg",
-    "author": "Obsidian Soul",
+  "beetroot": {
+    "title": "File:Beta vulgaris, San Francisco farmers market.jpg",
+    "author": "Frank Schulenburg",
     "license": "CC0",
     "licenseUrl": "http://creativecommons.org/publicdomain/zero/1.0/deed.en",
-    "page": "https://commons.wikimedia.org/wiki/File:Tanglad_(lemongrass,_Cymbopogon_citratus)_-_Philippines.jpg"
+    "page": "https://commons.wikimedia.org/wiki/File:Beta_vulgaris,_San_Francisco_farmers_market.jpg"
   },
-  "stevia": {
-    "title": "File:Stevia-rebaudiana-total.JPG",
-    "author": "Sten Porse",
-    "license": "CC BY-SA 3.0",
-    "licenseUrl": "http://creativecommons.org/licenses/by-sa/3.0/",
-    "page": "https://commons.wikimedia.org/wiki/File:Stevia-rebaudiana-total.JPG"
+  "blueberry": {
+    "title": "File:From the bush to your mouth in under 5 seconds!.jpg",
+    "author": "Gordana Adamovic-Mladenovic from Windsor, Canada",
+    "license": "CC BY 2.0",
+    "licenseUrl": "https://creativecommons.org/licenses/by/2.0",
+    "page": "https://commons.wikimedia.org/wiki/File:From_the_bush_to_your_mouth_in_under_5_seconds!.jpg",
+    "provisional": true
   },
-  "hyssop": {
-    "title": "File:Hyssopus officinalis 2 RF.jpg",
-    "author": "Robert Flogaus-Faust",
-    "license": "CC BY 4.0",
-    "licenseUrl": "https://creativecommons.org/licenses/by/4.0",
-    "page": "https://commons.wikimedia.org/wiki/File:Hyssopus_officinalis_2_RF.jpg"
-  },
-  "wild-garlic": {
-    "title": "File:Daslook (Allium ursinum) d.j.b 05.jpg",
+  "borage": {
+    "title": "File:Borago officinalis. Locatie, De Kruidhof.jpg",
     "author": "Dominicus Johannes Bergsma",
     "license": "CC BY-SA 4.0",
     "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0",
-    "page": "https://commons.wikimedia.org/wiki/File:Daslook_(Allium_ursinum)_d.j.b_05.jpg"
+    "page": "https://commons.wikimedia.org/wiki/File:Borago_officinalis._Locatie,_De_Kruidhof.jpg"
+  },
+  "calendula": {
+    "title": "File:Ringelblume (Calendula officinalis) Blüte focus stack-20220619-RM-165610.jpg",
+    "author": "Ermell",
+    "license": "CC BY-SA 4.0",
+    "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0",
+    "page": "https://commons.wikimedia.org/wiki/File:Ringelblume_(Calendula_officinalis)_Bl%C3%BCte_focus_stack-20220619-RM-165610.jpg"
+  },
+  "chard": {
+    "title": "File:Rainbow chard for sale at the Campbell farmers market.jpg",
+    "author": "Grendelkhan",
+    "license": "CC BY-SA 4.0",
+    "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0",
+    "page": "https://commons.wikimedia.org/wiki/File:Rainbow_chard_for_sale_at_the_Campbell_farmers_market.jpg"
   },
   "cherry-tomato": {
     "title": "File:Cherry tomatoes plant.jpg",
@@ -139,61 +56,49 @@
     "licenseUrl": "",
     "page": "https://commons.wikimedia.org/wiki/File:Cherry_tomatoes_plant.jpg"
   },
-  "strawberry": {
-    "title": "File:-2020-06-06 Strawberry plant with fruit, (Fragaria × ananassa), Trimingham.JPG",
-    "author": "Kolforn (Kolforn) I'd appreciate if you could mail me (Kolforn@gmail.com) if you want to use this picture out of the Wikimedia project scope. This file is licensed under the Creative Commons Attribution-Share Alike 4.0 International license. You are free: to share – to copy, distribute and transmit the work to remix – to adapt the work Under the following conditions: attribution – You must give appropriate credit, provide a link to the license, and indicate if changes were made. You may do so in any reasonable manner, but not in any way that suggests the licensor endorses you or your use. share alike – If you remix, transform, or build upon the material, you must distribute your contributions under the same or compatible license as the original.https://creativecommons.org/licenses/by-sa/4.0CC BY-SA 4.0 Creative Commons Attribution-Share Alike 4.0 truetrue",
+  "chervil": {
+    "title": "File:Kerbel (Anthriscus cerefolium) mit Echter Mehltau (Erysiphe heraclei) Befall, Schlaghecken.jpg",
+    "author": "Schlaghecken Josef",
+    "license": "CC BY 4.0",
+    "licenseUrl": "https://creativecommons.org/licenses/by/4.0",
+    "page": "https://commons.wikimedia.org/wiki/File:Kerbel_(Anthriscus_cerefolium)_mit_Echter_Mehltau_(Erysiphe_heraclei)_Befall,_Schlaghecken.jpg"
+  },
+  "chili": {
+    "title": "File:Plant de piment vert (Capsicum spp.) après arrosage au Burkina Faso (43408).jpg",
+    "author": "Ibrahim Somgalia Guitti",
     "license": "CC BY-SA 4.0",
     "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0",
-    "page": "https://commons.wikimedia.org/wiki/File:-2020-06-06_Strawberry_plant_with_fruit,_(Fragaria_%C3%97_ananassa),_Trimingham.JPG"
+    "page": "https://commons.wikimedia.org/wiki/File:Plant_de_piment_vert_(Capsicum_spp.)_apr%C3%A8s_arrosage_au_Burkina_Faso_(43408).jpg",
+    "provisional": true
   },
-  "eggplant": {
-    "title": "File:Solanum melongena 24 08 2012 (1).JPG",
-    "author": "Joydeep",
+  "chives": {
+    "title": "File:Allium schoenoprasum J1.JPG",
+    "author": "Jamain",
     "license": "CC BY-SA 3.0",
     "licenseUrl": "https://creativecommons.org/licenses/by-sa/3.0",
-    "page": "https://commons.wikimedia.org/wiki/File:Solanum_melongena_24_08_2012_(1).JPG"
+    "page": "https://commons.wikimedia.org/wiki/File:Allium_schoenoprasum_J1.JPG"
   },
-  "dwarf-bean": {
-    "title": "File:Buschbohnen Gelbe Sorte-Josef Schlaghecken.jpg",
+  "coriander": {
+    "title": "File:Koriander (Coriandrum sativum) Blätter-- Josef Schlaghecken.jpg",
     "author": "Schlaghecken Josef",
     "license": "CC BY-SA 4.0",
     "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0",
-    "page": "https://commons.wikimedia.org/wiki/File:Buschbohnen_Gelbe_Sorte-Josef_Schlaghecken.jpg"
+    "page": "https://commons.wikimedia.org/wiki/File:Koriander_(Coriandrum_sativum)_Bl%C3%A4tter--_Josef_Schlaghecken.jpg",
+    "provisional": true
   },
-  "mini-cucumber": {
-    "title": "File:Cucumis sativus 0001.JPG",
-    "author": "H. Zell",
+  "cornflower": {
+    "title": "File:CentaureaCyanus-bloem-kl.jpg",
+    "author": "TeunSpaans",
     "license": "CC BY-SA 3.0",
-    "licenseUrl": "https://creativecommons.org/licenses/by-sa/3.0",
-    "page": "https://commons.wikimedia.org/wiki/File:Cucumis_sativus_0001.JPG"
+    "licenseUrl": "http://creativecommons.org/licenses/by-sa/3.0/",
+    "page": "https://commons.wikimedia.org/wiki/File:CentaureaCyanus-bloem-kl.jpg"
   },
-  "dwarf-tomato": {
-    "title": "File:2017-12-21 Moneymaker tomato plant (Solanum lycopersicum), Albufeira.JPG",
-    "author": "Kolforn (Kolforn) I'd appreciate if you could mail me (Kolforn@gmail.com) if you want to use this picture out of the Wikimedia project scope. This file is licensed under the Creative Commons Attribution-Share Alike 4.0 International license. You are free: to share – to copy, distribute and transmit the work to remix – to adapt the work Under the following conditions: attribution – You must give appropriate credit, provide a link to the license, and indicate if changes were made. You may do so in any reasonable manner, but not in any way that suggests the licensor endorses you or your use. share alike – If you remix, transform, or build upon the material, you must distribute your contributions under the same or compatible license as the original.https://creativecommons.org/licenses/by-sa/4.0CC BY-SA 4.0 Creative Commons Attribution-Share Alike 4.0 truetrue",
+  "cosmos": {
+    "title": "File:Blueten 002 2021 08 23.jpg",
+    "author": "Friedrich Haag",
     "license": "CC BY-SA 4.0",
     "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0",
-    "page": "https://commons.wikimedia.org/wiki/File:2017-12-21_Moneymaker_tomato_plant_(Solanum_lycopersicum),_Albufeira.JPG"
-  },
-  "sweet-pepper": {
-    "title": "File:Red bell pepper.jpg",
-    "author": "AntanO",
-    "license": "CC BY-SA 4.0",
-    "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0",
-    "page": "https://commons.wikimedia.org/wiki/File:Red_bell_pepper.jpg"
-  },
-  "physalis": {
-    "title": "File:Physalis peruviana calix open close-up.jpg",
-    "author": "Ivar Leidus",
-    "license": "CC BY-SA 4.0",
-    "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0",
-    "page": "https://commons.wikimedia.org/wiki/File:Physalis_peruviana_calix_open_close-up.jpg"
-  },
-  "pole-bean": {
-    "title": "File:-2019-07-19 Runner bean plants with young beans (Phaseolus coccineus), Trimingham, Norfolk (2).JPG",
-    "author": "Kolforn (Kolforn) I'd appreciate if you could mail me (Kolforn@gmail.com) if you want to use this picture out of the Wikimedia project scope. This file is licensed under the Creative Commons Attribution-Share Alike 4.0 International license. You are free: to share – to copy, distribute and transmit the work to remix – to adapt the work Under the following conditions: attribution – You must give appropriate credit, provide a link to the license, and indicate if changes were made. You may do so in any reasonable manner, but not in any way that suggests the licensor endorses you or your use. share alike – If you remix, transform, or build upon the material, you must distribute your contributions under the same or compatible license as the original.https://creativecommons.org/licenses/by-sa/4.0CC BY-SA 4.0 Creative Commons Attribution-Share Alike 4.0 truetrue",
-    "license": "CC BY-SA 4.0",
-    "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0",
-    "page": "https://commons.wikimedia.org/wiki/File:-2019-07-19_Runner_bean_plants_with_young_beans_(Phaseolus_coccineus),_Trimingham,_Norfolk_(2).JPG"
+    "page": "https://commons.wikimedia.org/wiki/File:Blueten_002_2021_08_23.jpg"
   },
   "cucamelon": {
     "title": "File:Melothria scabra 861546.jpg",
@@ -209,159 +114,33 @@
     "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0",
     "page": "https://commons.wikimedia.org/wiki/File:2018-06-18_(109)_Lactuca_sativa_(garden_lettuce)_at_Bichlh%C3%A4usl_in_Frankenfels,_Austria.jpg"
   },
-  "arugula": {
-    "title": "File:Eruca vesicaria Rocket Herb.jpg",
-    "author": "aomorikuma",
-    "license": "CC BY-SA 3.0",
-    "licenseUrl": "http://creativecommons.org/licenses/by-sa/3.0/",
-    "page": "https://commons.wikimedia.org/wiki/File:Eruca_vesicaria_Rocket_Herb.jpg"
-  },
-  "spinach": {
-    "title": "File:Spinacia oleracea bd-2.jpg",
-    "author": "Kayser Ahmad",
-    "license": "CC BY-SA 4.0",
-    "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0",
-    "page": "https://commons.wikimedia.org/wiki/File:Spinacia_oleracea_bd-2.jpg"
-  },
-  "chard": {
-    "title": "File:Rainbow chard for sale at the Campbell farmers market.jpg",
-    "author": "Grendelkhan",
-    "license": "CC BY-SA 4.0",
-    "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0",
-    "page": "https://commons.wikimedia.org/wiki/File:Rainbow_chard_for_sale_at_the_Campbell_farmers_market.jpg"
-  },
-  "garden-cress": {
-    "title": "File:Close-up of garden cress (Lepidium Sativum), 2025-01-19.jpeg",
-    "author": "Nylki",
-    "license": "CC0",
-    "licenseUrl": "http://creativecommons.org/publicdomain/zero/1.0/deed.en",
-    "page": "https://commons.wikimedia.org/wiki/File:Close-up_of_garden_cress_(Lepidium_Sativum),_2025-01-19.jpeg"
-  },
-  "sorrel": {
-    "title": "File:(MHNT) Rumex acetosa - Habit.jpg",
-    "author": "Didier Descouens",
-    "license": "CC BY-SA 4.0",
-    "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0",
-    "page": "https://commons.wikimedia.org/wiki/File:(MHNT)_Rumex_acetosa_-_Habit.jpg"
-  },
-  "purslane": {
-    "title": "File:Portulaca oleracea.JPG",
-    "author": "ZooFari",
+  "dill": {
+    "title": "File:Anethum graveolens20090812 475.jpg",
+    "author": "Bff",
     "license": "CC BY-SA 3.0",
     "licenseUrl": "https://creativecommons.org/licenses/by-sa/3.0",
-    "page": "https://commons.wikimedia.org/wiki/File:Portulaca_oleracea.JPG"
+    "page": "https://commons.wikimedia.org/wiki/File:Anethum_graveolens20090812_475.jpg"
   },
-  "pak-choi": {
-    "title": "File:Bok choy - Harbourside Market, Wellington, New Zealand - DSC09779.jpg",
-    "author": "Daderot",
-    "license": "CC0",
-    "licenseUrl": "http://creativecommons.org/publicdomain/zero/1.0/deed.en",
-    "page": "https://commons.wikimedia.org/wiki/File:Bok_choy_-_Harbourside_Market,_Wellington,_New_Zealand_-_DSC09779.jpg"
-  },
-  "mizuna": {
-    "title": "File:Sensuji-mizuna.JPG",
-    "author": "Uo3rt",
-    "license": "CC BY-SA 4.0",
-    "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0",
-    "page": "https://commons.wikimedia.org/wiki/File:Sensuji-mizuna.JPG"
-  },
-  "microgreens": {
-    "title": "File:Sunflower microgreens 01.jpg",
-    "author": "Pannet",
-    "license": "CC BY 4.0",
-    "licenseUrl": "https://creativecommons.org/licenses/by/4.0",
-    "page": "https://commons.wikimedia.org/wiki/File:Sunflower_microgreens_01.jpg"
-  },
-  "radish": {
-    "title": "File:Raphanus sativus Radieschen, Bakterielle Nassfäule, J.Schlaghecken-1a.jpg",
+  "dwarf-bean": {
+    "title": "File:Buschbohnen Gelbe Sorte-Josef Schlaghecken.jpg",
     "author": "Schlaghecken Josef",
     "license": "CC BY-SA 4.0",
     "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0",
-    "page": "https://commons.wikimedia.org/wiki/File:Raphanus_sativus_Radieschen,_Bakterielle_Nassf%C3%A4ule,_J.Schlaghecken-1a.jpg"
+    "page": "https://commons.wikimedia.org/wiki/File:Buschbohnen_Gelbe_Sorte-Josef_Schlaghecken.jpg"
   },
-  "round-carrot": {
-    "title": "File:Carrot harvest.jpg",
-    "author": "woodleywonderworks",
-    "license": "CC BY 2.0",
-    "licenseUrl": "https://creativecommons.org/licenses/by/2.0",
-    "page": "https://commons.wikimedia.org/wiki/File:Carrot_harvest.jpg"
-  },
-  "spring-onion": {
-    "title": "File:Spring onions displayed.jpg",
-    "author": "Judethedeus",
-    "license": "CC0",
-    "licenseUrl": "http://creativecommons.org/publicdomain/zero/1.0/deed.en",
-    "page": "https://commons.wikimedia.org/wiki/File:Spring_onions_displayed.jpg"
-  },
-  "beetroot": {
-    "title": "File:Beta vulgaris, San Francisco farmers market.jpg",
-    "author": "Frank Schulenburg",
-    "license": "CC0",
-    "licenseUrl": "http://creativecommons.org/publicdomain/zero/1.0/deed.en",
-    "page": "https://commons.wikimedia.org/wiki/File:Beta_vulgaris,_San_Francisco_farmers_market.jpg"
-  },
-  "turnip": {
-    "title": "File:Brassica rapa subsp. rapa or simply turnips.jpg",
-    "author": "E4024",
-    "license": "CC BY-SA 4.0",
-    "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0",
-    "page": "https://commons.wikimedia.org/wiki/File:Brassica_rapa_subsp._rapa_or_simply_turnips.jpg"
-  },
-  "garlic": {
-    "title": "File:Garlic bulbs and cloves.jpg",
+  "dwarf-fig": {
+    "title": "File:Fig (Ficus carica) fruit halved.jpg",
     "author": "Ivar Leidus",
     "license": "CC BY-SA 4.0",
     "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0",
-    "page": "https://commons.wikimedia.org/wiki/File:Garlic_bulbs_and_cloves.jpg"
+    "page": "https://commons.wikimedia.org/wiki/File:Fig_(Ficus_carica)_fruit_halved.jpg"
   },
-  "potato": {
-    "title": "File:Potato flowers 2016 G1.jpg",
-    "author": "George Chernilevsky",
-    "license": "Public domain",
-    "licenseUrl": "",
-    "page": "https://commons.wikimedia.org/wiki/File:Potato_flowers_2016_G1.jpg"
-  },
-  "nasturtium": {
-    "title": "File:Tropaeolum majus 2005 G1.jpg",
-    "author": "George Chernilevsky",
-    "license": "Public domain",
-    "licenseUrl": "",
-    "page": "https://commons.wikimedia.org/wiki/File:Tropaeolum_majus_2005_G1.jpg"
-  },
-  "calendula": {
-    "title": "File:Ringelblume (Calendula officinalis) Blüte focus stack-20220619-RM-165610.jpg",
-    "author": "Ermell",
+  "dwarf-raspberry": {
+    "title": "File:Raspberries (Rubus idaeus).jpg",
+    "author": "Ivar Leidus",
     "license": "CC BY-SA 4.0",
     "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0",
-    "page": "https://commons.wikimedia.org/wiki/File:Ringelblume_(Calendula_officinalis)_Bl%C3%BCte_focus_stack-20220619-RM-165610.jpg"
-  },
-  "lavender": {
-    "title": "File:Vanessa cardui on Lavandula angustifolia-2459.jpg",
-    "author": "Isiwal",
-    "license": "CC BY-SA 4.0",
-    "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0",
-    "page": "https://commons.wikimedia.org/wiki/File:Vanessa_cardui_on_Lavandula_angustifolia-2459.jpg"
-  },
-  "cosmos": {
-    "title": "File:Blueten 002 2021 08 23.jpg",
-    "author": "Friedrich Haag",
-    "license": "CC BY-SA 4.0",
-    "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0",
-    "page": "https://commons.wikimedia.org/wiki/File:Blueten_002_2021_08_23.jpg"
-  },
-  "borage": {
-    "title": "File:Borago officinalis. Locatie, De Kruidhof.jpg",
-    "author": "Dominicus Johannes Bergsma",
-    "license": "CC BY-SA 4.0",
-    "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0",
-    "page": "https://commons.wikimedia.org/wiki/File:Borago_officinalis._Locatie,_De_Kruidhof.jpg"
-  },
-  "marigold": {
-    "title": "File:French marigold garden 2009 G1.jpg",
-    "author": "George Chernilevsky",
-    "license": "Public domain",
-    "licenseUrl": "",
-    "page": "https://commons.wikimedia.org/wiki/File:French_marigold_garden_2009_G1.jpg"
+    "page": "https://commons.wikimedia.org/wiki/File:Raspberries_(Rubus_idaeus).jpg"
   },
   "dwarf-sunflower": {
     "title": "File:Sunflower head 2026 G1.jpg",
@@ -370,19 +149,178 @@
     "licenseUrl": "https://creativecommons.org/licenses/by/4.0",
     "page": "https://commons.wikimedia.org/wiki/File:Sunflower_head_2026_G1.jpg"
   },
-  "viola": {
-    "title": "File:Bratek.jpg",
-    "author": "Kudak",
+  "dwarf-tomato": {
+    "title": "File:2017-12-21 Moneymaker tomato plant (Solanum lycopersicum), Albufeira.JPG",
+    "author": "Kolforn",
     "license": "CC BY-SA 4.0",
     "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0",
-    "page": "https://commons.wikimedia.org/wiki/File:Bratek.jpg"
+    "page": "https://commons.wikimedia.org/wiki/File:2017-12-21_Moneymaker_tomato_plant_(Solanum_lycopersicum),_Albufeira.JPG"
   },
-  "zinnia": {
-    "title": "File:Zinnienblüte Zinnia elegans stack15 20190722-RM-7222254.jpg",
-    "author": "Ermell",
+  "eggplant": {
+    "title": "File:Solanum melongena 24 08 2012 (1).JPG",
+    "author": "Joydeep",
+    "license": "CC BY-SA 3.0",
+    "licenseUrl": "https://creativecommons.org/licenses/by-sa/3.0",
+    "page": "https://commons.wikimedia.org/wiki/File:Solanum_melongena_24_08_2012_(1).JPG"
+  },
+  "garden-cress": {
+    "title": "File:Close-up of garden cress (Lepidium Sativum), 2025-01-19.jpeg",
+    "author": "Nylki",
+    "license": "CC0",
+    "licenseUrl": "http://creativecommons.org/publicdomain/zero/1.0/deed.en",
+    "page": "https://commons.wikimedia.org/wiki/File:Close-up_of_garden_cress_(Lepidium_Sativum),_2025-01-19.jpeg"
+  },
+  "garlic": {
+    "title": "File:Garlic bulbs and cloves.jpg",
+    "author": "Ivar Leidus",
     "license": "CC BY-SA 4.0",
     "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0",
-    "page": "https://commons.wikimedia.org/wiki/File:Zinnienbl%C3%BCte_Zinnia_elegans_stack15_20190722-RM-7222254.jpg"
+    "page": "https://commons.wikimedia.org/wiki/File:Garlic_bulbs_and_cloves.jpg"
+  },
+  "hardy-geranium": {
+    "title": "File:Geranium 'Rozanne'.JPG",
+    "author": "Dominicus Johannes Bergsma",
+    "license": "CC BY-SA 3.0",
+    "licenseUrl": "https://creativecommons.org/licenses/by-sa/3.0",
+    "page": "https://commons.wikimedia.org/wiki/File:Geranium_%27Rozanne%27.JPG"
+  },
+  "hyssop": {
+    "title": "File:Hyssopus officinalis 2 RF.jpg",
+    "author": "Robert Flogaus-Faust",
+    "license": "CC BY 4.0",
+    "licenseUrl": "https://creativecommons.org/licenses/by/4.0",
+    "page": "https://commons.wikimedia.org/wiki/File:Hyssopus_officinalis_2_RF.jpg"
+  },
+  "kale": {
+    "title": "File:Kale-Bundle.jpg",
+    "author": "Evan-Amos",
+    "license": "CC0",
+    "licenseUrl": "http://creativecommons.org/publicdomain/zero/1.0/deed.en",
+    "page": "https://commons.wikimedia.org/wiki/File:Kale-Bundle.jpg",
+    "provisional": true
+  },
+  "lambs-lettuce": {
+    "title": "File:(MHNT) Valerianella locusta - inflorescences and Leaf.jpg",
+    "author": "Didier Descouens",
+    "license": "CC BY-SA 4.0",
+    "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0",
+    "page": "https://commons.wikimedia.org/wiki/File:(MHNT)_Valerianella_locusta_-_inflorescences_and_Leaf.jpg",
+    "provisional": true
+  },
+  "lavender": {
+    "title": "File:Lavandula angustifolia - lavender - Lavendel - 01.jpg",
+    "author": "Norbert Nagel",
+    "license": "CC BY-SA 3.0",
+    "licenseUrl": "https://creativecommons.org/licenses/by-sa/3.0",
+    "page": "https://commons.wikimedia.org/wiki/File:Lavandula_angustifolia_-_lavender_-_Lavendel_-_01.jpg",
+    "provisional": true
+  },
+  "lemon-balm": {
+    "title": "File:Melissa officinalis Bee Balm,Lemon Balm ბარამბო.JPG",
+    "author": "Lazaregagnidze",
+    "license": "CC BY-SA 4.0",
+    "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0",
+    "page": "https://commons.wikimedia.org/wiki/File:Melissa_officinalis_Bee_Balm,Lemon_Balm_%E1%83%91%E1%83%90%E1%83%A0%E1%83%90%E1%83%9B%E1%83%91%E1%83%9D.JPG"
+  },
+  "lemon-tree": {
+    "title": "File:Lemon.jpg",
+    "author": "André Karwath aka Aka",
+    "license": "CC BY-SA 2.5",
+    "licenseUrl": "https://creativecommons.org/licenses/by-sa/2.5",
+    "page": "https://commons.wikimedia.org/wiki/File:Lemon.jpg"
+  },
+  "lemon-verbena": {
+    "title": "File:Aloysia citriodora 002.jpg",
+    "author": "H. Zell",
+    "license": "CC BY-SA 3.0",
+    "licenseUrl": "https://creativecommons.org/licenses/by-sa/3.0",
+    "page": "https://commons.wikimedia.org/wiki/File:Aloysia_citriodora_002.jpg"
+  },
+  "lemongrass": {
+    "title": "File:Tanglad (lemongrass, Cymbopogon citratus) - Philippines.jpg",
+    "author": "Obsidian Soul",
+    "license": "CC0",
+    "licenseUrl": "http://creativecommons.org/publicdomain/zero/1.0/deed.en",
+    "page": "https://commons.wikimedia.org/wiki/File:Tanglad_(lemongrass,_Cymbopogon_citratus)_-_Philippines.jpg"
+  },
+  "marigold": {
+    "title": "File:French marigold garden 2009 G1.jpg",
+    "author": "George Chernilevsky",
+    "license": "Public domain",
+    "licenseUrl": "",
+    "page": "https://commons.wikimedia.org/wiki/File:French_marigold_garden_2009_G1.jpg"
+  },
+  "microgreens": {
+    "title": "File:Sunflower microgreens 01.jpg",
+    "author": "Pannet",
+    "license": "CC BY 4.0",
+    "licenseUrl": "https://creativecommons.org/licenses/by/4.0",
+    "page": "https://commons.wikimedia.org/wiki/File:Sunflower_microgreens_01.jpg"
+  },
+  "mini-cucumber": {
+    "title": "File:Cucumis sativus 0001.JPG",
+    "author": "H. Zell",
+    "license": "CC BY-SA 3.0",
+    "licenseUrl": "https://creativecommons.org/licenses/by-sa/3.0",
+    "page": "https://commons.wikimedia.org/wiki/File:Cucumis_sativus_0001.JPG"
+  },
+  "mini-melon": {
+    "title": "File:Starr 080914-9943 Cucumis melo.jpg",
+    "author": "Forest & Kim Starr",
+    "license": "CC BY 3.0",
+    "licenseUrl": "https://creativecommons.org/licenses/by/3.0",
+    "page": "https://commons.wikimedia.org/wiki/File:Starr_080914-9943_Cucumis_melo.jpg",
+    "provisional": true
+  },
+  "mint": {
+    "title": "File:Mint leaves (Mentha spicata).jpg",
+    "author": "Commonists",
+    "license": "CC BY-SA 4.0",
+    "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0",
+    "page": "https://commons.wikimedia.org/wiki/File:Mint_leaves_(Mentha_spicata).jpg"
+  },
+  "mizuna": {
+    "title": "File:Sensuji-mizuna.JPG",
+    "author": "Uo3rt",
+    "license": "CC BY-SA 4.0",
+    "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0",
+    "page": "https://commons.wikimedia.org/wiki/File:Sensuji-mizuna.JPG"
+  },
+  "nasturtium": {
+    "title": "File:Tropaeolum majus 2005 G1.jpg",
+    "author": "George Chernilevsky",
+    "license": "Public domain",
+    "licenseUrl": "",
+    "page": "https://commons.wikimedia.org/wiki/File:Tropaeolum_majus_2005_G1.jpg"
+  },
+  "oregano": {
+    "title": "File:Fleurs d'Origan (Origanum vulgare).jpg",
+    "author": "JackyM59",
+    "license": "CC BY-SA 4.0",
+    "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0",
+    "page": "https://commons.wikimedia.org/wiki/File:Fleurs_d%27Origan_(Origanum_vulgare).jpg"
+  },
+  "pak-choi": {
+    "title": "File:Bok choy - Harbourside Market, Wellington, New Zealand - DSC09779.jpg",
+    "author": "Daderot",
+    "license": "CC0",
+    "licenseUrl": "http://creativecommons.org/publicdomain/zero/1.0/deed.en",
+    "page": "https://commons.wikimedia.org/wiki/File:Bok_choy_-_Harbourside_Market,_Wellington,_New_Zealand_-_DSC09779.jpg"
+  },
+  "parsley": {
+    "title": "File:Petroselinum crispum 003.JPG",
+    "author": "H. Zell",
+    "license": "CC BY-SA 3.0",
+    "licenseUrl": "https://creativecommons.org/licenses/by-sa/3.0",
+    "page": "https://commons.wikimedia.org/wiki/File:Petroselinum_crispum_003.JPG"
+  },
+  "pea": {
+    "title": "File:Starr 081009-0040 Pisum sativum var. macrocarpum.jpg",
+    "author": "Forest & Kim Starr",
+    "license": "CC BY 3.0",
+    "licenseUrl": "https://creativecommons.org/licenses/by/3.0",
+    "page": "https://commons.wikimedia.org/wiki/File:Starr_081009-0040_Pisum_sativum_var._macrocarpum.jpg",
+    "provisional": true
   },
   "phacelia": {
     "title": "File:20220709 Bombus 03.jpg",
@@ -391,12 +329,117 @@
     "licenseUrl": "https://creativecommons.org/licenses/by/4.0",
     "page": "https://commons.wikimedia.org/wiki/File:20220709_Bombus_03.jpg"
   },
-  "cornflower": {
-    "title": "File:CentaureaCyanus-bloem-kl.jpg",
-    "author": "TeunSpaans",
+  "physalis": {
+    "title": "File:Physalis peruviana calix open close-up.jpg",
+    "author": "Ivar Leidus",
+    "license": "CC BY-SA 4.0",
+    "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0",
+    "page": "https://commons.wikimedia.org/wiki/File:Physalis_peruviana_calix_open_close-up.jpg"
+  },
+  "pole-bean": {
+    "title": "File:-2019-07-19 Runner bean plants with young beans (Phaseolus coccineus), Trimingham, Norfolk (2).JPG",
+    "author": "Kolforn",
+    "license": "CC BY-SA 4.0",
+    "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0",
+    "page": "https://commons.wikimedia.org/wiki/File:-2019-07-19_Runner_bean_plants_with_young_beans_(Phaseolus_coccineus),_Trimingham,_Norfolk_(2).JPG"
+  },
+  "potato": {
+    "title": "File:Potato flowers 2016 G1.jpg",
+    "author": "George Chernilevsky",
+    "license": "Public domain",
+    "licenseUrl": "",
+    "page": "https://commons.wikimedia.org/wiki/File:Potato_flowers_2016_G1.jpg"
+  },
+  "purslane": {
+    "title": "File:Portulaca oleracea.JPG",
+    "author": "ZooFari",
+    "license": "CC BY-SA 3.0",
+    "licenseUrl": "https://creativecommons.org/licenses/by-sa/3.0",
+    "page": "https://commons.wikimedia.org/wiki/File:Portulaca_oleracea.JPG"
+  },
+  "radish": {
+    "title": "File:Raphanus sativus Radieschen, Bakterielle Nassfäule, J.Schlaghecken-1a.jpg",
+    "author": "Schlaghecken Josef",
+    "license": "CC BY-SA 4.0",
+    "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0",
+    "page": "https://commons.wikimedia.org/wiki/File:Raphanus_sativus_Radieschen,_Bakterielle_Nassf%C3%A4ule,_J.Schlaghecken-1a.jpg"
+  },
+  "redcurrant": {
+    "title": "File:Redcurrant (Ribes rubrum) fruits.jpg",
+    "author": "Ivar Leidus",
+    "license": "CC BY-SA 4.0",
+    "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0",
+    "page": "https://commons.wikimedia.org/wiki/File:Redcurrant_(Ribes_rubrum)_fruits.jpg"
+  },
+  "rosemary": {
+    "title": "File:Rosmarinus officinalis133095382.jpg",
+    "author": "THOR",
+    "license": "CC BY 2.0",
+    "licenseUrl": "https://creativecommons.org/licenses/by/2.0",
+    "page": "https://commons.wikimedia.org/wiki/File:Rosmarinus_officinalis133095382.jpg"
+  },
+  "round-carrot": {
+    "title": "File:Carrot harvest.jpg",
+    "author": "woodleywonderworks",
+    "license": "CC BY 2.0",
+    "licenseUrl": "https://creativecommons.org/licenses/by/2.0",
+    "page": "https://commons.wikimedia.org/wiki/File:Carrot_harvest.jpg"
+  },
+  "sage": {
+    "title": "File:20260614 Salvia officinalis 02.jpg",
+    "author": "Flocci Nivis",
+    "license": "CC BY 4.0",
+    "licenseUrl": "https://creativecommons.org/licenses/by/4.0",
+    "page": "https://commons.wikimedia.org/wiki/File:20260614_Salvia_officinalis_02.jpg"
+  },
+  "savory": {
+    "title": "File:Satureja montana kz03.jpg",
+    "author": "Krzysztof Ziarnek, Kenraiz",
+    "license": "CC BY-SA 4.0",
+    "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0",
+    "page": "https://commons.wikimedia.org/wiki/File:Satureja_montana_kz03.jpg"
+  },
+  "shiso": {
+    "title": "File:Perilla frutescens' foliage.jpg",
+    "author": "Dalgial",
+    "license": "CC BY-SA 3.0",
+    "licenseUrl": "https://creativecommons.org/licenses/by-sa/3.0",
+    "page": "https://commons.wikimedia.org/wiki/File:Perilla_frutescens%27_foliage.jpg"
+  },
+  "sorrel": {
+    "title": "File:(MHNT) Rumex acetosa - Habit.jpg",
+    "author": "Didier Descouens",
+    "license": "CC BY-SA 4.0",
+    "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0",
+    "page": "https://commons.wikimedia.org/wiki/File:(MHNT)_Rumex_acetosa_-_Habit.jpg"
+  },
+  "spinach": {
+    "title": "File:Spinacia oleracea bd-2.jpg",
+    "author": "Kayser Ahmad",
+    "license": "CC BY-SA 4.0",
+    "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0",
+    "page": "https://commons.wikimedia.org/wiki/File:Spinacia_oleracea_bd-2.jpg"
+  },
+  "spring-onion": {
+    "title": "File:Spring onions displayed.jpg",
+    "author": "Judethedeus",
+    "license": "CC0",
+    "licenseUrl": "http://creativecommons.org/publicdomain/zero/1.0/deed.en",
+    "page": "https://commons.wikimedia.org/wiki/File:Spring_onions_displayed.jpg"
+  },
+  "stevia": {
+    "title": "File:Stevia-rebaudiana-total.JPG",
+    "author": "Sten Porse",
     "license": "CC BY-SA 3.0",
     "licenseUrl": "http://creativecommons.org/licenses/by-sa/3.0/",
-    "page": "https://commons.wikimedia.org/wiki/File:CentaureaCyanus-bloem-kl.jpg"
+    "page": "https://commons.wikimedia.org/wiki/File:Stevia-rebaudiana-total.JPG"
+  },
+  "strawberry": {
+    "title": "File:-2020-06-06 Strawberry plant with fruit, (Fragaria × ananassa), Trimingham.JPG",
+    "author": "Kolforn",
+    "license": "CC BY-SA 4.0",
+    "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0",
+    "page": "https://commons.wikimedia.org/wiki/File:-2020-06-06_Strawberry_plant_with_fruit,_(Fragaria_%C3%97_ananassa),_Trimingham.JPG"
   },
   "sweet-alyssum": {
     "title": "File:Lobularia maritima Porto Covo 2022-1.jpg",
@@ -412,12 +455,12 @@
     "licenseUrl": "https://creativecommons.org/licenses/by/2.0",
     "page": "https://commons.wikimedia.org/wiki/File:Lathyrus_odoratus_Painted_Lady.jpg"
   },
-  "hardy-geranium": {
-    "title": "File:Geranium 'Rozanne'.JPG",
-    "author": "Dominicus Johannes Bergsma",
-    "license": "CC BY-SA 3.0",
-    "licenseUrl": "https://creativecommons.org/licenses/by-sa/3.0",
-    "page": "https://commons.wikimedia.org/wiki/File:Geranium_%27Rozanne%27.JPG"
+  "sweet-pepper": {
+    "title": "File:Red bell pepper.jpg",
+    "author": "AntanO",
+    "license": "CC BY-SA 4.0",
+    "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0",
+    "page": "https://commons.wikimedia.org/wiki/File:Red_bell_pepper.jpg"
   },
   "tall-verbena": {
     "title": "File:Bloeiwijze van Verbena bonariensis. 07-09-2024. (d.j.b).jpg",
@@ -426,32 +469,54 @@
     "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0",
     "page": "https://commons.wikimedia.org/wiki/File:Bloeiwijze_van_Verbena_bonariensis._07-09-2024._(d.j.b).jpg"
   },
-  "dwarf-raspberry": {
-    "title": "File:Raspberries (Rubus idaeus).jpg",
-    "author": "Ivar Leidus",
+  "tarragon": {
+    "title": "File:Artemisia dracunculus 2997 6393.jpg",
+    "author": "Joanna Boisse",
     "license": "CC BY-SA 4.0",
     "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0",
-    "page": "https://commons.wikimedia.org/wiki/File:Raspberries_(Rubus_idaeus).jpg"
+    "page": "https://commons.wikimedia.org/wiki/File:Artemisia_dracunculus_2997_6393.jpg"
   },
-  "redcurrant": {
-    "title": "File:Redcurrant (Ribes rubrum) fruits.jpg",
-    "author": "Ivar Leidus",
+  "thyme": {
+    "title": "File:Thymian (Thymus vulgaris), Nationalpark Hohe Tauern.jpg",
+    "author": "Naturpuur",
+    "license": "CC BY 4.0",
+    "licenseUrl": "https://creativecommons.org/licenses/by/4.0",
+    "page": "https://commons.wikimedia.org/wiki/File:Thymian_(Thymus_vulgaris),_Nationalpark_Hohe_Tauern.jpg"
+  },
+  "turnip": {
+    "title": "File:Brassica rapa subsp. rapa or simply turnips.jpg",
+    "author": "E4024",
     "license": "CC BY-SA 4.0",
     "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0",
-    "page": "https://commons.wikimedia.org/wiki/File:Redcurrant_(Ribes_rubrum)_fruits.jpg"
+    "page": "https://commons.wikimedia.org/wiki/File:Brassica_rapa_subsp._rapa_or_simply_turnips.jpg"
   },
-  "lemon-tree": {
-    "title": "File:Lemon.jpg",
-    "author": "André Karwath aka Aka",
-    "license": "CC BY-SA 2.5",
-    "licenseUrl": "https://creativecommons.org/licenses/by-sa/2.5",
-    "page": "https://commons.wikimedia.org/wiki/File:Lemon.jpg"
-  },
-  "dwarf-fig": {
-    "title": "File:Fig (Ficus carica) fruit halved.jpg",
-    "author": "Ivar Leidus",
+  "viola": {
+    "title": "File:Bratek.jpg",
+    "author": "Kudak",
     "license": "CC BY-SA 4.0",
     "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0",
-    "page": "https://commons.wikimedia.org/wiki/File:Fig_(Ficus_carica)_fruit_halved.jpg"
+    "page": "https://commons.wikimedia.org/wiki/File:Bratek.jpg"
+  },
+  "wild-garlic": {
+    "title": "File:Daslook (Allium ursinum) d.j.b 05.jpg",
+    "author": "Dominicus Johannes Bergsma",
+    "license": "CC BY-SA 4.0",
+    "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0",
+    "page": "https://commons.wikimedia.org/wiki/File:Daslook_(Allium_ursinum)_d.j.b_05.jpg"
+  },
+  "zinnia": {
+    "title": "File:Zinnienblüte Zinnia elegans stack15 20190722-RM-7222254.jpg",
+    "author": "Ermell",
+    "license": "CC BY-SA 4.0",
+    "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0",
+    "page": "https://commons.wikimedia.org/wiki/File:Zinnienbl%C3%BCte_Zinnia_elegans_stack15_20190722-RM-7222254.jpg"
+  },
+  "zucchini": {
+    "title": "File:-2019-06-20 Courgette plant, Trimingham (1).JPG",
+    "author": "Kolforn",
+    "license": "CC BY-SA 4.0",
+    "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0",
+    "page": "https://commons.wikimedia.org/wiki/File:-2019-06-20_Courgette_plant,_Trimingham_(1).JPG",
+    "provisional": true
   }
 }
