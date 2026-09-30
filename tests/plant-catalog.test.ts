@@ -39,9 +39,12 @@ describe("plant catalog integrity", () => {
     });
   });
 
-  it("gives every plant its own emoji, to tell them apart at a glance", () => {
-    const emojis = PLANT_CATALOG.map((entry) => entry.emoji);
-    expect(new Set(emojis).size).toBe(emojis.length);
+  it("shows the plant itself, or a plain plant or flower when no emoji exists (never an unrelated object)", () => {
+    const generic = ["🌿", "🍃", "🌱", "🌾", "🥬", "🌸", "🌼", "🏵️", "🌺", "🌻", "🪴"];
+    const exact: Record<string, string> = { "cherry-tomato": "🍅", "dwarf-tomato": "🍅", chili: "🌶️", strawberry: "🍓", eggplant: "🍆", "sweet-pepper": "🫑", "mini-melon": "🍈", "round-carrot": "🥕", "spring-onion": "🧅", garlic: "🧄", potato: "🥔", blueberry: "🫐", zucchini: "🥒", "mini-cucumber": "🥒", cucamelon: "🥒", "dwarf-bean": "🫘", "pole-bean": "🫘", physalis: "🏮", "lemon-tree": "🍋" };
+    for (const entry of PLANT_CATALOG) {
+      expect(exact[entry.id] ?? generic, entry.id).toContain(entry.emoji);
+    }
   });
 
   it("marks tender plants as frost sensitive", () => {
