@@ -121,7 +121,7 @@ Livré, à valider sur son téléphone :
   « Photo d'exemple » + « Ajoute ta photo ». Écran `app/credits.tsx` (Réglages → Crédits photos).
   Téléchargement par `scripts/photos/telecharger-photos.mjs`, **à lancer dans le Codespace** (le
   réseau de la session Claude bloque Wikimedia) : candidates, `--encore`, puis `--final` (choix.json).
-  9 photos sont encore « provisoires » (400 px) : `--final` les remplace en 800 px.
+  Après un `--final`, recompresser en 800 px (qualité ~74) : Wikimedia renvoie des images plus lourdes.
 - Emojis : l'emoji exact de la plante, sinon un emoji végétal générique (plus d'objets sans rapport).
 
 À faire, dans l'ordre :
