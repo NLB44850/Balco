@@ -11,6 +11,7 @@
  * disparaît aussi des autres, au lieu de réapparaître à la fusion.
  */
 import type { GardenPlant } from "../garden/garden-logic";
+import type { Vacation } from "../garden/vacation";
 import type { OnboardingAnswers } from "../plants/catalog";
 import type { MaintenanceEvent } from "../reminders/reminder-engine";
 
@@ -23,6 +24,7 @@ export type SyncSettings = {
   skipWateringWhenRainExpected: boolean;
   maxNormalRemindersPerDay: number;
   enabledPlantIds: string[];
+  vacation?: Vacation | null;
 };
 
 export type SyncLocation = { city: string; latitude: number; longitude: number; timezone: string };

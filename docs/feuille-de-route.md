@@ -216,7 +216,11 @@ Très cohérent avec la promesse écologique.
 
 | Élément | État |
 |---|---|
-| Tous les éléments | ⬜ À faire |
+| Dates d'absence | ✅ Écran « Mode vacances » (Moi, Réglages, accueil) : départ et durée en deux touches |
+| Plan de préparation | ✅ Préparatifs à cocher selon les plantes, la saison et la durée, avec leur moment (quelques jours avant, la veille, le jour du départ) |
+| Conservation de l'humidité | ✅ Paillis, pots groupés à l'ombre, réserve d'eau (bouteille, oya, mèche), soucoupe pour les plus assoiffées |
+| Liste pour un proche | ✅ Rythme d'arrosage par plante selon la saison, récoltes, message prêt à envoyer |
+| Reprise automatique | ✅ Rappels muets pendant l'absence (téléphone et serveur), notification « Bon retour » et liste de retour, reprise seule |
 
 ### 8. Communauté
 
@@ -254,7 +258,7 @@ L'ordre suit la priorité fixée par le porteur du projet. Chaque étape est val
 2. **Calendrier local connecté aux tâches** : ajout du rempotage, décalage des dates selon la région, alertes météo dans le calendrier, vue par saison, une seule source pour les tâches du calendrier et de l'accueil.
 3. ✅ **Assistant IA qui se souvient** : niveau et préférences de l'utilisateur, faits retenus en discutant, analyse de l'historique complet. (Validation sur téléphone en cours.)
 4. ✅ **Progression plus motivante** : bilan hebdomadaire (eau économisée, récoltes à venir), progression par plante, petites victoires fêtées. (Validation sur téléphone en cours.)
-5. **Mode vacances** : dates d'absence, plan de départ, liste pour un proche, reprise automatique.
+5. ✅ **Mode vacances** : dates d'absence, plan de départ, liste pour un proche, reprise automatique. (Validation sur téléphone en cours.)
 
 **Version suivante**
 

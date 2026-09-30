@@ -1,6 +1,7 @@
 import { desc, eq } from "drizzle-orm";
 
 import { maintenanceEvents, noraMemories, reminderPlants, reminderProfiles } from "../../drizzle/schema";
+import { vacationRange, isValidVacation, type Vacation } from "../../lib/garden/vacation";
 import { describeMemory, isNoraLevel, parseNotes, parsePreferences, type NoraMemoryView } from "../../lib/ai/memory";
 import { getCatalogPlant, MONTH_LONG, type Month, SPACE_LABELS, SUNLIGHT_LABELS, type OnboardingAnswers, type SpaceSize, type Sunlight } from "../../lib/plants/catalog";
 import { seasonName } from "../../lib/garden/garden-logic";
@@ -38,6 +39,7 @@ export type GardenFacts = {
   removedPlants: Array<{ name: string; grownDays: number | null; removedDaysAgo: number }>;
   totals: { events: number; last30Days: number; firstDaysAgo: number | null };
   memory: NoraMemoryView;
+  vacation?: Vacation | null;
 };
 
 type PlantRow = { plantId: string; catalogId: string | null; nickname: string | null; displayName: string; varietyId: string | null; active: number; addedAt: Date | null; removedAt: Date | null };
@@ -147,6 +149,14 @@ export async function loadGardenFacts(userId: number, now = new Date()): Promise
     plants: rows.filter((row) => row.active === 1).map((row) => ({ id: row.plantId, catalogId: row.catalogId, name: plantName(row) })),
     ...summarizeHistory(rows, events, now),
     memory: await loadMemory(userId),
+    vacation: (() => {
+      try {
+        const value: unknown = profile?.vacationJson ? JSON.parse(profile.vacationJson) : null;
+        return isValidVacation(value) ? value : null;
+      } catch {
+        return null;
+      }
+    })(),
   };
 }
 
@@ -178,6 +188,7 @@ export function describeGarden(facts: GardenFacts, now = new Date()) {
     facts.space || facts.sunlight ? `Balcon : ${[facts.space, facts.sunlight ? `exposition ${facts.sunlight.toLowerCase()}` : null].filter(Boolean).join(", ")}.` : null,
     facts.goals.length > 0 ? `Envies choisies à l'inscription : ${facts.goals.join(", ")}.` : null,
     ...describeMemory(facts.memory),
+    facts.vacation && facts.vacation.end >= `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}` ? `Mode vacances : absence ${vacationRange(facts.vacation)}, ${facts.vacation.helper ? "un proche passe arroser" : "personne ne passe arroser"}.` : null,
     facts.plants.length > 0 ? `Plantes cultivées : ${facts.plants.map((plant) => plant.name).join(", ")}.` : "Aucune plante enregistrée pour l'instant.",
     totals.events > 0 && totals.firstDaysAgo !== null ? `Gestes notés dans Balco : ${totals.events} depuis ${totals.firstDaysAgo < 60 ? `${totals.firstDaysAgo + 1} j` : `${Math.round(totals.firstDaysAgo / 30)} mois`}, dont ${totals.last30Days} ces 30 derniers jours.` : null,
     facts.history.length > 0 ? `Historique complet, plante par plante :\n${facts.history.map(describePlantHistory).join("\n")}` : null,

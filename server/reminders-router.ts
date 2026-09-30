@@ -27,6 +27,12 @@ const syncInput = z.object({
     skipWateringWhenRainExpected: z.boolean(),
     maxNormalRemindersPerDay: z.number().int().min(1).max(5),
     enabledPlantIds: z.array(id).max(200),
+    vacation: z.object({
+      start: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+      end: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+      helper: z.boolean(),
+      done: z.array(z.string().max(32)).max(20),
+    }).refine((value) => value.end >= value.start, "La date de retour doit suivre le départ.").nullable().optional(),
   }).optional(),
   location: z.object({
     city: z.string().min(1).max(128),

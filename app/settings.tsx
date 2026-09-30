@@ -176,6 +176,10 @@ export default function SettingsScreen() {
         </View>
 
         <Text style={[styles.section, { color: colors.foreground }]}>Rappels</Text>
+        <Pressable accessibilityRole="button" onPress={() => router.push("/vacation")} style={({ pressed }) => [glass.card, styles.card, styles.vacationRow, pressed && styles.pressed]}>
+          <Text style={[styles.linkText, { color: colors.primary }]}>✈️  Mode vacances</Text>
+          <Text style={[styles.linkArrow, { color: colors.muted }]}>›</Text>
+        </Pressable>
         <View style={[glass.card, styles.reminderCard]}>
           <View style={styles.reminderCardHeader}>
             <View style={styles.reminderCardCopy}><Text style={[styles.sectionEyebrow, { color: colors.muted }]}>Rappels contextuels</Text><Text style={[styles.reminderCardTitle, { color: colors.foreground }]}>Seulement quand c’est utile</Text><Text style={[styles.reminderCardText, { color: colors.muted }]}>Balco croise la météo et ton dernier geste.</Text></View>
@@ -266,6 +270,7 @@ const styles = StyleSheet.create({
   header: { marginBottom: 8 },
   section: { fontSize: 19, fontWeight: "800", letterSpacing: -0.3, marginTop: 18, marginBottom: 10 },
   card: { padding: 15, gap: 14 },
+  vacationRow: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginBottom: 12 },
   choiceGroup: { gap: 8 },
   choiceRow: { flexDirection: "row", flexWrap: "wrap", gap: 8 },
   choice: { borderRadius: 999, borderWidth: 1, paddingHorizontal: 12, paddingVertical: 8 },

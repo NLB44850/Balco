@@ -9,9 +9,11 @@ import { LightScreen } from "@/components/light-screen";
 import { ScreenHeader } from "@/components/screen-header";
 import { glass } from "@/components/ui/glass";
 import { useColors } from "@/hooks/use-colors";
+import { useVacation } from "@/hooks/use-vacation";
 import { useGarden } from "@/lib/garden/garden-context";
 import { computeBadges, computeProgress, computeStats } from "@/lib/garden/garden-logic";
 import { usePlantPhotos } from "@/lib/garden/photos-context";
+import { vacationRange, vacationState } from "@/lib/garden/vacation";
 import { weekSummary } from "@/lib/garden/week";
 import { SPACE_LABELS, SUNLIGHT_LABELS, type SpaceSize, type Sunlight } from "@/lib/plants/catalog";
 
@@ -27,6 +29,9 @@ export default function ProfileScreen() {
   const [openBadge, setOpenBadge] = useState<string | null>(null);
   const { photos } = usePlantPhotos();
   const week = useMemo(() => weekSummary(resolvedPlants, events, photos, new Date()), [events, photos, resolvedPlants]);
+  const { vacation } = useVacation();
+  const trip = vacationState(vacation);
+  const vacationLine = trip.phase === "none" || !vacation ? "Tu pars ? Balco prépare ton balcon et se tait pendant ton absence." : trip.phase === "back" ? "Bon retour ! Ta liste de retour t’attend." : `Absence ${vacationRange(vacation)}`;
 
   const stats = useMemo(() => computeStats(resolvedPlants, events, new Date()), [events, resolvedPlants]);
   const badges = useMemo(() => computeBadges(stats), [stats]);
@@ -67,6 +72,14 @@ export default function ProfileScreen() {
             </View>
           ))}
         </View>
+      </Pressable>
+      <Pressable accessibilityRole="button" onPress={() => router.push("/vacation")} style={({ pressed }) => [glass.card, styles.vacationCard, pressed && styles.pressed]}>
+        <Text style={styles.vacationIcon}>✈️</Text>
+        <View style={styles.flexOne}>
+          <Text style={[styles.vacationTitle, { color: colors.foreground }]}>Mode vacances</Text>
+          <Text style={[styles.vacationText, { color: colors.muted }]}>{vacationLine}</Text>
+        </View>
+        <Text style={[styles.vacationArrow, { color: colors.muted }]}>›</Text>
       </Pressable>
       <View style={[glass.card, styles.impactHero]}>
         <View style={styles.impactHeroTop}><View style={styles.flex}><Text style={[styles.impactHeroEyebrow, { color: colors.muted }]}>Niveau {progress.level}</Text><Text style={[styles.impactHeroTitle, { color: colors.foreground }]}>{progress.levelTitle}</Text></View><Text style={[styles.impactHeroScore, { color: colors.primary }]}>{progress.points}<Text style={[styles.impactHeroUnit, { color: colors.muted }]}> pts</Text></Text></View>
@@ -128,6 +141,12 @@ const styles = StyleSheet.create({
   settingsButton: { width: 40, height: 40, borderRadius: 20, alignItems: "center", justifyContent: "center" },
   settingsText: { fontSize: 17 },
   weekCard: { padding: 16, gap: 12, marginBottom: 14 },
+  vacationCard: { flexDirection: "row", alignItems: "center", gap: 12, padding: 16, marginBottom: 14 },
+  vacationIcon: { fontSize: 24 },
+  flexOne: { flex: 1 },
+  vacationTitle: { fontSize: 16, fontWeight: "700" },
+  vacationText: { fontSize: 13, lineHeight: 18, marginTop: 2 },
+  vacationArrow: { fontSize: 24, fontWeight: "300" },
   weekTop: { flexDirection: "row", alignItems: "flex-end", gap: 10 },
   weekTitle: { fontSize: 18, fontWeight: "800", marginTop: 2, letterSpacing: -0.3 },
   weekLink: { fontSize: 14, fontWeight: "700" },

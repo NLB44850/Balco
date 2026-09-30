@@ -5,6 +5,7 @@ import { Notifications } from "@/lib/notifications/module";
 import type { ReminderSnooze } from "@/lib/reminders/reminder-actions";
 import type { ReminderDecision } from "@/lib/reminders/reminder-engine";
 import type { ReminderGroup } from "@/lib/reminders/reminder-groups";
+import type { Vacation } from "@/lib/garden/vacation";
 
 export const REMINDER_SETTINGS_STORAGE_KEY = "balco.reminder.settings.v1";
 export const REMINDER_DECISIONS_STORAGE_KEY = "balco.reminder.decisions.v1";
@@ -39,6 +40,8 @@ export type LocalReminderSettings = {
   maxNormalRemindersPerDay: number;
   skipWateringWhenRainExpected: boolean;
   enabledPlantIds: string[];
+  /** Mode vacances : aucun rappel entre ces dates, reprise automatique au retour. */
+  vacation: Vacation | null;
 };
 
 export const defaultLocalReminderSettings: LocalReminderSettings = {
@@ -50,6 +53,7 @@ export const defaultLocalReminderSettings: LocalReminderSettings = {
   maxNormalRemindersPerDay: 1,
   skipWateringWhenRainExpected: true,
   enabledPlantIds: [],
+  vacation: null,
 };
 
 export async function loadLocalReminderSettings(): Promise<LocalReminderSettings> {
@@ -216,6 +220,25 @@ export async function scheduleLocalReminder(decision: ReminderGroup, settings: L
 
   await AsyncStorage.setItem(REMINDER_DECISIONS_STORAGE_KEY, JSON.stringify({ id, decision, scheduledFor: triggerDate.toISOString() }));
   return id;
+}
+
+const VACATION_RETURN_SOURCE = "balco-vacation-return";
+
+/** Le lendemain du retour, à l'heure des rappels : « Bon retour », et les rappels reprennent. */
+export async function scheduleVacationReturn(vacation: Vacation | null, settings: LocalReminderSettings) {
+  const notifications = Notifications;
+  if (!notifications) return;
+  const scheduled = await notifications.getAllScheduledNotificationsAsync();
+  await Promise.all(scheduled.filter((item) => (item.content.data as { source?: string } | undefined)?.source === VACATION_RETURN_SOURCE).map((item) => notifications.cancelScheduledNotificationAsync(item.identifier)));
+  if (!vacation || !settings.enabled) return;
+  const [year, month, day] = vacation.end.split("-").map(Number);
+  const date = new Date(year, month - 1, day + 1, settings.preferredHour, settings.preferredMinute);
+  if (date.getTime() <= Date.now() || !(await requestLocalNotificationPermission())) return;
+  await configureLocalNotifications();
+  await notifications.scheduleNotificationAsync({
+    content: { title: "Bon retour ! 🌿", body: "Fais le tour de ton balcon : Balco t’a préparé la liste.", data: { source: VACATION_RETURN_SOURCE, url: "/" } },
+    trigger: { type: notifications.SchedulableTriggerInputTypes.DATE, date, channelId: BALCO_NOTIFICATION_CHANNEL_ID },
+  });
 }
 
 export async function clearAndDisableLocalReminders() {

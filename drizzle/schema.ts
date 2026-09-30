@@ -76,6 +76,8 @@ export const reminderProfiles = mysqlTable("reminder_profiles", {
   maxNormalRemindersPerDay: int("maxNormalRemindersPerDay").default(1).notNull(),
   enabledPlantIds: text("enabledPlantIds"),
   firstName: varchar("firstName", { length: 64 }),
+  /** Mode vacances { start, end, helper, done } en JSON : aucun rappel entre ces dates. */
+  vacationJson: text("vacationJson"),
   /** Réponses d'onboarding (exposition, espace, objectifs) en JSON. */
   balconyJson: text("balconyJson"),
   createdAt: timestamp("createdAt").defaultNow().notNull(),

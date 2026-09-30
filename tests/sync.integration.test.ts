@@ -207,4 +207,18 @@ describe.skipIf(!TEST_DATABASE_URL)("garden sync and server reminders (MySQL)", 
     expect(await reminders.recalculateUserReminders(otherUserId, NOW)).toMatchObject({ status: "skipped", reason: "disabled" });
     expect(await decisions(otherUserId)).toHaveLength(0);
   });
+
+  it("stays silent during the holidays and resumes on its own after the return", async () => {
+    const vacation = { start: "2026-09-25", end: "2026-09-30", helper: false, done: ["water"] };
+    const snapshot = await reminders.syncGarden(otherUserId, { ...emptyPush(), location: PARIS, settings: { ...SETTINGS, vacation } });
+    expect(snapshot.settings?.vacation).toEqual(vacation);
+    expect(await reminders.recalculateUserReminders(otherUserId, NOW)).toMatchObject({ status: "skipped", reason: "vacation" });
+    expect((await decisions(otherUserId)).filter((row) => row.status === "pending")).toHaveLength(0);
+
+    const back = new Date("2026-10-01T08:00:00.000Z");
+    expect(await reminders.recalculateUserReminders(otherUserId, back)).toMatchObject({ status: "recalculated" });
+
+    await reminders.syncGarden(otherUserId, { ...emptyPush(), settings: { ...SETTINGS, vacation: null } });
+    expect((await reminders.loadSnapshot(otherUserId)).settings?.vacation).toBeNull();
+  });
 });

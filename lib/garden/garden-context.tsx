@@ -269,7 +269,8 @@ export function GardenProvider({ children }: { children: ReactNode }) {
       await saveEvents(applied.events);
       if ((applied.firstName ?? undefined) !== profileRef.current.firstName) await saveProfile({ ...profileRef.current, firstName: applied.firstName });
       if (JSON.stringify(applied.onboarding) !== JSON.stringify(onboardingRef.current)) await saveOnboarding(applied.onboarding);
-      if (JSON.stringify(applied.settings) !== JSON.stringify(latestSettings)) await saveLocalReminderSettings(applied.settings, "sync");
+      const appliedSettings = { ...defaultLocalReminderSettings, ...applied.settings, vacation: applied.settings.vacation ?? null };
+      if (JSON.stringify(appliedSettings) !== JSON.stringify(latestSettings)) await saveLocalReminderSettings(appliedSettings, "sync");
       await saveMeta({ openId, lastSyncedAt: snapshot.serverTime, lastLocation: location ?? metaRef.current.lastLocation });
       setSyncStatus("idle");
       await ensurePushRegistration(applied.settings.enabled, openId).catch((error) => console.warn("[push] registration failed", error));

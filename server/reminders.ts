@@ -1,6 +1,7 @@
 import { and, desc, eq, gt, inArray, lt, lte, notInArray, sql } from "drizzle-orm";
 
 import { careProfileFor, resolvePlants, type GardenPlant } from "../lib/garden/garden-logic";
+import { awayOn, isValidVacation, type Vacation } from "../lib/garden/vacation";
 import type { OnboardingAnswers } from "../lib/plants/catalog";
 import {
   decideReminders,
@@ -34,6 +35,7 @@ export type ReminderSettingsInput = {
   skipWateringWhenRainExpected: boolean;
   maxNormalRemindersPerDay: number;
   enabledPlantIds: string[];
+  vacation?: Vacation | null;
 };
 
 export type SyncLocation = { city: string; latitude: number; longitude: number; timezone: string };
@@ -199,7 +201,13 @@ function settingsFromProfile(profile: typeof reminderProfiles.$inferSelect): Rem
     skipWateringWhenRainExpected: profile.skipWateringWhenRainExpected === 1,
     maxNormalRemindersPerDay: Math.max(1, profile.maxNormalRemindersPerDay),
     enabledPlantIds: parseJson<string[]>(profile.enabledPlantIds, []),
+    vacation: parseVacation(profile.vacationJson),
   };
+}
+
+function parseVacation(json: string | null | undefined): Vacation | null {
+  const value = parseJson<unknown>(json, null);
+  return isValidVacation(value) ? value : null;
 }
 
 async function applyPush(db: Db, userId: number, push: SyncPush) {
@@ -214,6 +222,7 @@ async function applyPush(db: Db, userId: number, push: SyncPush) {
       skipWateringWhenRainExpected: push.settings.skipWateringWhenRainExpected ? 1 : 0,
       maxNormalRemindersPerDay: push.settings.maxNormalRemindersPerDay,
       enabledPlantIds: JSON.stringify(push.settings.enabledPlantIds),
+      vacationJson: push.settings.vacation ? JSON.stringify(push.settings.vacation) : null,
     });
   }
   if (push.location) Object.assign(profileSet, push.location, { locationUpdatedAt: new Date() });
@@ -306,6 +315,13 @@ export async function recalculateUserReminders(userId: number, now = new Date(),
   }
   if (!profile.locationUpdatedAt) return { userId, status: "skipped", reason: "no_location" } as const;
   const settings = settingsFromProfile(profile);
+  // Mode vacances : rien ne part pendant l'absence ; les rappels reprennent seuls le lendemain du retour.
+  const local = timezoneParts(now, profile.timezone);
+  const todayKey = `${local.year}-${String(local.month).padStart(2, "0")}-${String(local.day).padStart(2, "0")}`;
+  if (awayOn(settings.vacation, todayKey)) {
+    await db.update(reminderDecisions).set({ status: "obsolete" }).where(and(eq(reminderDecisions.userId, userId), eq(reminderDecisions.status, "pending")));
+    return { userId, status: "skipped", reason: "vacation" } as const;
+  }
   const location: SyncLocation = { city: profile.city, latitude: profile.latitude, longitude: profile.longitude, timezone: profile.timezone };
   const [plants, events] = await Promise.all([
     db.select().from(reminderPlants).where(and(eq(reminderPlants.userId, userId), eq(reminderPlants.active, 1))),

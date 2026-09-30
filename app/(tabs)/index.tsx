@@ -17,6 +17,7 @@ import { TODAY_ROW_PICTURE, TodayRow } from "@/components/today/today-row";
 import { UndoToast, type ToastMessage } from "@/components/today/undo-toast";
 import { useLocalWeather } from "@/hooks/use-local-weather";
 import { useColors } from "@/hooks/use-colors";
+import { useVacation } from "@/hooks/use-vacation";
 import { useWeatherSimulation } from "@/hooks/use-weather-simulation";
 import { setPendingPhoto } from "@/lib/ai/pending-photo";
 import { pickPlantPhoto } from "@/lib/ai/photo";
@@ -24,9 +25,11 @@ import { useGarden } from "@/lib/garden/garden-context";
 import { trpc } from "@/lib/trpc";
 import { usePlantPhotos } from "@/lib/garden/photos-context";
 import { celebrationFor, formatLiters, litersPerWatering } from "@/lib/garden/progress";
+import { awayOn, preparationSteps, vacationRange, vacationState } from "@/lib/garden/vacation";
 import {
   POINTS_PER_GESTURE,
   buildDailySession,
+  dayKey,
   careProfileFor,
   eventForSessionTask,
   plantDisplayName,
@@ -72,6 +75,7 @@ export default function HomeScreen() {
   const router = useRouter();
   const { loaded, resolvedPlants, events, onboarding, account, addPlant, logEvent, removeEvent, reportLocation } = useGarden();
   const aiStatus = trpc.ai.status.useQuery(undefined, { enabled: account.signedIn, retry: false });
+  const { vacation } = useVacation();
 
   /**
    * Le bouton appareil photo : la photo se prend tout de suite, puis Observer l'affiche prête à
@@ -168,9 +172,14 @@ export default function HomeScreen() {
   useEffect(() => {
     if (!reminderSettingsLoaded || !snoozesLoaded || !reminderSettings.enabled || weather.isFallback) return;
     const plan = planGroupedNotification(reminderDecisions, snoozes, reminderSettings, new Date());
-    if (plan) void scheduleLocalReminder(plan.group, reminderSettings, plan.date);
+    // Mode vacances : aucun rappel pendant l'absence (la notification « Bon retour » est à part).
+    if (plan && !awayOn(vacation, dayKey(plan.date))) void scheduleLocalReminder(plan.group, reminderSettings, plan.date);
     else void cancelBalcoReminderNotifications();
-  }, [reminderDecisions, reminderSettings, reminderSettingsLoaded, snoozes, snoozesLoaded, weather.isFallback]);
+  }, [reminderDecisions, reminderSettings, reminderSettingsLoaded, snoozes, snoozesLoaded, vacation, weather.isFallback]);
+
+  const trip = vacationState(vacation, now);
+  const away = trip.phase === "away";
+  const tripPlan = useMemo(() => (vacation ? preparationSteps(resolvedPlants, vacation, now) : []), [now, resolvedPlants, vacation]);
 
   const items = useMemo(() => buildTodayList({ groups: visibleReminders, session, seasonal }), [seasonal, session, visibleReminders]);
   const status = useMemo(() => balconyStatus(items, events, now), [events, items, now]);
@@ -258,7 +267,7 @@ export default function HomeScreen() {
     setReminderSettings(nextSettings);
     await saveLocalReminderSettings(nextSettings);
     const plan = planGroupedNotification(reminderDecisions, snoozes, nextSettings, new Date());
-    if (plan) await scheduleLocalReminder(plan.group, nextSettings, plan.date);
+    if (plan && !awayOn(vacation, dayKey(plan.date))) await scheduleLocalReminder(plan.group, nextSettings, plan.date);
     showToast(`Rappels activés : Balco te préviendra vers ${nextSettings.preferredHour} h ${String(nextSettings.preferredMinute).padStart(2, "0")}`);
   };
 
@@ -322,14 +331,33 @@ export default function HomeScreen() {
           </View>
         )}
 
-        {loaded && hasPlants && (
+        {loaded && hasPlants && !away && (
           <Pressable accessibilityRole="button" accessibilityLabel={`Ton balcon, ${status.label}`} onPress={() => router.push("/(tabs)/balcony")} style={({ pressed }) => [styles.status, styles.glass, pressed && styles.pressed]}>
             <Text style={[styles.statusText, { color: colors.foreground }]}>Ton balcon <Text style={{ color: colors.muted, fontWeight: "500" }}>· {status.label}</Text></Text>
             <View style={[styles.track, { backgroundColor: colors.border }]}><View style={[styles.fill, { width: `${Math.max(status.progress, 0.04) * 100}%`, backgroundColor: colors.primary }]} /></View>
           </Pressable>
         )}
 
-        {loaded && hasPlants && status.allDone && (
+        {trip.phase !== "none" && vacation && (trip.phase !== "upcoming" || trip.daysLeft <= 14) && (
+          <Pressable accessibilityRole="button" onPress={() => router.push("/vacation")} style={({ pressed }) => [styles.status, styles.glass, styles.trip, pressed && styles.pressed]}>
+            <Text style={styles.tripIcon}>{trip.phase === "upcoming" ? "✈️" : trip.phase === "away" ? "🌴" : "🌿"}</Text>
+            <View style={styles.flex}>
+              <Text style={[styles.statusText, { color: colors.foreground }]}>
+                {trip.phase === "upcoming" ? (trip.daysLeft === 1 ? "Départ demain" : `Départ dans ${trip.daysLeft} jours`) : trip.phase === "away" ? "Bonnes vacances !" : "Bon retour !"}
+              </Text>
+              <Text style={[styles.small, { color: colors.muted }]}>
+                {trip.phase === "upcoming"
+                  ? `${tripPlan.filter((step) => vacation.done.includes(step.id)).length} sur ${tripPlan.length} préparatifs · voir le plan`
+                  : trip.phase === "away"
+                    ? `Balco se tait ${vacationRange(vacation)}. Les rappels reprendront seuls.`
+                    : "Fais le tour de ton balcon : Balco t’a préparé la liste."}
+              </Text>
+            </View>
+            <Text style={[styles.tripArrow, { color: colors.muted }]}>›</Text>
+          </Pressable>
+        )}
+
+        {loaded && hasPlants && status.allDone && !away && (
           <FadeIn style={styles.allDone}>
             <Text style={styles.allDoneIcon}>{status.doneToday > 0 ? (evening ? "🌙" : "☀️") : "🌿"}</Text>
             <Text style={[styles.allDoneTitle, { color: colors.foreground }]}>{status.doneToday > 0 ? (evening ? "Ton balcon est prêt pour la nuit" : "Tout est fait pour aujourd’hui") : "Rien à faire aujourd’hui"}</Text>
@@ -344,7 +372,7 @@ export default function HomeScreen() {
           </FadeIn>
         )}
 
-        {items.length > 0 && (
+        {items.length > 0 && !away && (
           <View>
             {items.map((item) => (
               <TodayRow
@@ -363,7 +391,7 @@ export default function HomeScreen() {
           </View>
         )}
 
-        {loaded && hasPlants && !reminderSettings.enabled && notificationsUnavailableReason === null && (
+        {loaded && hasPlants && !away && !reminderSettings.enabled && notificationsUnavailableReason === null && (
           <View style={styles.remindersRow}>
             <Text style={[styles.small, styles.flex, { color: colors.muted }]}>Sois prévenu au bon moment, sans ouvrir l’app.</Text>
             <Pressable accessibilityRole="button" onPress={() => void activateReminders()} style={({ pressed }) => [styles.pill, { backgroundColor: colors.leaf }, pressed && styles.pressed]}>
@@ -483,6 +511,9 @@ function SheetContent({ item, events, onToggle, onSnooze, onOpenPlant, onOpenCal
 }
 
 const styles = StyleSheet.create({
+  trip: { flexDirection: "row", alignItems: "center", gap: 12 },
+  tripIcon: { fontSize: 24 },
+  tripArrow: { fontSize: 24, fontWeight: "300" },
   cameraButton: { width: 40, height: 40, borderRadius: 20, alignItems: "center", justifyContent: "center" },
   content: { gap: 18 },
   body: { paddingHorizontal: 20, gap: 18 },

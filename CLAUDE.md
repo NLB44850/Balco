@@ -38,7 +38,7 @@ Tout se passe dans son GitHub Codespace (pas de Docker sur son PC).
 
 - `pnpm -s check`, `pnpm -s lint`, puis `TEST_DATABASE_URL=mysql://balco:balco@localhost:3306/balco_cal npx vitest run`
   (MariaDB locale : `service mariadb start` si elle s'est arrêtée, `apt-get install -y mariadb-server` si elle manque,
-  puis `DATABASE_URL=… npx drizzle-kit migrate` ; 292 tests à ce jour). Dans un conteneur
+  puis `DATABASE_URL=… npx drizzle-kit migrate` ; 298 tests à ce jour). Dans un conteneur
   neuf : `apt-get install -y mariadb-server`, `service mariadb start`, créer la base `balco_cal` et l'utilisateur
   `balco`/`balco`, puis `pnpm -s build && DATABASE_URL=mysql://balco:balco@localhost:3306/balco_cal node dist/migrate.mjs`.
 - `npx expo export --platform android` pour s'assurer que le bundle Android se construit.
@@ -132,8 +132,16 @@ Livré, à valider sur son téléphone :
   côté de l'avatar) : prend la photo tout de suite puis ouvre Observer prêt à analyser (relais
   `lib/ai/pending-photo.ts`) ; sans compte ou sans analyse restante, ouvre Observer qui explique.
 
+- **Priorité 5, mode vacances** (`app/vacation.tsx`, logique pure `lib/garden/vacation.ts`, hook
+  `hooks/use-vacation.ts`) : dates en chips + boutons −/+, « Quelqu'un passera arroser ? » ; plan de
+  départ à cocher selon plantes, saison et durée (récolte, paillis, réserve d'eau, soucoupe, gel…) ;
+  liste pour le proche (rythme d'arrosage par plante, message partagé via `Share`, sinon affiché à
+  copier) ou astuces d'humidité. Les dates vivent dans les réglages des rappels (`settings.vacation`,
+  synchronisés, colonne `vacationJson`) : rappels du téléphone et du serveur muets pendant l'absence,
+  notification « Bon retour » le lendemain, carte sur Aujourd'hui (départ / vacances / retour). Entrées :
+  Moi, Réglages → Rappels, carte d'accueil. Nora connaît les dates.
+
 À faire, dans l'ordre :
-1. Priorité 5, mode vacances.
-2. À la publication : notifications serveur sur Android (Firebase/FCM) ; synchroniser les reports
+1. À la publication : notifications serveur sur Android (Firebase/FCM) ; synchroniser les reports
    (« Dans 3 h ») avec le serveur ; envoyer les photos des plantes sur le serveur (stockage d'images)
    pour les retrouver sur un autre téléphone.
