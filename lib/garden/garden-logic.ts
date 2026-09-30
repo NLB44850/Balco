@@ -132,6 +132,7 @@ export const EVENT_TYPE_LABELS: Record<MaintenanceTaskType, { label: string; ico
   protection: { label: "Protection", icon: "🛡️" },
   harvest: { label: "Récolte", icon: "🧺" },
   repotting: { label: "Rempotage", icon: "🪴" },
+  fertilizing: { label: "Engrais", icon: "🌱" },
 };
 
 export type HistoryDay = { key: string; label: string; events: MaintenanceEvent[] };
@@ -203,13 +204,15 @@ export function buildDailySession(plants: ResolvedPlant[], events: MaintenanceEv
 
   return plants
     .map((resolved, index) => {
-      const candidates = tasksForMonth(resolved.entry, month);
+      // Un geste espacé (engrais) n'est proposé que s'il est dû ; il passe alors avant les autres.
+      const candidates = tasksForMonth(resolved.entry, month).filter((task) => !task.everyDays || spacedTaskDue(resolved, task, events, today));
       if (candidates.length === 0) return null;
       const interval = resolved.entry.care.wateringIntervalHours * HOUR_MS;
       const lastWatering = lastEventDate(events, resolved.plant.id, "watering", today);
       const wateringTask = candidates.find((task) => task.type === "watering");
       const wateringDue = !lastWatering || today.getTime() - lastWatering.getTime() >= interval;
-      const task = wateringTask && wateringDue ? wateringTask : candidates[(dayOfYear(now) + index) % candidates.length];
+      const spaced = candidates.find((task) => task.everyDays);
+      const task = wateringTask && wateringDue ? wateringTask : spaced ?? candidates[(dayOfYear(now) + index) % candidates.length];
 
       const lastCare = lastEventDate(events, resolved.plant.id, undefined, today);
       const urgency = lastCare ? (today.getTime() - lastCare.getTime()) / interval : 10;
@@ -220,6 +223,19 @@ export function buildDailySession(plants: ResolvedPlant[], events: MaintenanceEv
     .sort((a, b) => b.urgency - a.urgency)
     .slice(0, limit)
     .map(({ item }) => item);
+}
+
+/**
+ * Un geste espacé est dû quand le dernier date d'au moins `everyDays` jours (gestes d'aujourd'hui
+ * exclus, pour qu'il reste coché dans la liste du jour). Jamais fait : on compte depuis l'arrivée de
+ * la plante, dont le terreau neuf la nourrit déjà.
+ */
+export function spacedTaskDue(resolved: ResolvedPlant, task: CareTask, events: MaintenanceEvent[], now = new Date()) {
+  if (!task.everyDays) return true;
+  const today = startOfDay(now);
+  const since = lastEventDate(events, resolved.plant.id, task.type, today) ?? new Date(resolved.plant.addedAt);
+  if (!Number.isFinite(since.getTime())) return true;
+  return daysBetween(since, today) >= task.everyDays;
 }
 
 export function eventForSessionTask({ resolved, task, eventId }: SessionTask, now = new Date()): MaintenanceEvent {

@@ -2,12 +2,12 @@ import { desc, eq } from "drizzle-orm";
 
 import { maintenanceEvents, noraMemories, reminderPlants, reminderProfiles } from "../../drizzle/schema";
 import { describeMemory, isNoraLevel, parseNotes, parsePreferences, type NoraMemoryView } from "../../lib/ai/memory";
-import { getCatalogPlant, MONTH_LONG, SPACE_LABELS, SUNLIGHT_LABELS, type OnboardingAnswers, type SpaceSize, type Sunlight } from "../../lib/plants/catalog";
+import { getCatalogPlant, MONTH_LONG, type Month, SPACE_LABELS, SUNLIGHT_LABELS, type OnboardingAnswers, type SpaceSize, type Sunlight } from "../../lib/plants/catalog";
 import { seasonName } from "../../lib/garden/garden-logic";
 import type { MaintenanceTaskType } from "../../lib/reminders/reminder-engine";
 import { getDb } from "../db";
 
-const TASK_LABELS: Record<string, string> = { watering: "arrosage", observation: "observation", pruning: "taille", protection: "protection", harvest: "récolte", repotting: "rempotage" };
+const TASK_LABELS: Record<string, string> = { watering: "arrosage", observation: "observation", pruning: "taille", protection: "protection", harvest: "récolte", repotting: "rempotage", fertilizing: "engrais" };
 const DAY_MS = 86_400_000;
 /** Assez pour des années de gestes sur un balcon ; au-delà, les plus anciens sont ignorés. */
 const MAX_HISTORY_EVENTS = 5000;
@@ -23,6 +23,8 @@ export type PlantHistory = {
   /** Gestes conseillés pour cette plante et jamais notés. */
   neverDone: string[];
   recentNotes: Array<{ text: string; daysAgo: number }>;
+  /** Engrais conseillé ce mois-ci : tous les combien de jours. */
+  feedEveryDays: number | null;
 };
 
 export type GardenFacts = {
@@ -89,6 +91,7 @@ export function summarizeHistory(plants: PlantRow[], events: EventRow[], now = n
       byType: [...types].sort((a, b) => b[1].count - a[1].count).map(([type, { count, last }]) => ({ type: TASK_LABELS[type] ?? type, count, lastDaysAgo: daysBetween(last, now) })),
       neverDone: expectedTypes(plant.catalogId).filter((type) => !types.has(type)).map((type) => TASK_LABELS[type]),
       recentNotes: notes,
+      feedEveryDays: getCatalogPlant(plant.catalogId ?? "")?.tasks.find((task) => task.type === "fertilizing" && task.months?.includes((now.getMonth() + 1) as Month))?.everyDays ?? null,
     };
   });
 
@@ -159,6 +162,7 @@ function describePlantHistory(plant: PlantHistory) {
   const parts = [
     plant.byType.length > 0 ? plant.byType.map((item) => `${item.type} ${item.count} fois, dernière fois ${ago(item.lastDaysAgo)}`).join(" ; ") : "aucun geste noté",
     plant.neverDone.length > 0 ? `jamais noté : ${plant.neverDone.join(", ")}` : null,
+    plant.feedEveryDays ? `engrais conseillé tous les ${plant.feedEveryDays} j en ce moment` : null,
     plant.recentNotes.length > 0 ? `derniers gestes : ${plant.recentNotes.map((note) => `« ${note.text} » ${ago(note.daysAgo)}`).join(", ")}` : null,
   ];
   return `- ${plant.name}${since} : ${parts.filter(Boolean).join(" ; ")}.`;

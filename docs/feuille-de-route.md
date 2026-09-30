@@ -162,7 +162,7 @@ Très cohérent avec la promesse écologique.
 | Ville, saison, exposition | ✅ | Ville, balcon, exposition et date transmis à chaque question |
 | Conseils pour débutants | ✅ | Niveau choisi à l'accueil, modifiable dans Réglages ou dans « Nora se souvient de toi » (Je débute / Je me lance / J'ai déjà un potager) : Nora adapte la longueur et le vocabulaire |
 | Questions rapides | ✅ | Boutons de questions prêtes à l'emploi |
-| Analyse de l'historique | ✅ | Tout l'historique résumé plante par plante : nombre de gestes par type, date du dernier, gestes conseillés jamais notés, derniers gestes, plantes retirées dans l'année. Bouton « Fais le point sur mes plantes ». Pas encore de geste « engrais » dans Balco |
+| Analyse de l'historique | ✅ | Tout l'historique résumé plante par plante : nombre de gestes par type, date du dernier, gestes conseillés jamais notés, derniers gestes, plantes retirées dans l'année. Bouton « Fais le point sur mes plantes ». Nouveau geste « Engrais » (26 plantes gourmandes, rythme par plante) : Nora sait dire « pas d'engrais depuis 3 semaines » |
 | Mémoire des préférences et du niveau | ✅ | 9 préférences à cocher (réponses courtes, animal, enfants, peu de temps, économiser l'eau…) et faits retenus en discutant (« A un chat »), affichés sous la réponse avec « Oublier », et « Tout oublier ». Stockés sur le serveur (table `nora_memories`), effacés avec le compte |
 
 ### 3. Scanner et diagnostic

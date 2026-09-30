@@ -35,7 +35,7 @@ Tout se passe dans son GitHub Codespace (pas de Docker sur son PC).
 
 - `pnpm -s check`, `pnpm -s lint`, puis `TEST_DATABASE_URL=mysql://balco:balco@localhost:3306/balco_cal npx vitest run`
   (MariaDB locale : `service mariadb start` si elle s'est arrêtée, `apt-get install -y mariadb-server` si elle manque,
-  puis `DATABASE_URL=… npx drizzle-kit migrate` ; 280 tests à ce jour). Dans un conteneur
+  puis `DATABASE_URL=… npx drizzle-kit migrate` ; 285 tests à ce jour). Dans un conteneur
   neuf : `apt-get install -y mariadb-server`, `service mariadb start`, créer la base `balco_cal` et l'utilisateur
   `balco`/`balco`, puis `pnpm -s build && DATABASE_URL=mysql://balco:balco@localhost:3306/balco_cal node dist/migrate.mjs`.
 - `npx expo export --platform android` pour s'assurer que le bundle Android se construit.
@@ -101,7 +101,12 @@ Livré, à valider sur son téléphone :
   s'affiche sous sa réponse. Faits et préférences : table `nora_memories` (`server/ai/memory-store.ts`,
   logique pure `lib/ai/memory.ts`). Contexte : tout l'historique résumé plante par plante
   (`summarizeHistory` dans `server/ai/context.ts`). Question prête « Fais le point sur mes plantes ».
-  Il n'existe pas encore de geste « engrais » : Nora ne peut pas dire « pas fertilisé depuis 3 semaines ».
+- **Geste « Engrais »** (type `fertilizing`) : 26 plantes gourmandes seulement (`lib/plants/fertilizing.ts` :
+  légumes-fruits tous les 14 j de juin à septembre, légumes-feuilles et fleurs tous les 21 j, petits
+  fruits tous les 30 j au printemps…), engrais organique uniquement. Geste espacé (`everyDays`) : sur
+  l'accueil seulement quand il est dû (`spacedTaskDue`, compté depuis l'arrivée de la plante), et il
+  passe alors avant la rotation ; dans Saisons avec l'étiquette « ENGRAIS » et son rythme ; Nora connaît
+  le dernier engrais et le rythme conseillé.
 
 À faire, dans l'ordre :
 1. Priorité 4, progression (bilan hebdomadaire, progression par plante).

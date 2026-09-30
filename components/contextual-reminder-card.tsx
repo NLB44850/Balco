@@ -18,6 +18,7 @@ export const TASK_LABELS: Record<ReminderDecision["taskType"], string> = {
   protection: "PROTECTION",
   harvest: "RÉCOLTE",
   repotting: "REMPOTAGE",
+  fertilizing: "ENGRAIS",
 };
 
 const priorityLabels: Record<ReminderDecision["priority"], string> = {

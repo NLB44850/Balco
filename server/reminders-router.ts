@@ -3,7 +3,7 @@ import { z } from "zod";
 import { protectedProcedure, router } from "./_core/trpc";
 import { recalculateUserReminders, registerPushToken, syncGarden, unregisterPushToken } from "./reminders";
 
-const taskType = z.enum(["watering", "observation", "pruning", "protection", "harvest", "repotting"]);
+const taskType = z.enum(["watering", "observation", "pruning", "protection", "harvest", "repotting", "fertilizing"]);
 const hour = z.number().int().min(0).max(23);
 const id = z.string().min(1).max(128);
 

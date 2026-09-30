@@ -9,7 +9,7 @@
  *   4. urgence depuis le dernier entretien (arrosage, chaleur)
  */
 
-export type MaintenanceTaskType = "watering" | "observation" | "pruning" | "protection" | "harvest" | "repotting";
+export type MaintenanceTaskType = "watering" | "observation" | "pruning" | "protection" | "harvest" | "repotting" | "fertilizing";
 
 export type MaintenanceEvent = {
   id: string;

@@ -1,4 +1,5 @@
 import type { MaintenanceTaskType } from "../reminders/reminder-engine";
+import { fertilizeTask } from "./fertilizing";
 import { PLANT_VARIETIES } from "./varieties";
 
 /**
@@ -24,6 +25,8 @@ export type CareTask = {
   minutes: number;
   /** Mois où le geste a du sens. Absent = toute la saison de culture. */
   months?: Month[];
+  /** Geste espacé (engrais) : proposé seulement si le dernier date d'au moins ce nombre de jours. */
+  everyDays?: number;
   doneTitle: string;
   doneText: string;
 };
@@ -145,6 +148,7 @@ type PlantInput = Omit<CatalogPlant, "tasks" | "varieties" | "repotMonths"> & { 
 
 function plant({ extraTasks = [], wateringMonths, wateringInstruction, varieties, repotMonths, ...data }: PlantInput): CatalogPlant {
   const activeMonths = wateringMonths ?? GROWING_SEASON;
+  const feed = fertilizeTask(data.id, data.label);
   return {
     ...data,
     // Une vivace se rempote à la reprise de végétation, avant la pousse de printemps.
@@ -155,6 +159,7 @@ function plant({ extraTasks = [], wateringMonths, wateringInstruction, varieties
       observeTask(data.label, activeMonths),
       harvestTask(data.label, data.harvestMonths, data.harvestTip),
       ...extraTasks,
+      ...(feed ? [feed] : []),
     ],
   };
 }

@@ -26,7 +26,7 @@ const ALERT_LOOK: Record<string, { tone: TodayTone; icon: string }> = {
   thirst: { tone: "water", icon: "💧" },
 };
 
-const TASK_ICONS: Record<string, string> = { watering: "💧", observation: "🔎", pruning: "✂", protection: "🛡", harvest: "🧺", repotting: "🪴" };
+const TASK_ICONS: Record<string, string> = { watering: "💧", observation: "🔎", pruning: "✂", protection: "🛡", harvest: "🧺", repotting: "🪴", fertilizing: "🌱" };
 
 /** « Aujourd’hui, retire les gourmands des tomates. » → « Retire les gourmands des tomates » */
 export function headline(title: string) {
