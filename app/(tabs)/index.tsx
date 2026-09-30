@@ -161,7 +161,8 @@ export default function HomeScreen() {
   );
   const reminderDecisions = useMemo(() => {
     if (!reminderSettingsLoaded || weather.isFallback) return [];
-    const settings = { enabled: reminderSettings.enabled, skipWateringWhenRainExpected: reminderSettings.skipWateringWhenRainExpected, maxNormalRemindersPerDay: reminderSettings.maxNormalRemindersPerDay };
+    // La liste du jour montre toujours les conseils ; « rappels activés » ne décide que des notifications.
+    const settings = { enabled: true, skipWateringWhenRainExpected: reminderSettings.skipWateringWhenRainExpected, maxNormalRemindersPerDay: reminderSettings.maxNormalRemindersPerDay };
     const decisions = decideReminders(reminderPlants.map((resolved) => ({ plant: careProfileFor(resolved), history: events, weather: weatherSnapshot, settings })));
     // Une alerte par cause météo ; toutes les alertes importantes, puis au plus N conseils ordinaires (cf. spec §6).
     return selectGroups(groupReminders(decisions), reminderSettings.maxNormalRemindersPerDay).flatMap((group) => group.decisions);
@@ -181,7 +182,7 @@ export default function HomeScreen() {
   const away = trip.phase === "away";
   const tripPlan = useMemo(() => (vacation ? preparationSteps(resolvedPlants, vacation, now) : []), [now, resolvedPlants, vacation]);
 
-  const items = useMemo(() => buildTodayList({ groups: visibleReminders, session, seasonal }), [seasonal, session, visibleReminders]);
+  const items = useMemo(() => buildTodayList({ groups: visibleReminders, session, seasonal, rainExpected: reminderDecisions.some((decision) => decision.cause === "rain") }), [reminderDecisions, seasonal, session, visibleReminders]);
   const status = useMemo(() => balconyStatus(items, events, now), [events, items, now]);
   const streak = useMemo(() => streakDays(events, now), [events, now]);
   const sheetItem = items.find((item) => item.key === sheetKey) ?? null;
@@ -315,7 +316,7 @@ export default function HomeScreen() {
         {simulation.scenario !== "none" && (
           <View style={[styles.simulation, { backgroundColor: colors.surface }]}>
             <Text style={[styles.simulationTitle, { color: colors.foreground }]}>🧪 Simulation : {scenarioLabel(simulation.scenario).toLowerCase()}</Text>
-            <Text style={[styles.small, { color: colors.muted }]}>{weather.isFallback ? "La météo réelle n’a pas encore chargé : la simulation s’appliquera dès qu’elle sera là." : visibleReminders.length === 0 ? "Aucune alerte pour ce scénario : vérifie tes plantes et leurs derniers arrosages." : "Les alertes ci-dessous sont simulées."}</Text>
+            <Text style={[styles.small, { color: colors.muted }]}>{weather.isFallback ? "La météo réelle n’a pas encore chargé : la simulation s’appliquera dès qu’elle sera là." : reminderDecisions.length === 0 ? "Aucune alerte pour ce scénario : vérifie tes plantes et leurs derniers arrosages." : visibleReminders.length === 0 ? "Alerte simulée déjà traitée aujourd’hui." : "Les alertes ci-dessous sont simulées."}</Text>
             <View style={styles.inlineActions}>
               {notificationsUnavailableReason === null && visibleReminders.length > 0 && (
                 <Pressable accessibilityRole="button" onPress={() => void sendReminderPreview(visibleReminders[0]).then((result) => setPreviewStatus(result === "sent" ? "sent" : "denied"))} style={({ pressed }) => [styles.pill, { backgroundColor: colors.foreground }, pressed && styles.pressed]}>

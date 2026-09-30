@@ -135,8 +135,9 @@ describe.skipIf(!TEST_DATABASE_URL)("garden sync and server reminders (MySQL)", 
     forecast = { rainMmPerHour: 1 };
     await reminders.recalculateUserReminders(userId, NOW);
     const pending = (await decisions()).filter((row) => row.status === "pending");
-    expect(pending).toHaveLength(1);
-    expect(pending[0]).toMatchObject({ plantId: "basil-a", action: "skip" });
+    // La tomate, jamais arrosée dans l'app, reçoit aussi le « n'arrose pas » (une seule alerte pluie).
+    expect(pending.map((row) => row.plantId).sort()).toEqual(["basil-a", "tomato-a"]);
+    expect(pending.every((row) => row.action === "skip")).toBe(true);
   });
 
   it("sends a frost alert immediately outside quiet hours", async () => {

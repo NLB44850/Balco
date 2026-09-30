@@ -276,4 +276,10 @@ describe("decideReminder", () => {
 
     expect(results.map((decision) => decision.priority)).toEqual(["urgent", "normal"]);
   });
+
+  it("advises not to water a never-watered plant when rain is coming, without inventing thirst otherwise", () => {
+    const rainy = weather({ next12h: { precipitationMm: 8, precipitationProbabilityMax: 90, windGustKmhMax: 10 } });
+    expect(decideReminder({ plant, history: [], weather: rainy, now })).toMatchObject({ action: "skip", cause: "rain" });
+    expect(decideReminder({ plant, history: [], weather: weather(), now })).toBeNull();
+  });
 });

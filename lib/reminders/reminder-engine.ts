@@ -225,11 +225,10 @@ function wateringDecision(
 ): DraftDecision | null {
   if (!allows(plant, "watering")) return null;
   const lastWatering = lastEventOfType(history, plant.plantId, "watering");
-  // Sans historique, Balco n'invente pas de besoin d'arrosage.
-  if (!lastWatering) return null;
-
   const name = plant.label ?? plant.displayName;
-  const elapsed = hoursBetween(lastWatering, now);
+  const elapsed = lastWatering ? hoursBetween(lastWatering, now) : Infinity;
+  // Jamais arrosée dans l'app : l'accueil propose « arrose si besoin », donc la pluie annoncée le
+  // remplace par « n'arrose pas ». En revanche, sans historique, Balco n'invente pas de soif.
   const due = elapsed >= plant.wateringIntervalHours;
   const rainMm = weather.next12h.precipitationMm;
   const rainExpected =
@@ -249,6 +248,8 @@ function wateringDecision(
       reason: `Pluie prévue ${round(rainMm)} mm (seuil ${plant.rainSkipMm} mm), probabilité max ${Math.round(weather.next12h.precipitationProbabilityMax)} %.`,
     };
   }
+
+  if (!lastWatering) return null;
 
   if (hot && elapsed >= 24) {
     return {

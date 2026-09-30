@@ -49,6 +49,12 @@ describe("liste « Aujourd'hui »", () => {
     expect(items.filter((item) => item.kind === "task" && item.task.task.type === "watering")).toHaveLength(0);
   });
 
+  it("ne repropose pas d'arroser une fois l'alerte pluie cochée (« Compris »)", () => {
+    const session = buildDailySession(plants, watered, now);
+    const items = buildTodayList({ groups: [], session, seasonal: [], rainExpected: true });
+    expect(items.filter((item) => item.kind === "task" && item.task.task.type === "watering")).toHaveLength(0);
+  });
+
   it("ajoute les gestes de saison du mois", () => {
     const { items } = list(12);
     expect(items.some((item) => item.kind === "season" && item.title === "Plante la lavande")).toBe(true);
