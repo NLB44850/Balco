@@ -130,7 +130,9 @@ export function BalconySky({ scene, quiet = false, pots = [], topInset, scrollY 
   const plantSize = Math.min(210, width * 0.52);
 
   return (
-    <View style={StyleSheet.absoluteFill} onLayout={onLayout} pointerEvents="none" accessibilityElementsHidden importantForAccessibility="no-hide-descendants">
+    // overflow hidden : les ombres dépassent volontairement des bords ; sans ce cadre, la page web devient
+    // plus large que le téléphone, Chrome la rétrécit et un vide apparaît sous l'écran.
+    <View style={[StyleSheet.absoluteFill, styles.clip]} onLayout={onLayout} pointerEvents="none" accessibilityElementsHidden importantForAccessibility="no-hide-descendants">
       <LinearGradient colors={scene.background} locations={[0, 0.5, 1]} style={StyleSheet.absoluteFill} />
 
       <Animated.View style={[StyleSheet.absoluteFill, { opacity: shade, transform: [{ scaleX: flip }] }]}>
@@ -275,5 +277,6 @@ export function BalconySky({ scene, quiet = false, pots = [], topInset, scrollY 
 }
 
 const styles = StyleSheet.create({
+  clip: { overflow: "hidden" },
   statusStrip: { position: "absolute", top: 0, left: 0, right: 0 },
 });
