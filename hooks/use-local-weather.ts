@@ -148,8 +148,25 @@ function fallbackSnapshot(city: string, latitude: number, longitude: number): We
   };
 }
 
+// Tous les écrans (Aujourd'hui, Saisons…) partagent la même ville : un changement fait dans l'un
+// prévient les autres, sinon un écran resté ouvert renverrait l'ancienne ville au serveur.
+const preferenceListeners = new Set<(preference: LocationPreference) => void>();
+
 async function savePreference(preference: LocationPreference) {
   await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(preference));
+  preferenceListeners.forEach((listener) => listener(preference));
+}
+
+/** Nom de la ville d'après la position, quand le téléphone ne le donne pas (navigateur web). */
+async function cityFromCoordinates(latitude: number, longitude: number) {
+  try {
+    const response = await fetch(`https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=${latitude}&longitude=${longitude}&localityLanguage=fr`);
+    if (!response.ok) return null;
+    const place = (await response.json()) as { city?: string; locality?: string };
+    return place.city?.trim() || place.locality?.trim() || null;
+  } catch {
+    return null;
+  }
 }
 
 export function useLocalWeather(options: UseLocalWeatherOptions = {}) {
@@ -236,6 +253,7 @@ export function useLocalWeather(options: UseLocalWeatherOptions = {}) {
       } catch {
         // Le nom de ville est optionnel : les coordonnées suffisent pour la météo.
       }
+      if (city === "Ma position") city = (await cityFromCoordinates(latitude, longitude)) ?? city;
       const nextPreference: LocationPreference = { mode: "device", city, latitude, longitude };
       await savePreference(nextPreference);
       setPreference(nextPreference);
@@ -276,6 +294,14 @@ export function useLocalWeather(options: UseLocalWeatherOptions = {}) {
     }
     await requestDeviceLocation();
   }, [loadForecast, preference, requestDeviceLocation]);
+
+  useEffect(() => {
+    const listener = (next: LocationPreference) => setPreference(next);
+    preferenceListeners.add(listener);
+    return () => {
+      preferenceListeners.delete(listener);
+    };
+  }, []);
 
   useEffect(() => {
     let active = true;

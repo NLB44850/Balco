@@ -33,7 +33,7 @@ export default function AssistantScreen() {
   const colors = useColors();
   const router = useRouter();
   const insets = useSafeAreaInsets();
-  const { account, profile, resolvedPlants, onboarding, updateOnboarding } = useGarden();
+  const { account, profile, resolvedPlants, onboarding, updateOnboarding, syncNow } = useGarden();
   // Des questions prêtes, tirées de tes plantes et de la saison : rien à écrire.
   const questions = useMemo(() => quickQuestions(resolvedPlants), [resolvedPlants]);
   const utils = trpc.useUtils();
@@ -44,6 +44,8 @@ export default function AssistantScreen() {
   const updateMemory = trpc.ai.updateMemory.useMutation({ onSuccess: setMemory, onError: () => void utils.ai.memory.invalidate() });
   const forget = trpc.ai.forget.useMutation({ onSuccess: setMemory, onError: () => void utils.ai.memory.invalidate() });
   const [memoryOpen, setMemoryOpen] = useState(false);
+  // Envoi des derniers gestes au serveur, juste avant la question.
+  const [syncing, setSyncing] = useState(false);
   // Le niveau est l'expérience choisie à l'accueil (modifiable aussi dans Réglages) : une seule source.
   const memoryView = memory.data ? { ...memory.data, level: isNoraLevel(onboarding?.experience) ? onboarding.experience : memory.data.level } : undefined;
   const [messages, setMessages] = useState<Message[]>([]);
@@ -67,7 +69,7 @@ export default function AssistantScreen() {
   const chat = status.data?.chat;
   const unavailable = status.data?.available === false;
   const noQuestionsLeft = chat ? chat.remaining <= 0 : false;
-  const canAsk = account.signedIn && !unavailable && !noQuestionsLeft && !ask.isPending;
+  const canAsk = account.signedIn && !unavailable && !noQuestionsLeft && !ask.isPending && !syncing;
   const firstName = profile.firstName?.trim();
 
   const welcome: Message[] = [
@@ -89,7 +91,9 @@ export default function AssistantScreen() {
     setDraft("");
     // Seuls les vrais échanges partent (ni notices ni souvenirs), en commençant par une question.
     const history = next.filter((message) => message.from === "user" || message.from === "bot").map((message) => ({ role: message.from === "user" ? ("user" as const) : ("assistant" as const), content: message.text.slice(0, 2000) }));
-    ask.mutate({ messages: history }, {
+    // Les derniers gestes et la ville partent d'abord : Nora répond sur un balcon à jour.
+    setSyncing(true);
+    void syncNow().catch(() => undefined).finally(() => ask.mutate({ messages: history }, {
       onSuccess: (result) => {
         const now = Date.now();
         setMessages((current) => [
@@ -101,7 +105,8 @@ export default function AssistantScreen() {
         if (result.remembered.length > 0 || result.forgotten.length > 0) void utils.ai.memory.invalidate();
       },
       onError: (error) => setMessages((current) => [...current, { id: `${Date.now()}-notice`, from: "notice", text: error.message, time: clock() }]),
-    });
+      onSettled: () => setSyncing(false),
+    }));
   };
 
   const changePreferences = (preferences: string[]) => {
@@ -163,7 +168,7 @@ export default function AssistantScreen() {
     </>
   );
 
-  const footer = ask.isPending ? (
+  const footer = ask.isPending || syncing ? (
     <View style={styles.messageRow}>
       <View style={[styles.smallAvatar, { backgroundColor: colors.primary }]}><Text style={styles.smallAvatarText}>N</Text></View>
       <View style={[glass.card, styles.bubble]}><Text style={[styles.messageText, { color: colors.muted }]}>Nora réfléchit…</Text></View>

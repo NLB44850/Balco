@@ -157,7 +157,7 @@ export default function CalendarScreen() {
   const rowSubtitle = (activity: CalendarActivity) => {
     const when = view === "season" && activity.months ? capitalize(describeMonths(activity.months)) : null;
     const subject = subjects.find((item) => item.id === activity.subjectId)?.displayName;
-    return [ACTIVITY_KIND_LABELS[activity.kind], when ?? subject].filter(Boolean).join(" · ");
+    return [activity.eventType === "fertilizing" ? "Engrais" : ACTIVITY_KIND_LABELS[activity.kind], when ?? subject].filter(Boolean).join(" · ");
   };
   const periodLabel = view === "season" ? SEASON_IN[season.id] : `en ${MONTH_LONG[selectedMonth - 1]}`;
   const climateLine = weather.isFallback || !climate ? "Paris par défaut : choisis ta ville pour des dates justes." : climateSummary(climate);
@@ -273,7 +273,7 @@ export default function CalendarScreen() {
           const resolved = resolvedById.get(sheetActivity.subjectId);
           return (
             <View style={styles.sheet}>
-              <Text style={[styles.sheetKind, { color: colors.primary }]}>{ACTIVITY_KIND_LABELS[sheetActivity.kind]}{sheetActivity.months ? ` · ${describeMonths(sheetActivity.months)}` : ` · ${periodLabel}`}</Text>
+              <Text style={[styles.sheetKind, { color: colors.primary }]}>{sheetActivity.eventType === "fertilizing" ? "Engrais" : ACTIVITY_KIND_LABELS[sheetActivity.kind]}{sheetActivity.months ? ` · ${describeMonths(sheetActivity.months)}` : ` · ${periodLabel}`}</Text>
               <Text style={[styles.sheetTitle, { color: colors.foreground }]}>{sheetActivity.title}</Text>
               <Text style={[styles.sheetBody, { color: colors.muted }]}>{sheetActivity.description}</Text>
               {showingIdeas ? (

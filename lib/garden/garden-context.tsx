@@ -386,7 +386,11 @@ export function GardenProvider({ children }: { children: ReactNode }) {
     await saveMeta({});
   }, [logout, saveMeta, setOutbox, utils]);
 
-  const syncNow = useCallback(() => runSync(), [runSync]);
+  /** Envoie tout de suite ce qui attend ; si un envoi est déjà en cours, attend sa fin puis renvoie le reste. */
+  const syncNow = useCallback(async () => {
+    for (let waited = 0; syncingRef.current && waited < 50; waited += 1) await new Promise((resolve) => setTimeout(resolve, 100));
+    await runSync();
+  }, [runSync]);
 
   /** Efface le compte côté serveur puis tout ce qui reste sur l'appareil : on repart de zéro. */
   const deleteAccount = useCallback(async () => {

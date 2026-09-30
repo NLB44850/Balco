@@ -89,4 +89,13 @@ describe("full history for Nora", () => {
     expect(text).toContain("Envies choisies à l'inscription : des aromatiques pour la cuisine.");
     expect(text).toContain("quelques plantes");
   });
+
+  it("gives Nora the balcony position, even when the city has no name", () => {
+    const summary = summarizeHistory([], [], NOW);
+    const base: GardenFacts = { firstName: null, city: null, sunlight: null, space: null, goals: [], plants: [], ...summary, memory: { level: null, preferences: [], notes: [] } };
+    const text = describeGarden({ ...base, position: { latitude: 47.22, longitude: -1.55 } }, NOW);
+    expect(text).toContain("Position du balcon : 47.22° N, 1.55° O (déduis-en la ville ou la région).");
+    expect(text).not.toContain("Ville :");
+    expect(describeGarden({ ...base, city: "Nantes", position: { latitude: 47.22, longitude: -1.55 } }, NOW)).toContain("Ville : Nantes.\nPosition du balcon : 47.22° N, 1.55° O.");
+  });
 });

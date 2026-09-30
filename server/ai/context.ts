@@ -31,6 +31,8 @@ export type PlantHistory = {
 export type GardenFacts = {
   firstName: string | null;
   city: string | null;
+  /** Coordonnées du balcon (arrondies), utiles quand la ville n'a pas de nom. */
+  position?: { latitude: number; longitude: number } | null;
   sunlight: string | null;
   space: string | null;
   goals: string[];
@@ -142,7 +144,8 @@ export async function loadGardenFacts(userId: number, now = new Date()): Promise
   const asked = balcony && !balcony.skipped ? balcony : null;
   return {
     firstName: profile?.firstName ?? null,
-    city: profile?.locationUpdatedAt ? profile.city : null,
+    city: profile?.locationUpdatedAt && profile.city !== "Ma position" ? profile.city : null,
+    position: profile?.locationUpdatedAt ? { latitude: Math.round(profile.latitude * 100) / 100, longitude: Math.round(profile.longitude * 100) / 100 } : null,
     sunlight: asked?.sunlight ? SUNLIGHT_LABELS[asked.sunlight as Sunlight] ?? null : null,
     space: asked?.space ? SPACE_LABELS[asked.space as SpaceSize] ?? null : null,
     goals: (asked?.goals ?? []).flatMap((goal) => GOAL_LABELS[goal] ?? []),
@@ -185,6 +188,7 @@ export function describeGarden(facts: GardenFacts, now = new Date()) {
     `Date : ${now.getDate()} ${MONTH_LONG[now.getMonth()]} ${now.getFullYear()} (${seasonName(now)}), France métropolitaine.`,
     facts.firstName ? `Prénom de la personne : ${facts.firstName}.` : null,
     facts.city ? `Ville : ${facts.city}.` : null,
+    facts.position ? `Position du balcon : ${Math.abs(facts.position.latitude)}° ${facts.position.latitude >= 0 ? "N" : "S"}, ${Math.abs(facts.position.longitude)}° ${facts.position.longitude >= 0 ? "E" : "O"}${facts.city ? "" : " (déduis-en la ville ou la région)"}.` : null,
     facts.space || facts.sunlight ? `Balcon : ${[facts.space, facts.sunlight ? `exposition ${facts.sunlight.toLowerCase()}` : null].filter(Boolean).join(", ")}.` : null,
     facts.goals.length > 0 ? `Envies choisies à l'inscription : ${facts.goals.join(", ")}.` : null,
     ...describeMemory(facts.memory),
