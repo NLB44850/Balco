@@ -10,7 +10,7 @@ import { ScreenHeader } from "@/components/screen-header";
 import { glass } from "@/components/ui/glass";
 import { useColors } from "@/hooks/use-colors";
 import { useGarden } from "@/lib/garden/garden-context";
-import { computeBadges, computeProgress, computeStats, initials } from "@/lib/garden/garden-logic";
+import { computeBadges, computeProgress, computeStats } from "@/lib/garden/garden-logic";
 import { usePlantPhotos } from "@/lib/garden/photos-context";
 import { weekSummary } from "@/lib/garden/week";
 import { SPACE_LABELS, SUNLIGHT_LABELS, type SpaceSize, type Sunlight } from "@/lib/plants/catalog";
@@ -32,7 +32,6 @@ export default function ProfileScreen() {
   const badges = useMemo(() => computeBadges(stats), [stats]);
   const progress = useMemo(() => computeProgress(stats, badges), [badges, stats]);
   const unlockedCount = badges.filter((badge) => badge.unlocked).length;
-  const userInitials = initials(profile.firstName);
   const balconyMeta = [
     onboarding?.space && !onboarding.skipped ? capitalize(SPACE_LABELS[onboarding.space as SpaceSize]) : null,
     onboarding?.sunlight && !onboarding.skipped ? SUNLIGHT_LABELS[onboarding.sunlight as Sunlight].toLowerCase() : null,
@@ -47,7 +46,6 @@ export default function ProfileScreen() {
         subtitle={balconyMeta}
         right={
           <View style={styles.headerRight}>
-            <View style={[styles.avatar, { backgroundColor: colors.primary }]}><Text style={userInitials ? styles.avatarText : styles.avatarEmoji}>{userInitials ?? "🌱"}</Text></View>
             <Pressable accessibilityRole="button" accessibilityLabel="Réglages" onPress={() => router.push("/settings")} style={({ pressed }) => [glass.soft, styles.settingsButton, pressed && styles.pressed]}><Text style={[styles.settingsText, { color: colors.foreground }]}>⚙</Text></Pressable>
           </View>
         }
@@ -127,9 +125,6 @@ const styles = StyleSheet.create({
   flex: { flex: 1 },
   header: { marginBottom: 18 },
   headerRight: { flexDirection: "row", alignItems: "center", gap: 8 },
-  avatar: { width: 40, height: 40, borderRadius: 20, alignItems: "center", justifyContent: "center" },
-  avatarText: { color: "#FFFFFF", fontSize: 16, fontWeight: "800", letterSpacing: 0.5 },
-  avatarEmoji: { fontSize: 24 },
   settingsButton: { width: 40, height: 40, borderRadius: 20, alignItems: "center", justifyContent: "center" },
   settingsText: { fontSize: 17 },
   weekCard: { padding: 16, gap: 12, marginBottom: 14 },
