@@ -69,7 +69,7 @@ export function TodayRow({ icon, tone, title, subtitle, done, onToggle, onOpen, 
         </View>
       </Pressable>
       {onToggle ? (
-        <Pressable accessibilityRole="checkbox" accessibilityState={{ checked: done }} accessibilityLabel={checkLabel ?? (done ? "Annuler ce geste" : "Marquer comme fait")} onPress={onToggle} hitSlop={12} style={styles.checkZone}>
+        <Pressable accessibilityRole="checkbox" accessibilityState={{ checked: done }} accessibilityLabel={`${checkLabel ?? (done ? "Annuler ce geste" : "Marquer comme fait")} : ${title}`} onPress={onToggle} hitSlop={12} style={styles.checkZone}>
           <View pointerEvents="none" style={styles.burst}>
             <Animated.View style={[styles.ring, { borderColor: colors.primary, opacity: ringOpacity, transform: [{ scale: ringScale }] }]} />
             {SPARKS.map((spark, index) => (

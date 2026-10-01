@@ -38,10 +38,19 @@ Tout se passe dans son GitHub Codespace (pas de Docker sur son PC).
 
 - `pnpm -s check`, `pnpm -s lint`, puis `TEST_DATABASE_URL=mysql://balco:balco@localhost:3306/balco_cal npx vitest run`
   (MariaDB locale : `service mariadb start` si elle s'est arrêtée, `apt-get install -y mariadb-server` si elle manque,
-  puis `DATABASE_URL=… npx drizzle-kit migrate` ; 301 tests à ce jour). Dans un conteneur
+  puis `DATABASE_URL=… npx drizzle-kit migrate` ; 303 tests à ce jour). Dans un conteneur
   neuf : `apt-get install -y mariadb-server`, `service mariadb start`, créer la base `balco_cal` et l'utilisateur
   `balco`/`balco`, puis `pnpm -s build && DATABASE_URL=mysql://balco:balco@localhost:3306/balco_cal node dist/migrate.mjs`.
 - `npx expo export --platform android` pour s'assurer que le bundle Android se construit.
+- **Tests de bout en bout** (à lancer quand le porteur le demande, et avant chaque grosse évolution) :
+  `bash scripts/e2e.sh` (≈ 4 min : construit l'app web avec la simulation météo, migre la base, démarre
+  le vrai serveur sur le port 3100, lance Playwright). `bash scripts/e2e.sh meteo` pour un seul fichier,
+  `E2E_SKIP_BUILD=1` pour ne pas reconstruire. Scénarios dans `e2e/` (15 aujourd'hui) : parcours
+  (onboarding, écrans, cocher/Annuler, fête, catalogue), météo (pluie + eau économisée, gel + Saisons,
+  orage, vent, canicule, « Pas aujourd'hui », retour météo réelle), compte (code de connexion lu dans
+  `dist/e2e-server.log`, balcon retrouvé sur un 2ᵉ téléphone) et vacances. Open-Meteo est simulé
+  (`e2e/helpers.ts`, `mockWeather`), le balcon est posé dans le stockage (`seedBalcony`). Les cases à
+  cocher s'appellent « Marquer comme fait : <titre> ». Échecs : captures dans `dist/e2e-results/`.
 - Rendu web : `npx expo export --platform web`, serveur `node dist/standalone/index.mjs` avec
   `WEB_DIR`, faux Open-Meteo et Playwright (Chromium dans `/opt/pw-browsers/chromium`). Attention :
   `page.clock.setFixedTime` fige les animations `FadeIn`/`PopIn` (écrans vides sur la capture).
@@ -156,8 +165,9 @@ Livré, à valider sur son téléphone :
    Ma semaine, bloc 💧).
 2. Petites victoires : refaites le 01/10 (animation à chaque coche, fête plein écran, chaque récolte
    fêtée). À valider sur son téléphone.
-3. Vérifier que les alertes météo (gel, chaleur, vent, orage, pluie) fonctionnent et agissent bien
-   sur les gestes (Aujourd'hui, Saisons, notifications), avec la simulation météo.
+3. Alertes météo : vérifiées le 01/10 (tests de bout en bout). Corrigé : canicule sans alerte pour une
+   plante jamais arrosée dans l'app ; « Arrose … si besoin » en double sous l'alerte chaleur, pendant un
+   orage ou une fois arrosé ; Saisons montrait encore une alerte déjà traitée. À valider sur son téléphone.
 4. Nouveau : agrandir le catalogue des plantes (`lib/plants/catalog`, 73 aujourd'hui ; penser aux
    photos d'exemple via `scripts/photos/`, à lancer dans le Codespace, et aux emojis).
 5. Nouveau : suggestions de plantes selon la saison / le mois (quoi semer ou planter maintenant).
