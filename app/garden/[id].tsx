@@ -13,6 +13,7 @@ import { FadeIn } from "@/components/motion";
 import { usePlantPhotoCapture } from "@/components/photo-source-sheet";
 import { PlantPicture, stockPhoto } from "@/components/plant-picture";
 import { ScreenContainer } from "@/components/screen-container";
+import { useCelebration } from "@/components/today/celebration";
 import { UndoToast, type ToastMessage } from "@/components/today/undo-toast";
 import { celebrationFor, milestoneDate, plantProgress, sinceLabel } from "@/lib/garden/progress";
 import { IconSymbol } from "@/components/ui/icon-symbol";
@@ -43,6 +44,7 @@ export default function PlantScreen() {
   const [confirmRemove, setConfirmRemove] = useState(false);
   const [toast, setToast] = useState<ToastMessage | null>(null);
   const toastId = useRef(0);
+  const { celebrate, overlay: celebration } = useCelebration();
   const scrollRef = useRef<ScrollView>(null);
   const showToast = useCallback((text: string, onUndo?: () => void) => {
     toastId.current += 1;
@@ -98,8 +100,8 @@ export default function PlantScreen() {
     const event = eventForSessionTask(gesture, new Date());
     await logEvent(event);
     void Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => undefined);
-    const cheer = celebrationFor(resolvedPlants, events, [event, ...events.filter((item) => item.id !== event.id)]);
-    showToast(cheer ?? `${gesture.task.doneTitle} +${POINTS_PER_GESTURE} points`, () => void removeEvent(event.id));
+    celebrate(celebrationFor(resolvedPlants, events, [event, ...events.filter((item) => item.id !== event.id)]));
+    showToast(`${gesture.task.doneTitle} +${POINTS_PER_GESTURE} points`, () => void removeEvent(event.id));
   };
 
   const undoGesture = async () => {
@@ -346,6 +348,7 @@ export default function PlantScreen() {
       </ScrollView>
       {capture.sheet}
       <UndoToast message={toast} onDone={hideToast} bottom={insets.bottom + 16} />
+      {celebration}
     </View>
   );
 }

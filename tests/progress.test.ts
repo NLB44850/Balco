@@ -56,22 +56,24 @@ describe("progression d'une plante", () => {
 });
 
 describe("petites victoires", () => {
-  it("fête un badge, une série, une première récolte, et se tait sinon", () => {
+  it("fête un badge, une série, chaque récolte, et se tait sinon", () => {
+    const title = (...args: Parameters<typeof celebrationFor>) => celebrationFor(...args)?.title ?? null;
     const harvest = event("tomato-1", "harvest", 0);
-    expect(celebrationFor(plants, [], [harvest], NOW)).toBe("🎉 Nouveau badge : Du Balcon à l'Assiette !");
-    const second = event("tomato-1", "harvest", 0, { note: "encore" });
-    expect(celebrationFor(plants, [harvest], [second, harvest], NOW)).toBeNull();
+    expect(title(plants, [], [harvest], NOW)).toBe("Nouveau badge : Du Balcon à l'Assiette");
+    const second = { ...event("tomato-1", "harvest", 0), id: "harvest-again" };
+    expect(celebrationFor(plants, [harvest], [second, harvest], NOW)).toMatchObject({ kind: "harvest", title: "Récolte de Tomates cerises" });
+    expect(celebrationFor(plants, [harvest], [event("basil-1", "pruning", 0), harvest], NOW)).toBeNull();
 
     const week = [1, 2, 3, 4, 5, 6].map((days) => event("basil-1", "watering", days));
     const withBadge = [event("tomato-1", "harvest", 30), ...week];
-    expect(celebrationFor(plants, withBadge, [event("basil-1", "watering", 0), ...withBadge], NOW)).toBe("🎉 Nouveau badge : Main Verte !");
+    expect(title(plants, withBadge, [event("basil-1", "watering", 0), ...withBadge], NOW)).toBe("Nouveau badge : Main Verte");
 
     const two = [1, 2].map((days) => event("basil-1", "pruning", days));
     const base = [event("tomato-1", "harvest", 30), ...two];
-    expect(celebrationFor(plants, base, [event("basil-1", "pruning", 0), ...base], NOW)).toBe("🔥 3 jours de suite : ton balcon adore ta régularité !");
+    expect(title(plants, base, [event("basil-1", "pruning", 0), ...base], NOW)).toBe("3 jours de suite");
 
     const pepperHarvest = event("pepper-1", "harvest", 0);
     const quiet = [event("tomato-1", "harvest", 30), event("basil-1", "pruning", 4)];
-    expect(celebrationFor(plants, quiet, [pepperHarvest, ...quiet], NOW)).toBe("🧺 Première récolte de Poivron : bravo !");
+    expect(title(plants, quiet, [pepperHarvest, ...quiet], NOW)).toBe("Première récolte de Poivron");
   });
 });

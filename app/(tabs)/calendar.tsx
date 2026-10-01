@@ -15,6 +15,7 @@ import { PlantPicture } from "@/components/plant-picture";
 import { ScreenHeader } from "@/components/screen-header";
 import { BottomSheet } from "@/components/today/bottom-sheet";
 import { TODAY_ROW_PICTURE, TodayRow } from "@/components/today/today-row";
+import { useCelebration } from "@/components/today/celebration";
 import { UndoToast, type ToastMessage } from "@/components/today/undo-toast";
 import { glass } from "@/components/ui/glass";
 import { Text, TextInput } from "@/components/ui/typography";
@@ -69,6 +70,7 @@ export default function CalendarScreen() {
   const [sheetKey, setSheetKey] = useState<string | null>(null);
   const [toast, setToast] = useState<ToastMessage | null>(null);
   const toastId = useRef(0);
+  const { celebrate, overlay: celebration } = useCelebration();
   const showToast = (text: string, onUndo?: () => void) => {
     toastId.current += 1;
     setToast({ id: toastId.current, text, onUndo });
@@ -122,8 +124,8 @@ export default function CalendarScreen() {
       return;
     }
     await logEvent(event);
-    const cheer = celebrationFor(resolvedPlants, events, [event, ...events.filter((item) => item.id !== event.id)]);
-    showToast(cheer ?? `${activity.title} : noté`, () => void removeEvent(event.id));
+    celebrate(celebrationFor(resolvedPlants, events, [event, ...events.filter((item) => item.id !== event.id)]));
+    showToast(`${activity.title} : noté`, () => void removeEvent(event.id));
   };
 
   const addIdea = async (activity: CalendarActivity) => {
@@ -293,7 +295,9 @@ export default function CalendarScreen() {
 
       <Modal visible={cityModalVisible} transparent animationType="slide" onRequestClose={() => setCityModalVisible(false)}>
         <View style={styles.modalBackdrop}><View style={[styles.modalCard, { backgroundColor: colors.surface }]}><View style={styles.modalHeader}><View><Text style={[styles.modalOverline, { color: colors.muted }]}>Ta ville</Text><Text style={[styles.modalTitle, { color: colors.foreground }]}>Où pousse ton jardin ?</Text></View><Pressable onPress={() => setCityModalVisible(false)} style={styles.closeButton}><Text style={[styles.closeText, { color: colors.muted }]}>×</Text></Pressable></View><Text style={[styles.modalIntro, { color: colors.muted }]}>Choisis une ville pour adapter la météo et les conseils de culture.</Text><TextInput value={cityQuery} onChangeText={setCityQuery} onSubmitEditing={() => void searchManualCity()} placeholder="Rechercher une ville…" placeholderTextColor={colors.muted} returnKeyType="search" style={[styles.cityInput, { borderColor: colors.border, color: colors.foreground, backgroundColor: colors.background }]} /><Pressable onPress={() => void searchManualCity()} style={({ pressed }) => [styles.searchButton, { backgroundColor: colors.primary }, pressed && styles.pressed]}><Text style={styles.searchButtonText}>{citySearchLoading ? "Recherche…" : "Rechercher"}</Text></Pressable>{citySearchError && <Text style={[styles.searchError, { color: colors.error }]}>{citySearchError}</Text>}<View style={styles.resultList}>{cityResults.map((city) => <Pressable key={`${city.id}-${city.latitude}`} onPress={() => void chooseCity(city)} style={({ pressed }) => [styles.resultRow, { borderColor: colors.border }, pressed && styles.pressed]}><Text style={[styles.resultName, { color: colors.foreground }]}>{city.name}</Text><Text style={[styles.resultMeta, { color: colors.muted }]}>{[city.admin1, city.country].filter(Boolean).join(" · ")}</Text></Pressable>)}</View><Pressable onPress={() => { setCityModalVisible(false); void requestDeviceLocation(); }} style={({ pressed }) => [styles.deviceLink, pressed && styles.pressed]}><Text style={[styles.deviceLinkText, { color: colors.primary }]}>⌖ Utiliser ma position actuelle</Text></Pressable></View></View>
-      </Modal>      <UndoToast message={toast} onDone={hideToast} />
+      </Modal>
+      <UndoToast message={toast} onDone={hideToast} />
+      {celebration}
     </LightScreen>
   );
 }

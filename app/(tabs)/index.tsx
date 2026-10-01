@@ -14,6 +14,7 @@ import { BALCONY_FLOOR_HEIGHT, BalconySky } from "@/components/today/balcony-sky
 import { CatalogPicture, PlantPicture } from "@/components/plant-picture";
 import { BottomSheet } from "@/components/today/bottom-sheet";
 import { TODAY_ROW_PICTURE, TodayRow } from "@/components/today/today-row";
+import { useCelebration } from "@/components/today/celebration";
 import { UndoToast, type ToastMessage } from "@/components/today/undo-toast";
 import { useLocalWeather } from "@/hooks/use-local-weather";
 import { useColors } from "@/hooks/use-colors";
@@ -105,6 +106,7 @@ export default function HomeScreen() {
   const [sheetKey, setSheetKey] = useState<string | null>(null);
   const [toast, setToast] = useState<ToastMessage | null>(null);
   const toastId = useRef(0);
+  const { celebrate, overlay: celebration } = useCelebration();
   const { weather, weatherSnapshot } = useLocalWeather();
   const simulation = useWeatherSimulation();
   const insets = useSafeAreaInsets();
@@ -205,7 +207,7 @@ export default function HomeScreen() {
   const hideToast = useCallback(() => setToast(null), []);
 
   /** Un badge, un niveau, une série ou une première récolte débloqués par ce geste : on le fête. */
-  const cheer = (logged: MaintenanceEvent[]) => celebrationFor(resolvedPlants, events, [...logged, ...events.filter((event) => !logged.some((item) => item.id === event.id))]);
+  const cheer = (logged: MaintenanceEvent[]) => celebrate(celebrationFor(resolvedPlants, events, [...logged, ...events.filter((event) => !logged.some((item) => item.id === event.id))]));
 
   const logAll = async (toLog: MaintenanceEvent[]) => {
     for (const event of toLog) await logEvent(event);
@@ -231,7 +233,8 @@ export default function HomeScreen() {
       return total + (resolved ? litersPerWatering(resolved) : 0);
     }, 0);
     const usual = skip ? `Arrosage évité : ≈ ${formatLiters(Math.round(liters * 10) / 10)} d’eau économisés` : `C’est noté · +${POINTS_PER_GESTURE * group.decisions.length} points`;
-    showToast(cheer(logged) ?? usual, () => {
+    cheer(logged);
+    showToast(usual, () => {
       undoEvents();
       void saveReminderSnoozes(previous);
     });
@@ -250,7 +253,8 @@ export default function HomeScreen() {
       const logged = [eventForActivity(item.activity, new Date())];
       const undo = await logAll(logged);
       haptic();
-      return showToast(cheer(logged) ?? `${item.title} : noté pour ce mois-ci`, undo);
+      cheer(logged);
+      return showToast(`${item.title} : noté pour ce mois-ci`, undo);
     }
     if (item.done) {
       const previous = events.find((event) => event.id === item.task.eventId);
@@ -260,7 +264,8 @@ export default function HomeScreen() {
     const logged = [eventForSessionTask(item.task, new Date())];
     const undo = await logAll(logged);
     haptic();
-    showToast(cheer(logged) ?? `${item.title} : noté · +${POINTS_PER_GESTURE} points`, undo);
+    cheer(logged);
+    showToast(`${item.title} : noté · +${POINTS_PER_GESTURE} points`, undo);
   };
 
   const activateReminders = async () => {
@@ -458,6 +463,7 @@ export default function HomeScreen() {
       </BottomSheet>
 
       <UndoToast message={toast} onDone={hideToast} />
+      {celebration}
     </ScreenContainer>
   );
 }

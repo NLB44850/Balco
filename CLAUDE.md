@@ -143,13 +143,19 @@ Livré, à valider sur son téléphone :
   (stade, 8 semaines en barres, étapes marquantes) ; `celebrationFor` remplace le message après un
   geste quand il débloque un badge, un niveau, une série ou une première récolte (Aujourd'hui,
   Saisons, fiche plante).
+- **Petites victoires en grand** (01/10, demande « pas d'effet waouh ») : chaque coche (`TodayRow`) fait
+  rebondir le rond avec une onde, 8 petites feuilles et un flash vert pâle sur la ligne. `celebrationFor`
+  renvoie maintenant `{ kind, emoji, title, detail }` et fête aussi **chaque récolte** (pas seulement la
+  première) ; la fête s'affiche en plein écran (`components/today/celebration.tsx`, `useCelebration` :
+  confettis aux couleurs de l'app, carte au centre, se ferme seule en ~3 s ou d'une touche), et le
+  message habituel avec « Annuler » reste en bas (les litres d'eau économisés ne sont plus cachés).
 
 
 À faire, dans l'ordre (liste du porteur, 30/09) :
 1. Tester avec lui l'eau économisée (simulation pluie → cocher « N'arrose pas » → toast litres →
    Ma semaine, bloc 💧).
-2. Corriger les petites victoires (`celebrationFor`, `lib/garden/progress.ts`) : lui demander ce qui
-   ne va pas (message, moment, affichage) avant de modifier.
+2. Petites victoires : refaites le 01/10 (animation à chaque coche, fête plein écran, chaque récolte
+   fêtée). À valider sur son téléphone.
 3. Vérifier que les alertes météo (gel, chaleur, vent, orage, pluie) fonctionnent et agissent bien
    sur les gestes (Aujourd'hui, Saisons, notifications), avec la simulation météo.
 4. Nouveau : agrandir le catalogue des plantes (`lib/plants/catalog`, 73 aujourd'hui ; penser aux

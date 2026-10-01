@@ -153,33 +153,40 @@ export function sinceLabel(days: number) {
 
 const STREAK_STEPS = [3, 7, 14, 30, 60, 100];
 
+export type Celebration = { kind: "badge" | "level" | "streak" | "harvest"; emoji: string; title: string; detail: string };
+
 /**
- * Ce qu'un geste vient de débloquer, pour le fêter tout de suite : un badge, un niveau, une série
- * de jours, la première récolte d'une plante. Rien sinon (le message habituel suffit).
+ * Ce qu'un geste vient de débloquer, pour le fêter tout de suite en grand : un badge, un niveau,
+ * une série de jours, une récolte (toujours un beau moment). Rien sinon (le message habituel suffit).
  */
-export function celebrationFor(plants: ResolvedPlant[], before: MaintenanceEvent[], after: MaintenanceEvent[], now = new Date()): string | null {
+export function celebrationFor(plants: ResolvedPlant[], before: MaintenanceEvent[], after: MaintenanceEvent[], now = new Date()): Celebration | null {
   const beforeStats = computeStats(plants, before, now);
   const afterStats = computeStats(plants, after, now);
   const beforeBadges = computeBadges(beforeStats);
   const afterBadges = computeBadges(afterStats);
   const badge = afterBadges.find((item, index) => item.unlocked && !beforeBadges[index].unlocked);
-  if (badge) return `🎉 Nouveau badge : ${badge.title} !`;
+  if (badge) return { kind: "badge", emoji: "🏅", title: `Nouveau badge : ${badge.title}`, detail: `${badge.detail} : c’est fait, bravo !` };
 
   const beforeLevel = computeProgress(beforeStats, beforeBadges);
   const afterLevel = computeProgress(afterStats, afterBadges);
-  if (afterLevel.level > beforeLevel.level) return `🎉 Niveau ${afterLevel.level} : ${afterLevel.levelTitle} !`;
+  if (afterLevel.level > beforeLevel.level) return { kind: "level", emoji: "🌟", title: `Niveau ${afterLevel.level}`, detail: `Te voilà ${afterLevel.levelTitle}. Ton balcon te dit merci !` };
 
   const ids = new Set(plants.map(({ plant }) => plant.id));
   const streakBefore = streakDays(before.filter((event) => ids.has(event.plantId)), now);
   const streakAfter = streakDays(after.filter((event) => ids.has(event.plantId)), now);
   const step = STREAK_STEPS.find((days) => streakAfter >= days && streakBefore < days);
-  if (step) return `🔥 ${step} jours de suite : ton balcon adore ta régularité !`;
+  if (step) return { kind: "streak", emoji: "🔥", title: `${step} jours de suite`, detail: "Ton balcon adore ta régularité." };
 
   const known = new Set(before.map((event) => event.id));
   for (const event of after) {
     if (known.has(event.id) || event.type !== "harvest") continue;
     const resolved = plants.find(({ plant }) => plant.id === event.plantId);
-    if (resolved && !before.some((old) => old.plantId === event.plantId && old.type === "harvest")) return `🧺 Première récolte de ${plantDisplayName(resolved)} : bravo !`;
+    if (!resolved) continue;
+    const name = plantDisplayName(resolved);
+    const first = !before.some((old) => old.plantId === event.plantId && old.type === "harvest");
+    return first
+      ? { kind: "harvest", emoji: "🧺", title: `Première récolte de ${name}`, detail: "Le plus beau moment du balcon. Bravo !" }
+      : { kind: "harvest", emoji: "🧺", title: `Récolte de ${name}`, detail: "Bon appétit ! Récolter souvent l’encourage à produire." };
   }
   return null;
 }
