@@ -38,15 +38,15 @@ Tout se passe dans son GitHub Codespace (pas de Docker sur son PC).
 
 - `pnpm -s check`, `pnpm -s lint`, puis `TEST_DATABASE_URL=mysql://balco:balco@localhost:3306/balco_cal npx vitest run`
   (MariaDB locale : `service mariadb start` si elle s'est arrêtée, `apt-get install -y mariadb-server` si elle manque,
-  puis `DATABASE_URL=… npx drizzle-kit migrate` ; 303 tests à ce jour). Dans un conteneur
+  puis `DATABASE_URL=… npx drizzle-kit migrate` ; 332 tests à ce jour). Dans un conteneur
   neuf : `apt-get install -y mariadb-server`, `service mariadb start`, créer la base `balco_cal` et l'utilisateur
   `balco`/`balco`, puis `pnpm -s build && DATABASE_URL=mysql://balco:balco@localhost:3306/balco_cal node dist/migrate.mjs`.
 - `npx expo export --platform android` pour s'assurer que le bundle Android se construit.
 - **Tests de bout en bout** (à lancer quand le porteur le demande, et avant chaque grosse évolution) :
   `bash scripts/e2e.sh` (≈ 4 min : construit l'app web avec la simulation météo, migre la base, démarre
   le vrai serveur sur le port 3100, lance Playwright). `bash scripts/e2e.sh meteo` pour un seul fichier,
-  `E2E_SKIP_BUILD=1` pour ne pas reconstruire. Scénarios dans `e2e/` (15 aujourd'hui) : parcours
-  (onboarding, écrans, cocher/Annuler, fête, catalogue), météo (pluie + eau économisée, gel + Saisons,
+  `E2E_SKIP_BUILD=1` pour ne pas reconstruire. Scénarios dans `e2e/` (16 aujourd'hui) : parcours
+  (onboarding, écrans, cocher/Annuler, fête, catalogue, variétés anciennes/originales), météo (pluie + eau économisée, gel + Saisons,
   orage, vent, canicule, « Pas aujourd'hui », retour météo réelle), compte (code de connexion lu dans
   `dist/e2e-server.log`, balcon retrouvé sur un 2ᵉ téléphone) et vacances. Open-Meteo est simulé
   (`e2e/helpers.ts`, `mockWeather`), le balcon est posé dans le stockage (`seedBalcony`). Les cases à
@@ -168,8 +168,17 @@ Livré, à valider sur son téléphone :
 3. Alertes météo : vérifiées le 01/10 (tests de bout en bout). Corrigé : canicule sans alerte pour une
    plante jamais arrosée dans l'app ; « Arrose … si besoin » en double sous l'alerte chaleur, pendant un
    orage ou une fois arrosé ; Saisons montrait encore une alerte déjà traitée. À valider sur son téléphone.
-4. Nouveau : agrandir le catalogue des plantes (`lib/plants/catalog`, 73 aujourd'hui ; penser aux
-   photos d'exemple via `scripts/photos/`, à lancer dans le Codespace, et aux emojis).
+4. Catalogue agrandi le 01/10 : **100 plantes** (27 nouvelles : agastache, livèche, plante huître, sauge
+   ananas, tomatillo, gombo, haricot kilomètre, concombre des Antilles, épinard-fraise, arroche,
+   tétragone, baselle, claytone, ficoïde glaciale, moutarde de Chine, chou-rave, poireau perpétuel, oca,
+   crosnes, œillet mignardise, dahlias nains, mufliers, fuchsia rustique, fraisier des bois, kiwaï,
+   cassissier, mûres sans épines) et des variétés marquées `kind` (« Ancienne », « Originale »,
+   « Nouveauté », `VARIETY_KIND_LABELS`) : filtre « Anciennes & originales » dans le catalogue,
+   pastilles dans sa fiche, mention dans le choix de variété de la fiche plante. **Photos d'exemple à
+   faire** pour les 27 (liste `AWAITING_PHOTO` dans `tests/stock-photos.test.ts`, emoji en attendant) :
+   le porteur lance `node scripts/photos/telecharger-photos.mjs` dans le Codespace et pousse
+   `scripts/photos/` ; Claude revoit les candidates, écrit `choix.json` ; il lance `--final` et pousse ;
+   Claude recompresse en 800 px et vide `AWAITING_PHOTO`.
 5. Nouveau : suggestions de plantes selon la saison / le mois (quoi semer ou planter maintenant).
 6. À la publication : notifications serveur sur Android (Firebase/FCM) ; synchroniser les reports
    (« Dans 3 h ») avec le serveur ; envoyer les photos des plantes sur le serveur (stockage d'images)

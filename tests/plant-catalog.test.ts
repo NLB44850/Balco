@@ -41,10 +41,20 @@ describe("plant catalog integrity", () => {
 
   it("shows the plant itself, or a plain plant or flower when no emoji exists (never an unrelated object)", () => {
     const generic = ["🌿", "🍃", "🌱", "🌾", "🥬", "🌸", "🌼", "🏵️", "🌺", "🌻", "🪴"];
-    const exact: Record<string, string> = { "cherry-tomato": "🍅", "dwarf-tomato": "🍅", chili: "🌶️", strawberry: "🍓", eggplant: "🍆", "sweet-pepper": "🫑", "mini-melon": "🍈", "round-carrot": "🥕", "spring-onion": "🧅", garlic: "🧄", potato: "🥔", blueberry: "🫐", zucchini: "🥒", "mini-cucumber": "🥒", cucamelon: "🥒", "dwarf-bean": "🫘", "pole-bean": "🫘", physalis: "🏮", "lemon-tree": "🍋" };
+    const exact: Record<string, string> = { "cherry-tomato": "🍅", "dwarf-tomato": "🍅", chili: "🌶️", strawberry: "🍓", eggplant: "🍆", "sweet-pepper": "🫑", "mini-melon": "🍈", "round-carrot": "🥕", "spring-onion": "🧅", garlic: "🧄", potato: "🥔", blueberry: "🫐", zucchini: "🥒", "mini-cucumber": "🥒", cucamelon: "🥒", "dwarf-bean": "🫘", "pole-bean": "🫘", physalis: "🏮", "lemon-tree": "🍋", tomatillo: "🏮", "yardlong-bean": "🫘", "west-indian-gherkin": "🥒", "woodland-strawberry": "🍓", kiwiberry: "🥝", blackcurrant: "🫐" };
     for (const entry of PLANT_CATALOG) {
       expect(exact[entry.id] ?? generic, entry.id).toContain(entry.emoji);
     }
+  });
+
+  it("mixes heirloom, original and new varieties suited to pots", () => {
+    expect(PLANT_CATALOG.length).toBeGreaterThanOrEqual(100);
+    const kinds = PLANT_CATALOG.flatMap((entry) => entry.varieties.map((variety) => variety.kind).filter(Boolean));
+    expect(kinds.filter((kind) => kind === "heirloom").length).toBeGreaterThanOrEqual(30);
+    expect(kinds.filter((kind) => kind === "original").length).toBeGreaterThanOrEqual(25);
+    expect(kinds.filter((kind) => kind === "new").length).toBeGreaterThanOrEqual(12);
+    expect(searchCatalog("cassis").map((entry) => entry.id)).toEqual(["blackcurrant"]);
+    expect(searchCatalog("gueule de loup").map((entry) => entry.id)).toEqual(["snapdragon"]);
   });
 
   it("marks tender plants as frost sensitive", () => {

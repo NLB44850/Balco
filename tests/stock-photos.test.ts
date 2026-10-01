@@ -8,9 +8,23 @@ const ROOT = path.resolve(__dirname, "..");
 const credits = JSON.parse(fs.readFileSync(path.join(ROOT, "assets/plants/credits.json"), "utf8")) as Record<string, { author: string; license: string; page: string }>;
 const index = fs.readFileSync(path.join(ROOT, "components/plant-stock-photos.ts"), "utf8");
 
+/**
+ * Les plantes ajoutées le 01/10 attendent leur photo (téléchargée dans le Codespace, voir
+ * scripts/photos/telecharger-photos.mjs) : en attendant, l'app montre leur emoji. Cette liste ne
+ * fait que rétrécir.
+ */
+const AWAITING_PHOTO = new Set(["agastache", "lovage", "oyster-plant", "pineapple-sage", "tomatillo", "okra", "yardlong-bean", "west-indian-gherkin", "strawberry-spinach", "orach", "nz-spinach", "malabar-spinach", "winter-purslane", "ice-plant", "mustard-greens", "kohlrabi", "perpetual-leek", "oca", "crosne", "pinks", "dahlia", "snapdragon", "fuchsia", "woodland-strawberry", "kiwiberry", "blackcurrant", "thornless-blackberry"]);
+
 describe("photos d'exemple des plantes", () => {
+  it("n'attendent leur photo que pour des plantes qui n'en ont vraiment pas encore", () => {
+    for (const id of AWAITING_PHOTO) {
+      expect(PLANT_CATALOG.some((entry) => entry.id === id), id).toBe(true);
+      expect(fs.existsSync(path.join(ROOT, "assets/plants", `${id}.jpg`)), `${id} a sa photo : retire-le de AWAITING_PHOTO`).toBe(false);
+    }
+  });
+
   it("existent pour chaque plante du catalogue, légères, avec leur crédit", () => {
-    for (const entry of PLANT_CATALOG) {
+    for (const entry of PLANT_CATALOG.filter((item) => !AWAITING_PHOTO.has(item.id))) {
       const file = path.join(ROOT, "assets/plants", `${entry.id}.jpg`);
       expect(fs.existsSync(file), entry.id).toBe(true);
       expect(fs.statSync(file).size, entry.id).toBeLessThan(400 * 1024);

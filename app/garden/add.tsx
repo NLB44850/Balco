@@ -23,9 +23,11 @@ import {
   PLANT_CATALOG,
   SPACE_LABELS,
   SUNLIGHT_LABELS,
+  VARIETY_KIND_LABELS,
   effortLabel,
   formatMonthRange,
   getCatalogPlant,
+  notableVarieties,
   recommendPlants,
   searchCatalog,
   type PlantCategory,
@@ -44,6 +46,7 @@ export default function AddPlantScreen() {
   const [category, setCategory] = useState<PlantCategory | undefined>(undefined);
   const hasBalconyInfo = Boolean(onboarding && !onboarding.skipped && (onboarding.sunlight || onboarding.space));
   const [onlyFitting, setOnlyFitting] = useState(hasBalconyInfo);
+  const [notableOnly, setNotableOnly] = useState(false);
   const [sheetId, setSheetId] = useState<string | null>(null);
   const [toast, setToast] = useState<ToastMessage | null>(null);
   const toastId = useRef(0);
@@ -58,8 +61,8 @@ export default function AddPlantScreen() {
   const results = useMemo(() => {
     const matching = new Set(searchCatalog(query, category).map((entry) => entry.id));
     const ordered = onlyFitting ? recommendPlants(onboarding, { month: new Date().getMonth() + 1 }) : [...PLANT_CATALOG].sort((a, b) => a.name.localeCompare(b.name, "fr"));
-    return ordered.filter((entry) => matching.has(entry.id));
-  }, [category, onboarding, onlyFitting, query]);
+    return ordered.filter((entry) => matching.has(entry.id) && (!notableOnly || notableVarieties(entry).length > 0));
+  }, [category, notableOnly, onboarding, onlyFitting, query]);
 
   const fitLabel = hasBalconyInfo
     ? [onboarding?.sunlight && SUNLIGHT_LABELS[onboarding.sunlight as Sunlight], onboarding?.space && SPACE_LABELS[onboarding.space as SpaceSize]].filter(Boolean).join(" · ").toLowerCase()
@@ -91,6 +94,9 @@ export default function AddPlantScreen() {
               <Text style={[styles.chipText, { color: onlyFitting ? "#FFFFFF" : colors.foreground }]}>{onlyFitting ? "✓ " : ""}Pour mon balcon</Text>
             </Pressable>
           )}
+          <Pressable accessibilityRole="button" accessibilityState={{ selected: notableOnly }} onPress={() => setNotableOnly((value) => !value)} style={({ pressed }) => [styles.chip, notableOnly ? { backgroundColor: colors.primary } : glass.soft, pressed && styles.pressed]}>
+            <Text style={[styles.chipText, { color: notableOnly ? "#FFFFFF" : colors.foreground }]}>{notableOnly ? "✓ " : ""}Anciennes & originales</Text>
+          </Pressable>
           {[undefined, ...categories].map((value) => {
             const active = category === value;
             return (
@@ -108,13 +114,15 @@ export default function AddPlantScreen() {
           <View style={[glass.card, styles.list]}>
             {results.map((entry, index) => {
               const owned = countByCatalogId.get(entry.id) ?? 0;
+              const notable = notableOnly ? notableVarieties(entry) : [];
+              const meta = owned ? `✓ Sur ton balcon${owned > 1 ? ` (${owned})` : ""}` : notable.length > 0 ? notable.map((variety) => `${variety.name} (${VARIETY_KIND_LABELS[variety.kind!].toLowerCase()})`).join(", ") : effortLabel(entry);
               return (
                 <View key={entry.id} style={[styles.row, index < results.length - 1 && glass.line]}>
                   <Pressable accessibilityRole="button" accessibilityLabel={`${entry.name}, voir le détail`} onPress={() => setSheetId(entry.id)} style={({ pressed }) => [styles.rowMain, pressed && styles.pressed]}>
                     <CatalogPicture entry={entry} style={styles.bubble} />
                     <View style={styles.flex}>
                       <Text style={[styles.name, { color: colors.foreground }]} numberOfLines={1}>{entry.name}</Text>
-                      <Text style={[styles.meta, { color: owned ? colors.primary : colors.muted }]} numberOfLines={1}>{owned ? `✓ Sur ton balcon${owned > 1 ? ` (${owned})` : ""}` : effortLabel(entry)}</Text>
+                      <Text style={[styles.meta, { color: owned ? colors.primary : colors.muted }]} numberOfLines={1}>{meta}</Text>
                     </View>
                   </Pressable>
                   <Pressable accessibilityRole="button" accessibilityLabel={`Ajouter ${entry.name}`} hitSlop={8} onPress={() => void add(entry.id)} style={({ pressed }) => [styles.add, { backgroundColor: owned ? colors.leaf : colors.primary }, pressed && styles.pressed]}>
@@ -158,7 +166,19 @@ export default function AddPlantScreen() {
                 <View key={fact} style={[styles.fact, { backgroundColor: colors.surface }]}><Text style={[styles.factText, { color: colors.foreground }]}>{fact}</Text></View>
               ))}
             </View>
-            {sheetEntry.varieties.length > 0 && <Text style={[styles.meta, { color: colors.muted }]}>Variétés conseillées : {sheetEntry.varieties.map((variety) => variety.name).join(", ")}</Text>}
+            {sheetEntry.varieties.length > 0 && (
+              <View style={styles.varieties}>
+                <Text style={[styles.meta, { color: colors.muted }]}>Variétés conseillées</Text>
+                <View style={styles.facts}>
+                  {sheetEntry.varieties.map((variety) => (
+                    <View key={variety.id} style={[styles.variety, { borderColor: colors.border }]}>
+                      <Text style={[styles.factText, { color: colors.foreground }]}>{variety.name}</Text>
+                      {variety.kind && <Text style={[styles.kind, { color: colors.primary, backgroundColor: colors.leaf }]}>{VARIETY_KIND_LABELS[variety.kind]}</Text>}
+                    </View>
+                  ))}
+                </View>
+              </View>
+            )}
             <Pressable accessibilityRole="button" onPress={() => { const id = sheetEntry.id; setSheetId(null); void add(id); }} style={({ pressed }) => [styles.cta, { backgroundColor: colors.primary }, pressed && styles.pressed]}>
               <Text style={styles.ctaText}>{countByCatalogId.get(sheetEntry.id) ? "En ajouter une autre" : "Ajouter à mon balcon"}</Text>
             </Pressable>
@@ -202,6 +222,9 @@ const styles = StyleSheet.create({
   facts: { flexDirection: "row", flexWrap: "wrap", gap: 8 },
   fact: { borderRadius: 999, paddingHorizontal: 12, paddingVertical: 7 },
   factText: { fontSize: 13, fontWeight: "600" },
+  varieties: { gap: 8 },
+  variety: { flexDirection: "row", alignItems: "center", gap: 6, borderRadius: 999, borderWidth: StyleSheet.hairlineWidth, paddingLeft: 12, paddingRight: 6, paddingVertical: 5 },
+  kind: { fontSize: 11, fontWeight: "700", borderRadius: 999, paddingHorizontal: 7, paddingVertical: 2, overflow: "hidden" },
   cta: { borderRadius: 14, paddingVertical: 15, alignItems: "center", marginTop: 4 },
   ctaText: { color: "#FFFFFF", fontSize: 16, fontWeight: "700" },
   pressed: { opacity: 0.78, transform: [{ scale: 0.97 }] },

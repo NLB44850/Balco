@@ -24,7 +24,7 @@ import { EVENT_TYPE_LABELS, POINTS_PER_GESTURE, eventForSessionTask, isScannerEv
 import { STATUS_LABELS, growingSince, journalByDay, nextGesture, photoDateLabel, photosForPlant, sunlightLabel } from "@/lib/garden/photos";
 import { usePlantPhotos } from "@/lib/garden/photos-context";
 import { headline } from "@/lib/garden/today";
-import { CATEGORY_LABELS, formatMonthRange } from "@/lib/plants/catalog";
+import { CATEGORY_LABELS, VARIETY_KIND_LABELS, formatMonthRange } from "@/lib/plants/catalog";
 
 const clock = (iso: string) => new Date(iso).toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" });
 
@@ -245,13 +245,13 @@ export default function PlantScreen() {
           {entry.varieties.length > 0 && (
             <View style={styles.section}>
               <Text style={[styles.sectionTitle, { color: colors.foreground }]}>Variété</Text>
-              <Text style={[styles.text, { color: colors.muted }]}>{variety ? variety.note : "Tu connais la variété de ton plant ? Choisis-la : Nora en tiendra compte dans ses conseils."}</Text>
+              <Text style={[styles.text, { color: colors.muted }]}>{variety ? `${variety.kind ? `${VARIETY_KIND_LABELS[variety.kind]} · ` : ""}${variety.note}` : "Tu connais la variété de ton plant ? Choisis-la : Nora en tiendra compte dans ses conseils."}</Text>
               <View style={styles.pills}>
                 {entry.varieties.map((item) => {
                   const active = item.id === variety?.id;
                   return (
                     <Pressable key={item.id} accessibilityRole="button" accessibilityState={{ selected: active }} onPress={() => void setPlantVariety(plant.id, active ? undefined : item.id)} style={({ pressed }) => [styles.chip, { borderColor: active ? colors.primary : colors.border, backgroundColor: active ? colors.primary : colors.background }, pressed && styles.pressed]}>
-                      <Text style={[styles.chipText, { color: active ? "#FFFFFF" : colors.foreground }]}>{active ? "✓ " : ""}{item.name}</Text>
+                      <Text style={[styles.chipText, { color: active ? "#FFFFFF" : colors.foreground }]}>{active ? "✓ " : ""}{item.name}{item.kind ? ` · ${VARIETY_KIND_LABELS[item.kind].toLowerCase()}` : ""}</Text>
                     </Pressable>
                   );
                 })}
