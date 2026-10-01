@@ -39,7 +39,9 @@ import {
 import { MONTH_LONG, MONTH_SHORT, recommendPlants } from "@/lib/plants/catalog";
 import { climateSummary, climateZoneFor } from "@/lib/plants/climate";
 import { decideReminders } from "@/lib/reminders/reminder-engine";
+import { withoutSnoozed, type ReminderSnooze } from "@/lib/reminders/reminder-actions";
 import { groupReminders } from "@/lib/reminders/reminder-groups";
+import { loadReminderSnoozes, subscribeReminderSnoozes } from "@/lib/reminders/local-notifications";
 
 type PlantFilter = "all" | string;
 
@@ -107,12 +109,19 @@ export default function CalendarScreen() {
   const ordered = checkable ? [...currentActivities.filter((activity) => !activityDone(activity, events, now)), ...currentActivities.filter((activity) => activityDone(activity, events, now))] : currentActivities;
   const sheetActivity = currentActivities.find((activity) => activity.key === sheetKey) ?? null;
 
+  // Les alertes déjà traitées sur Aujourd'hui (« Fait », « Pas aujourd'hui », « Dans 3 h ») ne s'affichent plus ici.
+  const [snoozes, setSnoozes] = useState<ReminderSnooze[]>([]);
+  useEffect(() => {
+    void loadReminderSnoozes().then(setSnoozes);
+    return subscribeReminderSnoozes(setSnoozes);
+  }, []);
+
   // Alertes météo du moment (gel, orage, vent, chaleur, pluie), une par cause, pour les plantes du balcon.
   const weatherAlerts = useMemo(() => {
     if (weather.isFallback || resolvedPlants.length === 0) return [];
     const decisions = decideReminders(resolvedPlants.map((resolved) => ({ plant: careProfileFor(resolved), history: events, weather: weatherSnapshot, settings: { enabled: true } })));
-    return groupReminders(decisions).filter((group) => group.cause && group.cause !== "thirst");
-  }, [events, resolvedPlants, weather.isFallback, weatherSnapshot]);
+    return groupReminders(withoutSnoozed(decisions, snoozes, new Date())).filter((group) => group.cause && group.cause !== "thirst");
+  }, [events, resolvedPlants, snoozes, weather.isFallback, weatherSnapshot]);
 
   const toggleActivity = async (activity: CalendarActivity) => {
     const today = new Date();

@@ -55,6 +55,16 @@ describe("liste « Aujourd'hui »", () => {
     expect(items.filter((item) => item.kind === "task" && item.task.task.type === "watering")).toHaveLength(0);
   });
 
+  it("ne double pas l'arrosage sous une alerte chaleur, ni pendant un orage, ni une fois arrosé", () => {
+    const session = buildDailySession(plants, watered, now);
+    const watering = (items: ReturnType<typeof buildTodayList>) => items.filter((item) => item.kind === "task" && item.task.task.type === "watering" && !item.done);
+    expect(watering(buildTodayList({ groups: [], session, seasonal: [] })).length).toBeGreaterThan(0);
+    const heat = plants.map(({ plant }) => ({ plantId: plant.id, cause: "heat" as const }));
+    expect(watering(buildTodayList({ groups: [], session, seasonal: [], decisions: heat }))).toHaveLength(0);
+    expect(watering(buildTodayList({ groups: [], session, seasonal: [], decisions: [{ plantId: "basil-1", cause: "storm" }] }))).toHaveLength(0);
+    expect(watering(buildTodayList({ groups: [], session, seasonal: [], wateredToday: plants.map(({ plant }) => plant.id) }))).toHaveLength(0);
+  });
+
   it("ajoute les gestes de saison du mois", () => {
     const { items } = list(12);
     expect(items.some((item) => item.kind === "season" && item.title === "Plante la lavande")).toBe(true);

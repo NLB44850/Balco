@@ -116,6 +116,19 @@ describe("decideReminder", () => {
     expect(heat?.body).toContain("Dernier arrosage il y a 3 jours");
   });
 
+  it("warns about heat even for a plant never watered in the app", () => {
+    const heat = decideReminder({
+      plant: { ...plant, label: "le basilic" },
+      history: [],
+      weather: weather({ today: { precipitationMm: 0, temperatureMinC: 20, temperatureMaxC: 34, windGustKmhMax: 10 } }),
+      now,
+    });
+    expect(heat).toMatchObject({ cause: "heat", action: "observe", taskType: "watering", title: "34 °C aujourd’hui : pense au basilic" });
+    expect(heat?.body).toMatch(/^Touche la terre/);
+    // Sans chaleur ni historique, Balco n'invente toujours pas de soif.
+    expect(decideReminder({ plant, history: [], weather: weather(), now })).toBeNull();
+  });
+
   it("asks for a soil check after the watering interval", () => {
     const result = decideReminder({
       plant,

@@ -249,9 +249,10 @@ function wateringDecision(
     };
   }
 
-  if (!lastWatering) return null;
-
+  // Forte chaleur : alerte aussi pour une plante jamais arrosée dans l'app (comme pour la pluie),
+  // car l'accueil propose déjà « arrose si besoin » et la chaleur rend ce geste pressant.
   if (hot && elapsed >= 24) {
+    const since = lastWatering ? `Dernier arrosage il y a ${formatElapsed(elapsed)}. ` : "";
     return {
       taskType: "watering",
       priority: "important",
@@ -259,10 +260,12 @@ function wateringDecision(
       cause: "heat",
       value: Math.round(maxTemp),
       title: `${Math.round(maxTemp)} °C aujourd’hui : pense ${toLabel(name)}`,
-      body: `Dernier arrosage il y a ${formatElapsed(elapsed)}. Touche la terre ce soir ou demain tôt, et arrose au pied si elle est sèche.`,
-      reason: `Maximum ${Math.round(maxTemp)} °C (seuil ${plant.heatThresholdC} °C), dernier arrosage il y a ${formatElapsed(elapsed)}.`,
+      body: `${since}Touche la terre ce soir ou demain tôt, et arrose au pied si elle est sèche.`,
+      reason: `Maximum ${Math.round(maxTemp)} °C (seuil ${plant.heatThresholdC} °C), ${lastWatering ? `dernier arrosage il y a ${formatElapsed(elapsed)}` : "pas encore d’arrosage noté"}.`,
     };
   }
+
+  if (!lastWatering) return null;
 
   if (due) {
     return {

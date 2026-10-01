@@ -12,7 +12,7 @@ export const WEATHER_SCENARIOS: Array<{ id: WeatherScenario; label: string; hint
   { id: "frost", label: "Gel", hint: "-3 °C cette nuit. Alerte pour les plantes qui craignent le froid." },
   { id: "storm", label: "Orage", hint: "Orage en cours : alerte pour toutes les plantes." },
   { id: "wind", label: "Vent fort", hint: "Rafales à 75 km/h : alerte pour toutes les plantes." },
-  { id: "heat", label: "Canicule", hint: "35 °C. Visible pour les plantes arrosées il y a plus d’un jour." },
+  { id: "heat", label: "Canicule", hint: "35 °C. Alerte pour les plantes qui n’ont pas été arrosées depuis hier." },
 ];
 
 export function scenarioLabel(scenario: WeatherScenario) {

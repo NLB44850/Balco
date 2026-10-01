@@ -4,7 +4,7 @@
  * Logique pure.
  */
 import type { CalendarActivity } from "../plants/calendar";
-import type { MaintenanceEvent } from "../reminders/reminder-engine";
+import type { MaintenanceEvent, ReminderDecision } from "../reminders/reminder-engine";
 import type { ReminderGroup } from "../reminders/reminder-groups";
 import { dayKey, plantDisplayName, type SessionTask } from "./garden-logic";
 
@@ -57,12 +57,24 @@ function alertSubtitle(group: ReminderGroup) {
   }
 }
 
-export function buildTodayList({ groups, session, seasonal, rainExpected = false }: { groups: ReminderGroup[]; session: SessionTask[]; seasonal: CalendarActivity[]; rainExpected?: boolean }): TodayItem[] {
-  // Une alerte de soif remplace le geste d'arrosage générique de la même plante, et quand la pluie
-  // arrive on ne dit pas « arrose le basilic » juste sous « n'arrose pas aujourd'hui », même une fois
-  // l'alerte pluie cochée (« Compris »).
-  const thirsty = new Set(groups.filter((group) => group.cause === "thirst").flatMap((group) => group.decisions.map((decision) => decision.plantId)));
-  const rainComing = rainExpected || groups.some((group) => group.cause === "rain");
+type BuildTodayInput = {
+  groups: ReminderGroup[];
+  session: SessionTask[];
+  seasonal: CalendarActivity[];
+  rainExpected?: boolean;
+  /** Tous les conseils du moment, même ceux déjà cochés ou reportés (« Pas aujourd'hui »). */
+  decisions?: Array<Pick<ReminderDecision, "plantId" | "cause">>;
+  /** Les plantes déjà arrosées aujourd'hui (par exemple en cochant l'alerte chaleur). */
+  wateredToday?: string[];
+};
+
+export function buildTodayList({ groups, session, seasonal, rainExpected = false, decisions = [], wateredToday = [] }: BuildTodayInput): TodayItem[] {
+  // Une alerte de soif ou de chaleur remplace le geste d'arrosage générique de la même plante, et
+  // quand la pluie ou l'orage arrive on ne dit pas « arrose le basilic » juste sous l'alerte, même une
+  // fois l'alerte cochée (« Compris ») ou reportée. Une plante déjà arrosée aujourd'hui non plus.
+  const all = [...groups.flatMap((group) => group.decisions), ...decisions];
+  const thirsty = new Set([...all.filter((decision) => decision.cause === "thirst" || decision.cause === "heat").map((decision) => decision.plantId), ...wateredToday]);
+  const rainComing = rainExpected || all.some((decision) => decision.cause === "rain" || decision.cause === "storm");
   const alerts: TodayItem[] = groups.map((group) => {
     const look = ALERT_LOOK[group.cause ?? "thirst"] ?? ALERT_LOOK.thirst;
     return { kind: "alert", key: `alert:${group.key}`, ...look, title: group.title, subtitle: alertSubtitle(group), done: false, group };

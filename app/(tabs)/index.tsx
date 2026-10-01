@@ -184,7 +184,8 @@ export default function HomeScreen() {
   const away = trip.phase === "away";
   const tripPlan = useMemo(() => (vacation ? preparationSteps(resolvedPlants, vacation, now) : []), [now, resolvedPlants, vacation]);
 
-  const items = useMemo(() => buildTodayList({ groups: visibleReminders, session, seasonal, rainExpected: reminderDecisions.some((decision) => decision.cause === "rain") }), [reminderDecisions, seasonal, session, visibleReminders]);
+  const wateredToday = useMemo(() => events.filter((event) => event.type === "watering" && dayKey(new Date(event.completedAt)) === dayKey(now)).map((event) => event.plantId), [events, now]);
+  const items = useMemo(() => buildTodayList({ groups: visibleReminders, session, seasonal, decisions: reminderDecisions, wateredToday }), [reminderDecisions, seasonal, session, visibleReminders, wateredToday]);
   const status = useMemo(() => balconyStatus(items, events, now), [events, items, now]);
   const streak = useMemo(() => streakDays(events, now), [events, now]);
   const sheetItem = items.find((item) => item.key === sheetKey) ?? null;
