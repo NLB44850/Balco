@@ -1,10 +1,11 @@
 /**
  * Le catalogue : ajouter une plante en un toucher. Une recherche, les plantes adaptées à ton balcon
  * d'abord, les familles en pastilles. Le « + » ajoute tout de suite (avec « Annuler ») ; toucher la
- * ligne ouvre la fiche du catalogue dans la feuille du bas (variétés, calendrier, pot).
+ * ligne ouvre la fiche du catalogue dans la feuille du bas (variétés, calendrier, pot). La pastille
+ * « À semer en octobre » ne garde que ce qui se sème ou se plante ce mois-là (ouverte depuis Saisons).
  */
 import * as Haptics from "expo-haptics";
-import { useRouter } from "expo-router";
+import { useLocalSearchParams, useRouter } from "expo-router";
 import { useCallback, useMemo, useRef, useState } from "react";
 import { Platform, Pressable, ScrollView, StyleSheet, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -26,12 +27,14 @@ import {
   effortLabel,
   formatMonthRange,
   getCatalogPlant,
+  MONTH_LONG,
   recommendPlants,
   searchCatalog,
   type PlantCategory,
   type SpaceSize,
   type Sunlight,
 } from "@/lib/plants/catalog";
+import { SUGGESTION_ACTION_LABELS, suggestionFor } from "@/lib/plants/suggestions";
 
 const categories = Object.keys(CATEGORY_LABELS) as PlantCategory[];
 
@@ -40,6 +43,11 @@ export default function AddPlantScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const { plants, onboarding, addPlant, removePlant } = useGarden();
+  const params = useLocalSearchParams<{ month?: string }>();
+  const currentMonth = new Date().getMonth() + 1;
+  const askedMonth = Number(params.month);
+  const seasonMonth = askedMonth >= 1 && askedMonth <= 12 ? askedMonth : currentMonth;
+  const [inSeason, setInSeason] = useState(Boolean(params.month));
   const [query, setQuery] = useState("");
   const [category, setCategory] = useState<PlantCategory | undefined>(undefined);
   const hasBalconyInfo = Boolean(onboarding && !onboarding.skipped && (onboarding.sunlight || onboarding.space));
@@ -58,8 +66,8 @@ export default function AddPlantScreen() {
   const results = useMemo(() => {
     const matching = new Set(searchCatalog(query, category).map((entry) => entry.id));
     const ordered = onlyFitting ? recommendPlants(onboarding, { month: new Date().getMonth() + 1 }) : [...PLANT_CATALOG].sort((a, b) => a.name.localeCompare(b.name, "fr"));
-    return ordered.filter((entry) => matching.has(entry.id));
-  }, [category, onboarding, onlyFitting, query]);
+    return ordered.filter((entry) => matching.has(entry.id) && (!inSeason || suggestionFor(entry, seasonMonth) !== null));
+  }, [category, inSeason, onboarding, onlyFitting, query, seasonMonth]);
 
   const fitLabel = hasBalconyInfo
     ? [onboarding?.sunlight && SUNLIGHT_LABELS[onboarding.sunlight as Sunlight], onboarding?.space && SPACE_LABELS[onboarding.space as SpaceSize]].filter(Boolean).join(" · ").toLowerCase()
@@ -91,6 +99,9 @@ export default function AddPlantScreen() {
               <Text style={[styles.chipText, { color: onlyFitting ? "#FFFFFF" : colors.foreground }]}>{onlyFitting ? "✓ " : ""}Pour mon balcon</Text>
             </Pressable>
           )}
+          <Pressable accessibilityRole="button" accessibilityState={{ selected: inSeason }} onPress={() => setInSeason((value) => !value)} style={({ pressed }) => [styles.chip, inSeason ? { backgroundColor: colors.primary } : glass.soft, pressed && styles.pressed]}>
+            <Text style={[styles.chipText, { color: inSeason ? "#FFFFFF" : colors.foreground }]}>{inSeason ? "✓ " : ""}À semer en {MONTH_LONG[seasonMonth - 1]}</Text>
+          </Pressable>
           {[undefined, ...categories].map((value) => {
             const active = category === value;
             return (
@@ -108,14 +119,15 @@ export default function AddPlantScreen() {
           <View style={[glass.card, styles.list]}>
             {results.map((entry, index) => {
               const owned = countByCatalogId.get(entry.id) ?? 0;
-              const meta = owned ? `✓ Sur ton balcon${owned > 1 ? ` (${owned})` : ""}` : effortLabel(entry);
+              const seasonal = inSeason ? suggestionFor(entry, seasonMonth) : null;
+              const meta = owned ? `✓ Sur ton balcon${owned > 1 ? ` (${owned})` : ""}` : seasonal ? `${SUGGESTION_ACTION_LABELS[seasonal.action]} · ${seasonal.reason}` : effortLabel(entry);
               return (
                 <View key={entry.id} style={[styles.row, index < results.length - 1 && glass.line]}>
                   <Pressable accessibilityRole="button" accessibilityLabel={`${entry.name}, voir le détail`} onPress={() => setSheetId(entry.id)} style={({ pressed }) => [styles.rowMain, pressed && styles.pressed]}>
                     <CatalogPicture entry={entry} style={styles.bubble} />
                     <View style={styles.flex}>
                       <Text style={[styles.name, { color: colors.foreground }]} numberOfLines={1}>{entry.name}</Text>
-                      <Text style={[styles.meta, { color: owned ? colors.primary : colors.muted }]} numberOfLines={1}>{meta}</Text>
+                      <Text style={[styles.meta, { color: owned ? colors.primary : colors.muted }]} numberOfLines={seasonal && !owned ? 2 : 1}>{meta}</Text>
                     </View>
                   </Pressable>
                   <Pressable accessibilityRole="button" accessibilityLabel={`Ajouter ${entry.name}`} hitSlop={8} onPress={() => void add(entry.id)} style={({ pressed }) => [styles.add, { backgroundColor: owned ? colors.leaf : colors.primary }, pressed && styles.pressed]}>

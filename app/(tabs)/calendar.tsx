@@ -2,7 +2,8 @@
  * Onglet « Saisons » : les gestes de saison de tes plantes (semis, plantation, rempotage, récolte,
  * entretien), en une liste à cocher comme sur Aujourd'hui. Le mois en cours se coche ; les mois et
  * les saisons à venir se lisent. Le détail s'ouvre dans la feuille du bas, avec « Annuler » après
- * chaque geste, et « Tout est fait » quand le mois est bouclé.
+ * chaque geste, et « Tout est fait » quand le mois est bouclé. Sous la liste, « À semer ou planter
+ * en … » propose des plantes de saison pour ton balcon, à ajouter d'un « + ».
  */
 import { useRouter } from "expo-router";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
@@ -13,6 +14,7 @@ import { LightScreen } from "@/components/light-screen";
 import { FadeIn } from "@/components/motion";
 import { PlantPicture } from "@/components/plant-picture";
 import { ScreenHeader } from "@/components/screen-header";
+import { SeasonalSuggestions } from "@/components/seasonal-suggestions";
 import { BottomSheet } from "@/components/today/bottom-sheet";
 import { TODAY_ROW_PICTURE, TodayRow } from "@/components/today/today-row";
 import { useCelebration } from "@/components/today/celebration";
@@ -36,7 +38,8 @@ import {
   type CalendarActivity,
   type CalendarSubject,
 } from "@/lib/plants/calendar";
-import { MONTH_LONG, MONTH_SHORT, recommendPlants } from "@/lib/plants/catalog";
+import { formatMonthRange, MONTH_LONG, MONTH_SHORT, recommendPlants } from "@/lib/plants/catalog";
+import { nextSuggestionMonth, seasonalSuggestions, SUGGESTION_ACTION_LABELS, type SeasonalSuggestion } from "@/lib/plants/suggestions";
 import { climateSummary, climateZoneFor } from "@/lib/plants/climate";
 import { decideReminders } from "@/lib/reminders/reminder-engine";
 import { withoutSnoozed, type ReminderSnooze } from "@/lib/reminders/reminder-actions";
@@ -54,7 +57,7 @@ export default function CalendarScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const { weather, weatherSnapshot, isLoading, refresh, requestDeviceLocation, searchCities, selectCity } = useLocalWeather();
-  const { resolvedPlants, events, onboarding, addPlant, logEvent, removeEvent, reportLocation } = useGarden();
+  const { resolvedPlants, events, onboarding, addPlant, removePlant, logEvent, removeEvent, reportLocation } = useGarden();
   const now = useMemo(() => new Date(), []);
 
   // Une ville choisie ici doit aussi servir aux rappels envoyés par le serveur.
@@ -116,6 +119,12 @@ export default function CalendarScreen() {
     return subscribeReminderSnoozes(setSnoozes);
   }, []);
 
+  // Quoi semer ou planter le mois choisi, parmi ce qui convient au balcon et qu'on n'a pas encore.
+  const suggestionOptions = useMemo(() => ({ month: selectedMonth, climate, ownedCatalogIds: resolvedPlants.map((resolved) => resolved.entry.id), limit: 4 }), [climate, resolvedPlants, selectedMonth]);
+  const suggestions = useMemo(() => (showingIdeas ? [] : seasonalSuggestions(onboarding, suggestionOptions)), [onboarding, showingIdeas, suggestionOptions]);
+  const nextMonth = useMemo(() => (suggestions.length === 0 && !showingIdeas ? nextSuggestionMonth(onboarding, suggestionOptions) : null), [onboarding, showingIdeas, suggestionOptions, suggestions.length]);
+  const [sheetSuggestion, setSheetSuggestion] = useState<SeasonalSuggestion | null>(null);
+
   // Alertes météo du moment (gel, orage, vent, chaleur, pluie), une par cause, pour les plantes du balcon.
   const weatherAlerts = useMemo(() => {
     if (weather.isFallback || resolvedPlants.length === 0) return [];
@@ -135,6 +144,11 @@ export default function CalendarScreen() {
     await logEvent(event);
     celebrate(celebrationFor(resolvedPlants, events, [event, ...events.filter((item) => item.id !== event.id)]));
     showToast(`${activity.title} : noté`, () => void removeEvent(event.id));
+  };
+
+  const addSuggestion = async ({ entry }: SeasonalSuggestion) => {
+    const created = await addPlant(entry.id);
+    showToast(`Ajouté à ton balcon : ${entry.name}`, () => void removePlant(created.id));
   };
 
   const addIdea = async (activity: CalendarActivity) => {
@@ -276,6 +290,10 @@ export default function CalendarScreen() {
           </View>
         )}
         {ordered.length === 0 && <Text style={[styles.text, styles.empty, { color: colors.muted }]}>Rien de prévu {periodLabel} : tes plantes se reposent.{view === "month" ? " Regarde les mois suivants." : ""}</Text>}
+
+        {view === "month" && !showingIdeas && (
+          <SeasonalSuggestions month={selectedMonth} current={selectedMonth === currentMonth} suggestions={suggestions} nextMonth={nextMonth} onAdd={(suggestion) => void addSuggestion(suggestion)} onOpen={setSheetSuggestion} />
+        )}
       </ScrollView>
 
       <BottomSheet visible={sheetActivity !== null} onClose={() => setSheetKey(null)}>
@@ -300,6 +318,26 @@ export default function CalendarScreen() {
             </View>
           );
         })()}
+      </BottomSheet>
+
+      <BottomSheet visible={sheetSuggestion !== null} onClose={() => setSheetSuggestion(null)}>
+        {sheetSuggestion && (
+          <View style={styles.sheet}>
+            <Text style={[styles.sheetKind, { color: colors.primary }]}>{SUGGESTION_ACTION_LABELS[sheetSuggestion.action]} {periodLabel}</Text>
+            <Text style={[styles.sheetTitle, { color: colors.foreground }]}>{sheetSuggestion.title}</Text>
+            <Text style={[styles.sheetBody, { color: colors.muted }]}>{sheetSuggestion.entry.pitch}</Text>
+            <Text style={[styles.small, { color: colors.foreground }]}>
+              {[
+                sheetSuggestion.entry.sowMonths.length > 0 ? `🌱 Semis : ${formatMonthRange(sheetSuggestion.entry.sowMonths)}` : null,
+                sheetSuggestion.entry.plantMonths.length > 0 ? `🪴 Plantation : ${formatMonthRange(sheetSuggestion.entry.plantMonths)}` : null,
+                `${sheetSuggestion.entry.category === "flower" ? "🌸 Floraison" : "🧺 Récolte"} : ${formatMonthRange(sheetSuggestion.entry.harvestMonths)}`,
+                `🪣 Pot d’au moins ${sheetSuggestion.entry.potLiters} L`,
+              ].filter(Boolean).join("\n")}
+            </Text>
+            {sheetSuggestion.lastChance && <Text style={[styles.small, { color: colors.terracotta }]}>C’est le dernier mois pour le faire cette année.</Text>}
+            <Pressable accessibilityRole="button" onPress={() => { const suggestion = sheetSuggestion; setSheetSuggestion(null); void addSuggestion(suggestion); }} style={({ pressed }) => [styles.cta, { backgroundColor: colors.primary }, pressed && styles.pressed]}><Text style={[styles.ctaText, { color: "#FFFFFF" }]}>+ Ajouter à mon balcon</Text></Pressable>
+          </View>
+        )}
       </BottomSheet>
 
       <Modal visible={cityModalVisible} transparent animationType="slide" onRequestClose={() => setCityModalVisible(false)}>

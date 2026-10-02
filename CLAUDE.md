@@ -38,7 +38,7 @@ Tout se passe dans son GitHub Codespace (pas de Docker sur son PC).
 
 - `pnpm -s check`, `pnpm -s lint`, puis `TEST_DATABASE_URL=mysql://balco:balco@localhost:3306/balco_cal npx vitest run`
   (MariaDB locale : `service mariadb start` si elle s'est arrêtée, `apt-get install -y mariadb-server` si elle manque,
-  puis `DATABASE_URL=… npx drizzle-kit migrate` ; 332 tests à ce jour). Dans un conteneur
+  puis `DATABASE_URL=… npx drizzle-kit migrate` ; 338 tests à ce jour). Dans un conteneur
   neuf : `apt-get install -y mariadb-server`, `service mariadb start`, créer la base `balco_cal` et l'utilisateur
   `balco`/`balco`, puis `pnpm -s build && DATABASE_URL=mysql://balco:balco@localhost:3306/balco_cal node dist/migrate.mjs`.
 - `npx expo export --platform android` pour s'assurer que le bundle Android se construit.
@@ -160,11 +160,18 @@ Livré, à valider sur son téléphone :
   première) ; la fête s'affiche en plein écran (`components/today/celebration.tsx`, `useCelebration` :
   confettis aux couleurs de l'app, carte au centre, se ferme seule en ~3 s ou d'une touche), et le
   message habituel avec « Annuler » reste en bas (les litres d'eau économisés ne sont plus cachés).
+- **Suggestions de saison** (02/10, logique pure `lib/plants/suggestions.ts`) : dans Saisons (vue par
+  mois, balcon non vide), sous la liste, carte « À semer ou planter en octobre »
+  (`components/seasonal-suggestions.tsx`) : 4 plantes adaptées au soleil, à l'espace, aux envies et au
+  climat, sans celles déjà sur le balcon ; « Récolte … · dernier mois / facile » ; « + » immédiat avec
+  « Annuler », feuille du bas (semis, plantation, récolte, pot) ; mois calme → « reprennent en … ».
+  Lien « Voir toutes les plantes d'octobre » → catalogue avec la pastille « À semer en octobre »
+  (`/garden/add?month=10`). Le catalogue n'applique pas le décalage de climat (pas de météo chargée).
 
 
 À faire, dans l'ordre (liste du porteur, 30/09) :
-1. Tester avec lui l'eau économisée (simulation pluie → cocher « N'arrose pas » → toast litres →
-   Ma semaine, bloc 💧).
+1. Eau économisée (simulation pluie → « N'arrose pas » → toast litres → Ma semaine, bloc 💧) :
+   **validé** le 02/10.
 2. Petites victoires : refaites le 01/10 (animation à chaque coche, fête plein écran, chaque récolte
    fêtée). **Validé** (« c'est top »).
 3. Alertes météo : vérifiées le 01/10 (tests de bout en bout). Corrigé : canicule sans alerte pour une
@@ -181,11 +188,9 @@ Livré, à valider sur son téléphone :
    Pour une nouvelle plante : recherche dans `PLANTS` du script, `AWAITING_PHOTO` dans
    `tests/stock-photos.test.ts`, puis candidates / `choix.json` / `--final`, recompression en 800 px
    qualité 74 (`convert -resize '800x800>' -strip -quality 74`) et `node scripts/photos/generer-index.mjs`.
-5. **Prochaine étape (nouvelle discussion)** : suggestions de plantes selon la saison / le mois (quoi
-   semer ou planter maintenant). Points de départ : `recommendPlants(…, { month })` et `seasonalToDo` /
-   `calendarActivities` (`lib/plants/calendar.ts`), climat de la ville (`lib/plants/climate.ts`),
-   recommandations déjà montrées sur Aujourd'hui quand le balcon est vide. Lui demander où il veut les
-   voir (Aujourd'hui, Saisons, catalogue) avant de coder.
+5. Suggestions selon le mois : livrées le 02/10 dans Saisons et le catalogue (voir plus haut), **à
+   valider** sur son téléphone. Lui demander s'il les veut aussi sur Aujourd'hui (par exemple sous
+   « Tout est fait »).
 6. À la publication : notifications serveur sur Android (Firebase/FCM) ; synchroniser les reports
    (« Dans 3 h ») avec le serveur ; envoyer les photos des plantes sur le serveur (stockage d'images)
    pour les retrouver sur un autre téléphone.
