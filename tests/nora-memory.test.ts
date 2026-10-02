@@ -49,7 +49,7 @@ describe("Nora's memory", () => {
   });
 });
 
-describe("full history for Nora", () => {
+describe("history for Nora (last 90 days, aggregated)", () => {
   const plants = [
     { plantId: "basil-1", catalogId: "basil", nickname: "Basilic cuisine", displayName: "Basilic", varietyId: null, active: 1, addedAt: daysAgo(90), removedAt: null },
     { plantId: "mint-1", catalogId: "mint", nickname: null, displayName: "Menthe", varietyId: null, active: 1, addedAt: daysAgo(10), removedAt: null },
@@ -60,14 +60,17 @@ describe("full history for Nora", () => {
     { plantId: "basil-1", type: "pruning", completedAt: daysAgo(25), note: "Pince les fleurs du basilic" },
     { plantId: "radish-1", type: "harvest", completedAt: daysAgo(61), note: null },
     { plantId: "ghost", type: "watering", completedAt: daysAgo(1), note: null },
+    // Plus vieux que 90 jours : ignoré, pour un contexte court.
+    { plantId: "basil-1", type: "harvest", completedAt: daysAgo(120), note: "Récolte le basilic" },
   ];
 
-  it("summarizes every gesture per plant, not just the last few", () => {
+  it("summarizes the last 90 days per plant and per type of gesture", () => {
     const { history, removedPlants, totals } = summarizeHistory(plants, events, NOW);
     const basil = history.find((plant) => plant.name === "Basilic cuisine")!;
     expect(basil.byType[0]).toEqual({ type: "arrosage", count: 20, lastDaysAgo: 2 });
     expect(basil.byType[1]).toEqual({ type: "taille", count: 1, lastDaysAgo: 25 });
-    expect(basil.recentNotes.map((note) => note.text)).toEqual(["Arrose le basilic", "Pince les fleurs du basilic"]);
+    // Une seule note en clair : le dernier geste ; le reste est agrégé.
+    expect(basil.recentNotes.map((note) => note.text)).toEqual(["Arrose le basilic"]);
     expect(basil.neverDone).toContain("récolte");
     expect(history.find((plant) => plant.name === "Menthe")!.byType).toEqual([]);
     expect(removedPlants).toEqual([{ name: "Radis", grownDays: 60, removedDaysAgo: 60 }]);
@@ -82,9 +85,11 @@ describe("full history for Nora", () => {
     };
     const text = describeGarden(facts, NOW);
     expect(text).toContain("Basilic cuisine (sur le balcon depuis 3 mois) : arrosage 20 fois, dernière fois il y a 2 j ; taille 1 fois, dernière fois il y a 25 j");
-    expect(text).toContain("jamais noté : ");
-    expect(text).toContain("« Pince les fleurs du basilic » il y a 25 j");
-    expect(text).toContain("Gestes notés dans Balco : 22 depuis 3 mois, dont 9 ces 30 derniers jours.");
+    expect(text).toContain("pas noté depuis 90 j : ");
+    expect(text).toContain("dernier geste : « Arrose le basilic » il y a 2 j");
+    expect(text).not.toContain("Récolte le basilic");
+    expect(text).toContain("Historique des 90 derniers jours, plante par plante");
+    expect(text).toContain("Gestes notés dans Balco ces 90 derniers jours : 22, dont 9 ces 30 derniers jours.");
     expect(text).toContain("Radis (60 j sur le balcon, retrait il y a 2 mois)");
     expect(text).toContain("Envies choisies à l'inscription : des aromatiques pour la cuisine.");
     expect(text).toContain("quelques plantes");

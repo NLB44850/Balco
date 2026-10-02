@@ -141,8 +141,8 @@ Livré, à valider sur son téléphone :
   Réglages), 9 préférences à cocher, faits retenus en discutant avec « Oublier » / « Tout oublier ».
   Nora répond en JSON `{ answer, remember, forget }` (`server/ai/claude.ts`) ; ce qu'elle retient
   s'affiche sous sa réponse. Faits et préférences : table `nora_memories` (`server/ai/memory-store.ts`,
-  logique pure `lib/ai/memory.ts`). Contexte : tout l'historique résumé plante par plante
-  (`summarizeHistory` dans `server/ai/context.ts`). Question prête « Fais le point sur mes plantes ».
+  logique pure `lib/ai/memory.ts`). Contexte : les 90 derniers jours résumés plante par plante et par
+  type de geste (`summarizeHistory` dans `server/ai/context.ts`, depuis l'étape 2 de l'audit). Question prête « Fais le point sur mes plantes ».
 - **Geste « Engrais »** (type `fertilizing`) : 26 plantes gourmandes seulement (`lib/plants/fertilizing.ts` :
   légumes-fruits tous les 14 j de juin à septembre, légumes-feuilles et fleurs tous les 21 j, petits
   fruits tous les 30 j au printemps…), engrais organique uniquement. Geste espacé (`everyDays`) : sur
@@ -194,6 +194,8 @@ et route réservée à `role = admin`. Balco+ sera payant (offre commerciale Ope
 - Étape 1 faite : `BALCO_AI_MODEL_PHOTO` (défaut `claude-opus-5`) et `BALCO_AI_MODEL_CHAT` (défaut
   `claude-sonnet-5`), repli `BALCO_AI_MODEL` ; `AI_MAX_TOKENS_PHOTO=2000`, `AI_MAX_TOKENS_CHAT=1500` ;
   `fallbacks` seulement pour les modèles qui l'acceptent (`requestSettings`, `server/ai/claude.ts`).
+- Étape 2 faite : Nora reçoit 8 messages (`MAX_HISTORY_TURNS`) et 90 jours d'historique agrégé
+  (`HISTORY_DAYS`, une seule note en clair par plante) ; prompt système toujours en cache.
 
 
 À faire, dans l'ordre (liste du porteur, 30/09) :

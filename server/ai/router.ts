@@ -11,7 +11,8 @@ import { planOf, QuotaExceededError, quotaStatus, reserve, settle, type AiKind }
 
 /** Limite de l'API pour une image ; l'app envoie des photos réduites bien plus légères. */
 const MAX_IMAGE_BYTES = 5 * 1024 * 1024;
-const MAX_HISTORY_TURNS = 12;
+/** Les derniers messages de la conversation envoyés à Nora (questions et réponses). */
+const MAX_HISTORY_TURNS = 8;
 
 /** Type réel de l'image, lu dans ses premiers octets : on ne se fie pas à ce que le client annonce. */
 export function detectImageType(bytes: Buffer): ImageMediaType | null {

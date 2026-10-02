@@ -187,7 +187,7 @@ describe.skipIf(!TEST_DATABASE_URL)("AI scanner and assistant (fake Messages API
       expect(result.answer).toBe("Arrose ton basilic le matin, au pied.");
       expect(result.quota).toMatchObject({ kind: "chat", used: 1, limit: 15 });
       const { body } = requests[0];
-      expect(body.messages.length).toBeLessThanOrEqual(12);
+      expect(body.messages.length).toBeLessThanOrEqual(8);
       expect(body.messages[0].role).toBe("user");
       expect(body.messages.at(-1)).toEqual({ role: "user", content: "message 14" });
       // Nora tourne sur un modèle moins cher ; Claude Sonnet 5 n'est pas dans la liste du repli serveur.

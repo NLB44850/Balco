@@ -1,4 +1,4 @@
-import { desc, eq } from "drizzle-orm";
+import { and, desc, eq, gt } from "drizzle-orm";
 
 import { maintenanceEvents, noraMemories, reminderPlants, reminderProfiles } from "../../drizzle/schema";
 import { vacationRange, isValidVacation, type Vacation } from "../../lib/garden/vacation";
@@ -10,9 +10,12 @@ import { getDb } from "../db";
 
 const TASK_LABELS: Record<string, string> = { watering: "arrosage", observation: "observation", pruning: "taille", protection: "protection", harvest: "récolte", repotting: "rempotage", fertilizing: "engrais" };
 const DAY_MS = 86_400_000;
-/** Assez pour des années de gestes sur un balcon ; au-delà, les plus anciens sont ignorés. */
-const MAX_HISTORY_EVENTS = 5000;
-const NOTES_PER_PLANT = 3;
+/** Nora ne lit que les gestes récents, résumés par plante et par type : un contexte court coûte moins cher. */
+export const HISTORY_DAYS = 90;
+/** Garde-fou : bien plus que 90 jours de gestes sur un balcon. */
+const MAX_HISTORY_EVENTS = 1500;
+/** Le dernier geste noté de chaque plante, en clair ; le reste est agrégé (nombre, dernière fois). */
+const NOTES_PER_PLANT = 1;
 /** Une plante retirée depuis plus longtemps ne sert plus aux conseils. */
 const REMOVED_PLANTS_DAYS = 365;
 
@@ -69,8 +72,12 @@ function expectedTypes(catalogId: string | null): MaintenanceTaskType[] {
   return [...types];
 }
 
-/** Tout l'historique résumé plante par plante : combien de fois, quand pour la dernière fois, ce qui manque. */
-export function summarizeHistory(plants: PlantRow[], events: EventRow[], now = new Date()) {
+/**
+ * Les 90 derniers jours résumés plante par plante : combien de fois chaque type de geste, quand pour la
+ * dernière fois, ce qui n'a pas été noté. Les gestes plus anciens sont ignorés.
+ */
+export function summarizeHistory(plants: PlantRow[], allEvents: EventRow[], now = new Date()) {
+  const events = allEvents.filter((event) => now.getTime() - event.completedAt.getTime() <= HISTORY_DAYS * DAY_MS);
   const byPlant = new Map<string, EventRow[]>();
   for (const event of events) byPlant.set(event.plantId, [...(byPlant.get(event.plantId) ?? []), event]);
   const newestFirst = (list: EventRow[]) => [...list].sort((a, b) => b.completedAt.getTime() - a.completedAt.getTime());
@@ -139,7 +146,8 @@ export async function loadGardenFacts(userId: number, now = new Date()): Promise
   if (!db) return { firstName: null, city: null, sunlight: null, space: null, goals: [], plants: [], history: [], removedPlants: [], totals: empty, memory: { level: null, preferences: [], notes: [] } };
   const [profile] = await db.select().from(reminderProfiles).where(eq(reminderProfiles.userId, userId)).limit(1);
   const rows = await db.select().from(reminderPlants).where(eq(reminderPlants.userId, userId));
-  const events = await db.select().from(maintenanceEvents).where(eq(maintenanceEvents.userId, userId)).orderBy(desc(maintenanceEvents.completedAt)).limit(MAX_HISTORY_EVENTS);
+  const since = new Date(now.getTime() - HISTORY_DAYS * DAY_MS);
+  const events = await db.select().from(maintenanceEvents).where(and(eq(maintenanceEvents.userId, userId), gt(maintenanceEvents.completedAt, since))).orderBy(desc(maintenanceEvents.completedAt)).limit(MAX_HISTORY_EVENTS);
   const balcony = parseBalcony(profile?.balconyJson);
   const asked = balcony && !balcony.skipped ? balcony : null;
   return {
@@ -174,9 +182,9 @@ function describePlantHistory(plant: PlantHistory) {
   const since = plant.addedDaysAgo === null ? "" : ` (sur le balcon depuis ${plant.addedDaysAgo < 60 ? `${plant.addedDaysAgo} j` : `${Math.round(plant.addedDaysAgo / 30)} mois`})`;
   const parts = [
     plant.byType.length > 0 ? plant.byType.map((item) => `${item.type} ${item.count} fois, dernière fois ${ago(item.lastDaysAgo)}`).join(" ; ") : "aucun geste noté",
-    plant.neverDone.length > 0 ? `jamais noté : ${plant.neverDone.join(", ")}` : null,
+    plant.neverDone.length > 0 ? `pas noté depuis ${HISTORY_DAYS} j : ${plant.neverDone.join(", ")}` : null,
     plant.feedEveryDays ? `engrais conseillé tous les ${plant.feedEveryDays} j en ce moment` : null,
-    plant.recentNotes.length > 0 ? `derniers gestes : ${plant.recentNotes.map((note) => `« ${note.text} » ${ago(note.daysAgo)}`).join(", ")}` : null,
+    plant.recentNotes.length > 0 ? `dernier geste : ${plant.recentNotes.map((note) => `« ${note.text} » ${ago(note.daysAgo)}`).join(", ")}` : null,
   ];
   return `- ${plant.name}${since} : ${parts.filter(Boolean).join(" ; ")}.`;
 }
@@ -194,8 +202,8 @@ export function describeGarden(facts: GardenFacts, now = new Date()) {
     ...describeMemory(facts.memory),
     facts.vacation && facts.vacation.end >= `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}` ? `Mode vacances : absence ${vacationRange(facts.vacation)}, ${facts.vacation.helper ? "un proche passe arroser" : "personne ne passe arroser"}.` : null,
     facts.plants.length > 0 ? `Plantes cultivées : ${facts.plants.map((plant) => plant.name).join(", ")}.` : "Aucune plante enregistrée pour l'instant.",
-    totals.events > 0 && totals.firstDaysAgo !== null ? `Gestes notés dans Balco : ${totals.events} depuis ${totals.firstDaysAgo < 60 ? `${totals.firstDaysAgo + 1} j` : `${Math.round(totals.firstDaysAgo / 30)} mois`}, dont ${totals.last30Days} ces 30 derniers jours.` : null,
-    facts.history.length > 0 ? `Historique complet, plante par plante :\n${facts.history.map(describePlantHistory).join("\n")}` : null,
+    totals.events > 0 ? `Gestes notés dans Balco ces ${HISTORY_DAYS} derniers jours : ${totals.events}, dont ${totals.last30Days} ces 30 derniers jours.` : null,
+    facts.history.length > 0 ? `Historique des ${HISTORY_DAYS} derniers jours, plante par plante :\n${facts.history.map(describePlantHistory).join("\n")}` : null,
     facts.removedPlants.length > 0 ? `Plantes retirées du balcon cette année : ${facts.removedPlants.map((plant) => `${plant.name} (${plant.grownDays === null ? "" : `${plant.grownDays} j sur le balcon, `}retrait ${ago(plant.removedDaysAgo)})`).join(", ")}.` : null,
   ];
   return lines.filter(Boolean).join("\n");

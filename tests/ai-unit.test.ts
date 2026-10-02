@@ -21,7 +21,7 @@ describe("chat history", () => {
     const turns = Array.from({ length: 20 }, (_, index) => ({ role: index % 2 === 0 ? ("user" as const) : ("assistant" as const), content: String(index) }));
     const trimmed = trimHistory(turns);
     expect(trimmed[0].role).toBe("user");
-    expect(trimmed.length).toBeLessThanOrEqual(12);
+    expect(trimmed.length).toBeLessThanOrEqual(8);
     expect(trimmed.at(-1)?.content).toBe("19");
     expect(trimHistory([{ role: "assistant", content: "Bonjour" }])).toEqual([]);
   });
