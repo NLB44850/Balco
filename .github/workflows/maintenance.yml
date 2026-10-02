@@ -47,6 +47,20 @@ jobs:
           MOIS_NOMS=(janvier février mars avril mai juin juillet août septembre octobre novembre décembre)
           MOIS="${MOIS_NOMS[$(( $(date +%-m) - 1 ))]} $(date +%Y)"
 
+          # Listes complètes dans des fichiers joints au passage ; l'issue n'en garde qu'un extrait,
+          # car GitHub refuse une issue de plus de 65 536 caractères.
+          mkdir -p rapport-complet
+          pnpm outdated --format list > rapport-complet/outdated.txt 2>&1 || true
+          pnpm audit --prod > rapport-complet/audit.txt 2>&1 || true
+          LIEN="$GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID"
+          extrait() {
+            head -c 12000 "$1"
+            if [ "$(wc -c < "$1")" -gt 12000 ]; then
+              echo
+              echo "… (extrait : liste complète dans « rapport-complet » sur $LIEN)"
+            fi
+          }
+
           {
             echo "## Rapport automatique"
             echo
@@ -56,14 +70,17 @@ jobs:
             echo "<details><summary>Dépendances obsolètes (pnpm outdated)</summary>"
             echo
             echo '```'
-            pnpm outdated 2>&1 || true
+            extrait rapport-complet/outdated.txt
             echo '```'
             echo "</details>"
             echo
             echo "<details><summary>Failles de sécurité (pnpm audit --prod)</summary>"
             echo
+            RESUME=$(grep -E 'vulnerabilit|Severity' rapport-complet/audit.txt | tr '\n' ' ' || true)
+            echo "Résumé : ${RESUME:-aucune faille signalée}"
+            echo
             echo '```'
-            pnpm audit --prod 2>&1 || true
+            extrait rapport-complet/audit.txt
             echo '```'
             echo "</details>"
             echo
@@ -97,11 +114,26 @@ jobs:
             fi
           } > rapport.md
 
+          # Dernier garde-fou sous la limite de GitHub (65 536 caractères).
+          if [ "$(wc -c < rapport.md)" -gt 60000 ]; then
+            head -c 60000 rapport.md > rapport-court.md
+            printf '\n\n… (rapport tronqué : version complète sur %s)\n' "$LIEN" >> rapport-court.md
+            mv rapport-court.md rapport.md
+          fi
+
           if [ "$ANNUEL" = "true" ]; then
             echo "TITRE=Maintenance et bilan annuel · $MOIS" >> "$GITHUB_ENV"
           else
             echo "TITRE=Maintenance mensuelle · $MOIS" >> "$GITHUB_ENV"
           fi
+
+      - name: Joindre les listes complètes
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: rapport-complet
+          path: rapport-complet/
+          retention-days: 90
 
       - name: Ouvrir l'issue
         env:
