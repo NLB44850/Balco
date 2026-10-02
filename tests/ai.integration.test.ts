@@ -97,7 +97,9 @@ describe.skipIf(!TEST_DATABASE_URL)("AI scanner and assistant (fake Messages API
       profile: { firstName: "Léa", balcony: { experience: "beginner", sunlight: "sunny", space: "balcony" } },
       location: { city: "Lyon", latitude: 45.76, longitude: 4.84, timezone: "Europe/Paris" },
       plants: [{ id: "basil-1", catalogId: "basil", nickname: "Basilic cuisine", addedAt: new Date().toISOString(), updatedAt: new Date().toISOString() }],
-      events: [{ id: "e1", plantId: "basil-1", type: "watering", completedAt: new Date(Date.now() - 2 * 86_400_000).toISOString(), source: "daily_task" }],
+      // 2 jours et 1 heure : MySQL 8 arrondit les fractions de seconde (MariaDB les tronque) ; « pile 48 h »
+      // pouvait tomber quelques millisecondes en dessous et donner « hier » selon la base.
+      events: [{ id: "e1", plantId: "basil-1", type: "watering", completedAt: new Date(Date.now() - 2 * 86_400_000 - 3_600_000).toISOString(), source: "daily_task" }],
       deletedEventIds: [],
     });
   });
