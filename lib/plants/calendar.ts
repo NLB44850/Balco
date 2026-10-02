@@ -1,6 +1,6 @@
 import { dayKey, sessionEventId } from "../garden/garden-logic";
 import type { MaintenanceEvent, MaintenanceTaskType } from "../reminders/reminder-engine";
-import { formatMonthRange, MONTH_LONG, type CatalogPlant, type Month } from "./catalog";
+import { describeSowing, formatMonthRange, MONTH_LONG, sowsIndoors, type CatalogPlant, type Month } from "./catalog";
 import { adaptToClimate, type ClimateInfo } from "./climate";
 
 export type CalendarActivityKind = "sow" | "plant" | "repot" | "harvest" | "care";
@@ -47,7 +47,12 @@ export function calendarActivities(subjects: CalendarSubject[], month: number, o
     const tag = displayName.toUpperCase();
     const base = { subjectId: id, entry, tag };
     if (entry.sowMonths.includes(m)) {
-      activities.push({ ...base, key: `${id}:sow`, kind: "sow", typeLabel: "SEMIS", title: `Sème ${entry.label}`, description: `Période de semis : ${formatMonthRange(entry.sowMonths)}. Prévois un pot d’au moins ${entry.potLiters} L.`, tone: "lime", eventType: "observation" });
+      // Semis précoce d'une plante frileuse : au chaud dans la maison, pas encore sur le balcon.
+      const indoors = sowsIndoors(entry, m);
+      const description = indoors
+        ? `Sème en godets à l’intérieur, au chaud (18 à 22 °C), près d’une fenêtre lumineuse : il fait encore trop froid sur le balcon.${entry.plantMonths.length > 0 ? ` Installe les plants dehors en ${formatMonthRange(entry.plantMonths)}, dans un pot d’au moins ${entry.potLiters} L.` : ""}`
+        : `Période de semis : ${describeSowing(entry)}. Prévois un pot d’au moins ${entry.potLiters} L.`;
+      activities.push({ ...base, key: `${id}:sow`, kind: "sow", typeLabel: "SEMIS", title: indoors ? `Sème ${entry.label} au chaud` : `Sème ${entry.label}`, description, tone: "lime", eventType: "observation" });
     }
     // Une vivace déjà en pot se rempote plutôt qu'elle ne se replante : un seul geste le même mois.
     const repotsThisMonth = entry.repotMonths.includes(m);

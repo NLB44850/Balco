@@ -57,7 +57,12 @@ function shiftMonths(months: Month[], shift: number): Month[] {
 /** Les dates d'une plante adaptées au climat : seules les plantes frileuses bougent, et seulement au printemps. */
 export function adaptToClimate(entry: CatalogPlant, climate: ClimateInfo | null | undefined): CatalogPlant {
   if (!climate || climate.springShift === 0 || !entry.care.frostSensitive) return entry;
-  return { ...entry, sowMonths: shiftMonths(entry.sowMonths, climate.springShift), plantMonths: shiftMonths(entry.plantMonths, climate.springShift) };
+  return {
+    ...entry,
+    sowMonths: shiftMonths(entry.sowMonths, climate.springShift),
+    indoorSowMonths: shiftMonths(entry.indoorSowMonths, climate.springShift),
+    plantMonths: shiftMonths(entry.plantMonths, climate.springShift),
+  };
 }
 
 /** Phrase courte pour la carte climat du calendrier. */

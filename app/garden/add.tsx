@@ -25,6 +25,7 @@ import {
   SPACE_LABELS,
   SUNLIGHT_LABELS,
   effortLabel,
+  describeSowing,
   formatMonthRange,
   getCatalogPlant,
   MONTH_LONG,
@@ -34,7 +35,7 @@ import {
   type SpaceSize,
   type Sunlight,
 } from "@/lib/plants/catalog";
-import { SUGGESTION_ACTION_LABELS, suggestionFor } from "@/lib/plants/suggestions";
+import { suggestionActionLabel, suggestionFor } from "@/lib/plants/suggestions";
 
 const categories = Object.keys(CATEGORY_LABELS) as PlantCategory[];
 
@@ -120,7 +121,7 @@ export default function AddPlantScreen() {
             {results.map((entry, index) => {
               const owned = countByCatalogId.get(entry.id) ?? 0;
               const seasonal = inSeason ? suggestionFor(entry, seasonMonth) : null;
-              const meta = owned ? `✓ Sur ton balcon${owned > 1 ? ` (${owned})` : ""}` : seasonal ? `${SUGGESTION_ACTION_LABELS[seasonal.action]} · ${seasonal.reason}` : effortLabel(entry);
+              const meta = owned ? `✓ Sur ton balcon${owned > 1 ? ` (${owned})` : ""}` : seasonal ? `${suggestionActionLabel(seasonal)} · ${seasonal.reason}` : effortLabel(entry);
               return (
                 <View key={entry.id} style={[styles.row, index < results.length - 1 && glass.line]}>
                   <Pressable accessibilityRole="button" accessibilityLabel={`${entry.name}, voir le détail`} onPress={() => setSheetId(entry.id)} style={({ pressed }) => [styles.rowMain, pressed && styles.pressed]}>
@@ -162,7 +163,7 @@ export default function AddPlantScreen() {
             <Text style={[styles.sheetBody, { color: colors.muted }]}>{sheetEntry.pitch}</Text>
             <View style={styles.facts}>
               {[
-                sheetEntry.sowMonths.length > 0 ? `🌱  Semis : ${formatMonthRange(sheetEntry.sowMonths)}` : null,
+                sheetEntry.sowMonths.length > 0 ? `🌱  Semis : ${describeSowing(sheetEntry)}` : null,
                 sheetEntry.plantMonths.length > 0 ? `🪴  Plantation : ${formatMonthRange(sheetEntry.plantMonths)}` : null,
                 `🧺  Récolte : ${formatMonthRange(sheetEntry.harvestMonths)}`,
                 `🪣  Pot d’au moins ${sheetEntry.potLiters} L`,

@@ -1,5 +1,6 @@
 import type { MaintenanceTaskType } from "../reminders/reminder-engine";
 import { fertilizeTask } from "./fertilizing";
+import { SOWING } from "./sowing";
 import { PLANT_VARIETIES } from "./varieties";
 
 /**
@@ -64,6 +65,8 @@ export type CatalogPlant = {
   potLiters: number;
   pitch: string;
   sowMonths: Month[];
+  /** Mois de semis (inclus dans `sowMonths`) qui se font seulement au chaud, à l'intérieur ; les autres se sèment dehors. */
+  indoorSowMonths: Month[];
   plantMonths: Month[];
   harvestMonths: Month[];
   /** Mois de rempotage des vivaces (terreau neuf, pot un peu plus grand) ; vide pour les annuelles. */
@@ -73,6 +76,8 @@ export type CatalogPlant = {
   tasks: CareTask[];
   /** Variétés conseillées en pot, de la plus facile à la plus originale. */
   varieties: PlantVariety[];
+  /** Pages consultées pour vérifier les mois de semis, de plantation et de récolte. */
+  sources: string[];
 };
 
 export const CATEGORY_LABELS: Record<PlantCategory, string> = {
@@ -144,7 +149,7 @@ function customTask(task: Omit<CareTask, "doneTitle" | "doneText"> & Partial<Pic
   return { doneTitle: "Geste fait, journée gagnée.", doneText: "Ta plante te remerciera dans quelques jours.", ...task };
 }
 
-type PlantInput = Omit<CatalogPlant, "tasks" | "varieties" | "repotMonths"> & { varieties?: PlantVariety[]; repotMonths?: Month[]; extraTasks?: CareTask[]; wateringMonths?: Month[]; wateringInstruction?: string };
+type PlantInput = Omit<CatalogPlant, "tasks" | "varieties" | "repotMonths" | "indoorSowMonths" | "sources"> & { varieties?: PlantVariety[]; repotMonths?: Month[]; extraTasks?: CareTask[]; wateringMonths?: Month[]; wateringInstruction?: string };
 
 function plant({ extraTasks = [], wateringMonths, wateringInstruction, varieties, repotMonths, ...data }: PlantInput): CatalogPlant {
   const activeMonths = wateringMonths ?? GROWING_SEASON;
@@ -154,6 +159,8 @@ function plant({ extraTasks = [], wateringMonths, wateringInstruction, varieties
     // Une vivace se rempote à la reprise de végétation, avant la pousse de printemps.
     repotMonths: repotMonths ?? (data.perennial ? [3, 4] : []),
     varieties: varieties ?? PLANT_VARIETIES[data.id] ?? [],
+    indoorSowMonths: (SOWING[data.id]?.indoor ?? []).filter((month) => data.sowMonths.includes(month)),
+    sources: SOWING[data.id]?.sources ?? [],
     tasks: [
       wateringTask(data.label, activeMonths, wateringInstruction),
       observeTask(data.label, activeMonths),
@@ -1523,6 +1530,19 @@ export function searchCatalog(query: string, category?: PlantCategory): CatalogP
 
 function normalize(value: string) {
   return value.normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase().trim();
+}
+
+/** Le semis de ce mois se fait-il seulement au chaud, à l'intérieur ? */
+export function sowsIndoors(entry: CatalogPlant, month: number) {
+  return entry.indoorSowMonths.includes(month as Month);
+}
+
+/** « mars–mai (au chaud en mars–avril) », « avril–juin », pour les fiches. */
+export function describeSowing(entry: CatalogPlant) {
+  const all = formatMonthRange(entry.sowMonths);
+  if (entry.indoorSowMonths.length === 0) return all;
+  if (entry.indoorSowMonths.length === entry.sowMonths.length) return `${all}, au chaud à l’intérieur`;
+  return `${all} (au chaud à l’intérieur en ${formatMonthRange(entry.indoorSowMonths)})`;
 }
 
 /** « mars–mai », « oct.–mars », « avr.–juin, sept. » : regroupe les mois consécutifs, y compris à cheval sur l'année. */

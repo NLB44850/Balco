@@ -38,8 +38,8 @@ import {
   type CalendarActivity,
   type CalendarSubject,
 } from "@/lib/plants/calendar";
-import { formatMonthRange, MONTH_LONG, MONTH_SHORT, recommendPlants } from "@/lib/plants/catalog";
-import { nextSuggestionMonth, seasonalSuggestions, SUGGESTION_ACTION_LABELS, type SeasonalSuggestion } from "@/lib/plants/suggestions";
+import { describeSowing, formatMonthRange, MONTH_LONG, MONTH_SHORT, recommendPlants } from "@/lib/plants/catalog";
+import { nextSuggestionMonth, seasonalSuggestions, suggestionActionLabel, type SeasonalSuggestion } from "@/lib/plants/suggestions";
 import { climateSummary, climateZoneFor } from "@/lib/plants/climate";
 import { decideReminders } from "@/lib/reminders/reminder-engine";
 import { withoutSnoozed, type ReminderSnooze } from "@/lib/reminders/reminder-actions";
@@ -324,12 +324,12 @@ export default function CalendarScreen() {
       <BottomSheet visible={sheetSuggestion !== null} onClose={() => setSheetSuggestion(null)}>
         {sheetSuggestion && (
           <View style={styles.sheet}>
-            <Text style={[styles.sheetKind, { color: colors.primary }]}>{SUGGESTION_ACTION_LABELS[sheetSuggestion.action]} {periodLabel}</Text>
+            <Text style={[styles.sheetKind, { color: colors.primary }]}>{suggestionActionLabel(sheetSuggestion)} {periodLabel}</Text>
             <Text style={[styles.sheetTitle, { color: colors.foreground }]}>{sheetSuggestion.title}</Text>
             <Text style={[styles.sheetBody, { color: colors.muted }]}>{sheetSuggestion.entry.pitch}</Text>
             <Text style={[styles.small, { color: colors.foreground }]}>
               {[
-                sheetSuggestion.entry.sowMonths.length > 0 ? `🌱 Semis : ${formatMonthRange(sheetSuggestion.entry.sowMonths)}` : null,
+                sheetSuggestion.entry.sowMonths.length > 0 ? `🌱 Semis : ${describeSowing(sheetSuggestion.entry)}` : null,
                 sheetSuggestion.entry.plantMonths.length > 0 ? `🪴 Plantation : ${formatMonthRange(sheetSuggestion.entry.plantMonths)}` : null,
                 `${sheetSuggestion.entry.category === "flower" ? "🌸 Floraison" : "🧺 Récolte"} : ${formatMonthRange(sheetSuggestion.entry.harvestMonths)}`,
                 `🪣 Pot d’au moins ${sheetSuggestion.entry.potLiters} L`,

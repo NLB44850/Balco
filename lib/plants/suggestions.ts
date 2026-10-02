@@ -5,7 +5,7 @@
  * les suggestions tournent chaque jour parmi les meilleures, pour que l'app ne propose pas toujours les
  * mêmes ; le même jour, elles restent identiques partout (Aujourd'hui montre la 1ʳᵉ de Saisons). Logique pure.
  */
-import { formatMonthRange, MONTH_LONG, recommendPlants, type CatalogPlant, type Month, type OnboardingAnswers } from "./catalog";
+import { formatMonthRange, MONTH_LONG, recommendPlants, sowsIndoors, type CatalogPlant, type Month, type OnboardingAnswers } from "./catalog";
 import { adaptToClimate, type ClimateInfo } from "./climate";
 
 export type SuggestionAction = "sow" | "plant" | "both";
@@ -15,7 +15,9 @@ export type SeasonalSuggestion = {
   action: SuggestionAction;
   /** Dernier mois de la période : c'est maintenant, sinon l'an prochain. */
   lastChance: boolean;
-  /** « Sème le basilic », « Plante le thym », « Sème ou plante la menthe ». */
+  /** Semis de ce mois à faire au chaud, à l'intérieur (pas encore sur le balcon). */
+  indoors: boolean;
+  /** « Sème le basilic au chaud », « Plante le thym », « Sème ou plante la menthe ». */
   title: string;
   /** « Récolte juin–septembre · dernier mois ». */
   reason: string;
@@ -47,6 +49,12 @@ function hash(text: string) {
 const VERBS: Record<SuggestionAction, string> = { sow: "Sème", plant: "Plante", both: "Sème ou plante" };
 export const SUGGESTION_ACTION_LABELS: Record<SuggestionAction, string> = { sow: "À semer", plant: "À planter", both: "À semer ou planter" };
 
+/** « À semer au chaud », « À planter » : l'étiquette du geste, avec le semis à l'intérieur s'il y a lieu. */
+export function suggestionActionLabel({ action, indoors }: Pick<SeasonalSuggestion, "action" | "indoors">) {
+  if (!indoors || action === "plant") return SUGGESTION_ACTION_LABELS[action];
+  return action === "sow" ? "À semer au chaud" : "À semer au chaud ou planter";
+}
+
 /** Le mois est-il le dernier d'une période (mars–mai → mai) ? Une période peut passer d'une année à l'autre. */
 function isLastMonth(months: Month[], month: Month) {
   const next = ((month % 12) + 1) as Month;
@@ -66,7 +74,9 @@ export function suggestionFor(catalogEntry: CatalogPlant, month: number, climate
   // Une fleur ne se récolte pas : on dit quand elle fleurit.
   const verb = entry.category === "flower" ? "Fleurit" : "Récolte";
   const parts = [harvest === "toute l’année" ? `${verb} toute l’année` : `${verb} ${harvest}`, lastChance ? "dernier mois" : entry.difficulty === "easy" ? "facile" : null];
-  return { entry, action, lastChance, title: `${VERBS[action]} ${entry.label}`, reason: parts.filter(Boolean).join(" · ") };
+  const indoors = sow && sowsIndoors(entry, m);
+  const title = !indoors ? `${VERBS[action]} ${entry.label}` : action === "sow" ? `Sème ${entry.label} au chaud` : `Sème au chaud ou plante ${entry.label}`;
+  return { entry, action, lastChance, indoors, title, reason: parts.filter(Boolean).join(" · ") };
 }
 
 export function seasonalSuggestions(answers: OnboardingAnswers | null, options: SuggestionOptions): SeasonalSuggestion[] {
