@@ -55,6 +55,7 @@ export const STOCK_PHOTOS: Record<string, number> = {
   "nz-spinach": require("@/assets/plants/nz-spinach.jpg"),
   "oca": require("@/assets/plants/oca.jpg"),
   "okra": require("@/assets/plants/okra.jpg"),
+  "orach": require("@/assets/plants/orach.jpg"),
   "oregano": require("@/assets/plants/oregano.jpg"),
   "oyster-plant": require("@/assets/plants/oyster-plant.jpg"),
   "pak-choi": require("@/assets/plants/pak-choi.jpg"),
@@ -75,6 +76,7 @@ export const STOCK_PHOTOS: Record<string, number> = {
   "sage": require("@/assets/plants/sage.jpg"),
   "savory": require("@/assets/plants/savory.jpg"),
   "shiso": require("@/assets/plants/shiso.jpg"),
+  "snapdragon": require("@/assets/plants/snapdragon.jpg"),
   "sorrel": require("@/assets/plants/sorrel.jpg"),
   "spinach": require("@/assets/plants/spinach.jpg"),
   "spring-onion": require("@/assets/plants/spring-onion.jpg"),
@@ -95,6 +97,7 @@ export const STOCK_PHOTOS: Record<string, number> = {
   "wild-garlic": require("@/assets/plants/wild-garlic.jpg"),
   "winter-purslane": require("@/assets/plants/winter-purslane.jpg"),
   "woodland-strawberry": require("@/assets/plants/woodland-strawberry.jpg"),
+  "yardlong-bean": require("@/assets/plants/yardlong-bean.jpg"),
   "zinnia": require("@/assets/plants/zinnia.jpg"),
   "zucchini": require("@/assets/plants/zucchini.jpg"),
 };

@@ -106,7 +106,7 @@ Fait (validé sur son téléphone) :
   Catalogue : « Voir mon balcon » dans une barre sous la liste (pas en surimpression).
 
 - **Photos d'exemple des plantes** (Wikimedia Commons, libres de droits) : `assets/plants/<id>.jpg`
-  (95 sur 100, ~8 Mo), crédits dans `assets/plants/credits.json`, index généré `components/plant-stock-photos.ts`
+  (98 sur 100, ~8 Mo), crédits dans `assets/plants/credits.json`, index généré `components/plant-stock-photos.ts`
   (`node scripts/photos/generer-index.mjs`). `PlantPicture` montre ta photo, sinon la photo d'exemple,
   sinon l'emoji ; `CatalogPicture` pour le catalogue, l'accueil et l'onboarding ; fiche plante avec
   « Photo d'exemple » + « Ajoute ta photo ». Écran `app/credits.tsx` (Réglages → Crédits photos).
@@ -174,10 +174,9 @@ Livré, à valider sur son téléphone :
    crosnes, œillet mignardise, dahlias nains, mufliers, fuchsia rustique, fraisier des bois, kiwaï,
    cassissier, mûres sans épines) et des variétés marquées `kind` (« Ancienne », « Originale »,
    « Nouveauté », `VARIETY_KIND_LABELS`) : filtre « Anciennes & originales » dans le catalogue,
-   pastilles dans sa fiche, mention dans le choix de variété de la fiche plante. **Photos d'exemple** : 95 sur 100 le 02/10.
-   Restent (liste `AWAITING_PHOTO` dans `tests/stock-photos.test.ts`, emoji en attendant) : haricot
-   kilomètre, arroche, mufliers (choisis dans `choix.json`, il reste `--final` à lancer) ; crosnes et
-   cassis (nouvelle recherche `--encore` dans `recherches-bis.json`). Après chaque `--final` : recompresser
+   pastilles dans sa fiche, mention dans le choix de variété de la fiche plante. **Photos d'exemple** : 98 sur 100 le 02/10.
+   Restent (liste `AWAITING_PHOTO` dans `tests/stock-photos.test.ts`, emoji en attendant) : crosnes et
+   cassis (choisis dans `choix.json`, il reste `--final` à lancer). Après chaque `--final` : recompresser
    en 800 px qualité 74 (`convert -resize '800x800>' -strip -quality 74`), `node scripts/photos/generer-index.mjs`,
    retirer les plantes de `AWAITING_PHOTO`.
 5. Nouveau : suggestions de plantes selon la saison / le mois (quoi semer ou planter maintenant).
