@@ -42,7 +42,8 @@ import { publishSky } from "@/lib/garden/sky-store";
 import { balconyStatus, buildTodayList, doneSubtitle, type TodayItem } from "@/lib/garden/today";
 import { notificationsUnavailableReason } from "@/lib/notifications/module";
 import { eventForActivity, seasonalToDo } from "@/lib/plants/calendar";
-import { recommendPlants } from "@/lib/plants/catalog";
+import { PLANT_CATALOG, recommendPlants } from "@/lib/plants/catalog";
+import { seasonalSuggestions, type SeasonalSuggestion } from "@/lib/plants/suggestions";
 import { climateZoneFor } from "@/lib/plants/climate";
 import { addSnooze, eventForReminder, planGroupedNotification, withoutSnoozed, type ReminderSnooze } from "@/lib/reminders/reminder-actions";
 import { decideReminders, type MaintenanceEvent } from "@/lib/reminders/reminder-engine";
@@ -74,7 +75,7 @@ const haptic = () => {
 export default function HomeScreen() {
   const colors = useColors();
   const router = useRouter();
-  const { loaded, resolvedPlants, events, onboarding, account, addPlant, logEvent, removeEvent, reportLocation } = useGarden();
+  const { loaded, resolvedPlants, events, onboarding, account, addPlant, removePlant, logEvent, removeEvent, reportLocation } = useGarden();
   const aiStatus = trpc.ai.status.useQuery(undefined, { enabled: account.signedIn, retry: false });
   const { vacation } = useVacation();
 
@@ -151,11 +152,17 @@ export default function HomeScreen() {
   }, [reportLocation, weather.city, weather.isFallback, weather.latitude, weather.longitude]);
 
   const session = useMemo(() => buildDailySession(resolvedPlants, events, now), [events, now, resolvedPlants]);
+  const climate = useMemo(() => (weather.isFallback ? null : climateZoneFor(weather.latitude, weather.longitude, weatherSnapshot.elevationM)), [weather.isFallback, weather.latitude, weather.longitude, weatherSnapshot.elevationM]);
   // Gestes de saison du calendrier (semer, planter, rempoter) pas encore notés ce mois-ci.
-  const seasonal = useMemo(() => {
-    const climate = weather.isFallback ? null : climateZoneFor(weather.latitude, weather.longitude, weatherSnapshot.elevationM);
-    return seasonalToDo(resolvedPlants.map((resolved) => ({ id: resolved.plant.id, entry: resolved.entry, displayName: plantDisplayName(resolved) })), events, now, { climate });
-  }, [events, now, resolvedPlants, weather.isFallback, weather.latitude, weather.longitude, weatherSnapshot.elevationM]);
+  const seasonal = useMemo(
+    () => seasonalToDo(resolvedPlants.map((resolved) => ({ id: resolved.plant.id, entry: resolved.entry, displayName: plantDisplayName(resolved) })), events, now, { climate }),
+    [climate, events, now, resolvedPlants],
+  );
+  // Idée du mois : une plante à semer ou planter maintenant, adaptée au balcon, qu'on n'a pas encore.
+  const monthIdea = useMemo(
+    () => (resolvedPlants.length === 0 ? null : seasonalSuggestions(onboarding, { month: now.getMonth() + 1, climate, ownedCatalogIds: resolvedPlants.map((resolved) => resolved.entry.id), limit: 1 })[0] ?? null),
+    [climate, now, onboarding, resolvedPlants],
+  );
 
   const reminderPlants = useMemo(
     () => resolvedPlants.filter(({ plant }) => reminderSettings.enabledPlantIds.length === 0 || reminderSettings.enabledPlantIds.includes(plant.id)),
@@ -284,6 +291,12 @@ export default function HomeScreen() {
     showToast(`${name} ajouté à ton balcon`);
   };
 
+  const addMonthIdea = async ({ entry }: SeasonalSuggestion) => {
+    const created = await addPlant(entry.id);
+    haptic();
+    showToast(`Ajouté à ton balcon : ${entry.name}`, () => void removePlant(created.id));
+  };
+
   const closeSheet = () => setSheetKey(null);
   const evening = now.getHours() >= 17;
   const metaLine = weather.isFallback
@@ -407,6 +420,24 @@ export default function HomeScreen() {
           </View>
         )}
 
+        {loaded && hasPlants && !away && monthIdea && (
+          <View style={styles.idea}>
+            <Text style={[styles.sectionTitle, { color: colors.foreground }]}>Idée du mois</Text>
+            <View style={[styles.reco, styles.ideaRow, { borderBottomColor: colors.border }]}>
+              <Pressable accessibilityRole="button" accessibilityLabel={`${monthIdea.title}, voir les idées de saison`} onPress={() => router.push("/(tabs)/calendar")} style={({ pressed }) => [styles.ideaMain, pressed && styles.pressed]}>
+                <CatalogPicture entry={monthIdea.entry} style={[styles.plantBubble, styles.recoBubble]} />
+                <View style={styles.flex}>
+                  <Text style={[styles.recoName, { color: colors.foreground }]} numberOfLines={1}>{monthIdea.title}</Text>
+                  <Text style={[styles.small, { color: colors.muted }]} numberOfLines={2}>{monthIdea.reason}</Text>
+                </View>
+              </Pressable>
+              <Pressable accessibilityRole="button" accessibilityLabel={`Ajouter ${monthIdea.entry.name} à mon balcon`} hitSlop={8} onPress={() => void addMonthIdea(monthIdea)} style={({ pressed }) => [styles.ideaAdd, { backgroundColor: colors.primary }, pressed && styles.pressed]}>
+                <Text style={styles.ideaAddText}>+</Text>
+              </Pressable>
+            </View>
+          </View>
+        )}
+
         {loaded && hasPlants && (
           <View style={styles.shelf}>
             <View style={styles.shelfHead}>
@@ -452,7 +483,7 @@ export default function HomeScreen() {
               </View>
             ))}
             <Pressable accessibilityRole="button" onPress={() => router.push("/garden/add")} style={({ pressed }) => [styles.cta, { backgroundColor: colors.foreground }, pressed && styles.pressed]}>
-              <Text style={[styles.ctaText, { color: colors.background }]}>Voir les 73 plantes</Text>
+              <Text style={[styles.ctaText, { color: colors.background }]}>Voir les {PLANT_CATALOG.length} plantes</Text>
             </Pressable>
           </FadeIn>
         )}
@@ -558,6 +589,11 @@ const styles = StyleSheet.create({
   reco: { flexDirection: "row", alignItems: "center", gap: 12, paddingVertical: 10, borderBottomWidth: StyleSheet.hairlineWidth },
   recoBubble: { width: 46, height: 46, borderRadius: 23 },
   recoName: { fontSize: 16, fontWeight: "600" },
+  idea: { gap: 4 },
+  ideaRow: { borderBottomWidth: 0 },
+  ideaMain: { flex: 1, flexDirection: "row", alignItems: "center", gap: 12 },
+  ideaAdd: { width: 38, height: 38, borderRadius: 19, alignItems: "center", justifyContent: "center" },
+  ideaAddText: { color: "#FFFFFF", fontSize: 22, fontWeight: "700", marginTop: -2 },
   cta: { borderRadius: 14, paddingVertical: 15, alignItems: "center" },
   ctaText: { fontSize: 16, fontWeight: "700" },
   sheet: { gap: 12 },

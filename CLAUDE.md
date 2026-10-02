@@ -45,8 +45,9 @@ Tout se passe dans son GitHub Codespace (pas de Docker sur son PC).
 - **Tests de bout en bout** (à lancer quand le porteur le demande, et avant chaque grosse évolution) :
   `bash scripts/e2e.sh` (≈ 4 min : construit l'app web avec la simulation météo, migre la base, démarre
   le vrai serveur sur le port 3100, lance Playwright). `bash scripts/e2e.sh meteo` pour un seul fichier,
-  `E2E_SKIP_BUILD=1` pour ne pas reconstruire. Scénarios dans `e2e/` (17 aujourd'hui) : parcours
-  (onboarding, écrans, cocher/Annuler, fête, catalogue, fiche d'une nouvelle plante, feuille du bas qui se ferme), météo (pluie + eau économisée, gel + Saisons,
+  `E2E_SKIP_BUILD=1` pour ne pas reconstruire. Scénarios dans `e2e/` (18 aujourd'hui) : parcours
+  (onboarding, écrans, cocher/Annuler, fête, catalogue, fiche d'une nouvelle plante, feuille du bas qui se ferme,
+  suggestions de saison), météo (pluie + eau économisée, gel + Saisons,
   orage, vent, canicule, « Pas aujourd'hui », retour météo réelle), compte (code de connexion lu dans
   `dist/e2e-server.log`, balcon retrouvé sur un 2ᵉ téléphone) et vacances. Open-Meteo est simulé
   (`e2e/helpers.ts`, `mockWeather`), le balcon est posé dans le stockage (`seedBalcony`). Les cases à
@@ -167,6 +168,8 @@ Livré, à valider sur son téléphone :
   « Annuler », feuille du bas (semis, plantation, récolte, pot) ; mois calme → « reprennent en … ».
   Lien « Voir toutes les plantes d'octobre » → catalogue avec la pastille « À semer en octobre »
   (`/garden/add?month=10`). Le catalogue n'applique pas le décalage de climat (pas de météo chargée).
+  Sur **Aujourd'hui**, ligne « Idée du mois » sous la liste du jour (la 1ʳᵉ suggestion, « + » avec
+  « Annuler », toucher la ligne ouvre Saisons) ; cachée pendant les vacances et balcon vide.
 
 
 À faire, dans l'ordre (liste du porteur, 30/09) :
@@ -188,9 +191,8 @@ Livré, à valider sur son téléphone :
    Pour une nouvelle plante : recherche dans `PLANTS` du script, `AWAITING_PHOTO` dans
    `tests/stock-photos.test.ts`, puis candidates / `choix.json` / `--final`, recompression en 800 px
    qualité 74 (`convert -resize '800x800>' -strip -quality 74`) et `node scripts/photos/generer-index.mjs`.
-5. Suggestions selon le mois : livrées le 02/10 dans Saisons et le catalogue (voir plus haut), **à
-   valider** sur son téléphone. Lui demander s'il les veut aussi sur Aujourd'hui (par exemple sous
-   « Tout est fait »).
+5. Suggestions selon le mois : livrées le 02/10 dans Saisons, le catalogue et Aujourd'hui (« Idée du
+   mois », à sa demande), **à valider** sur son téléphone.
 6. À la publication : notifications serveur sur Android (Firebase/FCM) ; synchroniser les reports
    (« Dans 3 h ») avec le serveur ; envoyer les photos des plantes sur le serveur (stockage d'images)
    pour les retrouver sur un autre téléphone.

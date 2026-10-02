@@ -116,10 +116,39 @@ test("fiche du bas : jamais plus haute que l'écran, se ferme par « × » ou en
 
   // Glisser la poignée vers le bas replie la fiche.
   await openSheet();
-  const handle = (await page.getByRole("button", { name: "Fermer la fiche" }).boundingBox())!;
+  // La fiche monte en glissant : on attend qu'elle soit arrivée avant de saisir la poignée.
+  const closeButton = page.getByRole("button", { name: "Fermer la fiche" });
+  let previous = -1;
+  await expect.poll(async () => {
+    const y = (await closeButton.boundingBox())?.y ?? -1;
+    const settled = y === previous;
+    previous = y;
+    return settled;
+  }, { intervals: [150] }).toBe(true);
+  const handle = (await closeButton.boundingBox())!;
   await page.mouse.move(180, handle.y + 10);
   await page.mouse.down();
   for (let step = 1; step <= 10; step += 1) await page.mouse.move(180, handle.y + 10 + step * 25);
   await page.mouse.up();
   await expect(page.getByRole("button", { name: "Fermer la fiche" })).toHaveCount(0);
+});
+
+test("suggestions de saison : idée du mois sur Aujourd'hui, carte de Saisons, catalogue du mois", async ({ page }) => {
+  const errors = trackErrors(page);
+  await mockWeather(page);
+  await seedBalcony(page, { plants: ["basil"], wateredDaysAgo: 1 });
+  await open(page, "/", "Idée du mois");
+  await page.getByRole("button", { name: /^Ajouter .* à mon balcon$/ }).first().click();
+  await expect(page.getByText(/^Ajouté à ton balcon : /)).toBeVisible();
+  await page.getByRole("button", { name: "Annuler" }).click();
+
+  await open(page, "/calendar", /^À semer ou planter en /);
+  await page.getByRole("button", { name: /, voir le détail$/ }).first().click();
+  await expect(page.getByRole("button", { name: "+ Ajouter à mon balcon" })).toBeVisible();
+  await page.getByRole("button", { name: "+ Ajouter à mon balcon" }).click();
+  await expect(page.getByText(/^Ajouté à ton balcon : /)).toBeVisible();
+
+  await page.getByRole("button", { name: /^Voir toutes les plantes d/ }).click();
+  await expect(page.getByRole("button", { name: /^✓ À semer en / })).toBeVisible();
+  expect(errors).toEqual([]);
 });
