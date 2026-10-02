@@ -4,7 +4,7 @@ import { loginCodes, mockWeather, open, seedBalcony, trackErrors } from "./helpe
 
 /** Le compte (code par e-mail, balcon retrouvé sur un autre téléphone) et le mode vacances. */
 
-test("connexion par code, puis le balcon retrouvé sur un autre téléphone", async ({ browser }) => {
+test("connexion par code, le balcon retrouvé sur un autre téléphone, qui devient celui de la sauvegarde", async ({ browser }) => {
   const email = `e2e-${Date.now()}@balco.test`;
 
   // Premier téléphone : un balcon, puis la connexion.
@@ -23,7 +23,6 @@ test("connexion par code, puis le balcon retrouvé sur un autre téléphone", as
   // Laisse le temps à la synchronisation d'envoyer le balcon.
   await phone.waitForTimeout(3000);
   expect(errors).toEqual([]);
-  await phone.close();
 
   // Second téléphone, tout neuf : la même adresse retrouve les plantes.
   const other = await browser.newContext();
@@ -38,6 +37,13 @@ test("connexion par code, puis le balcon retrouvé sur un autre téléphone", as
   await expect(second.getByText("Regarde tes e-mails.")).toHaveCount(0, { timeout: 15_000 });
   await open(second, "/balcony", "Basilic");
   await expect(second.getByText("Fraisier").first()).toBeVisible();
+
+  // Compte gratuit : la sauvegarde suit le dernier téléphone connecté ; le premier est prévenu.
+  await open(phone, "/settings", "Sauvegarde et compte");
+  await expect(phone.getByText(/sauvegardé depuis un autre téléphone/).first()).toBeVisible({ timeout: 15_000 });
+  await phone.getByRole("button", { name: "Sauvegarder depuis ce téléphone" }).click();
+  await expect(phone.getByText(/Sauvegardé aujourd/).first()).toBeVisible({ timeout: 15_000 });
+  await phone.close();
   await other.close();
 });
 

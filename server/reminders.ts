@@ -11,12 +11,14 @@ import {
   type WeatherSnapshot,
 } from "../lib/reminders/reminder-engine";
 import { groupReminders, selectGroups } from "../lib/reminders/reminder-groups";
+import { can, planOf, type Plan } from "../lib/plans";
 import {
   devicePushTokens,
   maintenanceEvents,
   reminderDecisions,
   reminderPlants,
   reminderProfiles,
+  users,
 } from "../drizzle/schema";
 import { getDb } from "./db";
 
@@ -304,10 +306,24 @@ function cachedWeather(cache: WeatherCache | undefined, location: SyncLocation, 
   return cache.get(key)!;
 }
 
-export async function recalculateUserReminders(userId: number, now = new Date(), weatherCache?: WeatherCache) {
+/** Le forfait d'un compte (un compte inconnu vaut le forfait gratuit). */
+export async function planOfUser(userId: number): Promise<Plan> {
+  const db = await getDb();
+  if (!db) return "free";
+  const [row] = await db.select({ plan: users.plan }).from(users).where(eq(users.id, userId)).limit(1);
+  return planOf(row?.plan);
+}
+
+export async function recalculateUserReminders(userId: number, now = new Date(), weatherCache?: WeatherCache, knownPlan?: Plan) {
   const db = await getDb();
   if (!db) return { userId, status: "skipped", reason: "database_unavailable" } as const;
   const profile = (await db.select().from(reminderProfiles).where(eq(reminderProfiles.userId, userId)).limit(1))[0];
+  // Rappels envoyés par le serveur (et alertes météo push) : réservés à Balco+ (lib/plans.ts).
+  // Les comptes gratuits gardent les rappels programmés par leur téléphone.
+  if (profile && !can(knownPlan ?? (await planOfUser(userId)), "serverReminders")) {
+    await db.update(reminderDecisions).set({ status: "obsolete" }).where(and(eq(reminderDecisions.userId, userId), eq(reminderDecisions.status, "pending")));
+    return { userId, status: "skipped", reason: "plan" } as const;
+  }
   if (!profile || profile.enabled !== 1) {
     // Rappels désactivés : rien d'ancien ne doit partir.
     await db.update(reminderDecisions).set({ status: "obsolete" }).where(and(eq(reminderDecisions.userId, userId), eq(reminderDecisions.status, "pending")));
@@ -372,13 +388,15 @@ export async function recalculateUserReminders(userId: number, now = new Date(),
 export async function recalculateAllReminders(now = new Date()) {
   const db = await getDb();
   if (!db) return { status: "skipped", reason: "database_unavailable", users: 0, decisions: 0, failures: 0 } as const;
-  const profiles = await db.select({ userId: reminderProfiles.userId }).from(reminderProfiles).where(eq(reminderProfiles.enabled, 1));
+  const rows = await db.select({ userId: reminderProfiles.userId, plan: users.plan }).from(reminderProfiles).leftJoin(users, eq(users.id, reminderProfiles.userId)).where(eq(reminderProfiles.enabled, 1));
+  // Seuls les forfaits qui ont droit aux rappels serveur sont recalculés.
+  const profiles = rows.filter((row) => can(row.plan, "serverReminders"));
   const cache: WeatherCache = new Map();
   let decisions = 0;
   let failures = 0;
   for (const profile of profiles) {
     try {
-      const result = await recalculateUserReminders(profile.userId, now, cache);
+      const result = await recalculateUserReminders(profile.userId, now, cache, planOf(profile.plan));
       if (result.status === "recalculated") decisions += result.decisions;
     } catch (error) {
       // Une météo indisponible pour un utilisateur ne doit pas bloquer les autres.
@@ -415,6 +433,12 @@ export async function dispatchDueReminderNotifications(now = new Date()) {
   for (const row of due) byUser.set(row.userId, [...(byUser.get(row.userId) ?? []), row]);
 
   for (const [userId, rows] of byUser) {
+    // Compte repassé en gratuit depuis le calcul : ses rappels serveur ne partent plus.
+    if (!can(await planOfUser(userId), "serverReminders")) {
+      await db.update(reminderDecisions).set({ status: "obsolete" }).where(inArray(reminderDecisions.id, rows.map((row) => row.id)));
+      skipped += rows.length;
+      continue;
+    }
     const tokens = await db.select().from(devicePushTokens).where(and(eq(devicePushTokens.userId, userId), eq(devicePushTokens.active, 1)));
     const parsedRows = rows.map((row) => ({ row, parsed: parseJson<ReminderDecision | null>(row.payload, null) }));
     const valid = parsedRows.filter((item): item is { row: (typeof rows)[number]; parsed: ReminderDecision } => item.parsed !== null);
@@ -457,4 +481,22 @@ export async function dispatchDueReminderNotifications(now = new Date()) {
     }
   }
   return { sent, skipped, deactivatedTokens };
+}
+
+export class OtherDeviceError extends Error {}
+
+/**
+ * Compte gratuit : un seul appareil sauvegarde le jardin. Le premier qui synchronise est retenu ;
+ * un autre appareil prend la place quand il le demande (connexion, « Sauvegarder depuis ce téléphone »).
+ * Sans identifiant d'appareil (ancienne version de l'app), rien n'est bloqué.
+ */
+export async function checkSyncDevice(userId: number, plan: Plan, deviceId: string | undefined, claim: boolean) {
+  if (!deviceId || can(plan, "multiDeviceSync")) return;
+  const db = await getDb();
+  if (!db) return;
+  const [row] = await db.select({ syncDeviceId: users.syncDeviceId }).from(users).where(eq(users.id, userId)).limit(1);
+  if (!row) return;
+  if (row.syncDeviceId === deviceId) return;
+  if (row.syncDeviceId && !claim) throw new OtherDeviceError("garden saved from another device");
+  await db.update(users).set({ syncDeviceId: deviceId }).where(eq(users.id, userId));
 }

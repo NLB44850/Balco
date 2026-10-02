@@ -35,7 +35,7 @@ export default function SettingsScreen() {
   const insets = useSafeAreaInsets();
   const colors = useColors();
   const router = useRouter();
-  const { resolvedPlants, profile, onboarding, account, updateProfile, updateOnboarding, signIn, signOut, syncNow, deleteAccount } = useGarden();
+  const { resolvedPlants, profile, onboarding, account, updateProfile, updateOnboarding, signIn, signOut, syncNow, claimThisDevice, deleteAccount } = useGarden();
   const [reminderSettings, setReminderSettings] = useState<LocalReminderSettings>(defaultLocalReminderSettings);
   const [settingsLoaded, setSettingsLoaded] = useState(false);
   const [nameDraft, setNameDraft] = useState(profile.firstName ?? "");
@@ -121,6 +121,8 @@ export default function SettingsScreen() {
       ? "Synchronisation…"
       : account.status === "offline"
         ? "Hors ligne : tes changements partiront dès que possible."
+        : account.status === "other-device"
+          ? "Ton jardin est sauvegardé depuis un autre téléphone : les changements faits ici restent sur ce téléphone."
         : account.lastSyncedAt
           ? `Sauvegardé ${relativeDay(new Date(account.lastSyncedAt))} à ${new Date(account.lastSyncedAt).toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" })}`
           : "Première sauvegarde en cours…";
@@ -207,17 +209,17 @@ export default function SettingsScreen() {
         <Text style={[styles.section, { color: colors.foreground }]}>Sauvegarde et compte</Text>
         <View style={[glass.card, styles.accountCard]}>
           <Text style={[styles.sectionEyebrow, { color: colors.muted }]}>Sauvegarde</Text>
-          <Text style={[styles.reminderCardTitle, { color: colors.foreground }]}>{account.signedIn ? "Ton balcon est sauvegardé" : "Ne perds jamais ton balcon"}</Text>
+          <Text style={[styles.reminderCardTitle, { color: colors.foreground }]}>{!account.signedIn ? "Ne perds jamais ton balcon" : account.status === "other-device" ? "Sauvegardé depuis un autre téléphone" : "Ton balcon est sauvegardé"}</Text>
           <Text style={[styles.reminderCardText, { color: colors.muted }]}>
             {account.signedIn
-              ? `${account.email ? `Connecté avec ${account.email}. ` : ""}${syncLabel}${account.serverPush ? " · Rappels envoyés même application fermée." : ""}`
-              : "Connecte-toi pour retrouver tes plantes et ton historique sur un autre téléphone, et recevoir les rappels météo même application fermée."}
+              ? `${account.email ? `Connecté avec ${account.email}. ` : ""}${syncLabel}${account.plan === "plus" ? `${account.serverPush ? " · Rappels envoyés même application fermée." : ""} Balco+ : ton jardin sur tous tes appareils.` : " Compte gratuit : sauvegarde depuis un seul téléphone, rappels programmés par ce téléphone. Balco+ ajoute les alertes gel et orage même application fermée, et plusieurs appareils."}`
+              : "Connecte-toi pour sauvegarder tes plantes et ton historique, et les retrouver si tu changes de téléphone."}
           </Text>
           <View style={styles.accountActions}>
             {account.signedIn ? (
               <>
-                <Pressable disabled={account.status === "syncing"} onPress={() => void syncNow()} style={({ pressed }) => [styles.accountButton, { backgroundColor: colors.primary }, pressed && styles.pressed]}><Text style={styles.accountButtonText}>Synchroniser</Text></Pressable>
-                <Pressable onPress={() => void signOut()} style={({ pressed }) => [styles.accountButtonGhost, pressed && styles.pressed]}><Text style={[styles.accountGhostText, { color: colors.primary }]}>Se déconnecter</Text></Pressable>
+                <Pressable accessibilityRole="button" disabled={account.status === "syncing"} onPress={() => void (account.status === "other-device" ? claimThisDevice() : syncNow())} style={({ pressed }) => [styles.accountButton, { backgroundColor: colors.primary }, pressed && styles.pressed]}><Text style={styles.accountButtonText}>{account.status === "other-device" ? "Sauvegarder depuis ce téléphone" : "Synchroniser"}</Text></Pressable>
+                <Pressable accessibilityRole="button" onPress={() => void signOut()} style={({ pressed }) => [styles.accountButtonGhost, pressed && styles.pressed]}><Text style={[styles.accountGhostText, { color: colors.primary }]}>Se déconnecter</Text></Pressable>
               </>
             ) : account.loginAvailable ? (
               <Pressable disabled={account.checking} onPress={() => void signIn()} style={({ pressed }) => [styles.accountButton, { backgroundColor: colors.foreground }, pressed && styles.pressed]}><Text style={styles.accountButtonText}>{account.checking ? "Vérification…" : "Se connecter"}</Text></Pressable>

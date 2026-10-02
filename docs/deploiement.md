@@ -54,6 +54,12 @@ Vérification : `https://api.ton-domaine.fr/api/health` doit répondre `{"ok":tr
 
 ## 4. Rappels météo automatiques
 
+Ces rappels envoyés par le serveur (et les alertes gel ou orage en notification push) sont réservés aux comptes **Balco+** (`lib/plans.ts`). Les comptes gratuits gardent les rappels programmés par leur téléphone, sans rien coûter au serveur. Pour donner Balco+ à un compte de test, en attendant les achats intégrés :
+
+```bash
+docker compose exec db mysql -u balco -p balco -e "UPDATE users SET plan = 'plus' WHERE email = 'ton@adresse.fr';"
+```
+
 Il faut appeler `POST /api/scheduled/reminders` toutes les heures à la minute 31, avec l'en-tête `Authorization: Bearer <CRON_SECRET>`. Deux possibilités :
 
 - **le cron de l'hébergeur**, le plus précis : `31 * * * * curl -fsS -X POST -H "Authorization: Bearer $CRON_SECRET" https://api.ton-domaine.fr/api/scheduled/reminders` ;

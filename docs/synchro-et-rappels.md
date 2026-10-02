@@ -6,7 +6,9 @@
 - **Avec un compte**, l'app envoie ses changements au serveur (`reminders.sync`) et reçoit l'état complet du jardin, qui fait foi. Un geste annulé ou une plante retirée sur un appareil disparaît donc aussi des autres.
 - Les changements sont mis en file sur l'appareil (`lib/sync/sync-logic.ts`). Hors ligne, rien n'est perdu : ils partent à la synchro suivante, déclenchée 2 s après une modification, au lancement et au retour au premier plan.
 - Le serveur recalcule les rappels avec la météo de la **vraie** position de l'utilisateur. Tant qu'aucune position n'a été envoyée, il ne calcule rien, plutôt que d'utiliser la ville par défaut.
-- Dès que l'appareil est inscrit aux notifications push, c'est le serveur qui prévient et les notifications locales s'effacent, pour éviter les doublons.
+- **Forfait** (`lib/plans.ts`) : les rappels calculés par le serveur et les alertes météo push (gel, orage) sont réservés à **Balco+**. Un compte gratuit garde les rappels programmés par son téléphone ; le serveur ne calcule ni n'envoie rien pour lui (`recalculateUserReminders` renvoie `reason: "plan"`, et un rappel déjà calculé pour un compte repassé en gratuit est annulé à l'envoi). La synchro renvoie `access` (forfait, rappels serveur, multi-appareils) et l'app s'inscrit ou se désinscrit des push en conséquence.
+- **Un seul appareil en gratuit** : chaque appareil envoie un identifiant tiré au hasard (`lib/sync/device-id.ts`). Le serveur retient l'appareil qui sauvegarde le jardin (`users.syncDeviceId`) ; se connecter sur un autre téléphone le remplace (`claimDevice`). L'ancien reçoit une erreur `CONFLICT` : ses changements restent sur lui, et Réglages propose « Sauvegarder depuis ce téléphone ». Balco+ synchronise sur tous ses appareils.
+- Dès que l'appareil est inscrit aux notifications push (Balco+), c'est le serveur qui prévient et les notifications locales s'effacent, pour éviter les doublons.
 - Un rappel en attente est annulé si le geste a été fait entre-temps, si la pluie est annoncée ou si la plante est retirée.
 
 ## Mise en production

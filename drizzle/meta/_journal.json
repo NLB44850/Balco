@@ -71,6 +71,13 @@
       "when": 1790951390950,
       "tag": "0009_ai_budget",
       "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "5",
+      "when": 1790966543560,
+      "tag": "0010_sync_device",
+      "breakpoints": true
     }
   ]
 }

@@ -49,11 +49,21 @@ describe.skipIf(!TEST_DATABASE_URL)("garden sync and server reminders (MySQL)", 
   let reminders: typeof RemindersModule;
   const userId = 900_000 + Math.floor(Math.random() * 90_000);
   const otherUserId = userId + 1;
+  const freeUserId = userId + 2;
 
   beforeAll(async () => {
     process.env.DATABASE_URL = TEST_DATABASE_URL;
     vi.stubGlobal("fetch", vi.fn(fakeFetch));
     reminders = await import("../server/reminders");
+    // Les rappels serveur sont réservés à Balco+ (lib/plans.ts) : les comptes de ces scénarios y sont abonnés.
+    const { getDb } = await import("../server/db");
+    const schema = await import("../drizzle/schema");
+    const db = (await getDb())!;
+    await db.insert(schema.users).values([
+      { id: userId, openId: `sync-test-${userId}`, plan: "plus" },
+      { id: otherUserId, openId: `sync-test-${otherUserId}`, plan: "plus" },
+      { id: freeUserId, openId: `sync-test-${freeUserId}`, plan: "free" },
+    ]);
   });
 
   afterEach(() => {
@@ -68,8 +78,9 @@ describe.skipIf(!TEST_DATABASE_URL)("garden sync and server reminders (MySQL)", 
     const { inArray } = await import("drizzle-orm");
     const db = (await getDb())!;
     for (const table of [schema.reminderProfiles, schema.reminderPlants, schema.maintenanceEvents, schema.reminderDecisions, schema.devicePushTokens]) {
-      await db.delete(table).where(inArray(table.userId, [userId, otherUserId]));
+      await db.delete(table).where(inArray(table.userId, [userId, otherUserId, freeUserId]));
     }
+    await db.delete(schema.users).where(inArray(schema.users.id, [userId, otherUserId, freeUserId]));
     vi.unstubAllGlobals();
   });
 
@@ -221,5 +232,61 @@ describe.skipIf(!TEST_DATABASE_URL)("garden sync and server reminders (MySQL)", 
 
     await reminders.syncGarden(otherUserId, { ...emptyPush(), settings: { ...SETTINGS, vacation: null } });
     expect((await reminders.loadSnapshot(otherUserId)).settings?.vacation).toBeNull();
+  });
+
+  describe("forfait gratuit", () => {
+    it("ne calcule ni n'envoie de rappels serveur : le téléphone programme les siens", async () => {
+      await reminders.syncGarden(freeUserId, { ...emptyPush(), location: PARIS, settings: SETTINGS, plants: [{ id: "basil-f", catalogId: "basil", addedAt: hoursAgo(240), updatedAt: hoursAgo(240) }], events: [{ id: "f-1", plantId: "basil-f", type: "watering", completedAt: hoursAgo(72), source: "manual" }] });
+      expect(await reminders.recalculateUserReminders(freeUserId, NOW)).toMatchObject({ status: "skipped", reason: "plan" });
+      const all = await reminders.recalculateAllReminders(NOW);
+      expect(all.status).toBe("recalculated");
+      expect((await decisions(freeUserId)).filter((row) => row.status === "pending")).toHaveLength(0);
+    });
+
+    it("n'envoie plus rien à un compte repassé en gratuit après le calcul", async () => {
+      const { getDb } = await import("../server/db");
+      const schema = await import("../drizzle/schema");
+      const { eq } = await import("drizzle-orm");
+      const db = (await getDb())!;
+      await db.update(schema.users).set({ plan: "plus" }).where(eq(schema.users.id, freeUserId));
+      await reminders.registerPushToken(freeUserId, "ExponentPushToken[free-user]", "android");
+      await reminders.recalculateUserReminders(freeUserId, NOW);
+      expect((await decisions(freeUserId)).filter((row) => row.status === "pending").length).toBeGreaterThan(0);
+      await db.update(schema.users).set({ plan: "free" }).where(eq(schema.users.id, freeUserId));
+      // 19 h à Paris : le rappel de 18 h 30 est dû.
+      await reminders.dispatchDueReminderNotifications(new Date(NOW.getTime() + 5 * 3600_000));
+      expect(pushRequests.flat().some((message) => message.to === "ExponentPushToken[free-user]")).toBe(false);
+      expect((await decisions(freeUserId)).filter((row) => row.status === "pending")).toHaveLength(0);
+    });
+
+    it("sauvegarde le jardin depuis un seul téléphone, qui change quand on se connecte ailleurs", async () => {
+      await reminders.checkSyncDevice(freeUserId, "free", "telephone-a-0001", false);
+      // Le même téléphone continue de synchroniser.
+      await expect(reminders.checkSyncDevice(freeUserId, "free", "telephone-a-0001", false)).resolves.toBeUndefined();
+      // Un autre téléphone est refusé tant qu'il ne prend pas la place…
+      await expect(reminders.checkSyncDevice(freeUserId, "free", "telephone-b-0002", false)).rejects.toBeInstanceOf(reminders.OtherDeviceError);
+      // … puis il la prend (connexion sur ce téléphone, ou « Sauvegarder depuis ce téléphone »).
+      await reminders.checkSyncDevice(freeUserId, "free", "telephone-b-0002", true);
+      await expect(reminders.checkSyncDevice(freeUserId, "free", "telephone-a-0001", false)).rejects.toBeInstanceOf(reminders.OtherDeviceError);
+      // Une ancienne version de l'app, sans identifiant d'appareil, n'est pas bloquée.
+      await expect(reminders.checkSyncDevice(freeUserId, "free", undefined, false)).resolves.toBeUndefined();
+    });
+
+    it("prévient l'app d'un compte gratuit sur un deuxième téléphone, et dit ce que permet le forfait", async () => {
+      const { appRouter } = await import("../server/routers");
+      const caller = appRouter.createCaller({
+        req: { headers: {}, ip: "127.0.0.1" },
+        res: { cookie: () => undefined, clearCookie: () => undefined },
+        user: { id: freeUserId, openId: `sync-test-${freeUserId}`, name: null, email: null, loginMethod: "email", role: "user", plan: "free", syncDeviceId: null, createdAt: new Date(), updatedAt: new Date(), lastSignedIn: new Date() },
+      } as never);
+      const first = await caller.reminders.sync({ ...emptyPush(), deviceId: "telephone-c-0003", claimDevice: true });
+      expect(first.access).toEqual({ plan: "free", serverReminders: false, multiDeviceSync: false });
+      await expect(caller.reminders.sync({ ...emptyPush(), deviceId: "telephone-d-0004" })).rejects.toMatchObject({ code: "CONFLICT", message: expect.stringContaining("sauvegardé depuis un autre téléphone") });
+    });
+
+    it("laisse Balco+ synchroniser depuis plusieurs téléphones", async () => {
+      await reminders.checkSyncDevice(userId, "plus", "telephone-a-0001", false);
+      await expect(reminders.checkSyncDevice(userId, "plus", "telephone-b-0002", false)).resolves.toBeUndefined();
+    });
   });
 });

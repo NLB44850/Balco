@@ -10,6 +10,11 @@ export const users = mysqlTable("users", {
   role: varchar("role", { length: 16 }).default("user").notNull(),
   /** Forfait : « free » ou « plus » (Balco+). Fixé plus tard par les achats intégrés. */
   plan: varchar("plan", { length: 16 }).default("free").notNull(),
+  /**
+   * Compte gratuit : l'appareil dont le jardin est sauvegardé (un seul ; plusieurs avec Balco+).
+   * Se connecter sur un autre téléphone le remplace.
+   */
+  syncDeviceId: varchar("syncDeviceId", { length: 64 }),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
   lastSignedIn: timestamp("lastSignedIn").defaultNow().notNull(),

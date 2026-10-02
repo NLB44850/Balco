@@ -16,7 +16,9 @@ import {
   saveLocalReminderSettings,
   subscribeReminderSettings,
 } from "@/lib/reminders/local-notifications";
+import { deviceId } from "@/lib/sync/device-id";
 import { getDevicePushToken } from "@/lib/sync/push-token";
+import type { Plan } from "@/lib/plans";
 import {
   applySnapshot,
   buildPush,
@@ -34,6 +36,7 @@ import {
   type SyncLocation,
 } from "@/lib/sync/sync-logic";
 import { trpc } from "@/lib/trpc";
+import { TRPCClientError } from "@trpc/client";
 import { activePlants, appendEvent, createGardenPlant, resolvePlants, type GardenPlant, type ResolvedPlant } from "./garden-logic";
 
 export const GARDEN_PLANTS_STORAGE_KEY = "balco.garden.plants.v1";
@@ -57,9 +60,12 @@ export type AccountState = {
   checking: boolean;
   name?: string | null;
   email?: string | null;
-  status: "idle" | "syncing" | "offline";
+  /** « other-device » : compte gratuit dont le jardin est sauvegardé depuis un autre téléphone. */
+  status: "idle" | "syncing" | "offline" | "other-device";
   lastSyncedAt?: string;
   serverPush: boolean;
+  /** Forfait du compte, connu après la première synchro. */
+  plan: Plan;
 };
 
 type GardenContextValue = {
@@ -84,6 +90,8 @@ type GardenContextValue = {
   signIn: () => Promise<void>;
   signOut: () => Promise<void>;
   syncNow: () => Promise<void>;
+  /** Compte gratuit : la sauvegarde du jardin passe sur ce téléphone. */
+  claimThisDevice: () => Promise<void>;
   refreshAccount: () => Promise<void>;
   completeSignIn: (result: SignInResult) => Promise<void>;
   deleteAccount: () => Promise<void>;
@@ -119,6 +127,9 @@ export function GardenProvider({ children }: { children: ReactNode }) {
   const [syncStatus, setSyncStatus] = useState<AccountState["status"]>("idle");
   const [lastSyncedAt, setLastSyncedAt] = useState<string | undefined>(undefined);
   const [serverPush, setServerPush] = useState(false);
+  const [plan, setPlan] = useState<Plan>("free");
+  /** La prochaine synchro demande la sauvegarde pour ce téléphone (compte gratuit, un seul appareil). */
+  const claimDeviceRef = useRef(false);
 
   // Références à jour : la synchro tourne en arrière-plan et ne doit jamais lire un état périmé.
   const plantsRef = useRef(allPlants);
@@ -240,6 +251,15 @@ export function GardenProvider({ children }: { children: ReactNode }) {
     setServerPush(true);
   }, [utils]);
 
+  /** Le serveur n'envoie plus de rappels à ce téléphone : il retrouve ses notifications locales. */
+  const dropPushRegistration = useCallback(async () => {
+    const registration = await readJson<PushRegistration | null>(SERVER_PUSH_STORAGE_KEY, null);
+    if (!registration) return;
+    await utils.client.reminders.unregisterPushToken.mutate({ token: registration.token }).catch(() => undefined);
+    await AsyncStorage.removeItem(SERVER_PUSH_STORAGE_KEY).catch(() => undefined);
+    setServerPush(false);
+  }, [utils]);
+
   const runSync = useCallback(async () => {
     const openId = openIdRef.current;
     if (!signedInRef.current || !loadedRef.current || !openId) return;
@@ -255,13 +275,17 @@ export function GardenProvider({ children }: { children: ReactNode }) {
       const localState = (currentSettings = settings): LocalGardenState => ({ plants: plantsRef.current, events: eventsRef.current, firstName: profileRef.current.firstName, onboarding: onboardingRef.current, settings: currentSettings });
       if (metaRef.current.openId !== openId) {
         // Premier passage de ce compte sur cet appareil : tout ce qui est local part vers le compte.
+        // Se connecter ici fait de ce téléphone celui qui sauvegarde le jardin (compte gratuit).
         sent = mergeOutbox(seedOutbox(localState(), defaultLocalReminderSettings), sent);
+        claimDeviceRef.current = true;
         await saveMeta({ openId });
       }
       setOutbox(emptyOutbox());
       const location = locationChanged(metaRef.current.lastLocation, locationRef.current) ? locationRef.current ?? undefined : undefined;
 
-      const snapshot = await utils.client.reminders.sync.mutate(buildPush(sent, localState(), location));
+      const claimDevice = claimDeviceRef.current;
+      const snapshot = await utils.client.reminders.sync.mutate({ ...buildPush(sent, localState(), location), deviceId: await deviceId(), claimDevice });
+      if (claimDevice) claimDeviceRef.current = false;
 
       const latestSettings = await loadLocalReminderSettings();
       const applied = applySnapshot(snapshot, outboxRef.current, localState(latestSettings));
@@ -273,10 +297,21 @@ export function GardenProvider({ children }: { children: ReactNode }) {
       if (JSON.stringify(appliedSettings) !== JSON.stringify(latestSettings)) await saveLocalReminderSettings(appliedSettings, "sync");
       await saveMeta({ openId, lastSyncedAt: snapshot.serverTime, lastLocation: location ?? metaRef.current.lastLocation });
       setSyncStatus("idle");
-      await ensurePushRegistration(applied.settings.enabled, openId).catch((error) => console.warn("[push] registration failed", error));
+      setPlan(snapshot.access.plan);
+      if (snapshot.access.serverReminders) {
+        await ensurePushRegistration(applied.settings.enabled, openId).catch((error) => console.warn("[push] registration failed", error));
+      } else {
+        // Forfait gratuit : le téléphone programme lui-même ses rappels, le serveur n'envoie rien.
+        await dropPushRegistration();
+      }
     } catch (error) {
-      // Hors ligne ou serveur indisponible : rien n'est perdu, la boîte d'envoi repartira plus tard.
+      // Rien n'est perdu : la boîte d'envoi repartira à la prochaine synchro.
       setOutbox(mergeOutbox(sent, outboxRef.current));
+      if (error instanceof TRPCClientError && error.data?.code === "CONFLICT") {
+        // Compte gratuit sauvegardé depuis un autre téléphone : les changements restent ici.
+        setSyncStatus("other-device");
+        return;
+      }
       setSyncStatus("offline");
       console.warn("[sync] failed, will retry", error);
     } finally {
@@ -286,7 +321,7 @@ export function GardenProvider({ children }: { children: ReactNode }) {
         scheduleSync(0);
       }
     }
-  }, [ensurePushRegistration, saveMeta, saveOnboarding, savePlants, saveEvents, saveProfile, scheduleSync, setOutbox, utils]);
+  }, [dropPushRegistration, ensurePushRegistration, saveMeta, saveOnboarding, savePlants, saveEvents, saveProfile, scheduleSync, setOutbox, utils]);
 
   runSyncRef.current = runSync;
 
@@ -392,6 +427,11 @@ export function GardenProvider({ children }: { children: ReactNode }) {
     await runSync();
   }, [runSync]);
 
+  const claimThisDevice = useCallback(async () => {
+    claimDeviceRef.current = true;
+    await syncNow();
+  }, [syncNow]);
+
   /** Efface le compte côté serveur puis tout ce qui reste sur l'appareil : on repart de zéro. */
   const deleteAccount = useCallback(async () => {
     await deleteServerAccount();
@@ -424,11 +464,12 @@ export function GardenProvider({ children }: { children: ReactNode }) {
     status: syncStatus,
     lastSyncedAt,
     serverPush,
-  }), [auth.isAuthenticated, auth.loading, auth.user?.email, auth.user?.name, lastSyncedAt, serverPush, syncStatus]);
+    plan,
+  }), [auth.isAuthenticated, auth.loading, auth.user?.email, auth.user?.name, lastSyncedAt, plan, serverPush, syncStatus]);
 
   const value = useMemo<GardenContextValue>(
-    () => ({ loaded, plants, resolvedPlants, events, profile, onboarding, account, addPlant, removePlant, renamePlant, setPlantVariety, logEvent, removeEvent, updateProfile, reloadOnboarding, updateOnboarding, reportLocation, signIn, signOut, syncNow, refreshAccount, completeSignIn, deleteAccount }),
-    [loaded, plants, resolvedPlants, events, profile, onboarding, account, addPlant, removePlant, renamePlant, setPlantVariety, logEvent, removeEvent, updateProfile, reloadOnboarding, updateOnboarding, reportLocation, signIn, signOut, syncNow, refreshAccount, completeSignIn, deleteAccount],
+    () => ({ loaded, plants, resolvedPlants, events, profile, onboarding, account, addPlant, removePlant, renamePlant, setPlantVariety, logEvent, removeEvent, updateProfile, reloadOnboarding, updateOnboarding, reportLocation, signIn, signOut, syncNow, claimThisDevice, refreshAccount, completeSignIn, deleteAccount }),
+    [loaded, plants, resolvedPlants, events, profile, onboarding, account, addPlant, removePlant, renamePlant, setPlantVariety, logEvent, removeEvent, updateProfile, reloadOnboarding, updateOnboarding, reportLocation, signIn, signOut, syncNow, claimThisDevice, refreshAccount, completeSignIn, deleteAccount],
   );
 
   return <GardenContext.Provider value={value}>{children}</GardenContext.Provider>;

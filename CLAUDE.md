@@ -38,7 +38,7 @@ Tout se passe dans son GitHub Codespace (pas de Docker sur son PC).
 
 - `pnpm -s check`, `pnpm -s lint`, puis `TEST_DATABASE_URL=mysql://balco:balco@localhost:3306/balco_cal npx vitest run`
   (MariaDB locale : `service mariadb start` si elle s'est arrêtée, `apt-get install -y mariadb-server` si elle manque,
-  puis `DATABASE_URL=… npx drizzle-kit migrate` ; 354 tests à ce jour). Dans un conteneur
+  puis `DATABASE_URL=… npx drizzle-kit migrate` ; 359 tests à ce jour). Dans un conteneur
   neuf : `apt-get install -y mariadb-server`, `service mariadb start`, créer la base `balco_cal` et l'utilisateur
   `balco`/`balco`, puis `pnpm -s build && DATABASE_URL=mysql://balco:balco@localhost:3306/balco_cal node dist/migrate.mjs`.
 - `npx expo export --platform android` pour s'assurer que le bundle Android se construit.
@@ -49,7 +49,7 @@ Tout se passe dans son GitHub Codespace (pas de Docker sur son PC).
   (onboarding, écrans, cocher/Annuler, fête, catalogue, fiche d'une nouvelle plante, feuille du bas qui se ferme,
   suggestions de saison), météo (pluie + eau économisée, gel + Saisons,
   orage, vent, canicule, « Pas aujourd'hui », retour météo réelle), compte (code de connexion lu dans
-  `dist/e2e-server.log`, balcon retrouvé sur un 2ᵉ téléphone) et vacances. Open-Meteo est simulé
+  `dist/e2e-server.log`, balcon retrouvé sur un 2ᵉ téléphone, le 1ᵉʳ prévenu « sauvegardé depuis un autre téléphone ») et vacances. Open-Meteo est simulé
   (`e2e/helpers.ts`, `mockWeather`), le balcon est posé dans le stockage (`seedBalcony`). Les cases à
   cocher s'appellent « Marquer comme fait : <titre> ». Échecs : captures dans `dist/e2e-results/`.
 - Rendu web : `npx expo export --platform web`, serveur `node dist/standalone/index.mjs` avec
@@ -211,6 +211,13 @@ et route réservée à `role = admin`. Balco+ sera payant (offre commerciale Ope
   Expo 54 → 55 → 56 → 57 (56 casse les imports `@react-navigation/*` de `haptic-tab.tsx` et
   `icon-symbol.tsx`, rend `copy()` d'`expo-file-system` asynchrone dans `photo-files.ts`), puis achats
   intégrés avec RevenueCat (droit `plus`, webhook `POST /api/webhooks/revenuecat` → `users.plan`).
+- Étape 6 faite : droits Balco+ appliqués. Rappels serveur et push météo réservés à Balco+
+  (`recalculateUserReminders` → `reason: "plan"`, cron filtré par forfait, envoi annulé si le compte est
+  repassé gratuit) ; la synchro renvoie `access` et l'app ne s'inscrit aux push qu'en Balco+ (sinon
+  désinscription, rappels locaux). Gratuit = sauvegarde depuis un seul appareil (`users.syncDeviceId`,
+  migration 0010, `lib/sync/device-id.ts`) : la connexion sur un téléphone le prend (`claimDevice`),
+  l'ancien reçoit `CONFLICT` → statut `other-device`, Réglages « Sauvegarder depuis ce téléphone »
+  (`claimThisDevice`). Pour tester Balco+ : `UPDATE users SET plan = 'plus'` (docs/deploiement.md).
 
 
 À faire, dans l'ordre (liste du porteur, 30/09) :
