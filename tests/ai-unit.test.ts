@@ -1,7 +1,9 @@
 import { describe, expect, it } from "vitest";
 
 import { quotaLabel } from "../lib/ai/quota-text";
+import { requestSettings } from "../server/ai/claude";
 import { detectImageType, trimHistory } from "../server/ai/router";
+import { ENV } from "../server/_core/env";
 import { monthStart, planOf, toQuotaStatus } from "../server/ai/quotas";
 
 describe("image detection", () => {
@@ -46,5 +48,24 @@ describe("quotas", () => {
     expect(quotaLabel(toQuotaStatus("chat", 14, 15, now))).toBe("1 question restante ce mois-ci");
     expect(quotaLabel(toQuotaStatus("scan", 3, 3, now))).toBe("Plus d’analyse ce mois-ci · retour le 1er octobre");
     expect(quotaLabel(toQuotaStatus("chat", 15, 15, now))).toBe("Plus de question ce mois-ci · retour le 1er octobre");
+  });
+});
+
+describe("modèle et plafond par usage", () => {
+  it("diagnostic sur Opus, Nora sur Sonnet, avec des plafonds de sortie réalistes", () => {
+    expect(requestSettings("scan")).toMatchObject({ model: "claude-opus-5", max_tokens: 2000, fallbacks: "default" });
+    expect(requestSettings("chat")).toEqual({ model: "claude-sonnet-5", max_tokens: 1500 });
+  });
+
+  it("n'envoie le repli serveur qu'aux modèles qui l'acceptent", () => {
+    const saved = { ...ENV.aiModels };
+    try {
+      ENV.aiModels.chat = "claude-sonnet-5-5";
+      expect(requestSettings("chat")).toMatchObject({ betas: ["server-side-fallback-2026-07-01"], fallbacks: "default" });
+      ENV.aiModels.scan = "claude-haiku-4-5";
+      expect(requestSettings("scan")).not.toHaveProperty("fallbacks");
+    } finally {
+      Object.assign(ENV.aiModels, saved);
+    }
   });
 });

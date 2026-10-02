@@ -38,7 +38,7 @@ Tout se passe dans son GitHub Codespace (pas de Docker sur son PC).
 
 - `pnpm -s check`, `pnpm -s lint`, puis `TEST_DATABASE_URL=mysql://balco:balco@localhost:3306/balco_cal npx vitest run`
   (MariaDB locale : `service mariadb start` si elle s'est arrêtée, `apt-get install -y mariadb-server` si elle manque,
-  puis `DATABASE_URL=… npx drizzle-kit migrate` ; 341 tests à ce jour). Dans un conteneur
+  puis `DATABASE_URL=… npx drizzle-kit migrate` ; 343 tests à ce jour). Dans un conteneur
   neuf : `apt-get install -y mariadb-server`, `service mariadb start`, créer la base `balco_cal` et l'utilisateur
   `balco`/`balco`, puis `pnpm -s build && DATABASE_URL=mysql://balco:balco@localhost:3306/balco_cal node dist/migrate.mjs`.
 - `npx expo export --platform android` pour s'assurer que le bundle Android se construit.
@@ -181,6 +181,19 @@ Livré, à valider sur son téléphone :
   + explication (godets à l'intérieur, 18-22 °C, plants dehors en …) dans Saisons, Aujourd'hui,
   suggestions et fiches (« Semis : mars–mai (au chaud à l'intérieur en mars–avril) »). Le réseau de la
   session laisse passer la recherche web (WebSearch) mais pas l'ouverture des pages (WebFetch, curl).
+
+**Audit de scalabilité et de coûts (02/10, plan validé)** : 11 étapes, une par commit (plan dans la
+discussion du 02/10, résumé technique dans un document Claude). Bloc A coût IA (1 modèles par usage +
+max_tokens, 2 contexte de Nora allégé, 3 `lib/plans.ts` + nouveaux quotas 1/5 gratuit et 20/100
+Balco+, 4 budget `AI_MONTHLY_BUDGET_USD` + rapport de coûts), 5 état des lieux avant publication
+(SDK, achats intégrés, FCM), bloc B offre (6 droits Balco+, 7 prix fondateur), bloc C charge
+(8 pool + limite IP en base, 9 cron par lots + verrou, 10 purge, 11 cache météo serveur). Choix du
+porteur : un compte gratuit garde la sauvegarde de son jardin sur un appareil (multi-appareils =
+Balco+) ; budget IA 30 $ en test, pas de coupure si la variable est vide ; rapport de coûts par script
+et route réservée à `role = admin`. Balco+ sera payant (offre commerciale Open-Meteo à prévoir).
+- Étape 1 faite : `BALCO_AI_MODEL_PHOTO` (défaut `claude-opus-5`) et `BALCO_AI_MODEL_CHAT` (défaut
+  `claude-sonnet-5`), repli `BALCO_AI_MODEL` ; `AI_MAX_TOKENS_PHOTO=2000`, `AI_MAX_TOKENS_CHAT=1500` ;
+  `fallbacks` seulement pour les modèles qui l'acceptent (`requestSettings`, `server/ai/claude.ts`).
 
 
 À faire, dans l'ordre (liste du porteur, 30/09) :

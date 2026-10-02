@@ -27,8 +27,16 @@ export const ENV = {
   googleJwksUrl: process.env.GOOGLE_JWKS_URL || "https://www.googleapis.com/oauth2/v3/certs",
   /** Clé de l'API Claude : sans elle, le scanner et Nora s'affichent comme indisponibles. */
   anthropicApiKey: process.env.ANTHROPIC_API_KEY ?? "",
-  /** Modèle utilisé par le scanner et Nora. */
-  aiModel: process.env.BALCO_AI_MODEL || "claude-opus-5",
+  /**
+   * Un modèle par usage : le diagnostic photo garde le plus précis, Nora un modèle moins cher.
+   * BALCO_AI_MODEL reste le repli commun quand la variable propre à l'usage est vide.
+   */
+  aiModels: {
+    scan: process.env.BALCO_AI_MODEL_PHOTO || process.env.BALCO_AI_MODEL || "claude-opus-5",
+    chat: process.env.BALCO_AI_MODEL_CHAT || process.env.BALCO_AI_MODEL || "claude-sonnet-5",
+  },
+  /** Plafond de jetons de sortie (réflexion comprise) : une réponse coupée n'est pas décomptée. */
+  aiMaxTokens: { scan: intEnv("AI_MAX_TOKENS_PHOTO", 2000), chat: intEnv("AI_MAX_TOKENS_CHAT", 1500) },
   aiQuotas: {
     free: { scan: intEnv("AI_FREE_SCANS_PER_MONTH", 3), chat: intEnv("AI_FREE_QUESTIONS_PER_MONTH", 15) },
     plus: { scan: intEnv("AI_PLUS_SCANS_PER_MONTH", 40), chat: intEnv("AI_PLUS_QUESTIONS_PER_MONTH", 300) },

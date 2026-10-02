@@ -123,7 +123,7 @@ describe.skipIf(!TEST_DATABASE_URL)("AI scanner and assistant (fake Messages API
 
       const [{ headers, body }] = requests;
       expect(headers["anthropic-beta"]).toContain("server-side-fallback-2026-07-01");
-      expect(body).toMatchObject({ model: "claude-opus-5", fallbacks: "default", thinking: { type: "adaptive" } });
+      expect(body).toMatchObject({ model: "claude-opus-5", max_tokens: 2000, fallbacks: "default", thinking: { type: "adaptive" } });
       expect(body.output_config.format).toMatchObject({ type: "json_schema" });
       expect(body.output_config.format.schema.properties.catalogId.enum).toContain("basil");
       const image = body.messages[0].content[0];
@@ -190,7 +190,10 @@ describe.skipIf(!TEST_DATABASE_URL)("AI scanner and assistant (fake Messages API
       expect(body.messages.length).toBeLessThanOrEqual(12);
       expect(body.messages[0].role).toBe("user");
       expect(body.messages.at(-1)).toEqual({ role: "user", content: "message 14" });
-      expect(body).toMatchObject({ cache_control: { type: "ephemeral" }, output_config: { effort: "low" }, fallbacks: "default" });
+      // Nora tourne sur un modèle moins cher ; Claude Sonnet 5 n'est pas dans la liste du repli serveur.
+      expect(body).toMatchObject({ model: "claude-sonnet-5", max_tokens: 1500, cache_control: { type: "ephemeral" }, output_config: { effort: "low" } });
+      expect(body.fallbacks).toBeUndefined();
+      expect(requests[0].headers["anthropic-beta"] ?? "").not.toContain("server-side-fallback");
       expect(body.system[1].text).toContain("Léa");
     });
 

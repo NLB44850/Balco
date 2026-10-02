@@ -63,21 +63,24 @@ Il faut appeler `POST /api/scheduled/reminders` toutes les heures à la minute 3
 2. **Fixe une limite de dépense mensuelle** dans la console Anthropic : c'est le vrai garde-fou si quelque chose tourne mal.
 3. Les quotas se règlent avec `AI_FREE_*` et `AI_PLUS_*`. Par défaut, un compte gratuit a droit à 3 analyses et 15 questions par mois, un compte Balco+ à 40 analyses et 300 questions. Les refus et les pannes ne sont pas décomptés.
 
-**Coût estimé avec `claude-opus-5`** (5 $ par million de jetons en entrée, 25 $ en sortie). Ce sont des ordres de grandeur, à vérifier sur les vrais chiffres :
+4. **Un modèle par usage** : le diagnostic photo utilise `BALCO_AI_MODEL_PHOTO` (défaut `claude-opus-5`, le plus précis), les questions à Nora `BALCO_AI_MODEL_CHAT` (défaut `claude-sonnet-5`, 2,5 fois moins cher). `BALCO_AI_MODEL` sert de repli commun si l'une des deux est vide. Le repli automatique en cas de refus du modèle (`fallbacks: "default"`) n'est envoyé qu'aux modèles qui l'acceptent (Claude Opus 5, Opus 5.5, Sonnet 5.5, Fable 5.1).
+5. **Plafond de sortie** : `AI_MAX_TOKENS_PHOTO=2000` et `AI_MAX_TOKENS_CHAT=1500` (réflexion du modèle comprise). Une réponse coupée par ce plafond n'est pas décomptée et laisse dans les journaux du serveur une ligne `[ai] scan truncated at max_tokens=…` (ou `chat`) : si elle revient souvent, relève la valeur.
 
-| | Par appel | Compte gratuit au maximum | Compte Balco+ au maximum |
-|---|---|---|---|
-| Analyse photo | ≈ 0,05 $ | 3 → 0,15 $ | 40 → 2 $ |
-| Question à Nora | ≈ 0,03 $ | 15 → 0,45 $ | 300 → 9 $ |
+**Coût estimé** (prix Anthropic au 25/09/2026, par million de jetons : Claude Opus 5 à 5 $ en entrée et 25 $ en sortie, Claude Sonnet 5 à 2 $ et 10 $). Ce sont des ordres de grandeur, à vérifier sur les vrais chiffres :
+
+| | Modèle par défaut | Par appel | Compte gratuit au maximum | Compte Balco+ au maximum |
+|---|---|---|---|---|
+| Analyse photo | `claude-opus-5` | ≈ 0,05 $ | 3 → 0,15 $ | 40 → 2 $ |
+| Question à Nora | `claude-sonnet-5` | ≈ 0,012 $ | 15 → 0,18 $ | 300 → 3,60 $ |
 
 Chaque appel est enregistré dans la table `ai_requests` (jetons consommés, modèle, statut), ce qui permet de mesurer le coût réel :
 
 ```sql
-SELECT kind, COUNT(*) AS appels, SUM(inputTokens) AS entree, SUM(outputTokens) AS sortie
-FROM ai_requests WHERE status = 'ok' AND createdAt >= DATE_FORMAT(NOW(), '%Y-%m-01') GROUP BY kind;
+SELECT kind, model, COUNT(*) AS appels, SUM(inputTokens) AS entree, SUM(outputTokens) AS sortie
+FROM ai_requests WHERE status = 'ok' AND createdAt >= DATE_FORMAT(NOW(), '%Y-%m-01') GROUP BY kind, model;
 ```
 
-Pour réduire la facture, `BALCO_AI_MODEL=claude-sonnet-5` coûte environ 2,5 fois moins cher. La qualité des diagnostics est à comparer sur un échantillon de vraies photos avant de basculer.
+À noter : Claude Opus 5.5 (`claude-opus-5-5`, 4 $ et 20 $) et Claude Sonnet 5.5 (`claude-sonnet-5-5`, 2 $ et 10 $) sont les versions les plus récentes ; Opus 5.5 coûte 20 % de moins qu'Opus 5. Pour en changer, il suffit de régler `BALCO_AI_MODEL_PHOTO` ou `BALCO_AI_MODEL_CHAT`, après avoir comparé la qualité sur un échantillon de vraies photos et de vraies questions.
 
 Pour faire passer un compte en Balco+ en attendant les achats intégrés : `UPDATE users SET plan = 'plus' WHERE email = '…';`
 

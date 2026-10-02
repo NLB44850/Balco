@@ -5,9 +5,22 @@ import { PLANT_CATALOG } from "../../lib/plants/catalog";
 import { ENV } from "../_core/env";
 import type { Usage } from "./quotas";
 
-// Repli automatique si un classifieur de sécurité refuse la requête (recommandé pour Claude Opus 5).
+// Repli automatique si un classifieur de sécurité refuse la requête (Claude Opus 5 et plus récents).
 const FALLBACK_BETA = "server-side-fallback-2026-07-01";
-const MAX_TOKENS = 8000;
+/** Modèles qui acceptent `fallbacks: "default"` ; les autres reçoivent la requête sans repli. */
+const FALLBACK_MODELS = new Set(["claude-fable-5-1", "claude-opus-5-5", "claude-opus-5", "claude-sonnet-5-5"]);
+
+export type AiUse = "scan" | "chat";
+
+/** Le modèle et le plafond de sortie de chaque usage, réglés par l'environnement. */
+export function requestSettings(use: AiUse) {
+  const model = ENV.aiModels[use];
+  return {
+    model,
+    max_tokens: ENV.aiMaxTokens[use],
+    ...(FALLBACK_MODELS.has(model) ? { betas: [FALLBACK_BETA], fallbacks: "default" as const } : {}),
+  };
+}
 
 let client: Anthropic | null = null;
 
@@ -49,9 +62,13 @@ function usageOf(message: Anthropic.Beta.BetaMessage): Usage {
   };
 }
 
-function textOf(message: Anthropic.Beta.BetaMessage) {
+function textOf(message: Anthropic.Beta.BetaMessage, use: AiUse) {
   if (message.stop_reason === "refusal") throw new AiRefusedError();
-  if (message.stop_reason === "max_tokens") throw new AiBadResponseError("response truncated");
+  if (message.stop_reason === "max_tokens") {
+    // À surveiller : si ce message revient souvent, relever AI_MAX_TOKENS_PHOTO ou AI_MAX_TOKENS_CHAT.
+    console.warn(`[ai] ${use} truncated at max_tokens=${ENV.aiMaxTokens[use]} (model ${message.model}, ${message.usage.output_tokens} output tokens)`);
+    throw new AiBadResponseError("response truncated");
+  }
   // Les blocs de réflexion ou de repli ne s'affichent pas : seul le texte final compte.
   return message.content.flatMap((block) => (block.type === "text" ? [block.text] : [])).join("").trim();
 }
@@ -116,10 +133,7 @@ export type ImageMediaType = "image/jpeg" | "image/png" | "image/webp";
 
 export async function diagnosePlant(image: { data: string; mediaType: ImageMediaType }, gardenDescription: string): Promise<{ diagnosis: Diagnosis; usage: Usage }> {
   const message = await getClient().beta.messages.create({
-    model: ENV.aiModel,
-    max_tokens: MAX_TOKENS,
-    betas: [FALLBACK_BETA],
-    fallbacks: "default",
+    ...requestSettings("scan"),
     thinking: { type: "adaptive" },
     output_config: { effort: "medium", format: { type: "json_schema", schema: SCAN_JSON_SCHEMA } },
     system: [
@@ -137,7 +151,7 @@ export async function diagnosePlant(image: { data: string; mediaType: ImageMedia
   const usage = usageOf(message);
   let parsed: z.infer<typeof diagnosisSchema>;
   try {
-    parsed = diagnosisSchema.parse(JSON.parse(textOf(message)));
+    parsed = diagnosisSchema.parse(JSON.parse(textOf(message, "scan")));
   } catch (error) {
     if (error instanceof AiRefusedError) throw error;
     throw new AiBadResponseError(error instanceof Error ? error.message : "invalid diagnosis");
@@ -195,10 +209,7 @@ export type NoraReply = { answer: string; remember: string[]; forget: string[] }
 
 export async function askNora(history: ChatTurn[], gardenDescription: string): Promise<NoraReply & { usage: Usage }> {
   const message = await getClient().beta.messages.create({
-    model: ENV.aiModel,
-    max_tokens: MAX_TOKENS,
-    betas: [FALLBACK_BETA],
-    fallbacks: "default",
+    ...requestSettings("chat"),
     thinking: { type: "adaptive" },
     output_config: { effort: "low", format: { type: "json_schema", schema: CHAT_JSON_SCHEMA } },
     // Met en cache tout le préfixe (instructions + conversation) : les questions suivantes coûtent moins.
@@ -210,7 +221,7 @@ export async function askNora(history: ChatTurn[], gardenDescription: string): P
     messages: history.map((turn) => ({ role: turn.role, content: turn.content })),
   });
   const usage = usageOf(message);
-  const text = textOf(message);
+  const text = textOf(message, "chat");
   let reply: NoraReply;
   try {
     const parsed = chatSchema.parse(JSON.parse(text));
