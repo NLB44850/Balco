@@ -1,0 +1,23 @@
+# Déclenche chaque heure le recalcul des rappels météo et l'envoi des notifications push.
+# À configurer dans Settings → Secrets and variables → Actions :
+#   - variable BALCO_API_URL (ex. https://api.votre-domaine.fr)
+#   - secret CRON_SECRET (le même que sur le serveur)
+# GitHub peut retarder les tâches planifiées de quelques minutes : un cron chez l'hébergeur est plus précis.
+name: Rappels météo
+
+on:
+  schedule:
+    - cron: "31 * * * *"
+  workflow_dispatch:
+
+jobs:
+  trigger:
+    runs-on: ubuntu-latest
+    if: ${{ vars.BALCO_API_URL != '' }}
+    steps:
+      - name: Recalculer et envoyer les rappels
+        env:
+          BALCO_API_URL: ${{ vars.BALCO_API_URL }}
+          CRON_SECRET: ${{ secrets.CRON_SECRET }}
+        run: |
+          curl --fail-with-body -sS -X POST -H "Authorization: Bearer $CRON_SECRET" "$BALCO_API_URL/api/scheduled/reminders"

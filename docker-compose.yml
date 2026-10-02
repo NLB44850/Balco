@@ -1,0 +1,41 @@
+# Balco complet sur une seule machine (VPS, serveur maison) : base MySQL + API + app web.
+#
+#   cp .env.example .env   # puis remplir les valeurs
+#   docker compose up -d --build
+#
+# Derrière un reverse proxy HTTPS (Caddy, Traefik, Nginx…) pointant sur le port 3000.
+
+services:
+  db:
+    image: mysql:8.4
+    restart: unless-stopped
+    environment:
+      MYSQL_DATABASE: balco
+      MYSQL_USER: balco
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD:?Définir MYSQL_PASSWORD dans .env}
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:?Définir MYSQL_ROOT_PASSWORD dans .env}
+    volumes:
+      - db-data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "127.0.0.1", "-u", "root", "-p$${MYSQL_ROOT_PASSWORD}"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  app:
+    build:
+      context: .
+      args:
+        EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID: ${EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID:-}
+    restart: unless-stopped
+    env_file: .env
+    environment:
+      DATABASE_URL: mysql://balco:${MYSQL_PASSWORD}@db:3306/balco
+    ports:
+      - "3000:3000"
+    depends_on:
+      db:
+        condition: service_healthy
+
+volumes:
+  db-data:

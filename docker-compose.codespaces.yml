@@ -1,0 +1,19 @@
+# Variante pour GitHub Codespaces (ou toute machine où les conteneurs n'arrivent pas à se joindre,
+# erreur « connect ETIMEDOUT » au démarrage) : les deux conteneurs partagent le réseau de la machine.
+#
+#   docker compose -f docker-compose.yml -f docker-compose.codespaces.yml up -d --build
+#
+# À réserver aux tests : en production, garder docker-compose.yml seul.
+
+services:
+  db:
+    network_mode: host
+  app:
+    network_mode: host
+    ports: !reset []
+    build:
+      args:
+        # L'app web du Codespace sert aussi à tester sur téléphone : on y garde la simulation météo.
+        EXPO_PUBLIC_WEATHER_SIMULATION: "1"
+    environment:
+      DATABASE_URL: mysql://balco:${MYSQL_PASSWORD}@127.0.0.1:3306/balco
