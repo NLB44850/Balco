@@ -8,12 +8,8 @@ const ROOT = path.resolve(__dirname, "..");
 const credits = JSON.parse(fs.readFileSync(path.join(ROOT, "assets/plants/credits.json"), "utf8")) as Record<string, { author: string; license: string; page: string }>;
 const index = fs.readFileSync(path.join(ROOT, "components/plant-stock-photos.ts"), "utf8");
 
-/**
- * Les plantes ajoutées le 01/10 attendent leur photo (téléchargée dans le Codespace, voir
- * scripts/photos/telecharger-photos.mjs) : en attendant, l'app montre leur emoji. Cette liste ne
- * fait que rétrécir.
- */
-const AWAITING_PHOTO = new Set(["crosne", "blackcurrant"]);
+/** Plantes qui attendent leur photo d'exemple (l'app montre leur emoji en attendant). Vide : toutes en ont une. */
+const AWAITING_PHOTO = new Set<string>([]);
 
 describe("photos d'exemple des plantes", () => {
   it("n'attendent leur photo que pour des plantes qui n'en ont vraiment pas encore", () => {
