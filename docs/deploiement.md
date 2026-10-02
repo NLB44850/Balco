@@ -60,6 +60,13 @@ Ces rappels envoyés par le serveur (et les alertes gel ou orage en notification
 docker compose exec db mysql -u balco -p balco -e "UPDATE users SET plan = 'plus' WHERE email = 'ton@adresse.fr';"
 ```
 
+**Prix fondateur** : les premiers abonnés à Balco+ (500 places, `BALCO_FOUNDER_SEATS` pour changer) gardent un prix réduit. Le prix se règle dans les stores (produit `balco_plus_fondateur`) ; le serveur retient seulement qui y a droit, dans la colonne `users.founderSince` (date du premier abonnement), et ce droit reste acquis si le compte repasse en gratuit. Les futurs achats intégrés l'attribueront tout seuls (`grantFounderPrice`, `server/founder.ts`). En attendant, pour tester, puis pour compter les places prises :
+
+```bash
+docker compose exec db mysql -u balco -p balco -e "UPDATE users SET plan = 'plus', founderSince = NOW() WHERE email = 'ton@adresse.fr';"
+docker compose exec db mysql -u balco -p balco -e "SELECT COUNT(*) AS fondateurs FROM users WHERE founderSince IS NOT NULL;"
+```
+
 Il faut appeler `POST /api/scheduled/reminders` toutes les heures à la minute 31, avec l'en-tête `Authorization: Bearer <CRON_SECRET>`. Deux possibilités :
 
 - **le cron de l'hébergeur**, le plus précis : `31 * * * * curl -fsS -X POST -H "Authorization: Bearer $CRON_SECRET" https://api.ton-domaine.fr/api/scheduled/reminders` ;

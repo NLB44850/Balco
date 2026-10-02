@@ -38,7 +38,7 @@ Tout se passe dans son GitHub Codespace (pas de Docker sur son PC).
 
 - `pnpm -s check`, `pnpm -s lint`, puis `TEST_DATABASE_URL=mysql://balco:balco@localhost:3306/balco_cal npx vitest run`
   (MariaDB locale : `service mariadb start` si elle s'est arrêtée, `apt-get install -y mariadb-server` si elle manque,
-  puis `DATABASE_URL=… npx drizzle-kit migrate` ; 359 tests à ce jour). Dans un conteneur
+  puis `DATABASE_URL=… npx drizzle-kit migrate` ; 363 tests à ce jour). Dans un conteneur
   neuf : `apt-get install -y mariadb-server`, `service mariadb start`, créer la base `balco_cal` et l'utilisateur
   `balco`/`balco`, puis `pnpm -s build && DATABASE_URL=mysql://balco:balco@localhost:3306/balco_cal node dist/migrate.mjs`.
 - `npx expo export --platform android` pour s'assurer que le bundle Android se construit.
@@ -218,6 +218,13 @@ et route réservée à `role = admin`. Balco+ sera payant (offre commerciale Ope
   migration 0010, `lib/sync/device-id.ts`) : la connexion sur un téléphone le prend (`claimDevice`),
   l'ancien reçoit `CONFLICT` → statut `other-device`, Réglages « Sauvegarder depuis ce téléphone »
   (`claimThisDevice`). Pour tester Balco+ : `UPDATE users SET plan = 'plus'` (docs/deploiement.md).
+  Validé sur téléphone le 02/10.
+- Étape 7 faite : prix fondateur sans paiement. Colonne `users.founderSince` (migration 0011, date du
+  premier abonnement, gardée si le compte repasse gratuit), `FOUNDER_OFFER` (500 places,
+  `BALCO_FOUNDER_SEATS`, produit `balco_plus_fondateur`) et `founderSeatsLeft` dans `lib/plans.ts`,
+  `server/founder.ts` (`founderOffer`, `grantFounderPrice` : place vérifiée et prise en une requête).
+  La synchro renvoie `access.founder` ; Réglages → Compte le mentionne. Test : `UPDATE users SET plan =
+  'plus', founderSince = NOW()`.
 
 
 À faire, dans l'ordre (liste du porteur, 30/09) :

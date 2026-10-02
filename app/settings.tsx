@@ -212,7 +212,7 @@ export default function SettingsScreen() {
           <Text style={[styles.reminderCardTitle, { color: colors.foreground }]}>{!account.signedIn ? "Ne perds jamais ton balcon" : account.status === "other-device" ? "Sauvegardé depuis un autre téléphone" : "Ton balcon est sauvegardé"}</Text>
           <Text style={[styles.reminderCardText, { color: colors.muted }]}>
             {account.signedIn
-              ? `${account.email ? `Connecté avec ${account.email}. ` : ""}${syncLabel}${account.plan === "plus" ? `${account.serverPush ? " · Rappels envoyés même application fermée." : ""} Balco+ : ton jardin sur tous tes appareils.` : " Compte gratuit : sauvegarde depuis un seul téléphone, rappels programmés par ce téléphone. Balco+ ajoute les alertes gel et orage même application fermée, et plusieurs appareils."}`
+              ? `${account.email ? `Connecté avec ${account.email}. ` : ""}${syncLabel}${account.plan === "plus" ? `${account.serverPush ? " · Rappels envoyés même application fermée." : ""} Balco+ : ton jardin sur tous tes appareils.${account.founder ? " Tu as le prix fondateur : merci d’être là depuis le début." : ""}` : ` Compte gratuit : sauvegarde depuis un seul téléphone, rappels programmés par ce téléphone. Balco+ ajoute les alertes gel et orage même application fermée, et plusieurs appareils.${account.founder ? " Ton prix fondateur reste à toi si tu reprends Balco+." : ""}`}`
               : "Connecte-toi pour sauvegarder tes plantes et ton historique, et les retrouver si tu changes de téléphone."}
           </Text>
           <View style={styles.accountActions}>

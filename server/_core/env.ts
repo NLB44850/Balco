@@ -1,4 +1,4 @@
-import { PLANS } from "../../lib/plans";
+import { FOUNDER_OFFER, PLANS } from "../../lib/plans";
 
 function list(value: string | undefined) {
   return (value ?? "").split(",").map((item) => item.trim()).filter(Boolean);
@@ -52,6 +52,8 @@ export const ENV = {
     free: { scan: intEnv("AI_FREE_SCANS_PER_MONTH", PLANS.free.aiQuota.scan), chat: intEnv("AI_FREE_QUESTIONS_PER_MONTH", PLANS.free.aiQuota.chat) },
     plus: { scan: intEnv("AI_PLUS_SCANS_PER_MONTH", PLANS.plus.aiQuota.scan), chat: intEnv("AI_PLUS_QUESTIONS_PER_MONTH", PLANS.plus.aiQuota.chat) },
   },
+  /** Places au prix fondateur pour les premiers abonnés Balco+ (lib/plans.ts). */
+  founderSeats: intEnv("BALCO_FOUNDER_SEATS", FOUNDER_OFFER.seats),
   /** Dossier de l'export web (`expo export -p web`), servi par l'API s'il existe. */
   webDir: process.env.WEB_DIR ?? "dist/web",
 };

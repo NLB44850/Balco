@@ -50,3 +50,21 @@ export function can(plan: Plan | string | null | undefined, feature: Feature) {
 export function defaultAiQuota(plan: Plan, kind: AiKind) {
   return PLANS[plan].aiQuota[kind];
 }
+
+/**
+ * Prix fondateur : les premiers abonnés à Balco+ gardent un prix réduit. Le prix lui-même se règle dans
+ * les stores (produit à part) ; Balco retient seulement qui y a droit (`users.founderSince`), et ce droit
+ * reste acquis même si l'abonnement s'arrête puis reprend. Le paiement n'est pas encore branché : les
+ * achats intégrés appelleront `grantFounderPrice` (server/founder.ts) au premier abonnement.
+ */
+export const FOUNDER_OFFER = {
+  /** Nombre de places au prix fondateur (BALCO_FOUNDER_SEATS sur le serveur pour le changer). */
+  seats: 500,
+  /** Identifiant du produit dans les stores et RevenueCat. */
+  productId: "balco_plus_fondateur",
+} as const;
+
+/** Places encore libres, jamais négatif (si on baisse le nombre de places après coup). */
+export function founderSeatsLeft(taken: number, seats: number = FOUNDER_OFFER.seats) {
+  return Math.max(0, seats - taken);
+}

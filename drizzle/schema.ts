@@ -15,6 +15,11 @@ export const users = mysqlTable("users", {
    * Se connecter sur un autre téléphone le remplace.
    */
   syncDeviceId: varchar("syncDeviceId", { length: 64 }),
+  /**
+   * Prix fondateur (premiers abonnés Balco+) : date à laquelle le compte l'a obtenu, vide sinon.
+   * Le droit reste acquis même si le compte repasse en gratuit (server/founder.ts).
+   */
+  founderSince: timestamp("founderSince"),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
   lastSignedIn: timestamp("lastSignedIn").defaultNow().notNull(),

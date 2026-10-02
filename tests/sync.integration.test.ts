@@ -280,7 +280,7 @@ describe.skipIf(!TEST_DATABASE_URL)("garden sync and server reminders (MySQL)", 
         user: { id: freeUserId, openId: `sync-test-${freeUserId}`, name: null, email: null, loginMethod: "email", role: "user", plan: "free", syncDeviceId: null, createdAt: new Date(), updatedAt: new Date(), lastSignedIn: new Date() },
       } as never);
       const first = await caller.reminders.sync({ ...emptyPush(), deviceId: "telephone-c-0003", claimDevice: true });
-      expect(first.access).toEqual({ plan: "free", serverReminders: false, multiDeviceSync: false });
+      expect(first.access).toEqual({ plan: "free", serverReminders: false, multiDeviceSync: false, founder: false });
       await expect(caller.reminders.sync({ ...emptyPush(), deviceId: "telephone-d-0004" })).rejects.toMatchObject({ code: "CONFLICT", message: expect.stringContaining("sauvegardé depuis un autre téléphone") });
     });
 

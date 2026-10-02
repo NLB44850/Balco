@@ -21,6 +21,7 @@ function createAuthContext(): { ctx: TrpcContext; clearedCookies: CookieCall[] }
     loginMethod: "email",
     role: "user",
     plan: "free",
+    founderSince: null,
     syncDeviceId: null,
     createdAt: new Date(),
     updatedAt: new Date(),

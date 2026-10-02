@@ -78,6 +78,13 @@
       "when": 1790966543560,
       "tag": "0010_sync_device",
       "breakpoints": true
+    },
+    {
+      "idx": 11,
+      "version": "5",
+      "when": 1790969709711,
+      "tag": "0011_founder_price",
+      "breakpoints": true
     }
   ]
 }
