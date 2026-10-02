@@ -61,6 +61,7 @@ Il faut appeler `POST /api/scheduled/reminders` toutes les heures à la minute 3
 
 1. Crée une clé API sur https://console.anthropic.com et renseigne-la dans `ANTHROPIC_API_KEY`. Sans clé, l'app affiche « bientôt disponible » à la place du scanner et de Nora.
 2. **Fixe une limite de dépense mensuelle** dans la console Anthropic : c'est le vrai garde-fou si quelque chose tourne mal.
+   Balco a aussi son propre budget, `AI_MONTHLY_BUDGET_USD` (par exemple `30`). La dépense du mois est calculée à partir des jetons enregistrés dans `ai_requests` et d'une grille de prix par modèle (`server/ai/budget.ts`, modifiable par `AI_PRICES_JSON`). À 80 % du budget, Nora et le scanner font une pause pour les comptes gratuits ; à 100 %, pour tous, jusqu'au 1er du mois suivant. L'app affiche alors un message clair (« Nora et l'analyse des photos font une pause… »), et le serveur écrit une ligne `[ai] budget 80 % atteint…` ou `[ai] budget 100 % atteint…` dans ses journaux. Sans variable, rien n'est coupé. Les réponses coupées ou illisibles ne sont pas décomptées du quota de la personne, mais leurs jetons comptent dans le budget, car Anthropic les facture.
 3. **Quotas mensuels** : l'offre est définie dans `lib/plans.ts` (un seul fichier pour l'app et le serveur) : un compte gratuit a droit à 1 analyse et 5 questions par mois, un compte Balco+ à 20 analyses et 100 questions. Les variables `AI_FREE_SCANS_PER_MONTH`, `AI_FREE_QUESTIONS_PER_MONTH`, `AI_PLUS_SCANS_PER_MONTH` et `AI_PLUS_QUESTIONS_PER_MONTH` les remplacent si besoin (tests, lancement). Les refus et les pannes ne sont pas décomptés.
 
 4. **Un modèle par usage** : le diagnostic photo utilise `BALCO_AI_MODEL_PHOTO` (défaut `claude-opus-5`, le plus précis), les questions à Nora `BALCO_AI_MODEL_CHAT` (défaut `claude-sonnet-5`, 2,5 fois moins cher). `BALCO_AI_MODEL` sert de repli commun si l'une des deux est vide. Le repli automatique en cas de refus du modèle (`fallbacks: "default"`) n'est envoyé qu'aux modèles qui l'acceptent (Claude Opus 5, Opus 5.5, Sonnet 5.5, Fable 5.1).
@@ -74,7 +75,18 @@ Il faut appeler `POST /api/scheduled/reminders` toutes les heures à la minute 3
 | Analyse photo | `claude-opus-5` | ≈ 0,05 $ | 1 → 0,05 $ | 20 → 1 $ |
 | Question à Nora | `claude-sonnet-5` | ≈ 0,012 $ | 5 → 0,06 $ | 100 → 1,20 $ |
 
-Chaque appel est enregistré dans la table `ai_requests` (jetons consommés, modèle, statut), ce qui permet de mesurer le coût réel :
+**Rapport des coûts réels** (coût moyen par diagnostic, par question et par compte, par modèle, comptes qui coûtent le plus) :
+
+- dans un navigateur connecté avec un compte administrateur : `https://api.ton-domaine.fr/api/admin/ai-costs` (ajoute `?from=2026-09-01` pour une autre période) ;
+- dans le Codespace : `DATABASE_URL=mysql://balco:MOT_DE_PASSE@127.0.0.1:3306/balco pnpm exec tsx scripts/couts-ia.ts`.
+
+Pour donner le rôle administrateur à ton compte (une seule fois) :
+
+```bash
+docker compose exec db mysql -u balco -p balco -e "UPDATE users SET role = 'admin' WHERE email = 'ton@adresse.fr';"
+```
+
+Chaque appel est enregistré dans la table `ai_requests` (jetons consommés, dont lecture et écriture du cache, modèle, statut), ce qui permet aussi de mesurer le coût réel en SQL :
 
 ```sql
 SELECT kind, model, COUNT(*) AS appels, SUM(inputTokens) AS entree, SUM(outputTokens) AS sortie

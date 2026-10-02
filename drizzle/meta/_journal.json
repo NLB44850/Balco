@@ -64,6 +64,13 @@
       "when": 1790780754003,
       "tag": "0008_vacation",
       "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "5",
+      "when": 1790951390950,
+      "tag": "0009_ai_budget",
+      "breakpoints": true
     }
   ]
 }

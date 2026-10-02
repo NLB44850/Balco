@@ -86,7 +86,7 @@ export default function HomeScreen() {
    */
   const observe = async () => {
     const status = aiStatus.data;
-    const canScan = account.signedIn && status?.available !== false && (status?.scan.remaining ?? 1) > 0;
+    const canScan = account.signedIn && status?.available !== false && !status?.paused && (status?.scan.remaining ?? 1) > 0;
     if (canScan) {
       try {
         const result = await pickPlantPhoto("camera");

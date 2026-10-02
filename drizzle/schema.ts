@@ -55,8 +55,14 @@ export const aiRequests = mysqlTable("ai_requests", {
   inputTokens: int("inputTokens"),
   outputTokens: int("outputTokens"),
   cacheReadTokens: int("cacheReadTokens"),
+  /** Jetons écrits dans le cache de prompt (facturés un peu plus cher que l'entrée). */
+  cacheWriteTokens: int("cacheWriteTokens"),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
-}, (table) => ({ userKindDateIndex: index("ai_requests_user_kind_date_index").on(table.userId, table.kind, table.createdAt) }));
+}, (table) => ({
+  userKindDateIndex: index("ai_requests_user_kind_date_index").on(table.userId, table.kind, table.createdAt),
+  // Dépense du mois et purge : lecture par date, tous comptes confondus.
+  dateIndex: index("ai_requests_date_index").on(table.createdAt),
+}));
 
 export const reminderProfiles = mysqlTable("reminder_profiles", {
   id: int("id").autoincrement().primaryKey(),

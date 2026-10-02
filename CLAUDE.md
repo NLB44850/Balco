@@ -38,7 +38,7 @@ Tout se passe dans son GitHub Codespace (pas de Docker sur son PC).
 
 - `pnpm -s check`, `pnpm -s lint`, puis `TEST_DATABASE_URL=mysql://balco:balco@localhost:3306/balco_cal npx vitest run`
   (MariaDB locale : `service mariadb start` si elle s'est arrêtée, `apt-get install -y mariadb-server` si elle manque,
-  puis `DATABASE_URL=… npx drizzle-kit migrate` ; 346 tests à ce jour). Dans un conteneur
+  puis `DATABASE_URL=… npx drizzle-kit migrate` ; 354 tests à ce jour). Dans un conteneur
   neuf : `apt-get install -y mariadb-server`, `service mariadb start`, créer la base `balco_cal` et l'utilisateur
   `balco`/`balco`, puis `pnpm -s build && DATABASE_URL=mysql://balco:balco@localhost:3306/balco_cal node dist/migrate.mjs`.
 - `npx expo export --platform android` pour s'assurer que le bundle Android se construit.
@@ -199,6 +199,13 @@ et route réservée à `role = admin`. Balco+ sera payant (offre commerciale Ope
 - Étape 3 faite : `lib/plans.ts` (`PLANS`, `planOf`, `can`) : quotas IA 1/5 gratuit, 20/100 Balco+,
   droits `serverReminders`, `weatherPushAlerts`, `cloudBackup` (gratuit aussi), `multiDeviceSync`
   (appliqués à l'étape 6). Message de quota au singulier (« ton analyse offerte »).
+- Étape 4 faite : budget `AI_MONTHLY_BUDGET_USD` (`server/ai/budget.ts` : grille `DEFAULT_PRICES` +
+  `AI_PRICES_JSON`, modèle inconnu au prix fort, dépense relue au plus une fois par minute) ; 80 % →
+  pause des gratuits, 100 % → pause pour tous, message dans Nora, Observer et le bouton photo
+  (`ai.status.paused`), ligne `[ai] budget … atteint` dans les journaux. Colonne `cacheWriteTokens`
+  (migration 0009) ; réponses coupées : jetons comptés dans le budget, pas dans le quota. Rapport :
+  route `/api/admin/ai-costs` (navigateur, `role = admin`), `ai.costReport`, script
+  `pnpm exec tsx scripts/couts-ia.ts`.
 
 
 À faire, dans l'ordre (liste du porteur, 30/09) :

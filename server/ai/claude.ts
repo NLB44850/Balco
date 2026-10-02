@@ -50,15 +50,20 @@ export class AiUnavailableError extends Error {
 /** Le modèle a décliné la demande (classifieur de sécurité), y compris après le repli. */
 export class AiRefusedError extends Error {}
 
-/** Réponse inexploitable (tronquée, JSON invalide) : non facturée à l'utilisateur. */
-export class AiBadResponseError extends Error {}
+/** Réponse inexploitable (tronquée, JSON invalide) : non décomptée du quota, mais facturée par Anthropic (budget). */
+export class AiBadResponseError extends Error {
+  constructor(message: string, public usage?: Usage) {
+    super(message);
+  }
+}
 
 function usageOf(message: Anthropic.Beta.BetaMessage): Usage {
   return {
     model: message.model,
-    inputTokens: message.usage.input_tokens + (message.usage.cache_creation_input_tokens ?? 0),
+    inputTokens: message.usage.input_tokens,
     outputTokens: message.usage.output_tokens,
     cacheReadTokens: message.usage.cache_read_input_tokens ?? 0,
+    cacheWriteTokens: message.usage.cache_creation_input_tokens ?? 0,
   };
 }
 
@@ -67,7 +72,7 @@ function textOf(message: Anthropic.Beta.BetaMessage, use: AiUse) {
   if (message.stop_reason === "max_tokens") {
     // À surveiller : si ce message revient souvent, relever AI_MAX_TOKENS_PHOTO ou AI_MAX_TOKENS_CHAT.
     console.warn(`[ai] ${use} truncated at max_tokens=${ENV.aiMaxTokens[use]} (model ${message.model}, ${message.usage.output_tokens} output tokens)`);
-    throw new AiBadResponseError("response truncated");
+    throw new AiBadResponseError("response truncated", usageOf(message));
   }
   // Les blocs de réflexion ou de repli ne s'affichent pas : seul le texte final compte.
   return message.content.flatMap((block) => (block.type === "text" ? [block.text] : [])).join("").trim();
@@ -153,8 +158,8 @@ export async function diagnosePlant(image: { data: string; mediaType: ImageMedia
   try {
     parsed = diagnosisSchema.parse(JSON.parse(textOf(message, "scan")));
   } catch (error) {
-    if (error instanceof AiRefusedError) throw error;
-    throw new AiBadResponseError(error instanceof Error ? error.message : "invalid diagnosis");
+    if (error instanceof AiRefusedError || error instanceof AiBadResponseError) throw error;
+    throw new AiBadResponseError(error instanceof Error ? error.message : "invalid diagnosis", usage);
   }
   return {
     diagnosis: {
@@ -228,9 +233,9 @@ export async function askNora(history: ChatTurn[], gardenDescription: string): P
     reply = { answer: parsed.answer.trim(), remember: parsed.remember.slice(0, 2), forget: parsed.forget };
   } catch {
     // Un texte simple reste une réponse valable : seule la mémoire est perdue.
-    if (!text || text.startsWith("{")) throw new AiBadResponseError("invalid answer");
+    if (!text || text.startsWith("{")) throw new AiBadResponseError("invalid answer", usage);
     reply = { answer: text, remember: [], forget: [] };
   }
-  if (!reply.answer) throw new AiBadResponseError("empty answer");
+  if (!reply.answer) throw new AiBadResponseError("empty answer", usage);
   return { ...reply, usage };
 }

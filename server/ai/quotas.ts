@@ -75,7 +75,7 @@ export async function reserve(userId: number, plan: Plan, kind: AiKind, now = ne
   return result.id;
 }
 
-export type Usage = { model: string; inputTokens: number; outputTokens: number; cacheReadTokens: number };
+export type Usage = { model: string; inputTokens: number; outputTokens: number; cacheReadTokens: number; cacheWriteTokens: number };
 
 export async function settle(requestId: number, status: "ok" | "refused" | "error", usage?: Usage) {
   const db = await requireDb();

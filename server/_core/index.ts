@@ -6,6 +6,8 @@ import net from "node:net";
 import { createExpressMiddleware } from "@trpc/server/adapters/express";
 import express, { type Express } from "express";
 
+import { costReport, formatCostReport } from "../ai/budget";
+import { authenticateRequest } from "../auth/session";
 import { appRouter } from "../routers";
 import { dispatchDueReminderNotifications, recalculateAllReminders } from "../reminders";
 import { createContext } from "./context";
@@ -91,6 +93,17 @@ export function createApp() {
       console.error("[scheduled/reminders] failed", error);
       res.status(500).json({ error: "failed" });
     }
+  });
+
+  // Rapport des coûts de l'IA, lisible dans un navigateur connecté avec un compte `role = admin`.
+  app.get("/api/admin/ai-costs", async (req, res) => {
+    const user = await authenticateRequest(req).catch(() => null);
+    if (!user || user.role !== "admin") {
+      res.status(user ? 403 : 401).type("text/plain").send("Réservé aux administrateurs de Balco.");
+      return;
+    }
+    const from = typeof req.query.from === "string" && !Number.isNaN(Date.parse(req.query.from)) ? new Date(req.query.from) : undefined;
+    res.type("text/plain; charset=utf-8").send(formatCostReport(await costReport(from)));
   });
 
   app.use("/api/trpc", createExpressMiddleware({ router: appRouter, createContext }));

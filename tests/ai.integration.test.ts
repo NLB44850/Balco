@@ -270,6 +270,57 @@ describe.skipIf(!TEST_DATABASE_URL)("AI scanner and assistant (fake Messages API
     }
   });
 
+  it("pauses AI for free accounts at 80 % of the monthly budget and for everyone at 100 %", async () => {
+    const { ENV } = await import("../server/_core/env");
+    const budget = await import("../server/ai/budget");
+    const { eq } = await import("drizzle-orm");
+    // Une grosse dépense connue : 1 M de jetons de sortie sur Claude Opus 5 = 25 $.
+    const [spend] = await db.insert(schema.aiRequests).values({ userId: userId + 20, kind: "scan", status: "ok", model: "claude-opus-5", inputTokens: 0, outputTokens: 1_000_000, cacheReadTokens: 0, cacheWriteTokens: 0 }).$returningId();
+    try {
+      budget.resetBudgetCache();
+      const spent = await budget.monthSpendUsd();
+      expect(spent).toBeGreaterThanOrEqual(25);
+
+      ENV.aiMonthlyBudgetUsd = spent / 0.9;
+      budget.resetBudgetCache();
+      const free = await caller().ai.status();
+      expect(free.paused).toContain("pause pour les comptes gratuits");
+      await expect(caller().ai.ask({ messages: [{ role: "user", content: "Bonjour" }] })).rejects.toMatchObject({ code: "PRECONDITION_FAILED", message: expect.stringContaining("Avec Balco+") });
+      expect((await caller(plusUserId, "plus").ai.status()).paused).toBeNull();
+
+      ENV.aiMonthlyBudgetUsd = spent;
+      budget.resetBudgetCache();
+      await expect(caller(plusUserId, "plus").ai.diagnose({ imageBase64: JPEG })).rejects.toMatchObject({ code: "PRECONDITION_FAILED", message: expect.stringContaining("la limite du mois est atteinte") });
+      expect(requests).toHaveLength(0);
+    } finally {
+      ENV.aiMonthlyBudgetUsd = null;
+      budget.resetBudgetCache();
+      await db.delete(schema.aiRequests).where(eq(schema.aiRequests.id, spend.id));
+    }
+  });
+
+  it("counts the tokens of a truncated answer in the budget, not in the quota", async () => {
+    const before = (await usedRows(plusUserId)).length;
+    nextReplies = [{ body: message([{ type: "text", text: "{\"isPlant\": tr" }], { stop_reason: "max_tokens" }) }];
+    await expect(caller(plusUserId, "plus").ai.diagnose({ imageBase64: JPEG })).rejects.toMatchObject({ code: "INTERNAL_SERVER_ERROR" });
+    const rows = await usedRows(plusUserId);
+    expect(rows).toHaveLength(before + 1);
+    expect(rows.at(-1)).toMatchObject({ status: "error", outputTokens: 300, cacheReadTokens: 800, cacheWriteTokens: 0 });
+  });
+
+  it("shows the real AI costs to admins only", async () => {
+    const admin = appRouter.createCaller({
+      req: { headers: {}, ip: "127.0.0.1" },
+      res: { cookie: () => undefined, clearCookie: () => undefined },
+      user: { id: userId + 30, openId: `ai-admin-${userId}`, name: null, email: null, loginMethod: "email", role: "admin", plan: "free", createdAt: new Date(), updatedAt: new Date(), lastSignedIn: new Date() },
+    } as never);
+    const report = await admin.ai.costReport();
+    expect(report.byKind.map((row) => row.kind)).toEqual(expect.arrayContaining(["scan", "chat"]));
+    expect(report.text).toContain("Par usage :");
+    expect(report.topAccounts.some((row) => row.userId === userId)).toBe(true);
+    await expect(caller().ai.costReport()).rejects.toMatchObject({ code: "FORBIDDEN" });
+  });
+
   it("reports the service as unavailable without an API key", async () => {
     claude.setAnthropicClient(null);
     try {

@@ -4,6 +4,12 @@ function list(value: string | undefined) {
   return (value ?? "").split(",").map((item) => item.trim()).filter(Boolean);
 }
 
+/** Montant en dollars ; vide ou invalide = pas de limite. */
+function usdEnv(name: string) {
+  const value = Number.parseFloat(process.env[name] ?? "");
+  return Number.isFinite(value) && value > 0 ? value : null;
+}
+
 function intEnv(name: string, fallback: number) {
   const value = Number.parseInt(process.env[name] ?? "", 10);
   return Number.isFinite(value) && value >= 0 ? value : fallback;
@@ -37,6 +43,8 @@ export const ENV = {
     scan: process.env.BALCO_AI_MODEL_PHOTO || process.env.BALCO_AI_MODEL || "claude-opus-5",
     chat: process.env.BALCO_AI_MODEL_CHAT || process.env.BALCO_AI_MODEL || "claude-sonnet-5",
   },
+  /** Budget IA mensuel en dollars (AI_MONTHLY_BUDGET_USD) : 80 % coupe les gratuits, 100 % tout le monde. Vide = pas de limite. */
+  aiMonthlyBudgetUsd: usdEnv("AI_MONTHLY_BUDGET_USD"),
   /** Plafond de jetons de sortie (réflexion comprise) : une réponse coupée n'est pas décomptée. */
   aiMaxTokens: { scan: intEnv("AI_MAX_TOKENS_PHOTO", 2000), chat: intEnv("AI_MAX_TOKENS_CHAT", 1500) },
   /** Quotas mensuels : ceux de l'offre (lib/plans.ts), sauf réglage contraire (tests, lancement). */

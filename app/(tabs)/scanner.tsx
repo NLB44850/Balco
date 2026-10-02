@@ -124,6 +124,8 @@ export default function ScannerScreen() {
     ? { title: PLANS.free.aiQuota.scan > 1 ? `${PLANS.free.aiQuota.scan} analyses offertes chaque mois` : "Une analyse offerte chaque mois", text: "Crée ton compte gratuit pour reconnaître tes plantes et savoir quoi faire quand une feuille jaunit.", action: { label: "Se connecter", onPress: () => router.push("/login") } }
     : status.data?.available === false
       ? { title: "Bientôt disponible", text: "L’analyse des photos arrive dans une prochaine mise à jour." }
+      : status.data?.paused && !diagnosis
+        ? { title: "L’analyse fait une pause", text: status.data.paused }
       : noScansLeft && !diagnosis
         ? { title: "Tes analyses du mois sont utilisées", text: "En attendant, pose ta question à Nora ou regarde tes feuilles de près : le dessous, les tiges et la terre.", action: { label: "Demander à Nora", onPress: () => router.push("/(tabs)/assistant") } }
         : null;

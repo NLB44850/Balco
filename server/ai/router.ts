@@ -2,7 +2,8 @@ import Anthropic from "@anthropic-ai/sdk";
 import { TRPCError } from "@trpc/server";
 import { z } from "zod";
 
-import { protectedProcedure, router } from "../_core/trpc";
+import { adminProcedure, protectedProcedure, router } from "../_core/trpc";
+import { budgetState, costReport, formatCostReport, pauseMessage } from "./budget";
 import { AiBadResponseError, AiRefusedError, AiUnavailableError, aiAvailable, askNora, diagnosePlant, type ChatTurn, type ImageMediaType } from "./claude";
 import { NORA_PREFERENCES } from "../../lib/ai/memory";
 import { describeGarden, loadGardenFacts, loadMemory } from "./context";
@@ -37,6 +38,9 @@ export function quotaMessage(kind: AiKind, limit: number, resetsAt: string, plan
 async function withQuota<T>(user: { id: number; plan: string }, kind: AiKind, call: () => Promise<T & { usage: Parameters<typeof settle>[2] }>) {
   if (!aiAvailable()) throw new TRPCError({ code: "PRECONDITION_FAILED", message: kind === "scan" ? "Le scanner n’est pas encore disponible." : "Nora n’est pas encore disponible." });
   const plan = planOf(user.plan);
+  // Budget du mois : à 80 % les comptes gratuits font une pause, à 100 % tout le monde.
+  const paused = pauseMessage((await budgetState()).level, plan);
+  if (paused) throw new TRPCError({ code: "PRECONDITION_FAILED", message: paused });
   let requestId: number;
   try {
     requestId = await reserve(user.id, plan, kind);
@@ -54,7 +58,8 @@ async function withQuota<T>(user: { id: number; plan: string }, kind: AiKind, ca
       await settle(requestId, "refused");
       throw new TRPCError({ code: "BAD_REQUEST", message: kind === "scan" ? "Je ne peux pas analyser cette photo. Essaie avec une photo de la plante seule." : "Je ne peux pas répondre à cette demande. Parlons plutôt de ton balcon !" });
     }
-    await settle(requestId, "error");
+    // Une réponse coupée ou illisible a quand même été facturée : ses jetons comptent dans le budget.
+    await settle(requestId, "error", error instanceof AiBadResponseError ? error.usage : undefined);
     if (error instanceof AiUnavailableError) throw new TRPCError({ code: "PRECONDITION_FAILED", message: "Le service n’est pas encore disponible." });
     if (!(error instanceof AiBadResponseError) && !(error instanceof Anthropic.APIError)) console.error(`[ai] ${kind} failed`, error);
     else console.warn(`[ai] ${kind} failed`, error instanceof Error ? error.message : error);
@@ -76,8 +81,17 @@ export function trimHistory(messages: ChatTurn[]): ChatTurn[] {
 export const aiRouter = router({
   status: protectedProcedure.query(async ({ ctx }) => {
     const plan = planOf(ctx.user.plan);
-    return { available: aiAvailable(), plan, scan: await quotaStatus(ctx.user.id, plan, "scan"), chat: await quotaStatus(ctx.user.id, plan, "chat") };
+    // `paused` : message à afficher quand le budget du mois met l'IA en pause pour ce compte.
+    return { available: aiAvailable(), plan, paused: pauseMessage((await budgetState()).level, plan), scan: await quotaStatus(ctx.user.id, plan, "scan"), chat: await quotaStatus(ctx.user.id, plan, "chat") };
   }),
+
+  /** Coût réel de l'IA (réservé aux comptes `role = admin`) : par usage, par modèle, par compte. */
+  costReport: adminProcedure
+    .input(z.object({ from: z.string().datetime().optional() }).optional())
+    .query(async ({ input }) => {
+      const report = await costReport(input?.from ? new Date(input.from) : undefined);
+      return { ...report, text: formatCostReport(report) };
+    }),
 
   diagnose: protectedProcedure
     .input(z.object({ imageBase64: z.string().min(100).max(Math.ceil((MAX_IMAGE_BYTES * 4) / 3) + 16) }))

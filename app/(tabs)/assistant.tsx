@@ -68,8 +68,10 @@ export default function AssistantScreen() {
 
   const chat = status.data?.chat;
   const unavailable = status.data?.available === false;
+  // Budget du mois atteint : Nora fait une pause (gratuits à 80 %, tout le monde à 100 %).
+  const paused = status.data?.paused ?? null;
   const noQuestionsLeft = chat ? chat.remaining <= 0 : false;
-  const canAsk = account.signedIn && !unavailable && !noQuestionsLeft && !ask.isPending && !syncing;
+  const canAsk = account.signedIn && !unavailable && !paused && !noQuestionsLeft && !ask.isPending && !syncing;
   const firstName = profile.firstName?.trim();
 
   const welcome: Message[] = [
@@ -209,13 +211,13 @@ export default function AssistantScreen() {
         />
         {account.signedIn ? (
           <>
-            {chat && <Text style={[styles.quota, { color: noQuestionsLeft ? colors.warning : colors.muted }]}>{unavailable ? "Nora arrive bientôt dans une mise à jour." : quotaLabel(chat)}</Text>}
+            {chat && <Text style={[styles.quota, { color: noQuestionsLeft || paused ? colors.warning : colors.muted }]}>{unavailable ? "Nora arrive bientôt dans une mise à jour." : paused ?? quotaLabel(chat)}</Text>}
             <View style={[glass.card, styles.composer]}>
               <TextInput
                 value={draft}
                 onChangeText={setDraft}
-                editable={!unavailable && !noQuestionsLeft}
-                placeholder={noQuestionsLeft ? "Plus de question ce mois-ci" : "Écris à Nora…"}
+                editable={!unavailable && !paused && !noQuestionsLeft}
+                placeholder={paused ? "Nora fait une pause ce mois-ci" : noQuestionsLeft ? "Plus de question ce mois-ci" : "Écris à Nora…"}
                 placeholderTextColor={colors.muted}
                 style={[styles.input, { color: colors.foreground }]}
                 maxLength={2000}
