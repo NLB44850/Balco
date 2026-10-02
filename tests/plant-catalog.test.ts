@@ -47,12 +47,8 @@ describe("plant catalog integrity", () => {
     }
   });
 
-  it("mixes heirloom, original and new varieties suited to pots", () => {
+  it("offers 100 balcony plants, found by their common names", () => {
     expect(PLANT_CATALOG.length).toBeGreaterThanOrEqual(100);
-    const kinds = PLANT_CATALOG.flatMap((entry) => entry.varieties.map((variety) => variety.kind).filter(Boolean));
-    expect(kinds.filter((kind) => kind === "heirloom").length).toBeGreaterThanOrEqual(30);
-    expect(kinds.filter((kind) => kind === "original").length).toBeGreaterThanOrEqual(25);
-    expect(kinds.filter((kind) => kind === "new").length).toBeGreaterThanOrEqual(12);
     expect(searchCatalog("cassis").map((entry) => entry.id)).toEqual(["blackcurrant"]);
     expect(searchCatalog("gueule de loup").map((entry) => entry.id)).toEqual(["snapdragon"]);
   });

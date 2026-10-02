@@ -46,7 +46,7 @@ Tout se passe dans son GitHub Codespace (pas de Docker sur son PC).
   `bash scripts/e2e.sh` (≈ 4 min : construit l'app web avec la simulation météo, migre la base, démarre
   le vrai serveur sur le port 3100, lance Playwright). `bash scripts/e2e.sh meteo` pour un seul fichier,
   `E2E_SKIP_BUILD=1` pour ne pas reconstruire. Scénarios dans `e2e/` (16 aujourd'hui) : parcours
-  (onboarding, écrans, cocher/Annuler, fête, catalogue, variétés anciennes/originales), météo (pluie + eau économisée, gel + Saisons,
+  (onboarding, écrans, cocher/Annuler, fête, catalogue, fiche d'une nouvelle plante), météo (pluie + eau économisée, gel + Saisons,
   orage, vent, canicule, « Pas aujourd'hui », retour météo réelle), compte (code de connexion lu dans
   `dist/e2e-server.log`, balcon retrouvé sur un 2ᵉ téléphone) et vacances. Open-Meteo est simulé
   (`e2e/helpers.ts`, `mockWeather`), le balcon est posé dans le stockage (`seedBalcony`). Les cases à
@@ -172,9 +172,9 @@ Livré, à valider sur son téléphone :
    ananas, tomatillo, gombo, haricot kilomètre, concombre des Antilles, épinard-fraise, arroche,
    tétragone, baselle, claytone, ficoïde glaciale, moutarde de Chine, chou-rave, poireau perpétuel, oca,
    crosnes, œillet mignardise, dahlias nains, mufliers, fuchsia rustique, fraisier des bois, kiwaï,
-   cassissier, mûres sans épines) et des variétés marquées `kind` (« Ancienne », « Originale »,
-   « Nouveauté », `VARIETY_KIND_LABELS`) : filtre « Anciennes & originales » dans le catalogue,
-   pastilles dans sa fiche, mention dans le choix de variété de la fiche plante. **Photos d'exemple** : 100 sur 100 le 02/10.
+   cassissier, mûres sans épines), des variétés anciennes, originales et récentes ajoutées aux plantes
+   existantes, variétés en pastilles dans la fiche du catalogue. (Le filtre « Anciennes & originales » et
+   les mentions Ancienne / Originale / Nouveauté ont été retirés le 02/10 à sa demande : « ça n'apporte rien ».) **Photos d'exemple** : 100 sur 100 le 02/10.
    Pour une nouvelle plante : recherche dans `PLANTS` du script, `AWAITING_PHOTO` dans
    `tests/stock-photos.test.ts`, puis candidates / `choix.json` / `--final`, recompression en 800 px
    qualité 74 (`convert -resize '800x800>' -strip -quality 74`) et `node scripts/photos/generer-index.mjs`.

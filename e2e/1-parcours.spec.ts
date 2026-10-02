@@ -80,19 +80,15 @@ test("catalogue : ajouter une plante puis ouvrir sa fiche", async ({ page }) => 
   expect(errors).toEqual([]);
 });
 
-test("catalogue : les variétés anciennes et originales, avec leur pastille", async ({ page }) => {
+test("catalogue : la fiche d'une nouvelle plante et ses variétés", async ({ page }) => {
   const errors = trackErrors(page);
   await mockWeather(page);
   await seedBalcony(page, { plants: ["basil"], wateredDaysAgo: 1 });
   await open(page, "/garden/add", "100 plantes pour le balcon");
-  await page.getByRole("button", { name: "Anciennes & originales" }).click();
-  await expect(page.getByText(/Mrs Sinkins \(ancienne\)/)).toBeVisible();
-  await expect(page.getByRole("button", { name: /^Radis, voir le détail/ })).toBeVisible();
   await page.getByPlaceholder("Basilic, fraisier, lavande…").fill("cassis");
   await page.getByRole("button", { name: /^Cassissier, voir le détail/ }).click();
   await expect(page.getByText("Variétés conseillées")).toBeVisible();
   await expect(page.getByText("Noir de Bourgogne", { exact: true })).toBeVisible();
-  await expect(page.getByText("Ancienne", { exact: true })).toBeVisible();
-  await expect(page.getByText("Nouveauté", { exact: true })).toBeVisible();
+  await expect(page.getByText("Titania", { exact: true })).toBeVisible();
   expect(errors).toEqual([]);
 });

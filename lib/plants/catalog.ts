@@ -40,17 +40,11 @@ export type CareThresholds = {
   frostSensitive: boolean;
 };
 
-/** Variété ancienne (d'avant 1950 environ), originale (curiosité, couleur ou goût inattendu) ou nouveauté récente. */
-export type VarietyKind = "heirloom" | "original" | "new";
-
-export const VARIETY_KIND_LABELS: Record<VarietyKind, string> = { heirloom: "Ancienne", original: "Originale", new: "Nouveauté" };
-
 /** Variété du commerce adaptée à la culture en pot : ce qui la distingue et pourquoi elle convient au balcon. */
 export type PlantVariety = {
   id: string;
   name: string;
   note: string;
-  kind?: VarietyKind;
 };
 
 export type CatalogPlant = {
@@ -305,7 +299,7 @@ export const PLANT_CATALOG: CatalogPlant[] = [
     wateringMonths: [3, 4, 5, 6, 7, 8, 9, 10, 11],
     varieties: [
       { id: "common", name: "Cerfeuil commun", note: "Feuillage fin et parfum délicat : sème tous les mois pour en avoir sans interruption." },
-      { id: "curled", name: "Cerfeuil frisé", note: "Plus décoratif et un peu plus lent à monter en graines en jardinière.", kind: "heirloom" },
+      { id: "curled", name: "Cerfeuil frisé", note: "Plus décoratif et un peu plus lent à monter en graines en jardinière." },
     ],
   }),
   plant({
@@ -331,7 +325,7 @@ export const PLANT_CATALOG: CatalogPlant[] = [
     wateringMonths: [5, 6, 7, 8, 9, 10],
     varieties: [
       { id: "green", name: "Shiso vert", note: "Le plus parfumé, parfait pour les sushis et les salades." },
-      { id: "red", name: "Shiso pourpre", note: "Feuillage rouge sombre très décoratif, qui colore aussi les marinades.", kind: "original" },
+      { id: "red", name: "Shiso pourpre", note: "Feuillage rouge sombre très décoratif, qui colore aussi les marinades." },
     ],
   }),
   plant({
@@ -397,8 +391,8 @@ export const PLANT_CATALOG: CatalogPlant[] = [
     care: { ...DROUGHT, heatThresholdC: 36, frostThresholdC: -10, frostSensitive: false },
     wateringInstruction: "L’agastache craint l’excès d’eau : arrose seulement si la terre est sèche sur 3 cm.",
     varieties: [
-      { id: "foeniculum", name: "Agastache anisée", note: "L’hysope anisée d’Amérique du Nord, au parfum de réglisse : la plus mellifère.", kind: "original" },
-      { id: "rugosa", name: "Menthe coréenne", note: "Agastache rugosa, entre menthe et anis, très utilisée dans la cuisine coréenne.", kind: "original" },
+      { id: "foeniculum", name: "Agastache anisée", note: "L’hysope anisée d’Amérique du Nord, au parfum de réglisse : la plus mellifère." },
+      { id: "rugosa", name: "Menthe coréenne", note: "Agastache rugosa, entre menthe et anis, très utilisée dans la cuisine coréenne." },
       { id: "blue-fortune", name: "Blue Fortune", note: "Sélection compacte de 60 cm aux épis bleu lavande, qui fleurit de juin à septembre." },
     ],
   }),
@@ -410,7 +404,7 @@ export const PLANT_CATALOG: CatalogPlant[] = [
     harvestTip: "Coupe les feuilles extérieures au fur et à mesure : elle repart chaque printemps plus vigoureuse.",
     care: { ...REGULAR, heatThresholdC: 30, frostThresholdC: -20, frostSensitive: false },
     varieties: [
-      { id: "commune", name: "Livèche commune", note: "Levisticum officinale, cultivée depuis le Moyen Âge : un pot profond suffit pour des années.", kind: "heirloom" },
+      { id: "commune", name: "Livèche commune", note: "Levisticum officinale, cultivée depuis le Moyen Âge : un pot profond suffit pour des années." },
     ],
   }),
   plant({
@@ -422,7 +416,7 @@ export const PLANT_CATALOG: CatalogPlant[] = [
     care: { ...REGULAR, heatThresholdC: 28, frostThresholdC: -20, frostSensitive: false },
     wateringInstruction: "La plante huître pourrit dans l’eau stagnante : un terreau mêlé de sable, et de l’eau seulement si la terre est sèche.",
     varieties: [
-      { id: "mertensia", name: "Mertensia maritima", note: "Plante des plages du Nord, à cultiver en pot drainé à l’abri du soleil brûlant.", kind: "original" },
+      { id: "mertensia", name: "Mertensia maritima", note: "Plante des plages du Nord, à cultiver en pot drainé à l’abri du soleil brûlant." },
     ],
   }),
   plant({
@@ -433,8 +427,8 @@ export const PLANT_CATALOG: CatalogPlant[] = [
     harvestTip: "Cueille les feuilles pour les salades de fruits, et les fleurs rouges sucrées en automne.",
     care: { ...REGULAR, heatThresholdC: 34, frostThresholdC: 0, frostSensitive: true },
     varieties: [
-      { id: "elegans", name: "Salvia elegans", note: "La sauge ananas classique, haute de 80 cm, à rentrer près d’une fenêtre l’hiver.", kind: "original" },
-      { id: "golden-delicious", name: "Golden Delicious", note: "Feuillage doré lumineux et même parfum d’ananas, plus compacte en pot.", kind: "original" },
+      { id: "elegans", name: "Salvia elegans", note: "La sauge ananas classique, haute de 80 cm, à rentrer près d’une fenêtre l’hiver." },
+      { id: "golden-delicious", name: "Golden Delicious", note: "Feuillage doré lumineux et même parfum d’ananas, plus compacte en pot." },
     ],
   }),
 
@@ -530,8 +524,8 @@ export const PLANT_CATALOG: CatalogPlant[] = [
       { id: "balconi-red", name: "Balconi Red", note: "Buisson compact de 40 cm couvert de tomates cerises, fait pour les jardinières." },
       { id: "totem", name: "Totem", note: "Port trapu de 50 cm et fruits moyens, sans taille des gourmands." },
       { id: "maskotka", name: "Maskotka", note: "Port retombant et très productif : superbe en suspension ou en bord de balcon." },
-      { id: "tasmanian-chocolate", name: "Tasmanian Chocolate", note: "Tomate naine d’1 m au goût des tomates noires anciennes, issue du Dwarf Tomato Project.", kind: "new" },
-      { id: "rosella-purple", name: "Rosella Purple", note: "Fruits pourpres sucrés sur un plant trapu, même programme : un pot de 20 L suffit.", kind: "new" },
+      { id: "tasmanian-chocolate", name: "Tasmanian Chocolate", note: "Tomate naine d’1 m au goût des tomates noires anciennes, issue du Dwarf Tomato Project." },
+      { id: "rosella-purple", name: "Rosella Purple", note: "Fruits pourpres sucrés sur un plant trapu, même programme : un pot de 20 L suffit." },
     ],
   }),
   plant({
@@ -559,7 +553,7 @@ export const PLANT_CATALOG: CatalogPlant[] = [
     wateringMonths: [5, 6, 7, 8, 9, 10],
     varieties: [
       { id: "peruviana", name: "Coqueret du Pérou", note: "Le physalis des pâtissiers, vigoureux (80 cm) : prévois un grand pot et un tuteur." },
-      { id: "pineapple", name: "Physalis ananas", note: "Plus compact (50 cm) et plus précoce, aux fruits parfumés d’ananas.", kind: "original" },
+      { id: "pineapple", name: "Physalis ananas", note: "Plus compact (50 cm) et plus précoce, aux fruits parfumés d’ananas." },
     ],
   }),
   plant({
@@ -574,7 +568,7 @@ export const PLANT_CATALOG: CatalogPlant[] = [
     varieties: [
       { id: "cobra", name: "Cobra", note: "Haricot vert filet très productif, qui grimpe à 2 m le long d’un treillis." },
       { id: "blauhilde", name: "Blauhilde", note: "Gousses violettes qui deviennent vertes à la cuisson : facile à repérer dans le feuillage." },
-      { id: "scarlet-runner", name: "Haricot d’Espagne", note: "Fleurs rouge vif adorées des butineurs : aussi décoratif que gourmand, supporte la mi-ombre.", kind: "heirloom" },
+      { id: "scarlet-runner", name: "Haricot d’Espagne", note: "Fleurs rouge vif adorées des butineurs : aussi décoratif que gourmand, supporte la mi-ombre." },
     ],
   }),
   plant({
@@ -586,7 +580,7 @@ export const PLANT_CATALOG: CatalogPlant[] = [
     care: { ...THIRSTY, heatThresholdC: 34, frostThresholdC: 6, frostSensitive: true },
     wateringMonths: [5, 6, 7, 8, 9, 10],
     varieties: [
-      { id: "melothria", name: "Melothria scabra", note: "Liane fine de 2 m qui s’accroche seule : un simple filet suffit sur un balcon.", kind: "original" },
+      { id: "melothria", name: "Melothria scabra", note: "Liane fine de 2 m qui s’accroche seule : un simple filet suffit sur un balcon." },
     ],
   }),
   plant({
@@ -600,8 +594,8 @@ export const PLANT_CATALOG: CatalogPlant[] = [
     wateringInstruction: "Arrose généreusement au pied jusqu’aux fruits, puis réduis à l’approche de la récolte pour concentrer le sucre.",
     extraTasks: [customTask({ id: "pinch", type: "pruning", title: "Aujourd’hui, pince le melon.", instruction: "Coupe les tiges après deux feuilles au-delà de chaque petit fruit formé, et garde 4 à 6 fruits au plus.", minutes: 5, months: [6, 7] })],
     varieties: [
-      { id: "minnesota-midget", name: "Minnesota Midget", note: "Fruits de 10 cm sur des tiges courtes : le melon conçu pour les petits espaces.", kind: "heirloom" },
-      { id: "petit-gris-de-rennes", name: "Petit Gris de Rennes", note: "Variété ancienne précoce, qui mûrit même hors du Sud.", kind: "heirloom" },
+      { id: "minnesota-midget", name: "Minnesota Midget", note: "Fruits de 10 cm sur des tiges courtes : le melon conçu pour les petits espaces." },
+      { id: "petit-gris-de-rennes", name: "Petit Gris de Rennes", note: "Variété ancienne précoce, qui mûrit même hors du Sud." },
     ],
   }),
 
@@ -616,8 +610,8 @@ export const PLANT_CATALOG: CatalogPlant[] = [
     wateringMonths: [5, 6, 7, 8, 9, 10],
     extraTasks: [customTask({ id: "stake", type: "pruning", title: "Aujourd’hui, attache les tomatillos.", instruction: "Les tiges s’étalent vite : attache-les à un tuteur ou une cage, sans serrer.", minutes: 4, months: [6, 7, 8] })],
     varieties: [
-      { id: "verde", name: "Verde", note: "Le tomatillo vert classique, acidulé : deux plants côte à côte pour qu’ils se pollinisent.", kind: "original" },
-      { id: "purple-de-milpa", name: "Purple de Milpa", note: "Ancienne variété mexicaine aux fruits violets, plus sucrés et plus petits.", kind: "heirloom" },
+      { id: "verde", name: "Verde", note: "Le tomatillo vert classique, acidulé : deux plants côte à côte pour qu’ils se pollinisent." },
+      { id: "purple-de-milpa", name: "Purple de Milpa", note: "Ancienne variété mexicaine aux fruits violets, plus sucrés et plus petits." },
     ],
   }),
   plant({
@@ -629,9 +623,9 @@ export const PLANT_CATALOG: CatalogPlant[] = [
     care: { ...THIRSTY, heatThresholdC: 38, frostThresholdC: 10, frostSensitive: true },
     wateringMonths: [6, 7, 8, 9],
     varieties: [
-      { id: "clemson-spineless", name: "Clemson Spineless", note: "Le gombo classique sans épines, fiable même quand l’été est moyen.", kind: "heirloom" },
-      { id: "burgundy", name: "Burgundy", note: "Tiges et gousses rouge bordeaux, superbes sur le balcon : elles verdissent à la cuisson.", kind: "original" },
-      { id: "baby-bubba", name: "Baby Bubba", note: "Sélection naine de 90 cm conçue pour les pots, productive sur un balcon chaud.", kind: "new" },
+      { id: "clemson-spineless", name: "Clemson Spineless", note: "Le gombo classique sans épines, fiable même quand l’été est moyen." },
+      { id: "burgundy", name: "Burgundy", note: "Tiges et gousses rouge bordeaux, superbes sur le balcon : elles verdissent à la cuisson." },
+      { id: "baby-bubba", name: "Baby Bubba", note: "Sélection naine de 90 cm conçue pour les pots, productive sur un balcon chaud." },
     ],
   }),
   plant({
@@ -643,8 +637,8 @@ export const PLANT_CATALOG: CatalogPlant[] = [
     care: { ...THIRSTY, heatThresholdC: 38, frostThresholdC: 10, frostSensitive: true },
     wateringMonths: [5, 6, 7, 8, 9],
     varieties: [
-      { id: "dolique-asperge", name: "Dolique asperge", note: "Vigna unguiculata, la version verte classique d’Asie : grimpe à 2 m le long d’un filet.", kind: "original" },
-      { id: "red-noodle", name: "Red Noodle", note: "Gousses pourpres de 45 cm qui restent colorées après une cuisson rapide au wok.", kind: "original" },
+      { id: "dolique-asperge", name: "Dolique asperge", note: "Vigna unguiculata, la version verte classique d’Asie : grimpe à 2 m le long d’un filet." },
+      { id: "red-noodle", name: "Red Noodle", note: "Gousses pourpres de 45 cm qui restent colorées après une cuisson rapide au wok." },
     ],
   }),
   plant({
@@ -656,7 +650,7 @@ export const PLANT_CATALOG: CatalogPlant[] = [
     care: { ...THIRSTY, heatThresholdC: 35, frostThresholdC: 8, frostSensitive: true },
     wateringMonths: [5, 6, 7, 8, 9],
     varieties: [
-      { id: "maxixe", name: "Maxixe", note: "Cucumis anguria, cultivé au Brésil et aux Antilles : très productif et sans amertume.", kind: "original" },
+      { id: "maxixe", name: "Maxixe", note: "Cucumis anguria, cultivé au Brésil et aux Antilles : très productif et sans amertume." },
     ],
   }),
 
@@ -738,8 +732,8 @@ export const PLANT_CATALOG: CatalogPlant[] = [
     harvestTip: "Cueille les feuilles extérieures jeunes et coupe les tiges florales pour qu’elle reste tendre.",
     care: { ...REGULAR, heatThresholdC: 30, frostThresholdC: -15, frostSensitive: false },
     varieties: [
-      { id: "belleville", name: "Large de Belleville", note: "La variété classique à grandes feuilles, productive dès la première année.", kind: "heirloom" },
-      { id: "red-veined", name: "Oseille sanguine", note: "Nervures rouges très décoratives, parfaite en jardinière mixte à l’ombre.", kind: "original" },
+      { id: "belleville", name: "Large de Belleville", note: "La variété classique à grandes feuilles, productive dès la première année." },
+      { id: "red-veined", name: "Oseille sanguine", note: "Nervures rouges très décoratives, parfaite en jardinière mixte à l’ombre." },
     ],
   }),
   plant({
@@ -777,7 +771,7 @@ export const PLANT_CATALOG: CatalogPlant[] = [
     wateringMonths: [3, 4, 5, 6, 8, 9, 10, 11, 12],
     varieties: [
       { id: "green", name: "Mizuna verte", note: "Feuillage fin et abondant, idéale en mélange de jeunes pousses." },
-      { id: "red-kingdom", name: "Mizuna rouge (Red Kingdom)", note: "Tiges et feuilles pourpres qui colorent l’assiette et la jardinière.", kind: "original" },
+      { id: "red-kingdom", name: "Mizuna rouge (Red Kingdom)", note: "Tiges et feuilles pourpres qui colorent l’assiette et la jardinière." },
     ],
   }),
   plant({
@@ -805,7 +799,7 @@ export const PLANT_CATALOG: CatalogPlant[] = [
     harvestTip: "Cueille les jeunes feuilles au printemps, puis les baies bien rouges en été, crues en salade.",
     care: { ...REGULAR, heatThresholdC: 30, frostThresholdC: -5, frostSensitive: false },
     varieties: [
-      { id: "blitum", name: "Blitum capitatum", note: "Cultivé dans les potagers du Moyen Âge, il se ressème souvent seul dans la jardinière.", kind: "heirloom" },
+      { id: "blitum", name: "Blitum capitatum", note: "Cultivé dans les potagers du Moyen Âge, il se ressème souvent seul dans la jardinière." },
     ],
   }),
   plant({
@@ -816,8 +810,8 @@ export const PLANT_CATALOG: CatalogPlant[] = [
     harvestTip: "Cueille les feuilles jeunes et tendres, et pince la tête pour retarder la floraison.",
     care: { ...REGULAR, heatThresholdC: 32, frostThresholdC: -5, frostSensitive: false },
     varieties: [
-      { id: "rouge", name: "Arroche rouge", note: "Feuilles pourpres très décoratives, qui colorent les salades et la jardinière.", kind: "heirloom" },
-      { id: "blonde", name: "Arroche blonde", note: "La forme verte pâle des anciens potagers, la plus tendre en cuisine.", kind: "heirloom" },
+      { id: "rouge", name: "Arroche rouge", note: "Feuilles pourpres très décoratives, qui colorent les salades et la jardinière." },
+      { id: "blonde", name: "Arroche blonde", note: "La forme verte pâle des anciens potagers, la plus tendre en cuisine." },
     ],
   }),
   plant({
@@ -828,7 +822,7 @@ export const PLANT_CATALOG: CatalogPlant[] = [
     harvestTip: "Pince l’extrémité des tiges sur 8 cm : de nouvelles pousses repartent tout l’été.",
     care: { ...REGULAR, heatThresholdC: 38, frostThresholdC: 2, frostSensitive: true },
     varieties: [
-      { id: "cornue", name: "Tétragone cornue", note: "Rapportée de Nouvelle-Zélande par le capitaine Cook : ses tiges débordent joliment du bac.", kind: "heirloom" },
+      { id: "cornue", name: "Tétragone cornue", note: "Rapportée de Nouvelle-Zélande par le capitaine Cook : ses tiges débordent joliment du bac." },
     ],
   }),
   plant({
@@ -840,8 +834,8 @@ export const PLANT_CATALOG: CatalogPlant[] = [
     care: { ...THIRSTY, heatThresholdC: 38, frostThresholdC: 8, frostSensitive: true },
     wateringMonths: [6, 7, 8, 9, 10],
     varieties: [
-      { id: "verte", name: "Baselle verte", note: "Basella alba, la plus productive : grimpe à 1,5 m sur une simple ficelle.", kind: "original" },
-      { id: "rouge", name: "Baselle rouge", note: "Tiges pourpres et nervures rouges, aussi décorative qu’une plante grimpante d’ornement.", kind: "original" },
+      { id: "verte", name: "Baselle verte", note: "Basella alba, la plus productive : grimpe à 1,5 m sur une simple ficelle." },
+      { id: "rouge", name: "Baselle rouge", note: "Tiges pourpres et nervures rouges, aussi décorative qu’une plante grimpante d’ornement." },
     ],
   }),
   plant({
@@ -853,7 +847,7 @@ export const PLANT_CATALOG: CatalogPlant[] = [
     care: { ...REGULAR, heatThresholdC: 25, frostThresholdC: -15, frostSensitive: false },
     wateringMonths: [1, 2, 3, 4, 9, 10, 11, 12],
     varieties: [
-      { id: "pourpier-d-hiver", name: "Pourpier d’hiver", note: "Claytonia perfoliata, cultivée en France depuis le XIXᵉ siècle : idéale pour un balcon nord.", kind: "heirloom" },
+      { id: "pourpier-d-hiver", name: "Pourpier d’hiver", note: "Claytonia perfoliata, cultivée en France depuis le XIXᵉ siècle : idéale pour un balcon nord." },
     ],
   }),
   plant({
@@ -864,7 +858,7 @@ export const PLANT_CATALOG: CatalogPlant[] = [
     harvestTip: "Cueille les tiges et les feuilles les plus charnues, à croquer crues ou à peine sautées.",
     care: { ...DROUGHT, heatThresholdC: 40, frostThresholdC: 3, frostSensitive: true },
     varieties: [
-      { id: "crystallinum", name: "Mesembryanthemum crystallinum", note: "Plante des bords de mer chauds, elle se plaît dans un pot sec en plein soleil.", kind: "original" },
+      { id: "crystallinum", name: "Mesembryanthemum crystallinum", note: "Plante des bords de mer chauds, elle se plaît dans un pot sec en plein soleil." },
     ],
   }),
   plant({
@@ -876,9 +870,9 @@ export const PLANT_CATALOG: CatalogPlant[] = [
     care: { ...REGULAR, heatThresholdC: 27, frostThresholdC: -6, frostSensitive: false },
     wateringMonths: [3, 4, 5, 6, 8, 9, 10, 11],
     varieties: [
-      { id: "red-giant", name: "Red Giant", note: "Grandes feuilles pourpres cloquées au goût de moutarde forte, très décoratives.", kind: "original" },
-      { id: "wasabina", name: "Wasabina", note: "Feuilles frisées vert vif au piquant de wasabi, pour relever un plat.", kind: "new" },
-      { id: "golden-streaks", name: "Golden Streaks", note: "Feuillage finement découpé vert doré, doux et rapide en jeunes pousses.", kind: "new" },
+      { id: "red-giant", name: "Red Giant", note: "Grandes feuilles pourpres cloquées au goût de moutarde forte, très décoratives." },
+      { id: "wasabina", name: "Wasabina", note: "Feuilles frisées vert vif au piquant de wasabi, pour relever un plat." },
+      { id: "golden-streaks", name: "Golden Streaks", note: "Feuillage finement découpé vert doré, doux et rapide en jeunes pousses." },
     ],
   }),
   plant({
@@ -889,8 +883,8 @@ export const PLANT_CATALOG: CatalogPlant[] = [
     harvestTip: "Récolte la boule quand elle a la taille d’une balle de tennis : plus grosse, elle devient fibreuse.",
     care: { ...REGULAR, heatThresholdC: 28, frostThresholdC: -5, frostSensitive: false },
     varieties: [
-      { id: "azur-star", name: "Azur Star", note: "Boule violette à chair blanche, précoce et lente à durcir en pot.", kind: "original" },
-      { id: "blanc-hatif-de-vienne", name: "Blanc hâtif de Vienne", note: "Variété ancienne du XIXᵉ siècle, petite et tendre, la plus sûre en jardinière.", kind: "heirloom" },
+      { id: "azur-star", name: "Azur Star", note: "Boule violette à chair blanche, précoce et lente à durcir en pot." },
+      { id: "blanc-hatif-de-vienne", name: "Blanc hâtif de Vienne", note: "Variété ancienne du XIXᵉ siècle, petite et tendre, la plus sûre en jardinière." },
     ],
   }),
   plant({
@@ -902,7 +896,7 @@ export const PLANT_CATALOG: CatalogPlant[] = [
     care: { ...REGULAR, heatThresholdC: 32, frostThresholdC: -15, frostSensitive: false },
     repotMonths: [9, 10],
     varieties: [
-      { id: "ampeloprasum", name: "Poireau perpétuel", note: "Allium ampeloprasum des anciens potagers : il se multiplie seul en petits caïeux.", kind: "heirloom" },
+      { id: "ampeloprasum", name: "Poireau perpétuel", note: "Allium ampeloprasum des anciens potagers : il se multiplie seul en petits caïeux." },
     ],
   }),
 
@@ -947,8 +941,8 @@ export const PLANT_CATALOG: CatalogPlant[] = [
     extraTasks: [customTask({ id: "thin", type: "pruning", title: "Aujourd’hui, éclaircis les betteraves.", instruction: "Chaque graine donne plusieurs pousses : garde la plus belle tous les 8 cm et mange les autres en salade.", minutes: 3, months: [5, 6, 7] })],
     varieties: [
       { id: "detroit", name: "Détroit 2", note: "Ronde et rouge foncé, la plus fiable dans 20 cm de terre." },
-      { id: "chioggia", name: "Chioggia", note: "Chair zébrée rose et blanc, très douce, superbe crue en carpaccio.", kind: "heirloom" },
-      { id: "golden", name: "Burpee’s Golden", note: "Jaune, elle ne tache pas et ses feuilles sont excellentes en poêlée.", kind: "heirloom" },
+      { id: "chioggia", name: "Chioggia", note: "Chair zébrée rose et blanc, très douce, superbe crue en carpaccio." },
+      { id: "golden", name: "Burpee’s Golden", note: "Jaune, elle ne tache pas et ses feuilles sont excellentes en poêlée." },
     ],
   }),
   plant({
@@ -960,7 +954,7 @@ export const PLANT_CATALOG: CatalogPlant[] = [
     care: { ...THIRSTY, heatThresholdC: 27, frostThresholdC: -5, frostSensitive: false },
     wateringMonths: [3, 4, 5, 6, 8, 9, 10, 11],
     varieties: [
-      { id: "milan", name: "Milan rouge", note: "Navet plat à collet violet, très précoce et peu exigeant en profondeur.", kind: "heirloom" },
+      { id: "milan", name: "Milan rouge", note: "Navet plat à collet violet, très précoce et peu exigeant en profondeur." },
       { id: "tokyo", name: "Tokyo Cross", note: "Petit navet blanc de 5 cm, tendre et prêt en 40 jours." },
     ],
   }),
@@ -990,8 +984,8 @@ export const PLANT_CATALOG: CatalogPlant[] = [
     extraTasks: [customTask({ id: "earth-up", type: "pruning", title: "Aujourd’hui, butte les pommes de terre.", instruction: "Quand les tiges font 20 cm, ajoute du terreau en ne laissant dépasser que les feuilles du haut.", minutes: 5, months: [4, 5, 6] })],
     varieties: [
       { id: "charlotte", name: "Charlotte", note: "Chair ferme et précoce : la valeur sûre pour une culture en sac." },
-      { id: "ratte", name: "Ratte", note: "Petite et fondante, elle se plaît en contenant et se récolte en 90 jours.", kind: "heirloom" },
-      { id: "vitelotte", name: "Vitelotte", note: "Chair violette et goût de châtaigne : la curiosité du balcon.", kind: "heirloom" },
+      { id: "ratte", name: "Ratte", note: "Petite et fondante, elle se plaît en contenant et se récolte en 90 jours." },
+      { id: "vitelotte", name: "Vitelotte", note: "Chair violette et goût de châtaigne : la curiosité du balcon." },
     ],
   }),
 
@@ -1005,8 +999,8 @@ export const PLANT_CATALOG: CatalogPlant[] = [
     care: { ...REGULAR, heatThresholdC: 28, frostThresholdC: 0, frostSensitive: true },
     wateringMonths: [5, 6, 7, 8, 9, 10, 11],
     varieties: [
-      { id: "rose", name: "Oca rose", note: "Tubercules roses brillants, croquants crus comme un radis acidulé.", kind: "original" },
-      { id: "jaune", name: "Oca jaune", note: "Plus doux une fois cuit, au goût de châtaigne citronnée.", kind: "original" },
+      { id: "rose", name: "Oca rose", note: "Tubercules roses brillants, croquants crus comme un radis acidulé." },
+      { id: "jaune", name: "Oca jaune", note: "Plus doux une fois cuit, au goût de châtaigne citronnée." },
     ],
   }),
   plant({
@@ -1018,7 +1012,7 @@ export const PLANT_CATALOG: CatalogPlant[] = [
     care: { ...REGULAR, heatThresholdC: 30, frostThresholdC: -15, frostSensitive: false },
     wateringMonths: [4, 5, 6, 7, 8, 9, 10],
     varieties: [
-      { id: "stachys", name: "Stachys affinis", note: "Arrivé en France en 1882 au village de Crosne : replante quelques tubercules chaque printemps.", kind: "heirloom" },
+      { id: "stachys", name: "Stachys affinis", note: "Arrivé en France en 1882 au village de Crosne : replante quelques tubercules chaque printemps." },
     ],
   }),
 
@@ -1098,7 +1092,7 @@ export const PLANT_CATALOG: CatalogPlant[] = [
     wateringMonths: [9, 10, 11, 12, 1, 2, 3, 4, 5],
     varieties: [
       { id: "cornuta", name: "Viola cornuta", note: "Petites fleurs très nombreuses, les plus florifères et résistantes au froid." },
-      { id: "tricolor", name: "Pensée sauvage", note: "Viola tricolor, ancienne et comestible, qui se ressème seule dans les pots.", kind: "heirloom" },
+      { id: "tricolor", name: "Pensée sauvage", note: "Viola tricolor, ancienne et comestible, qui se ressème seule dans les pots." },
       { id: "swiss-giants", name: "Pensée Géante suisse", note: "Grandes fleurs à « visage » pour une jardinière bien visible de l’intérieur." },
     ],
   }),
@@ -1161,8 +1155,8 @@ export const PLANT_CATALOG: CatalogPlant[] = [
     care: { ...THIRSTY, heatThresholdC: 28, frostThresholdC: -5, frostSensitive: false },
     extraTasks: [customTask({ id: "guide", type: "observation", title: "Aujourd’hui, guide les pois de senteur.", instruction: "Accroche les nouvelles tiges au treillage ou à la rambarde avec un lien souple.", minutes: 3, months: [4, 5, 6] })],
     varieties: [
-      { id: "spencer", name: "Spencer en mélange", note: "Grandes fleurs ondulées très parfumées, pour grimper à 1,50 m le long d’un filet.", kind: "heirloom" },
-      { id: "cupid", name: "Cupid", note: "Variété naine de 20 cm, sans support : idéale en pot suspendu.", kind: "heirloom" },
+      { id: "spencer", name: "Spencer en mélange", note: "Grandes fleurs ondulées très parfumées, pour grimper à 1,50 m le long d’un filet." },
+      { id: "cupid", name: "Cupid", note: "Variété naine de 20 cm, sans support : idéale en pot suspendu." },
     ],
   }),
   plant({
@@ -1200,9 +1194,9 @@ export const PLANT_CATALOG: CatalogPlant[] = [
     care: { ...DROUGHT, heatThresholdC: 35, frostThresholdC: -20, frostSensitive: false },
     wateringInstruction: "L’œillet craint l’humidité : arrose seulement quand la terre est sèche, jamais sur le feuillage.",
     varieties: [
-      { id: "mrs-sinkins", name: "Mrs Sinkins", note: "Fleurs blanches doubles très parfumées, cultivée depuis 1868 en Angleterre.", kind: "heirloom" },
-      { id: "doris", name: "Doris", note: "Fleurs rose saumon à cœur foncé, remontante et parfumée, une valeur sûre depuis 1954.", kind: "heirloom" },
-      { id: "pink-kisses", name: "Pink Kisses", note: "Sélection récente très compacte (15 cm), couverte de fleurs roses parfumées en pot.", kind: "new" },
+      { id: "mrs-sinkins", name: "Mrs Sinkins", note: "Fleurs blanches doubles très parfumées, cultivée depuis 1868 en Angleterre." },
+      { id: "doris", name: "Doris", note: "Fleurs rose saumon à cœur foncé, remontante et parfumée, une valeur sûre depuis 1954." },
+      { id: "pink-kisses", name: "Pink Kisses", note: "Sélection récente très compacte (15 cm), couverte de fleurs roses parfumées en pot." },
     ],
   }),
   plant({
@@ -1216,9 +1210,9 @@ export const PLANT_CATALOG: CatalogPlant[] = [
     repotMonths: [4],
     extraTasks: [customTask({ id: "store-tubers", type: "protection", title: "Aujourd’hui, mets les dahlias à l’abri pour l’hiver.", instruction: "Après le premier gel, coupe les tiges à 10 cm et rentre le pot (ou les tubercules) dans un endroit sec hors gel.", minutes: 10, months: [11] })],
     varieties: [
-      { id: "bishop-of-llandaff", name: "Bishop of Llandaff", note: "Fleurs simples rouge vif sur feuillage pourpre, une ancienne star de 1924.", kind: "heirloom" },
-      { id: "gallery", name: "Gallery", note: "Série naine de 40 cm créée pour les pots, aux fleurs doubles de toutes les couleurs.", kind: "new" },
-      { id: "happy-single", name: "Happy Single", note: "Fleurs simples grandes ouvertes, faciles d’accès pour les abeilles, port compact.", kind: "new" },
+      { id: "bishop-of-llandaff", name: "Bishop of Llandaff", note: "Fleurs simples rouge vif sur feuillage pourpre, une ancienne star de 1924." },
+      { id: "gallery", name: "Gallery", note: "Série naine de 40 cm créée pour les pots, aux fleurs doubles de toutes les couleurs." },
+      { id: "happy-single", name: "Happy Single", note: "Fleurs simples grandes ouvertes, faciles d’accès pour les abeilles, port compact." },
     ],
   }),
   plant({
@@ -1229,9 +1223,9 @@ export const PLANT_CATALOG: CatalogPlant[] = [
     harvestTip: "Coupe les épis fanés au-dessus d’une feuille : une nouvelle floraison suit en quelques semaines.",
     care: { ...REGULAR, heatThresholdC: 30, frostThresholdC: -5, frostSensitive: false },
     varieties: [
-      { id: "tom-thumb", name: "Tom Pouce", note: "Muflier nain de 20 cm en mélange de couleurs, la variété ancienne des bordures.", kind: "heirloom" },
-      { id: "twinny", name: "Twinny", note: "Fleurs doubles en papillon sur 30 cm, une sélection récente très florifère en pot.", kind: "new" },
-      { id: "night-and-day", name: "Night and Day", note: "Fleurs pourpre sombre à gorge blanche, très originales sur un balcon clair.", kind: "original" },
+      { id: "tom-thumb", name: "Tom Pouce", note: "Muflier nain de 20 cm en mélange de couleurs, la variété ancienne des bordures." },
+      { id: "twinny", name: "Twinny", note: "Fleurs doubles en papillon sur 30 cm, une sélection récente très florifère en pot." },
+      { id: "night-and-day", name: "Night and Day", note: "Fleurs pourpre sombre à gorge blanche, très originales sur un balcon clair." },
     ],
   }),
   plant({
@@ -1242,8 +1236,8 @@ export const PLANT_CATALOG: CatalogPlant[] = [
     harvestTip: "Les baies bien mûres, presque noires, sont sucrées : goûte-les ou fais-en une confiture.",
     care: { ...THIRSTY, heatThresholdC: 28, frostThresholdC: -10, frostSensitive: false },
     varieties: [
-      { id: "magellanica", name: "Fuchsia magellanica", note: "L’espèce rustique du Chili, qui passe l’hiver dehors en pot et repart de la base.", kind: "heirloom" },
-      { id: "riccartonii", name: "Riccartonii", note: "Hybride écossais de 1830, très florifère, rouge et violet, le plus résistant au froid.", kind: "heirloom" },
+      { id: "magellanica", name: "Fuchsia magellanica", note: "L’espèce rustique du Chili, qui passe l’hiver dehors en pot et repart de la base." },
+      { id: "riccartonii", name: "Riccartonii", note: "Hybride écossais de 1830, très florifère, rouge et violet, le plus résistant au froid." },
     ],
   }),
 
@@ -1284,8 +1278,8 @@ export const PLANT_CATALOG: CatalogPlant[] = [
     care: { ...REGULAR, heatThresholdC: 30, frostThresholdC: -20, frostSensitive: false },
     extraTasks: [customTask({ id: "prune", type: "pruning", title: "Aujourd’hui, taille le groseillier.", instruction: "Supprime les branches de plus de trois ans et celles qui partent vers le centre, pour aérer.", minutes: 5, months: [12, 1, 2] })],
     varieties: [
-      { id: "jonkheer", name: "Jonkheer van Tets", note: "Groseille rouge précoce à longues grappes, très productive en bac.", kind: "heirloom" },
-      { id: "white-versailles", name: "Blanche de Versailles", note: "Baies blanches plus douces, parfaites à croquer sur le balcon.", kind: "heirloom" },
+      { id: "jonkheer", name: "Jonkheer van Tets", note: "Groseille rouge précoce à longues grappes, très productive en bac." },
+      { id: "white-versailles", name: "Blanche de Versailles", note: "Baies blanches plus douces, parfaites à croquer sur le balcon." },
       { id: "gooseberry", name: "Groseillier à maquereau Hinnonmaki", note: "Grosses baies rouges acidulées, résistant à l’oïdium." },
     ],
   }),
@@ -1301,7 +1295,7 @@ export const PLANT_CATALOG: CatalogPlant[] = [
     extraTasks: [customTask({ id: "shelter", type: "protection", title: "Aujourd’hui, abrite le citronnier.", instruction: "Sous 3 °C, rentre-le dans une pièce lumineuse et fraîche (idéalement 10 °C), ou protège-le d’un voile d’hivernage.", minutes: 10, months: [10, 11, 12, 1, 2, 3] })],
     varieties: [
       { id: "four-seasons", name: "Citronnier 4 saisons", note: "Fleurit et fructifie plusieurs fois par an : le plus adapté à la culture en pot." },
-      { id: "meyer", name: "Meyer", note: "Compact, un peu plus résistant au froid (-4 °C), aux citrons doux et juteux.", kind: "heirloom" },
+      { id: "meyer", name: "Meyer", note: "Compact, un peu plus résistant au froid (-4 °C), aux citrons doux et juteux." },
     ],
   }),
   plant({
@@ -1327,8 +1321,8 @@ export const PLANT_CATALOG: CatalogPlant[] = [
     harvestTip: "Cueille-les bien rouges, presque tous les jours : chaque plant donne peu, mais tout l’été.",
     care: { ...REGULAR, heatThresholdC: 30, frostThresholdC: -15, frostSensitive: false },
     varieties: [
-      { id: "baron-solemacher", name: "Baron Solemacher", note: "Fraisier des quatre saisons sans stolons, sélectionné en 1935 : il reste sagement dans son pot.", kind: "heirloom" },
-      { id: "yellow-wonder", name: "Yellow Wonder", note: "Fraises blanc crème au goût d’ananas, que les oiseaux ne repèrent pas.", kind: "original" },
+      { id: "baron-solemacher", name: "Baron Solemacher", note: "Fraisier des quatre saisons sans stolons, sélectionné en 1935 : il reste sagement dans son pot." },
+      { id: "yellow-wonder", name: "Yellow Wonder", note: "Fraises blanc crème au goût d’ananas, que les oiseaux ne repèrent pas." },
     ],
   }),
   plant({
@@ -1340,8 +1334,8 @@ export const PLANT_CATALOG: CatalogPlant[] = [
     care: { ...THIRSTY, heatThresholdC: 32, frostThresholdC: -25, frostSensitive: false },
     extraTasks: [customTask({ id: "prune", type: "pruning", title: "Aujourd’hui, taille le kiwaï.", instruction: "Raccourcis les longues pousses de l’année à 4 ou 5 bourgeons et attache les autres au treillis.", minutes: 10, months: [1, 2] })],
     varieties: [
-      { id: "issai", name: "Issai", note: "Autofertile et compact : un seul pied suffit sur un balcon, fruits dès la 2ᵉ année.", kind: "new" },
-      { id: "kens-red", name: "Ken’s Red", note: "Fruits rouges à l’intérieur comme à l’extérieur, mais il lui faut un pied mâle à côté.", kind: "original" },
+      { id: "issai", name: "Issai", note: "Autofertile et compact : un seul pied suffit sur un balcon, fruits dès la 2ᵉ année." },
+      { id: "kens-red", name: "Ken’s Red", note: "Fruits rouges à l’intérieur comme à l’extérieur, mais il lui faut un pied mâle à côté." },
     ],
   }),
   plant({
@@ -1353,8 +1347,8 @@ export const PLANT_CATALOG: CatalogPlant[] = [
     care: { ...REGULAR, heatThresholdC: 30, frostThresholdC: -25, frostSensitive: false },
     extraTasks: [customTask({ id: "prune", type: "pruning", title: "Aujourd’hui, taille le cassissier.", instruction: "Coupe à la base les plus vieilles branches (les plus foncées) pour faire place aux jeunes.", minutes: 10, months: [2, 3] })],
     varieties: [
-      { id: "noir-de-bourgogne", name: "Noir de Bourgogne", note: "La variété ancienne de la crème de cassis : petites baies très parfumées.", kind: "heirloom" },
-      { id: "titania", name: "Titania", note: "Grosses baies et bonne résistance aux maladies, la plus facile en pot.", kind: "new" },
+      { id: "noir-de-bourgogne", name: "Noir de Bourgogne", note: "La variété ancienne de la crème de cassis : petites baies très parfumées." },
+      { id: "titania", name: "Titania", note: "Grosses baies et bonne résistance aux maladies, la plus facile en pot." },
     ],
   }),
   plant({
@@ -1366,19 +1360,14 @@ export const PLANT_CATALOG: CatalogPlant[] = [
     care: { ...REGULAR, heatThresholdC: 32, frostThresholdC: -15, frostSensitive: false },
     extraTasks: [customTask({ id: "prune", type: "pruning", title: "Aujourd’hui, taille les mûres.", instruction: "Après la récolte, coupe au ras les tiges qui ont donné des fruits : les nouvelles porteront l’an prochain.", minutes: 10, months: [9, 10] })],
     varieties: [
-      { id: "little-black-prince", name: "Little Black Prince", note: "Mûrier nain d’1 m sans épines, sélectionné pour les pots de balcon.", kind: "new" },
-      { id: "black-cascade", name: "Black Cascade", note: "Port retombant pour suspension ou bord de balcon, des mûres à hauteur de main.", kind: "new" },
+      { id: "little-black-prince", name: "Little Black Prince", note: "Mûrier nain d’1 m sans épines, sélectionné pour les pots de balcon." },
+      { id: "black-cascade", name: "Black Cascade", note: "Port retombant pour suspension ou bord de balcon, des mûres à hauteur de main." },
       { id: "navaho", name: "Navaho", note: "Tiges dressées sans épines et mûres très sucrées : un tuteur et un grand bac suffisent." },
     ],
   }),
 ];
 
 const BY_ID = new Map(PLANT_CATALOG.map((entry) => [entry.id, entry]));
-
-/** Les variétés anciennes, originales ou récentes d'une plante (filtre « Anciennes & originales » du catalogue). */
-export function notableVarieties(entry: CatalogPlant) {
-  return entry.varieties.filter((variety) => variety.kind);
-}
 
 export function getCatalogPlant(id: string): CatalogPlant | undefined {
   return BY_ID.get(id);
