@@ -663,5 +663,26 @@
     "license": "CC BY-SA 3.0",
     "licenseUrl": "https://creativecommons.org/licenses/by-sa/3.0",
     "page": "https://commons.wikimedia.org/wiki/File:Fragaria_vesca_-_metsmaasikas.jpg"
+  },
+  "orach": {
+    "title": "File:Atriplex hortensis sl5.jpg",
+    "author": "Stefan.lefnaer",
+    "license": "CC BY-SA 4.0",
+    "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0",
+    "page": "https://commons.wikimedia.org/wiki/File:Atriplex_hortensis_sl5.jpg"
+  },
+  "snapdragon": {
+    "title": "File:P1000533 Antirrhinum majus (Snapdragon) (Scrophulariaceae) Flower.JPG",
+    "author": "Magnus Manske",
+    "license": "CC BY-SA 3.0",
+    "licenseUrl": "https://creativecommons.org/licenses/by-sa/3.0",
+    "page": "https://commons.wikimedia.org/wiki/File:P1000533_Antirrhinum_majus_(Snapdragon)_(Scrophulariaceae)_Flower.JPG"
+  },
+  "yardlong-bean": {
+    "title": "File:Long Bean.JPG",
+    "author": "David",
+    "license": "Public domain",
+    "licenseUrl": "",
+    "page": "https://commons.wikimedia.org/wiki/File:Long_Bean.JPG"
   }
 }

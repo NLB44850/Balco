@@ -3808,6 +3808,45 @@
       "license": "CC BY 2.0",
       "licenseUrl": "https://creativecommons.org/licenses/by/2.0",
       "file": "crosne-1.jpg"
+    },
+    {
+      "title": "File:Stachys affinis kz03.jpg",
+      "width": 2927,
+      "height": 4391,
+      "mime": "image/jpeg",
+      "thumb": "https://thumb.wikimedia.org/wikipedia/commons/thumb/a/ad/Stachys_affinis_kz03.jpg/500px-Stachys_affinis_kz03.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
+      "page": "https://commons.wikimedia.org/wiki/File:Stachys_affinis_kz03.jpg",
+      "author": "Krzysztof Ziarnek, Kenraiz",
+      "license": "CC BY-SA 4.0",
+      "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0",
+      "file": "crosne-2.jpg",
+      "query": "Stachys affinis"
+    },
+    {
+      "title": "File:Stachys affinis kz02.jpg",
+      "width": 3670,
+      "height": 4894,
+      "mime": "image/jpeg",
+      "thumb": "https://thumb.wikimedia.org/wikipedia/commons/thumb/1/1d/Stachys_affinis_kz02.jpg/500px-Stachys_affinis_kz02.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
+      "page": "https://commons.wikimedia.org/wiki/File:Stachys_affinis_kz02.jpg",
+      "author": "Krzysztof Ziarnek, Kenraiz",
+      "license": "CC BY-SA 4.0",
+      "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0",
+      "file": "crosne-3.jpg",
+      "query": "Stachys affinis"
+    },
+    {
+      "title": "File:Stachys affinis kz01.jpg",
+      "width": 4000,
+      "height": 6000,
+      "mime": "image/jpeg",
+      "thumb": "https://thumb.wikimedia.org/wikipedia/commons/thumb/c/ce/Stachys_affinis_kz01.jpg/500px-Stachys_affinis_kz01.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
+      "page": "https://commons.wikimedia.org/wiki/File:Stachys_affinis_kz01.jpg",
+      "author": "Krzysztof Ziarnek, Kenraiz",
+      "license": "CC BY-SA 4.0",
+      "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0",
+      "file": "crosne-4.jpg",
+      "query": "Stachys affinis"
     }
   ],
   "pinks": [
@@ -4113,6 +4152,45 @@
       "license": "CC BY-SA 3.0",
       "licenseUrl": "https://creativecommons.org/licenses/by-sa/3.0",
       "file": "blackcurrant-3.jpg"
+    },
+    {
+      "title": "File:Ribes nigrum 'Vertti'.jpg",
+      "width": 2848,
+      "height": 4272,
+      "mime": "image/jpeg",
+      "thumb": "https://thumb.wikimedia.org/wikipedia/commons/thumb/a/a5/Ribes_nigrum_%27Vertti%27.jpg/500px-Ribes_nigrum_%27Vertti%27.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
+      "page": "https://commons.wikimedia.org/wiki/File:Ribes_nigrum_%27Vertti%27.jpg",
+      "author": "J. Albert Vallunen (Albval)",
+      "license": "CC BY-SA 3.0",
+      "licenseUrl": "https://creativecommons.org/licenses/by-sa/3.0",
+      "file": "blackcurrant-4.jpg",
+      "query": "blackcurrants Ribes nigrum"
+    },
+    {
+      "title": "File:Ribes nigrum-1.jpg",
+      "width": 2300,
+      "height": 2588,
+      "mime": "image/jpeg",
+      "thumb": "https://thumb.wikimedia.org/wikipedia/commons/thumb/2/21/Ribes_nigrum-1.jpg/500px-Ribes_nigrum-1.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
+      "page": "https://commons.wikimedia.org/wiki/File:Ribes_nigrum-1.jpg",
+      "author": "This photography was created by Mariluna. Other photos see here.",
+      "license": "CC BY-SA 3.0",
+      "licenseUrl": "https://creativecommons.org/licenses/by-sa/3.0",
+      "file": "blackcurrant-5.jpg",
+      "query": "blackcurrants Ribes nigrum"
+    },
+    {
+      "title": "File:Ribes nigrum flos.JPG",
+      "width": 2848,
+      "height": 2136,
+      "mime": "image/jpeg",
+      "thumb": "https://thumb.wikimedia.org/wikipedia/commons/thumb/f/fb/Ribes_nigrum_flos.JPG/500px-Ribes_nigrum_flos.JPG?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
+      "page": "https://commons.wikimedia.org/wiki/File:Ribes_nigrum_flos.JPG",
+      "author": "Aiwok",
+      "license": "CC BY-SA 3.0",
+      "licenseUrl": "https://creativecommons.org/licenses/by-sa/3.0",
+      "file": "blackcurrant-6.jpg",
+      "query": "blackcurrants Ribes nigrum"
     }
   ],
   "thornless-blackberry": [
