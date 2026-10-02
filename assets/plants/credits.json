@@ -684,5 +684,19 @@
     "license": "Public domain",
     "licenseUrl": "",
     "page": "https://commons.wikimedia.org/wiki/File:Long_Bean.JPG"
+  },
+  "blackcurrant": {
+    "title": "File:Ribes nigrum-1.jpg",
+    "author": "This photography was created by Mariluna. Other photos see here.",
+    "license": "CC BY-SA 3.0",
+    "licenseUrl": "https://creativecommons.org/licenses/by-sa/3.0",
+    "page": "https://commons.wikimedia.org/wiki/File:Ribes_nigrum-1.jpg"
+  },
+  "crosne": {
+    "title": "File:Stachys affinis kz03.jpg",
+    "author": "Krzysztof Ziarnek, Kenraiz",
+    "license": "CC BY-SA 4.0",
+    "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0",
+    "page": "https://commons.wikimedia.org/wiki/File:Stachys_affinis_kz03.jpg"
   }
 }
