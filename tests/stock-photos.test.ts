@@ -13,7 +13,7 @@ const index = fs.readFileSync(path.join(ROOT, "components/plant-stock-photos.ts"
  * scripts/photos/telecharger-photos.mjs) : en attendant, l'app montre leur emoji. Cette liste ne
  * fait que rétrécir.
  */
-const AWAITING_PHOTO = new Set(["agastache", "lovage", "oyster-plant", "pineapple-sage", "tomatillo", "okra", "yardlong-bean", "west-indian-gherkin", "strawberry-spinach", "orach", "nz-spinach", "malabar-spinach", "winter-purslane", "ice-plant", "mustard-greens", "kohlrabi", "perpetual-leek", "oca", "crosne", "pinks", "dahlia", "snapdragon", "fuchsia", "woodland-strawberry", "kiwiberry", "blackcurrant", "thornless-blackberry"]);
+const AWAITING_PHOTO = new Set(["yardlong-bean", "orach", "crosne", "snapdragon", "blackcurrant"]);
 
 describe("photos d'exemple des plantes", () => {
   it("n'attendent leur photo que pour des plantes qui n'en ont vraiment pas encore", () => {
