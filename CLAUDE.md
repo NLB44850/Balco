@@ -248,15 +248,16 @@ et route réservée à `role = admin`. Balco+ sera payant (offre commerciale Ope
 Points à ne pas oublier (à proposer au porteur au bon moment, noté le 30/09) :
 - Encore à valider sur son téléphone : la carte « Sa progression » de la fiche plante et les petites
   victoires (priorité 4), la mémoire de Nora sur plusieurs jours.
-- La branche `claude/eloquent-gates-g7xc6x` a plus de 60 commits qui ne sont pas sur `main` :
-  proposer une fusion dans `main` (pull request) une fois la todo du 30/09 validée. **Attention** (vu le
-  02/10) : `main` (24 fichiers, « Add files via upload ») n'a **aucun historique commun** avec la branche :
-  la fusion devra remplacer le contenu de `main` (à décider avec lui), pas un merge classique.
+- **Branche fusionnée dans `main`** le 02/10 (https://github.com/NLB44850/Balco/pull/1, jusqu'à l'étape 6
+  de l'audit). Le travail continue sur `claude/eloquent-gates-g7xc6x` ; proposer une nouvelle PR vers `main`
+  à la fin de chaque bloc validé. (La session clone le dépôt en partiel : `git fetch --unshallow` avant
+  toute comparaison d'historique avec `main`.)
 - **Maintenance** (02/10, fusionné dans `main` par https://github.com/NLB44850/Balco/pull/2 et copié sur
   la branche) : `.github/dependabot.yml` (dépendances chaque lundi, groupées ; pas de montée mineure ou
   majeure des paquets liés au SDK Expo) et `.github/workflows/maintenance.yml` (issue « Maintenance »
   le 1er du mois, bilan annuel en février ; pnpm lu depuis `packageManager`). Les tâches planifiées de
-  GitHub tournent sur `main` : tant que la branche n'y est pas, le rapport décrit l'ancien `main`.
+  GitHub tournent sur `main` (le cron des rappels reste inactif tant que la variable `BALCO_API_URL`
+  n'est pas définie sur GitHub).
 - Avant la publication sur le Play Store : politique de confidentialité et mentions (données du
   compte, position, photos, questions envoyées à l'IA d'Anthropic), fiche Play Store, compte
   développeur Google, et prévoir la montée de version d'Expo (SDK 54 vieillit).
