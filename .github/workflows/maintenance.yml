@@ -1,0 +1,111 @@
+# Ouvre chaque mois une issue « Maintenance » avec un rapport automatique
+# (dépendances obsolètes, failles, version d'Expo) et la check-list à suivre.
+# En février, l'issue inclut en plus le bilan annuel avant le printemps.
+# GitHub envoie une notification (e-mail et app mobile) à chaque nouvelle issue.
+name: Maintenance Balco
+
+on:
+  schedule:
+    - cron: "0 6 1 1,3-12 *"   # le 1er de chaque mois sauf février, 7 h ou 8 h à Paris
+    - cron: "0 6 1 2 *"        # le 1er février : maintenance + bilan annuel
+  workflow_dispatch:
+    inputs:
+      annuel:
+        description: "Inclure le bilan annuel"
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+  issues: write
+
+jobs:
+  rapport:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      # Version de pnpm lue dans package.json (« packageManager »: pnpm@9.12.0) : une seule source,
+      # pour éviter tout conflit entre deux versions indiquées à deux endroits.
+      - uses: pnpm/action-setup@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - name: Installer les dépendances
+        run: pnpm install --frozen-lockfile
+
+      - name: Construire le rapport
+        env:
+          ANNUEL: ${{ github.event.schedule == '0 6 1 2 *' || inputs.annuel == true }}
+        run: |
+          EXPO_ACTUEL=$(node -p "require('./package.json').dependencies.expo || 'inconnu'")
+          EXPO_DERNIER=$(npm view expo version 2>/dev/null || echo "inconnu")
+          # Les machines GitHub n'ont pas la langue française : le mois est écrit à la main.
+          MOIS_NOMS=(janvier février mars avril mai juin juillet août septembre octobre novembre décembre)
+          MOIS="${MOIS_NOMS[$(( $(date +%-m) - 1 ))]} $(date +%Y)"
+
+          {
+            echo "## Rapport automatique"
+            echo
+            echo "- Expo dans le projet : \`$EXPO_ACTUEL\`"
+            echo "- Dernière version d'Expo publiée : \`$EXPO_DERNIER\`"
+            echo
+            echo "<details><summary>Dépendances obsolètes (pnpm outdated)</summary>"
+            echo
+            echo '```'
+            pnpm outdated 2>&1 || true
+            echo '```'
+            echo "</details>"
+            echo
+            echo "<details><summary>Failles de sécurité (pnpm audit --prod)</summary>"
+            echo
+            echo '```'
+            pnpm audit --prod 2>&1 || true
+            echo '```'
+            echo "</details>"
+            echo
+            echo "## Check-list mensuelle"
+            echo
+            echo "- [ ] Fusionner ou fermer les PR Dependabot ouvertes"
+            echo "- [ ] Lancer la routine dans Claude Code (message ci-dessous)"
+            echo "- [ ] Si une nouvelle version d'Expo SDK est sortie : planifier la migration (ne jamais sauter plus d'une version)"
+            echo "- [ ] Regarder les erreurs dans Sentry et les avis sur les stores"
+            echo "- [ ] Vérifier le coût IA du mois par rapport au budget"
+            echo "- [ ] Publier une mise à jour visible si quelque chose a changé"
+            echo
+            echo "### Message à envoyer à Claude Code"
+            echo
+            echo '```'
+            echo "Fais la maintenance mensuelle de Balco : vérifie les dépendances obsolètes et les failles de sécurité (pnpm outdated, pnpm audit), indique si une nouvelle version d'Expo SDK est sortie et ce qu'implique la migration, signale les avertissements de dépréciation dans le code, relance tous les tests, et résume le coût IA du mois à partir de ai_requests. Propose un plan avant de modifier quoi que ce soit."
+            echo '```'
+
+            if [ "$ANNUEL" = "true" ]; then
+              echo
+              echo "## Bilan annuel (avant le printemps)"
+              echo
+              echo "- [ ] Exigences Google Play : version Android cible (targetSdkVersion) imposée cette année"
+              echo "- [ ] Exigences App Store : version minimale du SDK iOS et de Xcode"
+              echo "- [ ] Modèles Claude : nouveaux modèles et retraits annoncés ; tester le jeu de questions et photos de référence avant de changer BALCO_AI_MODEL_*"
+              echo "- [ ] Revoir les quotas IA et le budget mensuel selon les coûts réels de l'année"
+              echo "- [ ] Revoir le prix de Balco+ et l'offre gratuite"
+              echo "- [ ] Vérifier les offres des services : Open-Meteo, hébergeur, SMTP, EAS"
+              echo "- [ ] Préparer les contenus et notifications de la saison (semis, plantations)"
+              echo "- [ ] Mettre à jour la feuille de route (docs/feuille-de-route)"
+            fi
+          } > rapport.md
+
+          if [ "$ANNUEL" = "true" ]; then
+            echo "TITRE=Maintenance et bilan annuel · $MOIS" >> "$GITHUB_ENV"
+          else
+            echo "TITRE=Maintenance mensuelle · $MOIS" >> "$GITHUB_ENV"
+          fi
+
+      - name: Ouvrir l'issue
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh label create maintenance --color 2E7D32 --description "Routine de maintenance" --force
+          gh issue create --title "$TITRE" --body-file rapport.md --label maintenance
