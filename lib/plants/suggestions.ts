@@ -1,7 +1,9 @@
 /**
  * Suggestions de saison : ce qu'on peut semer ou planter ce mois-ci sur ton balcon. Les plantes qui
  * ne pousseront pas chez toi (soleil, espace) sont écartées, celles que tu as déjà aussi ; l'ordre suit
- * tes envies et la facilité (`recommendPlants`), et les dates suivent ton climat. Logique pure.
+ * tes envies et la facilité (`recommendPlants`), et les dates suivent ton climat. Avec `seed` (le jour),
+ * les suggestions tournent chaque jour parmi les meilleures, pour que l'app ne propose pas toujours les
+ * mêmes ; le même jour, elles restent identiques partout (Aujourd'hui montre la 1ʳᵉ de Saisons). Logique pure.
  */
 import { formatMonthRange, MONTH_LONG, recommendPlants, type CatalogPlant, type Month, type OnboardingAnswers } from "./catalog";
 import { adaptToClimate, type ClimateInfo } from "./climate";
@@ -25,7 +27,22 @@ export type SuggestionOptions = {
   ownedCatalogIds?: string[];
   climate?: ClimateInfo | null;
   limit?: number;
+  /** Change l'ordre chaque jour (« 2026-10-02 ») ; absent : les mieux adaptées d'abord, toujours dans le même ordre. */
+  seed?: string;
 };
+
+/** Les suggestions du jour sont tirées parmi les plantes les mieux adaptées, pas dans tout le catalogue. */
+const ROTATION_POOL = 12;
+
+/** Petit hachage stable (FNV-1a) : même jour + même plante → même rang, sur tous les téléphones. */
+function hash(text: string) {
+  let value = 2166136261;
+  for (let index = 0; index < text.length; index += 1) {
+    value ^= text.charCodeAt(index);
+    value = Math.imul(value, 16777619);
+  }
+  return value >>> 0;
+}
 
 const VERBS: Record<SuggestionAction, string> = { sow: "Sème", plant: "Plante", both: "Sème ou plante" };
 export const SUGGESTION_ACTION_LABELS: Record<SuggestionAction, string> = { sow: "À semer", plant: "À planter", both: "À semer ou planter" };
@@ -53,18 +70,24 @@ export function suggestionFor(catalogEntry: CatalogPlant, month: number, climate
 }
 
 export function seasonalSuggestions(answers: OnboardingAnswers | null, options: SuggestionOptions): SeasonalSuggestion[] {
-  const { month, climate, limit = 5 } = options;
+  const { month, climate, limit = 5, seed } = options;
   const owned = new Set(options.ownedCatalogIds ?? []);
   // Sans réponses d'onboarding, `recommendPlants` ne renvoie qu'une courte liste : on part alors du catalogue entier.
   const ranked = recommendPlants(answers && !answers.skipped ? answers : {}, { month });
+  const pool = seed ? Math.max(limit, ROTATION_POOL) : limit;
   const suggestions: SeasonalSuggestion[] = [];
   for (const entry of ranked) {
     if (owned.has(entry.id)) continue;
     const suggestion = suggestionFor(entry, month, climate);
     if (suggestion) suggestions.push(suggestion);
-    if (suggestions.length >= limit) break;
+    if (suggestions.length >= pool) break;
   }
-  return suggestions;
+  if (!seed) return suggestions;
+  return suggestions
+    .map((suggestion) => ({ suggestion, rank: hash(`${seed}:${suggestion.entry.id}`) }))
+    .sort((a, b) => a.rank - b.rank)
+    .slice(0, limit)
+    .map(({ suggestion }) => suggestion);
 }
 
 /** Le prochain mois (après `month`) où il y a quelque chose à semer ou planter, pour les mois calmes. */

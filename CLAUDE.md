@@ -38,7 +38,7 @@ Tout se passe dans son GitHub Codespace (pas de Docker sur son PC).
 
 - `pnpm -s check`, `pnpm -s lint`, puis `TEST_DATABASE_URL=mysql://balco:balco@localhost:3306/balco_cal npx vitest run`
   (MariaDB locale : `service mariadb start` si elle s'est arrêtée, `apt-get install -y mariadb-server` si elle manque,
-  puis `DATABASE_URL=… npx drizzle-kit migrate` ; 338 tests à ce jour). Dans un conteneur
+  puis `DATABASE_URL=… npx drizzle-kit migrate` ; 339 tests à ce jour). Dans un conteneur
   neuf : `apt-get install -y mariadb-server`, `service mariadb start`, créer la base `balco_cal` et l'utilisateur
   `balco`/`balco`, puis `pnpm -s build && DATABASE_URL=mysql://balco:balco@localhost:3306/balco_cal node dist/migrate.mjs`.
 - `npx expo export --platform android` pour s'assurer que le bundle Android se construit.
@@ -170,6 +170,9 @@ Livré, à valider sur son téléphone :
   (`/garden/add?month=10`). Le catalogue n'applique pas le décalage de climat (pas de météo chargée).
   Sur **Aujourd'hui**, ligne « Idée du mois » sous la liste du jour (la 1ʳᵉ suggestion, « + » avec
   « Annuler », toucher la ligne ouvre Saisons) ; cachée pendant les vacances et balcon vide.
+  **Les suggestions tournent chaque jour** (à sa demande, « que l'app ne paraisse pas figée ») : tirage
+  du jour (`seed: dayKey(now)`) parmi les 12 mieux adaptées, stable dans la journée, et l'Idée du mois
+  d'Aujourd'hui est toujours la 1ʳᵉ suggestion de Saisons.
 
 
 À faire, dans l'ordre (liste du porteur, 30/09) :

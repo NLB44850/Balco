@@ -160,7 +160,7 @@ export default function HomeScreen() {
   );
   // Idée du mois : une plante à semer ou planter maintenant, adaptée au balcon, qu'on n'a pas encore.
   const monthIdea = useMemo(
-    () => (resolvedPlants.length === 0 ? null : seasonalSuggestions(onboarding, { month: now.getMonth() + 1, climate, ownedCatalogIds: resolvedPlants.map((resolved) => resolved.entry.id), limit: 1 })[0] ?? null),
+    () => (resolvedPlants.length === 0 ? null : seasonalSuggestions(onboarding, { month: now.getMonth() + 1, climate, ownedCatalogIds: resolvedPlants.map((resolved) => resolved.entry.id), limit: 1, seed: dayKey(now) })[0] ?? null),
     [climate, now, onboarding, resolvedPlants],
   );
 

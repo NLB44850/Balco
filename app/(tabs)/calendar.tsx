@@ -25,7 +25,7 @@ import { type CityResult, useLocalWeather } from "@/hooks/use-local-weather";
 import { useColors } from "@/hooks/use-colors";
 import { useGarden } from "@/lib/garden/garden-context";
 import { celebrationFor } from "@/lib/garden/progress";
-import { careProfileFor, plantDisplayName, type ResolvedPlant } from "@/lib/garden/garden-logic";
+import { careProfileFor, dayKey, plantDisplayName, type ResolvedPlant } from "@/lib/garden/garden-logic";
 import {
   ACTIVITY_KIND_LABELS,
   activityDone,
@@ -120,7 +120,8 @@ export default function CalendarScreen() {
   }, []);
 
   // Quoi semer ou planter le mois choisi, parmi ce qui convient au balcon et qu'on n'a pas encore.
-  const suggestionOptions = useMemo(() => ({ month: selectedMonth, climate, ownedCatalogIds: resolvedPlants.map((resolved) => resolved.entry.id), limit: 4 }), [climate, resolvedPlants, selectedMonth]);
+  // Elles changent chaque jour (même tirage que l'« Idée du mois » d'Aujourd'hui).
+  const suggestionOptions = useMemo(() => ({ month: selectedMonth, climate, ownedCatalogIds: resolvedPlants.map((resolved) => resolved.entry.id), limit: 4, seed: dayKey(now) }), [climate, now, resolvedPlants, selectedMonth]);
   const suggestions = useMemo(() => (showingIdeas ? [] : seasonalSuggestions(onboarding, suggestionOptions)), [onboarding, showingIdeas, suggestionOptions]);
   const nextMonth = useMemo(() => (suggestions.length === 0 && !showingIdeas ? nextSuggestionMonth(onboarding, suggestionOptions) : null), [onboarding, showingIdeas, suggestionOptions, suggestions.length]);
   const [sheetSuggestion, setSheetSuggestion] = useState<SeasonalSuggestion | null>(null);

@@ -57,4 +57,19 @@ describe("suggestions de saison", () => {
     expect(seasonalSuggestions({ sunlight: "shade", space: "windowsill" }, { month: next! }).length).toBeGreaterThan(0);
     expect(suggestionsHeading(10)).toBe("À semer ou planter en octobre");
   });
+
+  it("tourne chaque jour parmi les mieux adaptées, sans changer dans la journée", () => {
+    const answers = { experience: "beginner", sunlight: "sunny", space: "balcony", goals: ["aromatics"] };
+    const ids = (seed: string, limit = 4) => seasonalSuggestions(answers, { month: 4, limit, seed }).map((suggestion) => suggestion.entry.id);
+    expect(ids("2026-04-02")).toEqual(ids("2026-04-02"));
+    expect(ids("2026-04-02")).toHaveLength(4);
+    // Sur une semaine, on ne voit pas toujours les mêmes.
+    const week = new Set(Array.from({ length: 7 }, (_, day) => ids(`2026-04-0${day + 1}`).join(",")));
+    expect(week.size).toBeGreaterThan(1);
+    // Toujours tirées parmi les 12 mieux adaptées.
+    const best = seasonalSuggestions(answers, { month: 4, limit: 12 }).map((suggestion) => suggestion.entry.id);
+    for (const id of ids("2026-04-05")) expect(best).toContain(id);
+    // L'idée du mois d'Aujourd'hui est la première des suggestions de Saisons.
+    expect(ids("2026-04-05", 1)[0]).toBe(ids("2026-04-05")[0]);
+  });
 });
