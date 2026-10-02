@@ -92,3 +92,34 @@ test("catalogue : la fiche d'une nouvelle plante et ses variétés", async ({ pa
   await expect(page.getByText("Titania", { exact: true })).toBeVisible();
   expect(errors).toEqual([]);
 });
+
+test("fiche du bas : jamais plus haute que l'écran, se ferme par « × » ou en glissant vers le bas", async ({ page }) => {
+  await page.setViewportSize({ width: 360, height: 640 });
+  await mockWeather(page);
+  await seedBalcony(page, { plants: ["basil"], wateredDaysAgo: 1 });
+  await open(page, "/garden/add", "100 plantes pour le balcon");
+  await page.getByPlaceholder("Basilic, fraisier, lavande…").fill("piment");
+  const openSheet = () => page.getByRole("button", { name: /^Piment, voir le détail/ }).click();
+
+  // Fiche longue sur un petit écran : le bouton du bas reste atteignable (le contenu défile).
+  await openSheet();
+  const close = page.getByRole("button", { name: "Fermer la fiche" });
+  await expect(close).toBeVisible();
+  const box = await close.boundingBox();
+  expect(box!.y).toBeGreaterThanOrEqual(0);
+  await page.getByRole("button", { name: "Ajouter à mon balcon" }).scrollIntoViewIfNeeded();
+  await expect(page.getByRole("button", { name: "Ajouter à mon balcon" })).toBeInViewport();
+
+  // « × » ferme la fiche.
+  await close.click();
+  await expect(close).toHaveCount(0);
+
+  // Glisser la poignée vers le bas replie la fiche.
+  await openSheet();
+  const handle = (await page.getByRole("button", { name: "Fermer la fiche" }).boundingBox())!;
+  await page.mouse.move(180, handle.y + 10);
+  await page.mouse.down();
+  for (let step = 1; step <= 10; step += 1) await page.mouse.move(180, handle.y + 10 + step * 25);
+  await page.mouse.up();
+  await expect(page.getByRole("button", { name: "Fermer la fiche" })).toHaveCount(0);
+});

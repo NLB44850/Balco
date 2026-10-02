@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Pressable, ScrollView, StyleSheet, View } from "react-native";
+import { Pressable, StyleSheet, View } from "react-native";
 
 import { BottomSheet } from "@/components/today/bottom-sheet";
 import { Text } from "@/components/ui/typography";
@@ -35,7 +35,7 @@ export function MemorySheet({ visible, onClose, memory, onLevel, onPreferences, 
   }, [visible]);
   return (
     <BottomSheet visible={visible} onClose={onClose}>
-      <ScrollView style={styles.scroll} contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
+      <View style={styles.content}>
         <Text style={[styles.title, { color: colors.foreground }]}>Ce que Nora sait de toi</Text>
         <Text style={[styles.intro, { color: colors.muted }]}>Elle connaît aussi tes plantes et tout l’historique de tes gestes, pour te dire ce qui a été oublié.</Text>
 
@@ -82,13 +82,12 @@ export function MemorySheet({ visible, onClose, memory, onLevel, onPreferences, 
             </Pressable>
           </>
         )}
-      </ScrollView>
+      </View>
     </BottomSheet>
   );
 }
 
 const styles = StyleSheet.create({
-  scroll: { maxHeight: 560 },
   content: { gap: 10, paddingBottom: 6 },
   title: { fontSize: 22, fontWeight: "800" },
   intro: { fontSize: 14, lineHeight: 20 },

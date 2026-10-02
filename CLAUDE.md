@@ -45,8 +45,8 @@ Tout se passe dans son GitHub Codespace (pas de Docker sur son PC).
 - **Tests de bout en bout** (à lancer quand le porteur le demande, et avant chaque grosse évolution) :
   `bash scripts/e2e.sh` (≈ 4 min : construit l'app web avec la simulation météo, migre la base, démarre
   le vrai serveur sur le port 3100, lance Playwright). `bash scripts/e2e.sh meteo` pour un seul fichier,
-  `E2E_SKIP_BUILD=1` pour ne pas reconstruire. Scénarios dans `e2e/` (16 aujourd'hui) : parcours
-  (onboarding, écrans, cocher/Annuler, fête, catalogue, fiche d'une nouvelle plante), météo (pluie + eau économisée, gel + Saisons,
+  `E2E_SKIP_BUILD=1` pour ne pas reconstruire. Scénarios dans `e2e/` (17 aujourd'hui) : parcours
+  (onboarding, écrans, cocher/Annuler, fête, catalogue, fiche d'une nouvelle plante, feuille du bas qui se ferme), météo (pluie + eau économisée, gel + Saisons,
   orage, vent, canicule, « Pas aujourd'hui », retour météo réelle), compte (code de connexion lu dans
   `dist/e2e-server.log`, balcon retrouvé sur un 2ᵉ téléphone) et vacances. Open-Meteo est simulé
   (`e2e/helpers.ts`, `mockWeather`), le balcon est posé dans le stockage (`seedBalcony`). Les cases à
@@ -71,7 +71,9 @@ visuelle, retour immédiat.
   `lib/garden/sky-store.ts`. Les ombres se repeignent avec `scripts/art/ombres-balcon.mjs`.
 - **Composants communs** : `components/screen-header.tsx` (grand titre, contexte, avatar vers Moi),
   `components/ui/glass.ts` (cartes en verre), `components/today/*` (ligne à cocher, feuille du bas,
-  message « Annuler »).
+  message « Annuler »). La feuille du bas (`bottom-sheet.tsx`) ne dépasse jamais l'écran (contenu qui
+  défile à l'intérieur, ne pas y remettre de ScrollView vertical), se ferme par le fond, le « × » ou en
+  glissant vers le bas.
 - **4 onglets** : Aujourd'hui, Balcon, Saisons (fichier `calendar.tsx`), Nora. « Moi »
   (`profile.tsx`) s'ouvre par l'avatar, « Observer » (`scanner.tsx`) depuis Nora et Balcon.
 
