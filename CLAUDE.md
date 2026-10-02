@@ -166,21 +166,26 @@ Livré, à valider sur son téléphone :
 1. Tester avec lui l'eau économisée (simulation pluie → cocher « N'arrose pas » → toast litres →
    Ma semaine, bloc 💧).
 2. Petites victoires : refaites le 01/10 (animation à chaque coche, fête plein écran, chaque récolte
-   fêtée). À valider sur son téléphone.
+   fêtée). **Validé** (« c'est top »).
 3. Alertes météo : vérifiées le 01/10 (tests de bout en bout). Corrigé : canicule sans alerte pour une
    plante jamais arrosée dans l'app ; « Arrose … si besoin » en double sous l'alerte chaleur, pendant un
-   orage ou une fois arrosé ; Saisons montrait encore une alerte déjà traitée. À valider sur son téléphone.
+   orage ou une fois arrosé ; Saisons montrait encore une alerte déjà traitée. **Validé** le 01/10.
 4. Catalogue agrandi le 01/10 : **100 plantes** (27 nouvelles : agastache, livèche, plante huître, sauge
    ananas, tomatillo, gombo, haricot kilomètre, concombre des Antilles, épinard-fraise, arroche,
    tétragone, baselle, claytone, ficoïde glaciale, moutarde de Chine, chou-rave, poireau perpétuel, oca,
    crosnes, œillet mignardise, dahlias nains, mufliers, fuchsia rustique, fraisier des bois, kiwaï,
    cassissier, mûres sans épines), des variétés anciennes, originales et récentes ajoutées aux plantes
    existantes, variétés en pastilles dans la fiche du catalogue. (Le filtre « Anciennes & originales » et
-   les mentions Ancienne / Originale / Nouveauté ont été retirés le 02/10 à sa demande : « ça n'apporte rien ».) **Photos d'exemple** : 100 sur 100 le 02/10.
+   les mentions Ancienne / Originale / Nouveauté ont été retirés le 02/10 à sa demande : « ça n'apporte rien ».) **Photos d'exemple** : 100 sur 100 le 02/10. **Validé**, ainsi que la
+   feuille du bas corrigée le 02/10 (« × », glisser vers le bas, jamais plus haute que l'écran).
    Pour une nouvelle plante : recherche dans `PLANTS` du script, `AWAITING_PHOTO` dans
    `tests/stock-photos.test.ts`, puis candidates / `choix.json` / `--final`, recompression en 800 px
    qualité 74 (`convert -resize '800x800>' -strip -quality 74`) et `node scripts/photos/generer-index.mjs`.
-5. Nouveau : suggestions de plantes selon la saison / le mois (quoi semer ou planter maintenant).
+5. **Prochaine étape (nouvelle discussion)** : suggestions de plantes selon la saison / le mois (quoi
+   semer ou planter maintenant). Points de départ : `recommendPlants(…, { month })` et `seasonalToDo` /
+   `calendarActivities` (`lib/plants/calendar.ts`), climat de la ville (`lib/plants/climate.ts`),
+   recommandations déjà montrées sur Aujourd'hui quand le balcon est vide. Lui demander où il veut les
+   voir (Aujourd'hui, Saisons, catalogue) avant de coder.
 6. À la publication : notifications serveur sur Android (Firebase/FCM) ; synchroniser les reports
    (« Dans 3 h ») avec le serveur ; envoyer les photos des plantes sur le serveur (stockage d'images)
    pour les retrouver sur un autre téléphone.
