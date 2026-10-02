@@ -206,6 +206,11 @@ et route réservée à `role = admin`. Balco+ sera payant (offre commerciale Ope
   (migration 0009) ; réponses coupées : jetons comptés dans le budget, pas dans le quota. Rapport :
   route `/api/admin/ai-costs` (navigateur, `role = admin`), `ai.costReport`, script
   `pnpm exec tsx scripts/couts-ia.ts`.
+- Étape 5 faite (bloc A validé sur téléphone le 02/10) : état des lieux `docs/avant-publication.md` :
+  FCM d'abord (clé de compte de service dans EAS, `google-services.json` en variable fichier EAS), puis
+  Expo 54 → 55 → 56 → 57 (56 casse les imports `@react-navigation/*` de `haptic-tab.tsx` et
+  `icon-symbol.tsx`, rend `copy()` d'`expo-file-system` asynchrone dans `photo-files.ts`), puis achats
+  intégrés avec RevenueCat (droit `plus`, webhook `POST /api/webhooks/revenuecat` → `users.plan`).
 
 
 À faire, dans l'ordre (liste du porteur, 30/09) :

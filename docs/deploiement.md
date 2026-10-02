@@ -1,5 +1,7 @@
 # Mettre Balco en ligne
 
+> Avant de publier sur les stores : voir [avant-publication.md](avant-publication.md) (montée d'Expo, achats intégrés Balco+, notifications Android).
+
 Balco ne dépend plus d'aucune plateforme. Il faut quatre choses :
 
 1. **un hébergeur** qui fait tourner l'image Docker (l'API et l'app web sont dans le même conteneur) ;
