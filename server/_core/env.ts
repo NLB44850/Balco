@@ -1,3 +1,5 @@
+import { PLANS } from "../../lib/plans";
+
 function list(value: string | undefined) {
   return (value ?? "").split(",").map((item) => item.trim()).filter(Boolean);
 }
@@ -37,9 +39,10 @@ export const ENV = {
   },
   /** Plafond de jetons de sortie (réflexion comprise) : une réponse coupée n'est pas décomptée. */
   aiMaxTokens: { scan: intEnv("AI_MAX_TOKENS_PHOTO", 2000), chat: intEnv("AI_MAX_TOKENS_CHAT", 1500) },
+  /** Quotas mensuels : ceux de l'offre (lib/plans.ts), sauf réglage contraire (tests, lancement). */
   aiQuotas: {
-    free: { scan: intEnv("AI_FREE_SCANS_PER_MONTH", 3), chat: intEnv("AI_FREE_QUESTIONS_PER_MONTH", 15) },
-    plus: { scan: intEnv("AI_PLUS_SCANS_PER_MONTH", 40), chat: intEnv("AI_PLUS_QUESTIONS_PER_MONTH", 300) },
+    free: { scan: intEnv("AI_FREE_SCANS_PER_MONTH", PLANS.free.aiQuota.scan), chat: intEnv("AI_FREE_QUESTIONS_PER_MONTH", PLANS.free.aiQuota.chat) },
+    plus: { scan: intEnv("AI_PLUS_SCANS_PER_MONTH", PLANS.plus.aiQuota.scan), chat: intEnv("AI_PLUS_QUESTIONS_PER_MONTH", PLANS.plus.aiQuota.chat) },
   },
   /** Dossier de l'export web (`expo export -p web`), servi par l'API s'il existe. */
   webDir: process.env.WEB_DIR ?? "dist/web",

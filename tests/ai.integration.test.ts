@@ -71,6 +71,10 @@ describe.skipIf(!TEST_DATABASE_URL)("AI scanner and assistant (fake Messages API
   beforeAll(async () => {
     process.env.DATABASE_URL = TEST_DATABASE_URL;
     process.env.ANTHROPIC_API_KEY = "";
+    // Ces scénarios enchaînent plusieurs analyses : quota gratuit élargi comme le permet AI_FREE_*.
+    // Balco+ garde les valeurs de l'offre (lib/plans.ts).
+    process.env.AI_FREE_SCANS_PER_MONTH = "3";
+    process.env.AI_FREE_QUESTIONS_PER_MONTH = "15";
     server = http.createServer((req, res) => {
       let raw = "";
       req.on("data", (chunk) => (raw += chunk));
@@ -247,8 +251,8 @@ describe.skipIf(!TEST_DATABASE_URL)("AI scanner and assistant (fake Messages API
     it("gives Balco+ members a larger allowance", async () => {
       const status = await caller(plusUserId, "plus").ai.status();
       expect(status.plan).toBe("plus");
-      expect(status.chat.limit).toBe(300);
-      expect(status.scan.limit).toBe(40);
+      expect(status.chat.limit).toBe(100);
+      expect(status.scan.limit).toBe(20);
     });
   });
 

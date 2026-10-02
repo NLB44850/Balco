@@ -4,15 +4,13 @@ import { aiRequests } from "../../drizzle/schema";
 import { ENV } from "../_core/env";
 import { getDb } from "../db";
 
-export type AiKind = "scan" | "chat";
-export type Plan = "free" | "plus";
+import type { AiKind, Plan } from "../../lib/plans";
+
+// Le forfait et ses quotas viennent de lib/plans.ts, partagé avec l'app.
+export { planOf, type AiKind, type Plan } from "../../lib/plans";
 
 /** Une réservation plus vieille que ça n'a jamais abouti (serveur redémarré) : elle ne compte plus. */
 const PENDING_TTL_MS = 10 * 60 * 1000;
-
-export function planOf(value: string | null | undefined): Plan {
-  return value === "plus" ? "plus" : "free";
-}
 
 export function monthStart(now = new Date()) {
   return new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 1));

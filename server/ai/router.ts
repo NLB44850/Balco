@@ -7,7 +7,7 @@ import { AiBadResponseError, AiRefusedError, AiUnavailableError, aiAvailable, as
 import { NORA_PREFERENCES } from "../../lib/ai/memory";
 import { describeGarden, loadGardenFacts, loadMemory } from "./context";
 import { forgetNotes, learnFromAnswer, updatePreferences } from "./memory-store";
-import { planOf, QuotaExceededError, quotaStatus, reserve, settle, type AiKind } from "./quotas";
+import { planOf, QuotaExceededError, quotaStatus, reserve, settle, type AiKind, type Plan } from "./quotas";
 
 /** Limite de l'API pour une image ; l'app envoie des photos réduites bien plus légères. */
 const MAX_IMAGE_BYTES = 5 * 1024 * 1024;
@@ -24,11 +24,13 @@ export function detectImageType(bytes: Buffer): ImageMediaType | null {
 
 const KIND_WORDS: Record<AiKind, [string, string]> = { scan: ["analyse", "analyses"], chat: ["question", "questions"] };
 
-function quotaMessage(kind: AiKind, limit: number, resetsAt: string, plan: "free" | "plus") {
+export function quotaMessage(kind: AiKind, limit: number, resetsAt: string, plan: Plan) {
   const [one, many] = KIND_WORDS[kind];
-  const date = new Date(resetsAt).toLocaleDateString("fr-FR", { day: "numeric", month: "long", timeZone: "UTC" });
-  const offered = plan === "free" ? " offertes" : "";
-  return `Tu as utilisé tes ${limit} ${limit > 1 ? many : one}${offered} ce mois-ci. Le compteur repart le ${date}.`;
+  const date = new Date(resetsAt).toLocaleDateString("fr-FR", { day: "numeric", month: "long", timeZone: "UTC" }).replace(/^1 /, "1er ");
+  const offered = plan === "free" ? (limit > 1 ? " offertes" : " offerte") : "";
+  // « ton analyse offerte » pour une seule, « tes 5 questions offertes » au-delà.
+  const used = limit > 1 ? `tes ${limit} ${many}${offered}` : `ton ${one}${offered}`;
+  return `Tu as utilisé ${used} ce mois-ci. Le compteur repart le ${date}.`;
 }
 
 /** Réserve une place, appelle le modèle, puis solde la réservation selon l'issue. Refus et pannes ne sont pas décomptés. */

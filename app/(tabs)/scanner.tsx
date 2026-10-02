@@ -16,6 +16,7 @@ import { quotaLabel } from "@/lib/ai/quota-text";
 import { useGarden } from "@/lib/garden/garden-context";
 import { usePlantPhotos } from "@/lib/garden/photos-context";
 import { getCatalogPlant } from "@/lib/plants/catalog";
+import { PLANS } from "@/lib/plans";
 import { trpc } from "@/lib/trpc";
 import type { AppRouter } from "@/server/routers";
 import type { inferRouterOutputs } from "@trpc/server";
@@ -120,7 +121,7 @@ export default function ScannerScreen() {
 
   /** Un message à la place de la prise de vue : pas connecté, pas encore disponible, plus d'analyse ce mois-ci. */
   const blocker = !account.signedIn
-    ? { title: "3 analyses offertes chaque mois", text: "Crée ton compte gratuit pour reconnaître tes plantes et savoir quoi faire quand une feuille jaunit.", action: { label: "Se connecter", onPress: () => router.push("/login") } }
+    ? { title: PLANS.free.aiQuota.scan > 1 ? `${PLANS.free.aiQuota.scan} analyses offertes chaque mois` : "Une analyse offerte chaque mois", text: "Crée ton compte gratuit pour reconnaître tes plantes et savoir quoi faire quand une feuille jaunit.", action: { label: "Se connecter", onPress: () => router.push("/login") } }
     : status.data?.available === false
       ? { title: "Bientôt disponible", text: "L’analyse des photos arrive dans une prochaine mise à jour." }
       : noScansLeft && !diagnosis

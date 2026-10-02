@@ -2,7 +2,8 @@ import { describe, expect, it } from "vitest";
 
 import { quotaLabel } from "../lib/ai/quota-text";
 import { requestSettings } from "../server/ai/claude";
-import { detectImageType, trimHistory } from "../server/ai/router";
+import { detectImageType, quotaMessage, trimHistory } from "../server/ai/router";
+import { can, PLANS, planOf as planOfShared } from "../lib/plans";
 import { ENV } from "../server/_core/env";
 import { monthStart, planOf, toQuotaStatus } from "../server/ai/quotas";
 
@@ -67,5 +68,31 @@ describe("modèle et plafond par usage", () => {
     } finally {
       Object.assign(ENV.aiModels, saved);
     }
+  });
+});
+
+describe("offre gratuit / Balco+ (lib/plans.ts)", () => {
+  it("donne les nouveaux quotas par défaut", () => {
+    expect(PLANS.free.aiQuota).toEqual({ scan: 1, chat: 5 });
+    expect(PLANS.plus.aiQuota).toEqual({ scan: 20, chat: 100 });
+    expect(ENV.aiQuotas.plus).toEqual({ scan: 20, chat: 100 });
+  });
+
+  it("réserve à Balco+ les rappels serveur, les alertes push et le multi-appareils, pas la sauvegarde", () => {
+    expect(can("free", "serverReminders")).toBe(false);
+    expect(can("free", "weatherPushAlerts")).toBe(false);
+    expect(can("free", "multiDeviceSync")).toBe(false);
+    expect(can("free", "cloudBackup")).toBe(true);
+    expect(can("plus", "serverReminders")).toBe(true);
+    expect(can("plus", "multiDeviceSync")).toBe(true);
+    // Une valeur inconnue en base vaut le forfait gratuit.
+    expect(planOfShared("premium")).toBe("free");
+    expect(can(null, "serverReminders")).toBe(false);
+  });
+
+  it("écrit le message de quota au singulier pour une seule analyse", () => {
+    expect(quotaMessage("scan", 1, "2026-11-01T00:00:00.000Z", "free")).toBe("Tu as utilisé ton analyse offerte ce mois-ci. Le compteur repart le 1er novembre.");
+    expect(quotaMessage("chat", 5, "2026-11-01T00:00:00.000Z", "free")).toBe("Tu as utilisé tes 5 questions offertes ce mois-ci. Le compteur repart le 1er novembre.");
+    expect(quotaMessage("chat", 100, "2026-11-01T00:00:00.000Z", "plus")).toBe("Tu as utilisé tes 100 questions ce mois-ci. Le compteur repart le 1er novembre.");
   });
 });

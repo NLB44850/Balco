@@ -61,7 +61,7 @@ Il faut appeler `POST /api/scheduled/reminders` toutes les heures à la minute 3
 
 1. Crée une clé API sur https://console.anthropic.com et renseigne-la dans `ANTHROPIC_API_KEY`. Sans clé, l'app affiche « bientôt disponible » à la place du scanner et de Nora.
 2. **Fixe une limite de dépense mensuelle** dans la console Anthropic : c'est le vrai garde-fou si quelque chose tourne mal.
-3. Les quotas se règlent avec `AI_FREE_*` et `AI_PLUS_*`. Par défaut, un compte gratuit a droit à 3 analyses et 15 questions par mois, un compte Balco+ à 40 analyses et 300 questions. Les refus et les pannes ne sont pas décomptés.
+3. **Quotas mensuels** : l'offre est définie dans `lib/plans.ts` (un seul fichier pour l'app et le serveur) : un compte gratuit a droit à 1 analyse et 5 questions par mois, un compte Balco+ à 20 analyses et 100 questions. Les variables `AI_FREE_SCANS_PER_MONTH`, `AI_FREE_QUESTIONS_PER_MONTH`, `AI_PLUS_SCANS_PER_MONTH` et `AI_PLUS_QUESTIONS_PER_MONTH` les remplacent si besoin (tests, lancement). Les refus et les pannes ne sont pas décomptés.
 
 4. **Un modèle par usage** : le diagnostic photo utilise `BALCO_AI_MODEL_PHOTO` (défaut `claude-opus-5`, le plus précis), les questions à Nora `BALCO_AI_MODEL_CHAT` (défaut `claude-sonnet-5`, 2,5 fois moins cher). `BALCO_AI_MODEL` sert de repli commun si l'une des deux est vide. Le repli automatique en cas de refus du modèle (`fallbacks: "default"`) n'est envoyé qu'aux modèles qui l'acceptent (Claude Opus 5, Opus 5.5, Sonnet 5.5, Fable 5.1).
 6. **Contexte de Nora allégé** : à chaque question, Nora reçoit les 8 derniers messages de la conversation et un résumé des 90 derniers jours du jardin (par plante : nombre de gestes par type, dernière fois, gestes pas notés, dernier geste en clair). Les instructions fixes restent en tête de requête, en cache de prompt : les questions suivantes les relisent à 10 % du prix.
@@ -71,8 +71,8 @@ Il faut appeler `POST /api/scheduled/reminders` toutes les heures à la minute 3
 
 | | Modèle par défaut | Par appel | Compte gratuit au maximum | Compte Balco+ au maximum |
 |---|---|---|---|---|
-| Analyse photo | `claude-opus-5` | ≈ 0,05 $ | 3 → 0,15 $ | 40 → 2 $ |
-| Question à Nora | `claude-sonnet-5` | ≈ 0,012 $ | 15 → 0,18 $ | 300 → 3,60 $ |
+| Analyse photo | `claude-opus-5` | ≈ 0,05 $ | 1 → 0,05 $ | 20 → 1 $ |
+| Question à Nora | `claude-sonnet-5` | ≈ 0,012 $ | 5 → 0,06 $ | 100 → 1,20 $ |
 
 Chaque appel est enregistré dans la table `ai_requests` (jetons consommés, modèle, statut), ce qui permet de mesurer le coût réel :
 
