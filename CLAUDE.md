@@ -38,7 +38,7 @@ Tout se passe dans son GitHub Codespace (pas de Docker sur son PC).
 
 - `pnpm -s check`, `pnpm -s lint`, puis `TEST_DATABASE_URL=mysql://balco:balco@localhost:3306/balco_cal npx vitest run`
   (MariaDB locale : `service mariadb start` si elle s'est arrêtée, `apt-get install -y mariadb-server` si elle manque,
-  puis `DATABASE_URL=… npx drizzle-kit migrate` ; 339 tests à ce jour). Dans un conteneur
+  puis `DATABASE_URL=… npx drizzle-kit migrate` ; 341 tests à ce jour). Dans un conteneur
   neuf : `apt-get install -y mariadb-server`, `service mariadb start`, créer la base `balco_cal` et l'utilisateur
   `balco`/`balco`, puis `pnpm -s build && DATABASE_URL=mysql://balco:balco@localhost:3306/balco_cal node dist/migrate.mjs`.
 - `npx expo export --platform android` pour s'assurer que le bundle Android se construit.
@@ -173,6 +173,14 @@ Livré, à valider sur son téléphone :
   **Les suggestions tournent chaque jour** (à sa demande, « que l'app ne paraisse pas figée ») : tirage
   du jour (`seed: dayKey(now)`) parmi les 12 mieux adaptées, stable dans la journée, et l'Idée du mois
   d'Aujourd'hui est toujours la 1ʳᵉ suggestion de Saisons.
+- **Calendrier de culture vérifié** (02/10, à sa demande « quelles sont tes sources ») : les 100 plantes
+  comparées à 2-3 pages de semenciers / sites de jardinage (recherche web, repère Paris, culture en pot ;
+  un mois n'est changé que si 2 sources concordent) : 35 mois corrigés (récoltes prolongées, semis plus
+  larges…). Sources et semis au chaud dans `lib/plants/sowing.ts`, document lisible
+  `docs/sources-calendrier.md`. **Semis au chaud** (`indoorSowMonths`) : « Sème le basilic au chaud »
+  + explication (godets à l'intérieur, 18-22 °C, plants dehors en …) dans Saisons, Aujourd'hui,
+  suggestions et fiches (« Semis : mars–mai (au chaud à l'intérieur en mars–avril) »). Le réseau de la
+  session laisse passer la recherche web (WebSearch) mais pas l'ouverture des pages (WebFetch, curl).
 
 
 À faire, dans l'ordre (liste du porteur, 30/09) :

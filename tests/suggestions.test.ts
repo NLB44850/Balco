@@ -1,8 +1,9 @@
 import { describe, expect, it } from "vitest";
 
-import { getCatalogPlant, PLANT_CATALOG } from "../lib/plants/catalog";
+import { describeSowing, getCatalogPlant, PLANT_CATALOG } from "../lib/plants/catalog";
 import { climateZoneFor } from "../lib/plants/climate";
-import { nextSuggestionMonth, seasonalSuggestions, suggestionFor, suggestionsHeading } from "../lib/plants/suggestions";
+import { nextSuggestionMonth, seasonalSuggestions, suggestionActionLabel, suggestionFor, suggestionsHeading } from "../lib/plants/suggestions";
+import { calendarActivities } from "../lib/plants/calendar";
 
 describe("suggestions de saison", () => {
   it("ne propose que ce qui se sème ou se plante le mois choisi", () => {
@@ -32,7 +33,7 @@ describe("suggestions de saison", () => {
 
   it("écrit le geste, la récolte et le dernier mois", () => {
     const tomato = suggestionFor(getCatalogPlant("cherry-tomato")!, 3)!;
-    expect(tomato).toMatchObject({ action: "sow", title: "Sème les tomates cerises" });
+    expect(tomato).toMatchObject({ action: "sow", indoors: true, title: "Sème les tomates cerises au chaud" });
     expect(tomato.reason).toMatch(/^Récolte /u);
     expect(suggestionFor(getCatalogPlant("cherry-tomato")!, 12)).toBeNull();
 
@@ -72,4 +73,28 @@ describe("suggestions de saison", () => {
     // L'idée du mois d'Aujourd'hui est la première des suggestions de Saisons.
     expect(ids("2026-04-05", 1)[0]).toBe(ids("2026-04-05")[0]);
   });
+
+  it("dit quand semer au chaud, à l'intérieur, et quand semer dehors", () => {
+    const basil = getCatalogPlant("basil")!;
+    expect(basil.indoorSowMonths).toEqual([3, 4]);
+    expect(suggestionFor(basil, 3)).toMatchObject({ indoors: true, title: "Sème le basilic au chaud" });
+    expect(suggestionActionLabel(suggestionFor(basil, 3)!)).toBe("À semer au chaud");
+    // En mai, le basilic se sème dehors ou se plante.
+    expect(suggestionFor(basil, 5)).toMatchObject({ indoors: false, title: "Sème ou plante le basilic" });
+    expect(describeSowing(basil)).toBe("mars–mai (au chaud à l’intérieur en mars–avril)");
+    // La fiche du calendrier explique où et quand installer les plants.
+    const [sow] = calendarActivities([{ id: "b", entry: basil, displayName: "Basilic" }], 3).filter((activity) => activity.kind === "sow");
+    expect(sow.title).toBe("Sème le basilic au chaud");
+    expect(sow.description).toContain("à l’intérieur");
+    expect(sow.description).toContain("mai–juin");
+  });
+
+  it("donne au moins deux sources pour chaque plante du catalogue", () => {
+    for (const entry of PLANT_CATALOG) {
+      expect(entry.sources.length, entry.id).toBeGreaterThanOrEqual(2);
+      for (const url of entry.sources) expect(url).toMatch(/^https?:\/\//u);
+      for (const month of entry.indoorSowMonths) expect(entry.sowMonths, entry.id).toContain(month);
+    }
+  });
 });
+

@@ -107,9 +107,9 @@ describe("lien avec l'accueil", () => {
     const march = new Date(2026, 2, 10);
     const subjects = [subject("thyme", "thyme-1"), subject("cherry-tomato", "tomato-1")];
     const todo = seasonalToDo(subjects, [], march);
-    expect(todo.map((activity) => activity.title)).toEqual(["Rempote le thym", "Sème les tomates cerises"]);
+    expect(todo.map((activity) => activity.title)).toEqual(["Rempote le thym", "Sème le thym au chaud", "Sème les tomates cerises au chaud"]);
     const done = eventForActivity(todo[0], march);
-    expect(seasonalToDo(subjects, [done], march).map((activity) => activity.title)).toEqual(["Sème les tomates cerises"]);
+    expect(seasonalToDo(subjects, [done], march).map((activity) => activity.title)).toEqual(["Sème le thym au chaud", "Sème les tomates cerises au chaud"]);
   });
 });
 
