@@ -23,7 +23,7 @@ jobs:
   rapport:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       # Version de pnpm lue dans package.json (« packageManager »: pnpm@9.12.0) : une seule source,
       # pour éviter tout conflit entre deux versions indiquées à deux endroits.
