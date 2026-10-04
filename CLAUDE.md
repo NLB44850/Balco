@@ -302,7 +302,7 @@ Points à ne pas oublier (à proposer au porteur au bon moment, noté le 30/09) 
 - Encore à valider sur son téléphone : la carte « Sa progression » de la fiche plante et les petites
   victoires (priorité 4), la mémoire de Nora sur plusieurs jours.
 - **Branche fusionnée dans `main`** : PR #1 (02/10, jusqu'à l'étape 6 de l'audit), #14 (04/10, étapes 7
-  à 11) et #15 (04/10, mises à jour Dependabot) ; la branche est au niveau de `main`. Le travail continue
+  à 11), #15 (04/10, mises à jour Dependabot) et #22 (04/10, Saisons rangé par type, progression, Nora datée) ; la branche est au niveau de `main`. Le travail continue
   sur `claude/eloquent-gates-g7xc6x` ; proposer une nouvelle PR vers `main` à la fin de chaque bloc validé. (La session clone le dépôt en partiel : `git fetch --unshallow` avant
   toute comparaison d'historique avec `main`.)
 - **Maintenance** (02/10, fusionné dans `main` par https://github.com/NLB44850/Balco/pull/2 et copié sur
@@ -314,7 +314,11 @@ Points à ne pas oublier (à proposer au porteur au bon moment, noté le 30/09) 
   `node_modules/expo/bundledNativeModules.json` car `expo install --fix` ne joint pas le site d'Expo depuis
   la session), Express 5, dotenv 18, concurrently 10, actions checkout 7 / setup-node 7 / pnpm 6.
   Refusés : React 19.1.9 (doit rester 19.1.0, version exacte du moteur de React Native 0.81) et
-  tailwind-merge 3 (Tailwind 4 seulement, NativeWind 4 reste sur Tailwind 3) ; ignorés dans `dependabot.yml`. Les tâches planifiées de
+  tailwind-merge 3 (Tailwind 4 seulement, NativeWind 4 reste sur Tailwind 3) ; ignorés dans `dependabot.yml`.
+  **Nouvelles PR Dependabot #16 à #21 (04/10), à traiter plus tard** en une PR groupée : `babel-preset-expo`
+  et `eslint-config-expo` 57 sont liés au SDK Expo (à refuser et ajouter aux exclusions de `dependabot.yml`,
+  leurs noms ne commencent pas par « expo ») ; aussi cross-env 10, @types/node 26, upload-artifact 7, et un
+  groupe de 5 correctifs. Les tâches planifiées de
   GitHub tournent sur `main` (le cron des rappels reste inactif tant que la variable `BALCO_API_URL`
   n'est pas définie sur GitHub).
 - Avant la publication sur le Play Store : politique de confidentialité et mentions (données du
