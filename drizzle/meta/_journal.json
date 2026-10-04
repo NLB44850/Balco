@@ -85,6 +85,13 @@
       "when": 1790969709711,
       "tag": "0011_founder_price",
       "breakpoints": true
+    },
+    {
+      "idx": 12,
+      "version": "5",
+      "when": 1791131070689,
+      "tag": "0012_rate_limits",
+      "breakpoints": true
     }
   ]
 }

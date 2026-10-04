@@ -38,7 +38,7 @@ Tout se passe dans son GitHub Codespace (pas de Docker sur son PC).
 
 - `pnpm -s check`, `pnpm -s lint`, puis `TEST_DATABASE_URL=mysql://balco:balco@localhost:3306/balco_cal npx vitest run`
   (MariaDB locale : `service mariadb start` si elle s'est arrêtée, `apt-get install -y mariadb-server` si elle manque,
-  puis `DATABASE_URL=… npx drizzle-kit migrate` ; 363 tests à ce jour). Dans un conteneur
+  puis `DATABASE_URL=… npx drizzle-kit migrate` ; 368 tests à ce jour). Dans un conteneur
   neuf : `apt-get install -y mariadb-server`, `service mariadb start`, créer la base `balco_cal` et l'utilisateur
   `balco`/`balco`, puis `pnpm -s build && DATABASE_URL=mysql://balco:balco@localhost:3306/balco_cal node dist/migrate.mjs`.
 - `npx expo export --platform android` pour s'assurer que le bundle Android se construit.
@@ -225,6 +225,11 @@ et route réservée à `role = admin`. Balco+ sera payant (offre commerciale Ope
   `server/founder.ts` (`founderOffer`, `grantFounderPrice` : place vérifiée et prise en une requête).
   La synchro renvoie `access.founder` ; Réglages → Compte le mentionne. Test : `UPDATE users SET plan =
   'plus', founderSince = NOW()`.
+- Bloc B validé sur téléphone le 04/10, PR vers `main` : https://github.com/NLB44850/Balco/pull/14.
+- Étape 8 faite : pool mysql2 réglable (`DB_POOL_SIZE`, 10 par défaut, `poolSize()` dans `server/db.ts`,
+  attente au lieu d'échec). Limite de 20 demandes de code par heure et par IP comptée dans MySQL
+  (table `rate_limits`, migration 0012, fenêtres d'une heure, IP en empreinte SHA-256) :
+  `server/rate-limit.ts` (`hitRateLimit`, `purgeRateLimits` pour l'étape 10, repli en mémoire sans base).
 
 
 À faire, dans l'ordre (liste du porteur, 30/09) :

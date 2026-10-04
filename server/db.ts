@@ -4,11 +4,21 @@ import { InsertUser, users } from "../drizzle/schema";
 
 let _db: ReturnType<typeof drizzle> | null = null;
 
+/**
+ * Connexions ouvertes en même temps par une instance du serveur (DB_POOL_SIZE, 10 par défaut). Avec
+ * plusieurs instances, garder « instances × DB_POOL_SIZE » sous le max_connections de MySQL (151 par défaut).
+ */
+export function poolSize() {
+  const value = Number.parseInt(process.env.DB_POOL_SIZE ?? "", 10);
+  return Number.isFinite(value) && value > 0 ? value : 10;
+}
+
 // Lazily create the drizzle instance so local tooling can run without a DB.
 export async function getDb() {
   if (!_db && process.env.DATABASE_URL) {
     try {
-      _db = drizzle(process.env.DATABASE_URL);
+      // Au-delà de la taille du pool, les requêtes attendent leur tour au lieu d'échouer.
+      _db = drizzle({ connection: { uri: process.env.DATABASE_URL, connectionLimit: poolSize(), waitForConnections: true, queueLimit: 0, enableKeepAlive: true } });
     } catch (error) {
       console.warn("[Database] Failed to connect:", error);
       _db = null;

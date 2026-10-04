@@ -50,6 +50,11 @@ Sur une plateforme (Clever Cloud, Railway…), déploie le `Dockerfile` du dép�
 
 Vérification : `https://api.ton-domaine.fr/api/health` doit répondre `{"ok":true,…}`, et `https://api.ton-domaine.fr` affiche l'app web.
 
+**Plusieurs instances du serveur** (quand il y aura du monde) : elles peuvent tourner côte à côte derrière le même reverse proxy, tout ce qui doit être partagé est dans MySQL.
+
+- Chaque instance ouvre au plus `DB_POOL_SIZE` connexions à la base (10 par défaut) ; au-delà, les requêtes attendent leur tour. Garde « nombre d'instances × `DB_POOL_SIZE` » sous la limite de connexions de MySQL (`max_connections`, 151 par défaut, souvent moins sur une petite base managée).
+- La limite de 20 demandes de code de connexion par heure et par adresse IP est comptée dans la table `rate_limits` (adresse enregistrée sous forme d'empreinte, jamais en clair), donc commune à toutes les instances. Les vieilles lignes seront purgées par la tâche quotidienne (étape 10 de l'audit).
+
 > En production, le serveur **refuse de démarrer** si `JWT_SECRET` fait moins de 32 caractères, ou si `DATABASE_URL` ou `SMTP_URL` manque. Le message d'erreur dit ce qu'il faut corriger.
 
 ## 4. Rappels météo automatiques

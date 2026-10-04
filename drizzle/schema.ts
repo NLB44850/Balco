@@ -1,4 +1,4 @@
-import { int, mysqlTable, text, timestamp, varchar, double, uniqueIndex, index } from "drizzle-orm/mysql-core";
+import { int, mysqlTable, primaryKey, text, timestamp, varchar, double, uniqueIndex, index } from "drizzle-orm/mysql-core";
 
 /** Core user table backing auth flow. */
 export const users = mysqlTable("users", {
@@ -50,6 +50,16 @@ export const loginCodes = mysqlTable("login_codes", {
   consumedAt: timestamp("consumedAt"),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
 }, (table) => ({ emailIndex: index("login_codes_email_index").on(table.email, table.createdAt) }));
+
+/**
+ * Limites de débit partagées par toutes les instances du serveur (server/rate-limit.ts) : un compteur
+ * par clé (« code-ip:<empreinte de l'IP> ») et par fenêtre de temps. Les vieilles fenêtres sont purgées.
+ */
+export const rateLimits = mysqlTable("rate_limits", {
+  bucket: varchar("bucket", { length: 128 }).notNull(),
+  windowStart: timestamp("windowStart").notNull(),
+  hits: int("hits").default(0).notNull(),
+}, (table) => ({ pk: primaryKey({ name: "rate_limits_pk", columns: [table.bucket, table.windowStart] }), windowIndex: index("rate_limits_window_index").on(table.windowStart) }));
 
 /**
  * Un appel à l'IA (diagnostic photo ou question à Nora). Sert aux quotas — une ligne « pending »
