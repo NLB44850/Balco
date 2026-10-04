@@ -112,9 +112,13 @@ describe("Balco MVP content", () => {
     const weather = readProjectFile("hooks/use-local-weather.ts");
 
     expect(weather).toContain("requestForegroundPermissionsAsync");
-    expect(weather).toContain("api.open-meteo.com/v1/forecast");
-    expect(weather).toContain('hourly: "precipitation,precipitation_probability,wind_gusts_10m"');
-    expect(weather).toContain('daily: "precipitation_sum,temperature_2m_min,temperature_2m_max,wind_gusts_10m_max"');
+    // La prévision passe par le serveur (en cache), avec Open-Meteo en secours (lib/weather/forecast-client.ts).
+    const forecast = readProjectFile("lib/weather/forecast-client.ts");
+    expect(weather).toContain("loadForecastPayload");
+    expect(forecast).toContain("/api/weather");
+    expect(forecast).toContain("api.open-meteo.com/v1/forecast");
+    expect(forecast).toContain('hourly: "precipitation,precipitation_probability,wind_gusts_10m"');
+    expect(forecast).toContain('daily: "precipitation_sum,temperature_2m_min,temperature_2m_max,wind_gusts_10m_max"');
     expect(weather).toContain("buildSnapshot");
     expect(weather).toContain("decideReminder");
     expect(weather).toContain("reminderDecision");

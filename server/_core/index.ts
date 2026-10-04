@@ -9,7 +9,9 @@ import express, { type Express } from "express";
 import { costReport, formatCostReport } from "../ai/budget";
 import { authenticateRequest } from "../auth/session";
 import { appRouter } from "../routers";
+import { fingerprint, hitRateLimit } from "../rate-limit";
 import { runScheduledReminders } from "../reminders";
+import { forecastFor, isForecastCached, isValidCoordinate } from "../weather-cache";
 import { createContext } from "./context";
 import { assertProductionConfig, ENV } from "./env";
 
@@ -29,6 +31,9 @@ async function findAvailablePort(startPort: number): Promise<number> {
   }
   throw new Error(`No available port found starting from ${startPort}`);
 }
+
+/** Prévisions demandées à Open-Meteo par heure et par adresse IP (zones pas encore en cache). */
+const MAX_WEATHER_MISSES_PER_IP = 60;
 
 /** Origines autorisées : celles listées dans CORS_ORIGINS, plus le serveur Expo local en développement. */
 export function isAllowedOrigin(origin: string) {
@@ -77,6 +82,30 @@ export function createApp() {
 
   app.get("/api/health", (_req, res) => {
     res.json({ ok: true, timestamp: Date.now() });
+  });
+
+  // Météo de l'app, en cache par zone d'environ 1 km (server/weather-cache.ts). Publique : l'app l'appelle
+  // avant même la connexion ; seuls les appels qui iront jusqu'à Open-Meteo comptent dans la limite par IP.
+  app.get("/api/weather", async (req, res) => {
+    const latitude = Number(req.query.latitude);
+    const longitude = Number(req.query.longitude);
+    if (!isValidCoordinate(latitude, longitude)) {
+      res.status(400).json({ error: "invalid_coordinates" });
+      return;
+    }
+    try {
+      if (!isForecastCached(latitude, longitude) && !(await hitRateLimit(`weather-ip:${fingerprint(req.ip ?? "unknown")}`, MAX_WEATHER_MISSES_PER_IP, 60 * 60 * 1000))) {
+        res.status(429).json({ error: "too_many_requests" });
+        return;
+      }
+      const { payload, cached } = await forecastFor(latitude, longitude);
+      res.setHeader("Cache-Control", "public, max-age=600");
+      res.setHeader("X-Balco-Weather-Cache", cached ? "hit" : "miss");
+      res.json(payload);
+    } catch (error) {
+      console.error("[weather] forecast failed", error);
+      res.status(502).json({ error: "weather_unavailable" });
+    }
   });
 
   // Appelé par un cron externe (toutes les heures, minute 31) : recalcule les décisions avec une météo fraîche puis envoie les push dus.

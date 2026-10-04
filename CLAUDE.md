@@ -38,7 +38,7 @@ Tout se passe dans son GitHub Codespace (pas de Docker sur son PC).
 
 - `pnpm -s check`, `pnpm -s lint`, puis `TEST_DATABASE_URL=mysql://balco:balco@localhost:3306/balco_cal npx vitest run`
   (MariaDB locale : `service mariadb start` si elle s'est arrêtée, `apt-get install -y mariadb-server` si elle manque,
-  puis `DATABASE_URL=… npx drizzle-kit migrate` ; 377 tests à ce jour). Dans un conteneur
+  puis `DATABASE_URL=… npx drizzle-kit migrate` ; 383 tests à ce jour). Dans un conteneur
   neuf : `apt-get install -y mariadb-server`, `service mariadb start`, créer la base `balco_cal` et l'utilisateur
   `balco`/`balco`, puis `pnpm -s build && DATABASE_URL=mysql://balco:balco@localhost:3306/balco_cal node dist/migrate.mjs`.
 - `npx expo export --platform android` pour s'assurer que le bundle Android se construit.
@@ -240,6 +240,14 @@ et route réservée à `role = admin`. Balco+ sera payant (offre commerciale Ope
   dont `validUntil` a plus de 30 j, `login_codes` de plus de 24 h, `ai_requests` de plus de 13 mois,
   `rate_limits` de plus de 24 h ; par paquets de 5 000 ; index ajoutés (migration 0014). Les tests de
   purge utilisent une date passée (2026-03) pour ne pas effacer les lignes des autres tests.
+- Étape 11 faite : météo de l'app servie par le serveur, `GET /api/weather?latitude=&longitude=` (route
+  Express plutôt que tRPC : cache HTTP et simulable dans les e2e) ; `server/weather-cache.ts` : zone
+  arrondie au centième (~1 km), 30 min (`WEATHER_CACHE_MINUTES`), appels simultanés partagés, échec non
+  gardé, 5 000 zones au plus, 60 nouvelles zones par heure et par IP. App : `lib/weather/forecast-client.ts`
+  (`loadForecastPayload`, partagé par Aujourd'hui et Saisons, 10 min sur le téléphone, `force` au
+  rafraîchissement, repli direct sur Open-Meteo si le serveur ne répond pas ou sans adresse d'API).
+  `mockWeather` (e2e) simule aussi `/api/weather`. Alias `@/` ajouté dans `vitest.config.ts`.
+  **Bloc C terminé** (étapes 8 à 11), à valider sur téléphone.
 
 
 À faire, dans l'ordre (liste du porteur, 30/09) :
