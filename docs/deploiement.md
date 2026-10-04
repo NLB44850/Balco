@@ -53,7 +53,7 @@ Vérification : `https://api.ton-domaine.fr/api/health` doit répondre `{"ok":tr
 **Plusieurs instances du serveur** (quand il y aura du monde) : elles peuvent tourner côte à côte derrière le même reverse proxy, tout ce qui doit être partagé est dans MySQL.
 
 - Chaque instance ouvre au plus `DB_POOL_SIZE` connexions à la base (10 par défaut) ; au-delà, les requêtes attendent leur tour. Garde « nombre d'instances × `DB_POOL_SIZE` » sous la limite de connexions de MySQL (`max_connections`, 151 par défaut, souvent moins sur une petite base managée).
-- La limite de 20 demandes de code de connexion par heure et par adresse IP est comptée dans la table `rate_limits` (adresse enregistrée sous forme d'empreinte, jamais en clair), donc commune à toutes les instances. Les vieilles lignes seront purgées par la tâche quotidienne (étape 10 de l'audit).
+- La limite de 20 demandes de code de connexion par heure et par adresse IP est comptée dans la table `rate_limits` (adresse enregistrée sous forme d'empreinte, jamais en clair), donc commune à toutes les instances. Les vieilles lignes partent avec la purge quotidienne (section 4).
 
 > En production, le serveur **refuse de démarrer** si `JWT_SECRET` fait moins de 32 caractères, ou si `DATABASE_URL` ou `SMTP_URL` manque. Le message d'erreur dit ce qu'il faut corriger.
 
@@ -84,6 +84,14 @@ Chaque passage récupère d'abord la météo une fois par zone d'environ 1 km (l
 ```
 
 Si la durée approche l'heure, augmente `REMINDERS_CONCURRENCY` (et `DB_POOL_SIZE` avec).
+
+Le même cron fait aussi, **une fois par jour**, le ménage dans la base (`server/purge.ts`) : rappels de plus de 30 jours, codes de connexion de plus de 24 heures, appels à l'IA de plus de 13 mois (le rapport de coûts garde ainsi une année de recul) et vieux compteurs de la limite par IP. Les lignes partent par paquets de 5 000 pour ne pas bloquer la base. Journal :
+
+```
+[purge] en 120 ms : 5320 rappels, 410 codes de connexion, 0 appels à l'IA supprimés
+```
+
+Si la purge échoue, elle est retentée au passage suivant, et les rappels partent quand même.
 
 ## 5. Scanner et Nora (IA)
 

@@ -24,6 +24,7 @@ import { ENV } from "./_core/env";
 import { mapWithConcurrency } from "./concurrency";
 import { getDb } from "./db";
 import { withJobLock } from "./job-lock";
+import { runDailyPurge } from "./purge";
 
 // Surchargeables pour les tests de bout en bout (serveurs simulés).
 const OPEN_METEO_URL = process.env.OPEN_METEO_URL || "https://api.open-meteo.com/v1/forecast";
@@ -437,14 +438,20 @@ const REMINDERS_LOCK_MS = 30 * 60 * 1000;
 
 /**
  * Le passage horaire du cron : recalcul puis envoi, sous un verrou en base pour qu'un seul passage
- * tourne à la fois (plusieurs instances, cron lancé deux fois). La durée est notée dans les journaux.
+ * tourne à la fois (plusieurs instances, cron lancé deux fois), et la purge quotidienne (server/purge.ts).
+ * La durée est notée dans les journaux.
  */
 export async function runScheduledReminders(now = new Date()) {
   const started = Date.now();
   const outcome = await withJobLock("reminders", REMINDERS_LOCK_MS, async () => {
     const recalculated = await recalculateAllReminders(now);
     const dispatched = await dispatchDueReminderNotifications(now);
-    return { recalculated, dispatched };
+    // Une fois par jour, les vieilles données ; un échec de la purge n'empêche pas les rappels.
+    const purge = await runDailyPurge(now).catch((error: unknown) => {
+      console.error("[purge] failed", error);
+      return { status: "failed" } as const;
+    });
+    return { recalculated, dispatched, purge };
   }, now);
   if (!outcome.ran) {
     console.warn("[reminders] passage ignoré : un autre passage est en cours");

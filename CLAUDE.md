@@ -38,7 +38,7 @@ Tout se passe dans son GitHub Codespace (pas de Docker sur son PC).
 
 - `pnpm -s check`, `pnpm -s lint`, puis `TEST_DATABASE_URL=mysql://balco:balco@localhost:3306/balco_cal npx vitest run`
   (MariaDB locale : `service mariadb start` si elle s'est arrêtée, `apt-get install -y mariadb-server` si elle manque,
-  puis `DATABASE_URL=… npx drizzle-kit migrate` ; 374 tests à ce jour). Dans un conteneur
+  puis `DATABASE_URL=… npx drizzle-kit migrate` ; 377 tests à ce jour). Dans un conteneur
   neuf : `apt-get install -y mariadb-server`, `service mariadb start`, créer la base `balco_cal` et l'utilisateur
   `balco`/`balco`, puis `pnpm -s build && DATABASE_URL=mysql://balco:balco@localhost:3306/balco_cal node dist/migrate.mjs`.
 - `npx expo export --platform android` pour s'assurer que le bundle Android se construit.
@@ -235,6 +235,11 @@ et route réservée à `role = admin`. Balco+ sera payant (offre commerciale Ope
   `server/concurrency.ts`, `REMINDERS_CONCURRENCY` = 20) ; verrou en base `job_locks` (migration 0013,
   `server/job-lock.ts`, 30 min de durée de vie) → second passage `{ skipped: "already_running" }` ;
   ligne `[reminders] passage en … ms : … comptes, … zones météo…` dans les journaux.
+- Étape 10 faite : purge quotidienne (`server/purge.ts`, `runDailyPurge` appelée par le cron des rappels ;
+  verrou `daily-purge` de 23 h jamais relâché = « déjà fait aujourd'hui », relâché si échec) : rappels
+  dont `validUntil` a plus de 30 j, `login_codes` de plus de 24 h, `ai_requests` de plus de 13 mois,
+  `rate_limits` de plus de 24 h ; par paquets de 5 000 ; index ajoutés (migration 0014). Les tests de
+  purge utilisent une date passée (2026-03) pour ne pas effacer les lignes des autres tests.
 
 
 À faire, dans l'ordre (liste du porteur, 30/09) :

@@ -49,7 +49,7 @@ export const loginCodes = mysqlTable("login_codes", {
   expiresAt: timestamp("expiresAt").notNull(),
   consumedAt: timestamp("consumedAt"),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
-}, (table) => ({ emailIndex: index("login_codes_email_index").on(table.email, table.createdAt) }));
+}, (table) => ({ emailIndex: index("login_codes_email_index").on(table.email, table.createdAt), createdIndex: index("login_codes_created_index").on(table.createdAt) }));
 
 /**
  * Limites de débit partagées par toutes les instances du serveur (server/rate-limit.ts) : un compteur
@@ -163,7 +163,7 @@ export const reminderDecisions = mysqlTable("reminder_decisions", {
   sentAt: timestamp("sentAt"),
   status: varchar("status", { length: 32 }).default("pending").notNull(),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
-}, (table) => ({ decisionUnique: uniqueIndex("reminder_decisions_user_key_unique").on(table.userId, table.decisionKey), userStatusIndex: index("reminder_decisions_user_status_index").on(table.userId, table.status) }));
+}, (table) => ({ decisionUnique: uniqueIndex("reminder_decisions_user_key_unique").on(table.userId, table.decisionKey), userStatusIndex: index("reminder_decisions_user_status_index").on(table.userId, table.status), validUntilIndex: index("reminder_decisions_valid_until_index").on(table.validUntil) }));
 
 export const devicePushTokens = mysqlTable("device_push_tokens", {
   id: int("id").autoincrement().primaryKey(),

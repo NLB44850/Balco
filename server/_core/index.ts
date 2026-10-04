@@ -92,8 +92,8 @@ export function createApp() {
         res.json({ skipped: "already_running" });
         return;
       }
-      const { recalculated, dispatched, durationMs } = run;
-      res.json({ recalculated: { users: recalculated.users, zones: recalculated.zones, decisions: recalculated.decisions, failures: recalculated.failures }, dispatched, durationMs });
+      const { recalculated, dispatched, purge, durationMs } = run;
+      res.json({ recalculated: { users: recalculated.users, zones: recalculated.zones, decisions: recalculated.decisions, failures: recalculated.failures }, dispatched, purge, durationMs });
     } catch (error) {
       console.error("[scheduled/reminders] failed", error);
       res.status(500).json({ error: "failed" });
