@@ -38,7 +38,7 @@ Tout se passe dans son GitHub Codespace (pas de Docker sur son PC).
 
 - `pnpm -s check`, `pnpm -s lint`, puis `TEST_DATABASE_URL=mysql://balco:balco@localhost:3306/balco_cal npx vitest run`
   (MariaDB locale : `service mariadb start` si elle s'est arrêtée, `apt-get install -y mariadb-server` si elle manque,
-  puis `DATABASE_URL=… npx drizzle-kit migrate` ; 359 tests à ce jour). Dans un conteneur
+  puis `DATABASE_URL=… npx drizzle-kit migrate` ; 383 tests à ce jour). Dans un conteneur
   neuf : `apt-get install -y mariadb-server`, `service mariadb start`, créer la base `balco_cal` et l'utilisateur
   `balco`/`balco`, puis `pnpm -s build && DATABASE_URL=mysql://balco:balco@localhost:3306/balco_cal node dist/migrate.mjs`.
 - `npx expo export --platform android` pour s'assurer que le bundle Android se construit.
@@ -218,6 +218,36 @@ et route réservée à `role = admin`. Balco+ sera payant (offre commerciale Ope
   migration 0010, `lib/sync/device-id.ts`) : la connexion sur un téléphone le prend (`claimDevice`),
   l'ancien reçoit `CONFLICT` → statut `other-device`, Réglages « Sauvegarder depuis ce téléphone »
   (`claimThisDevice`). Pour tester Balco+ : `UPDATE users SET plan = 'plus'` (docs/deploiement.md).
+  Validé sur téléphone le 02/10.
+- Étape 7 faite : prix fondateur sans paiement. Colonne `users.founderSince` (migration 0011, date du
+  premier abonnement, gardée si le compte repasse gratuit), `FOUNDER_OFFER` (500 places,
+  `BALCO_FOUNDER_SEATS`, produit `balco_plus_fondateur`) et `founderSeatsLeft` dans `lib/plans.ts`,
+  `server/founder.ts` (`founderOffer`, `grantFounderPrice` : place vérifiée et prise en une requête).
+  La synchro renvoie `access.founder` ; Réglages → Compte le mentionne. Test : `UPDATE users SET plan =
+  'plus', founderSince = NOW()`.
+- Bloc B validé sur téléphone le 04/10, PR vers `main` : https://github.com/NLB44850/Balco/pull/14.
+- Étape 8 faite : pool mysql2 réglable (`DB_POOL_SIZE`, 10 par défaut, `poolSize()` dans `server/db.ts`,
+  attente au lieu d'échec). Limite de 20 demandes de code par heure et par IP comptée dans MySQL
+  (table `rate_limits`, migration 0012, fenêtres d'une heure, IP en empreinte SHA-256) :
+  `server/rate-limit.ts` (`hitRateLimit`, `purgeRateLimits` pour l'étape 10, repli en mémoire sans base).
+- Étape 9 faite : cron des rappels (`runScheduledReminders`, `server/reminders.ts`) : météo d'abord, une
+  fois par zone ~1 km (`weatherZone`, 4 appels à la fois), puis comptes par lots (`mapWithConcurrency`,
+  `server/concurrency.ts`, `REMINDERS_CONCURRENCY` = 20) ; verrou en base `job_locks` (migration 0013,
+  `server/job-lock.ts`, 30 min de durée de vie) → second passage `{ skipped: "already_running" }` ;
+  ligne `[reminders] passage en … ms : … comptes, … zones météo…` dans les journaux.
+- Étape 10 faite : purge quotidienne (`server/purge.ts`, `runDailyPurge` appelée par le cron des rappels ;
+  verrou `daily-purge` de 23 h jamais relâché = « déjà fait aujourd'hui », relâché si échec) : rappels
+  dont `validUntil` a plus de 30 j, `login_codes` de plus de 24 h, `ai_requests` de plus de 13 mois,
+  `rate_limits` de plus de 24 h ; par paquets de 5 000 ; index ajoutés (migration 0014). Les tests de
+  purge utilisent une date passée (2026-03) pour ne pas effacer les lignes des autres tests.
+- Étape 11 faite : météo de l'app servie par le serveur, `GET /api/weather?latitude=&longitude=` (route
+  Express plutôt que tRPC : cache HTTP et simulable dans les e2e) ; `server/weather-cache.ts` : zone
+  arrondie au centième (~1 km), 30 min (`WEATHER_CACHE_MINUTES`), appels simultanés partagés, échec non
+  gardé, 5 000 zones au plus, 60 nouvelles zones par heure et par IP. App : `lib/weather/forecast-client.ts`
+  (`loadForecastPayload`, partagé par Aujourd'hui et Saisons, 10 min sur le téléphone, `force` au
+  rafraîchissement, repli direct sur Open-Meteo si le serveur ne répond pas ou sans adresse d'API).
+  `mockWeather` (e2e) simule aussi `/api/weather`. Alias `@/` ajouté dans `vitest.config.ts`.
+  **Bloc C terminé** (étapes 8 à 11), à valider sur téléphone.
 
 
 À faire, dans l'ordre (liste du porteur, 30/09) :

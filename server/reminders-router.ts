@@ -89,7 +89,8 @@ export const remindersRouter = router({
       return { userId: ctx.user.id, status: "skipped", reason: "weather_unavailable" } as const;
     });
     // Ce que le forfait permet : l'app en déduit si le serveur envoie les rappels ou si elle les programme.
-    const access = { plan, serverReminders: can(plan, "serverReminders"), multiDeviceSync: can(plan, "multiDeviceSync") };
+    // `founder` : le compte a le prix fondateur (gardé même s'il repasse en gratuit).
+    const access = { plan, serverReminders: can(plan, "serverReminders"), multiDeviceSync: can(plan, "multiDeviceSync"), founder: Boolean(ctx.user.founderSince) };
     return { ...snapshot, recalculated, access };
   }),
   registerPushToken: protectedProcedure

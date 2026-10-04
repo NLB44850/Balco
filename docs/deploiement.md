@@ -50,6 +50,12 @@ Sur une plateforme (Clever Cloud, Railway…), déploie le `Dockerfile` du dép�
 
 Vérification : `https://api.ton-domaine.fr/api/health` doit répondre `{"ok":true,…}`, et `https://api.ton-domaine.fr` affiche l'app web.
 
+**Plusieurs instances du serveur** (quand il y aura du monde) : elles peuvent tourner côte à côte derrière le même reverse proxy, tout ce qui doit être partagé est dans MySQL.
+
+- Chaque instance ouvre au plus `DB_POOL_SIZE` connexions à la base (10 par défaut) ; au-delà, les requêtes attendent leur tour. Garde « nombre d'instances × `DB_POOL_SIZE` » sous la limite de connexions de MySQL (`max_connections`, 151 par défaut, souvent moins sur une petite base managée).
+- La météo affichée dans l'app passe par le serveur (`GET /api/weather`, `server/weather-cache.ts`) : une prévision par zone d'environ 1 km, gardée 30 minutes (`WEATHER_CACHE_MINUTES`), demandée une seule fois à Open-Meteo même si des centaines de voisins ouvrent l'app. Ce cache est propre à chaque instance (en mémoire) : avec plusieurs instances, chacune appelle Open-Meteo de son côté, ce qui reste très peu. Si le serveur ne répond pas, l'app appelle Open-Meteo elle-même. Un même réseau ne peut pas déclencher plus de 60 nouvelles prévisions par heure (les zones déjà en cache ne comptent pas).
+- La limite de 20 demandes de code de connexion par heure et par adresse IP est comptée dans la table `rate_limits` (adresse enregistrée sous forme d'empreinte, jamais en clair), donc commune à toutes les instances. Les vieilles lignes partent avec la purge quotidienne (section 4).
+
 > En production, le serveur **refuse de démarrer** si `JWT_SECRET` fait moins de 32 caractères, ou si `DATABASE_URL` ou `SMTP_URL` manque. Le message d'erreur dit ce qu'il faut corriger.
 
 ## 4. Rappels météo automatiques
@@ -60,10 +66,33 @@ Ces rappels envoyés par le serveur (et les alertes gel ou orage en notification
 docker compose exec db mysql -u balco -p balco -e "UPDATE users SET plan = 'plus' WHERE email = 'ton@adresse.fr';"
 ```
 
+**Prix fondateur** : les premiers abonnés à Balco+ (500 places, `BALCO_FOUNDER_SEATS` pour changer) gardent un prix réduit. Le prix se règle dans les stores (produit `balco_plus_fondateur`) ; le serveur retient seulement qui y a droit, dans la colonne `users.founderSince` (date du premier abonnement), et ce droit reste acquis si le compte repasse en gratuit. Les futurs achats intégrés l'attribueront tout seuls (`grantFounderPrice`, `server/founder.ts`). En attendant, pour tester, puis pour compter les places prises :
+
+```bash
+docker compose exec db mysql -u balco -p balco -e "UPDATE users SET plan = 'plus', founderSince = NOW() WHERE email = 'ton@adresse.fr';"
+docker compose exec db mysql -u balco -p balco -e "SELECT COUNT(*) AS fondateurs FROM users WHERE founderSince IS NOT NULL;"
+```
+
 Il faut appeler `POST /api/scheduled/reminders` toutes les heures à la minute 31, avec l'en-tête `Authorization: Bearer <CRON_SECRET>`. Deux possibilités :
 
 - **le cron de l'hébergeur**, le plus précis : `31 * * * * curl -fsS -X POST -H "Authorization: Bearer $CRON_SECRET" https://api.ton-domaine.fr/api/scheduled/reminders` ;
 - **GitHub Actions**, déjà prêt (`.github/workflows/reminders-cron.yml`) : ajoute la variable `BALCO_API_URL` et le secret `CRON_SECRET` dans les réglages du dépôt.
+
+Chaque passage récupère d'abord la météo une fois par zone d'environ 1 km (les voisins partagent la même prévision, 4 appels à Open-Meteo à la fois), puis recalcule les comptes Balco+ par lots de 20 en parallèle (`REMINDERS_CONCURRENCY`), avant d'envoyer les notifications dues. Un verrou en base (table `job_locks`) garantit qu'un seul passage tourne à la fois, même avec plusieurs instances ou si le cron est lancé deux fois : le second répond `{"skipped":"already_running"}`. Si une instance s'arrête en plein passage, le verrou se libère seul au bout de 30 minutes. Chaque passage laisse une ligne dans les journaux, par exemple :
+
+```
+[reminders] passage en 4210 ms : 830 comptes, 212 zones météo, 1240 rappels, 0 échecs, 97 notifications envoyées
+```
+
+Si la durée approche l'heure, augmente `REMINDERS_CONCURRENCY` (et `DB_POOL_SIZE` avec).
+
+Le même cron fait aussi, **une fois par jour**, le ménage dans la base (`server/purge.ts`) : rappels de plus de 30 jours, codes de connexion de plus de 24 heures, appels à l'IA de plus de 13 mois (le rapport de coûts garde ainsi une année de recul) et vieux compteurs de la limite par IP. Les lignes partent par paquets de 5 000 pour ne pas bloquer la base. Journal :
+
+```
+[purge] en 120 ms : 5320 rappels, 410 codes de connexion, 0 appels à l'IA supprimés
+```
+
+Si la purge échoue, elle est retentée au passage suivant, et les rappels partent quand même.
 
 ## 5. Scanner et Nora (IA)
 

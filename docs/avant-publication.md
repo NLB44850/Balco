@@ -61,7 +61,9 @@ moins d'un million de dollars par an) ; sur Google Play, 15 % pour les abonnemen
 2. **Produits dans les stores** : un groupe d'abonnement « Balco+ » avec une formule mensuelle et une
    annuelle, mêmes identifiants des deux côtés (par exemple `balco_plus_mensuel`, `balco_plus_annuel`).
    Le **prix fondateur** (étape 7 de l'audit) : une offre de lancement des stores ou un produit à part
-   (`balco_plus_fondateur`) réservé aux premiers abonnés.
+   (`balco_plus_fondateur`) réservé aux premiers abonnés. Côté serveur, c'est prêt (étape 7) : la colonne
+   `users.founderSince` dit qui y a droit, `founderOffer()` donne les places restantes (à montrer sur
+   l'écran d'abonnement) et `grantFounderPrice()` (`server/founder.ts`) prend une place au premier achat.
 3. **RevenueCat** : un projet avec les deux apps (identifiant `APP_BUNDLE_ID`), un droit (« entitlement »)
    `plus` qui regroupe les produits, une offre (« offering ») par défaut.
 4. **App** :
@@ -83,7 +85,9 @@ moins d'un million de dollars par an) ; sur Google Play, 15 % pour les abonnemen
      fin de la période payée) ; `BILLING_ISSUE` laisse le délai de grâce du store ;
    - une vérification de rattrapage (API REST de RevenueCat) à la connexion ou une fois par jour, au cas où
      un webhook se perdrait ;
-   - colonnes utiles : date de fin de l'abonnement, produit, prix fondateur.
+   - au premier `INITIAL_PURCHASE`, appeler `grantFounderPrice(userId)` ; s'il ne reste plus de place, l'app
+     propose le prix normal ;
+   - colonnes utiles : date de fin de l'abonnement, produit (le prix fondateur est déjà dans `founderSince`).
 6. **Tests** : comptes testeurs des deux stores (achats gratuits, renouvellements accélérés), puis
    abonnement, résiliation, expiration et restauration sur un vrai téléphone ; tests Vitest du webhook.
 7. **Obligations** : conditions générales de vente, droit de rétractation, politique de confidentialité

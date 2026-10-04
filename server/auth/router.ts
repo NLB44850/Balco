@@ -9,6 +9,7 @@ import type { User } from "../../drizzle/schema";
 import { AuthError, availableProviders, deleteAccount, requestLoginCode, signInWithApple, signInWithGoogle, verifyLoginCode } from "./accounts";
 import { MailNotConfiguredError } from "./mailer";
 import { SESSION_TTL_SECONDS, signSession } from "./session";
+import { fingerprint, hitRateLimit, resetRateLimits } from "../rate-limit";
 
 const TRPC_CODES = {
   invalid_email: "BAD_REQUEST",
@@ -28,21 +29,18 @@ async function mapErrors<T>(action: () => Promise<T>): Promise<T> {
   }
 }
 
-/** Limite par adresse IP, en plus de la limite par e-mail : freine l'envoi massif de codes. */
+/** Limite par adresse IP, en plus de la limite par e-mail : freine l'envoi massif de codes. Comptée en base. */
 const IP_WINDOW_MS = 60 * 60 * 1000;
 const MAX_CODE_REQUESTS_PER_IP = 20;
-const requestsByIp = new Map<string, number[]>();
+const CODE_IP_BUCKET = "code-ip:";
 
-function checkIpRate(ip: string, now = Date.now()) {
-  const recent = (requestsByIp.get(ip) ?? []).filter((time) => now - time < IP_WINDOW_MS);
-  if (recent.length >= MAX_CODE_REQUESTS_PER_IP) throw new TRPCError({ code: "TOO_MANY_REQUESTS", message: "Trop de demandes depuis ce réseau. Réessaie plus tard." });
-  recent.push(now);
-  requestsByIp.set(ip, recent);
-  if (requestsByIp.size > 10_000) requestsByIp.clear();
+async function checkIpRate(ip: string) {
+  const allowed = await hitRateLimit(`${CODE_IP_BUCKET}${fingerprint(ip)}`, MAX_CODE_REQUESTS_PER_IP, IP_WINDOW_MS);
+  if (!allowed) throw new TRPCError({ code: "TOO_MANY_REQUESTS", message: "Trop de demandes depuis ce réseau. Réessaie plus tard." });
 }
 
 export function resetAuthRateLimits() {
-  requestsByIp.clear();
+  return resetRateLimits(CODE_IP_BUCKET);
 }
 
 function publicUser(user: User) {
@@ -63,7 +61,7 @@ export const authRouter = router({
   requestEmailCode: publicProcedure
     .input(z.object({ email: z.string().min(3).max(254) }))
     .mutation(({ ctx, input }) => mapErrors(async () => {
-      checkIpRate(ctx.req.ip ?? "unknown");
+      await checkIpRate(ctx.req.ip ?? "unknown");
       const { expiresInSeconds } = await requestLoginCode(input.email);
       return { sent: true, expiresInSeconds };
     })),

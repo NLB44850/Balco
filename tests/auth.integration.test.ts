@@ -33,7 +33,7 @@ describe.skipIf(!TEST_DATABASE_URL)("own authentication (MySQL)", () => {
   let accounts: typeof import("../server/auth/accounts");
   let session: typeof import("../server/auth/session");
   let appRouter: typeof import("../server/routers")["appRouter"];
-  let resetAuthRateLimits: () => void;
+  let resetAuthRateLimits: () => Promise<void>;
   const createdEmails: string[] = [];
 
   beforeAll(async () => {

@@ -78,6 +78,34 @@
       "when": 1790966543560,
       "tag": "0010_sync_device",
       "breakpoints": true
+    },
+    {
+      "idx": 11,
+      "version": "5",
+      "when": 1790969709711,
+      "tag": "0011_founder_price",
+      "breakpoints": true
+    },
+    {
+      "idx": 12,
+      "version": "5",
+      "when": 1791131070689,
+      "tag": "0012_rate_limits",
+      "breakpoints": true
+    },
+    {
+      "idx": 13,
+      "version": "5",
+      "when": 1791131268685,
+      "tag": "0013_job_locks",
+      "breakpoints": true
+    },
+    {
+      "idx": 14,
+      "version": "5",
+      "when": 1791131374596,
+      "tag": "0014_purge_indexes",
+      "breakpoints": true
     }
   ]
 }

@@ -1,4 +1,4 @@
-import { int, mysqlTable, text, timestamp, varchar, double, uniqueIndex, index } from "drizzle-orm/mysql-core";
+import { int, mysqlTable, primaryKey, text, timestamp, varchar, double, uniqueIndex, index } from "drizzle-orm/mysql-core";
 
 /** Core user table backing auth flow. */
 export const users = mysqlTable("users", {
@@ -15,6 +15,11 @@ export const users = mysqlTable("users", {
    * Se connecter sur un autre téléphone le remplace.
    */
   syncDeviceId: varchar("syncDeviceId", { length: 64 }),
+  /**
+   * Prix fondateur (premiers abonnés Balco+) : date à laquelle le compte l'a obtenu, vide sinon.
+   * Le droit reste acquis même si le compte repasse en gratuit (server/founder.ts).
+   */
+  founderSince: timestamp("founderSince"),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
   lastSignedIn: timestamp("lastSignedIn").defaultNow().notNull(),
@@ -44,7 +49,24 @@ export const loginCodes = mysqlTable("login_codes", {
   expiresAt: timestamp("expiresAt").notNull(),
   consumedAt: timestamp("consumedAt"),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
-}, (table) => ({ emailIndex: index("login_codes_email_index").on(table.email, table.createdAt) }));
+}, (table) => ({ emailIndex: index("login_codes_email_index").on(table.email, table.createdAt), createdIndex: index("login_codes_created_index").on(table.createdAt) }));
+
+/**
+ * Limites de débit partagées par toutes les instances du serveur (server/rate-limit.ts) : un compteur
+ * par clé (« code-ip:<empreinte de l'IP> ») et par fenêtre de temps. Les vieilles fenêtres sont purgées.
+ */
+export const rateLimits = mysqlTable("rate_limits", {
+  bucket: varchar("bucket", { length: 128 }).notNull(),
+  windowStart: timestamp("windowStart").notNull(),
+  hits: int("hits").default(0).notNull(),
+}, (table) => ({ pk: primaryKey({ name: "rate_limits_pk", columns: [table.bucket, table.windowStart] }), windowIndex: index("rate_limits_window_index").on(table.windowStart) }));
+
+/** Verrous des tâches planifiées (server/job-lock.ts) : un seul passage à la fois, toutes instances confondues. */
+export const jobLocks = mysqlTable("job_locks", {
+  name: varchar("name", { length: 64 }).primaryKey(),
+  owner: varchar("owner", { length: 64 }).notNull(),
+  lockedUntil: timestamp("lockedUntil").notNull(),
+});
 
 /**
  * Un appel à l'IA (diagnostic photo ou question à Nora). Sert aux quotas — une ligne « pending »
@@ -141,7 +163,7 @@ export const reminderDecisions = mysqlTable("reminder_decisions", {
   sentAt: timestamp("sentAt"),
   status: varchar("status", { length: 32 }).default("pending").notNull(),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
-}, (table) => ({ decisionUnique: uniqueIndex("reminder_decisions_user_key_unique").on(table.userId, table.decisionKey), userStatusIndex: index("reminder_decisions_user_status_index").on(table.userId, table.status) }));
+}, (table) => ({ decisionUnique: uniqueIndex("reminder_decisions_user_key_unique").on(table.userId, table.decisionKey), userStatusIndex: index("reminder_decisions_user_status_index").on(table.userId, table.status), validUntilIndex: index("reminder_decisions_valid_until_index").on(table.validUntil) }));
 
 export const devicePushTokens = mysqlTable("device_push_tokens", {
   id: int("id").autoincrement().primaryKey(),

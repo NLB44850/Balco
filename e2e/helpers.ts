@@ -1,7 +1,7 @@
 import { readFileSync } from "node:fs";
 import path from "node:path";
 
-import { expect, type Page } from "@playwright/test";
+import { expect, type Page, type Route } from "@playwright/test";
 
 /** Outils communs aux scénarios : faux service météo, balcon prêt à l'emploi, raccourcis. */
 
@@ -13,14 +13,15 @@ type Weather = { temperature?: number; min?: number; max?: number; rainMm?: numb
 const MILD: Required<Weather> = { temperature: 16, min: 10, max: 19, rainMm: 0, gust: 18, code: 2 };
 
 /**
- * Remplace Open-Meteo (et le nom de ville) par des réponses fixes : les tests ne dépendent ni du
+ * Remplace la météo (route /api/weather du serveur et Open-Meteo) et le nom de ville par des réponses fixes : les tests ne dépendent ni du
  * réseau ni du temps qu'il fait vraiment.
  */
 export async function mockWeather(page: Page, weather: Weather = {}) {
   const w = { ...MILD, ...weather };
-  await page.route("https://api.open-meteo.com/**", (route) => {
+  // La météo passe d'abord par le serveur Balco (/api/weather, en cache), sinon par Open-Meteo directement.
+  const forecast = (route: Route) => {
     const hours = 48;
-    route.fulfill({
+    return route.fulfill({
       contentType: "application/json",
       body: JSON.stringify({
         elevation: 170,
@@ -33,7 +34,9 @@ export async function mockWeather(page: Page, weather: Weather = {}) {
         daily: { precipitation_sum: [w.rainMm, 0], temperature_2m_min: [w.min, w.min], temperature_2m_max: [w.max, w.max], wind_gusts_10m_max: [w.gust, w.gust] },
       }),
     });
-  });
+  };
+  await page.route("https://api.open-meteo.com/**", forecast);
+  await page.route("**/api/weather?**", forecast);
   await page.route("https://api.bigdatacloud.net/**", (route) => route.fulfill({ contentType: "application/json", body: JSON.stringify({ city: "Lyon" }) }));
   await page.route("https://geocoding-api.open-meteo.com/**", (route) =>
     route.fulfill({ contentType: "application/json", body: JSON.stringify({ results: [{ id: 1, name: "Lyon", latitude: 45.76, longitude: 4.84, country: "France", admin1: "Auvergne-Rhône-Alpes" }] }) }),

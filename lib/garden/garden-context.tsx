@@ -66,6 +66,8 @@ export type AccountState = {
   serverPush: boolean;
   /** Forfait du compte, connu après la première synchro. */
   plan: Plan;
+  /** Prix fondateur obtenu (premiers abonnés Balco+). */
+  founder: boolean;
 };
 
 type GardenContextValue = {
@@ -128,6 +130,7 @@ export function GardenProvider({ children }: { children: ReactNode }) {
   const [lastSyncedAt, setLastSyncedAt] = useState<string | undefined>(undefined);
   const [serverPush, setServerPush] = useState(false);
   const [plan, setPlan] = useState<Plan>("free");
+  const [founder, setFounder] = useState(false);
   /** La prochaine synchro demande la sauvegarde pour ce téléphone (compte gratuit, un seul appareil). */
   const claimDeviceRef = useRef(false);
 
@@ -298,6 +301,7 @@ export function GardenProvider({ children }: { children: ReactNode }) {
       await saveMeta({ openId, lastSyncedAt: snapshot.serverTime, lastLocation: location ?? metaRef.current.lastLocation });
       setSyncStatus("idle");
       setPlan(snapshot.access.plan);
+      setFounder(snapshot.access.founder);
       if (snapshot.access.serverReminders) {
         await ensurePushRegistration(applied.settings.enabled, openId).catch((error) => console.warn("[push] registration failed", error));
       } else {
@@ -465,7 +469,8 @@ export function GardenProvider({ children }: { children: ReactNode }) {
     lastSyncedAt,
     serverPush,
     plan,
-  }), [auth.isAuthenticated, auth.loading, auth.user?.email, auth.user?.name, lastSyncedAt, plan, serverPush, syncStatus]);
+    founder,
+  }), [auth.isAuthenticated, auth.loading, auth.user?.email, auth.user?.name, founder, lastSyncedAt, plan, serverPush, syncStatus]);
 
   const value = useMemo<GardenContextValue>(
     () => ({ loaded, plants, resolvedPlants, events, profile, onboarding, account, addPlant, removePlant, renamePlant, setPlantVariety, logEvent, removeEvent, updateProfile, reloadOnboarding, updateOnboarding, reportLocation, signIn, signOut, syncNow, claimThisDevice, refreshAccount, completeSignIn, deleteAccount }),

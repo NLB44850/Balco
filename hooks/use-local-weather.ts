@@ -11,6 +11,7 @@ import {
   type ReminderSettings,
   type WeatherSnapshot,
 } from "@/lib/reminders/reminder-engine";
+import { loadForecastPayload, type OpenMeteoPayload } from "@/lib/weather/forecast-client";
 import { applyWeatherScenario, scenarioLabel } from "@/lib/weather/simulation";
 
 import { useWeatherSimulation } from "./use-weather-simulation";
@@ -47,29 +48,6 @@ type UseLocalWeatherOptions = {
   history?: MaintenanceEvent[];
   reminderSettings?: ReminderSettings;
   lastReminderAt?: string;
-};
-
-type OpenMeteoPayload = {
-  elevation?: number;
-  current?: {
-    time?: string;
-    temperature_2m?: number;
-    apparent_temperature?: number;
-    weather_code?: number;
-    is_day?: number;
-  };
-  hourly?: {
-    time?: string[];
-    precipitation?: number[];
-    precipitation_probability?: number[];
-    wind_gusts_10m?: number[];
-  };
-  daily?: {
-    precipitation_sum?: number[];
-    temperature_2m_min?: number[];
-    temperature_2m_max?: number[];
-    wind_gusts_10m_max?: number[];
-  };
 };
 
 const STORAGE_KEY = "balco.location.preference.v1";
@@ -190,21 +168,13 @@ export function useLocalWeather(options: UseLocalWeatherOptions = {}) {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  const loadForecast = useCallback(async (latitude: number, longitude: number, city: string, isFallback = false) => {
+  const loadForecast = useCallback(async (latitude: number, longitude: number, city: string, isFallback = false, force = false) => {
     setIsLoading(true);
     try {
-      const params = new URLSearchParams({
-        latitude: String(latitude),
-        longitude: String(longitude),
-        current: "temperature_2m,apparent_temperature,weather_code,is_day",
-        hourly: "precipitation,precipitation_probability,wind_gusts_10m",
-        daily: "precipitation_sum,temperature_2m_min,temperature_2m_max,wind_gusts_10m_max",
-        forecast_days: "2",
-        timezone: "auto",
+      // Partagée entre les écrans et mise en cache par le serveur (lib/weather/forecast-client.ts).
+      const payload = await loadForecastPayload(latitude, longitude, { force }).catch(() => {
+        throw new Error("Le service météo est indisponible.");
       });
-      const response = await fetch(`https://api.open-meteo.com/v1/forecast?${params.toString()}`);
-      if (!response.ok) throw new Error("Le service météo est indisponible.");
-      const payload = (await response.json()) as OpenMeteoPayload;
       const current = payload.current ?? {};
       const isDay = Boolean(current.is_day);
       const snapshot = buildSnapshot(payload, city, latitude, longitude);
@@ -285,11 +255,11 @@ export function useLocalWeather(options: UseLocalWeatherOptions = {}) {
 
   const refresh = useCallback(async () => {
     if (preference?.mode === "device" || preference?.mode === "manual") {
-      await loadForecast(preference.latitude, preference.longitude, preference.city);
+      await loadForecast(preference.latitude, preference.longitude, preference.city, false, true);
       return;
     }
     if (preference?.mode === "denied") {
-      await loadForecast(PARIS_COORDINATES.latitude, PARIS_COORDINATES.longitude, PARIS_COORDINATES.city, true);
+      await loadForecast(PARIS_COORDINATES.latitude, PARIS_COORDINATES.longitude, PARIS_COORDINATES.city, true, true);
       return;
     }
     await requestDeviceLocation();
