@@ -234,6 +234,28 @@ describe.skipIf(!TEST_DATABASE_URL)("garden sync and server reminders (MySQL)", 
     expect((await reminders.loadSnapshot(otherUserId)).settings?.vacation).toBeNull();
   });
 
+  it("cron : une prévision par zone d'environ 1 km, puis les comptes par lots, sous un verrou", async () => {
+    // Deux comptes Balco+ voisins (moins de 1 km) : une seule prévision pour les deux.
+    await reminders.syncGarden(userId, { ...emptyPush(), location: PARIS, settings: SETTINGS });
+    await reminders.syncGarden(otherUserId, { ...emptyPush(), location: { ...PARIS, latitude: 48.8561, longitude: 2.3519 }, settings: { ...SETTINGS, vacation: null } });
+    const fetchMock = vi.mocked(globalThis.fetch);
+    fetchMock.mockClear();
+    const all = await reminders.recalculateAllReminders(NOW, { concurrency: 2 });
+    const weatherCalls = fetchMock.mock.calls.filter(([input]) => String(input instanceof Request ? input.url : input).includes("open-meteo"));
+    expect(all.failures).toBe(0);
+    expect(weatherCalls).toHaveLength(all.zones);
+    expect(all.zones).toBeLessThan(all.users);
+
+    const run = await reminders.runScheduledReminders(NOW);
+    expect(run).toMatchObject({ status: "done", recalculated: { status: "recalculated" } });
+
+    // Pendant qu'un passage tourne, un second appel du cron ne fait rien.
+    const { acquireJobLock, releaseJobLock } = await import("../server/job-lock");
+    const owner = (await acquireJobLock("reminders", 60_000, NOW))!;
+    expect(await reminders.runScheduledReminders(NOW)).toEqual({ status: "locked" });
+    await releaseJobLock("reminders", owner);
+  });
+
   describe("forfait gratuit", () => {
     it("ne calcule ni n'envoie de rappels serveur : le téléphone programme les siens", async () => {
       await reminders.syncGarden(freeUserId, { ...emptyPush(), location: PARIS, settings: SETTINGS, plants: [{ id: "basil-f", catalogId: "basil", addedAt: hoursAgo(240), updatedAt: hoursAgo(240) }], events: [{ id: "f-1", plantId: "basil-f", type: "watering", completedAt: hoursAgo(72), source: "manual" }] });

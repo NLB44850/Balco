@@ -9,7 +9,7 @@ import express, { type Express } from "express";
 import { costReport, formatCostReport } from "../ai/budget";
 import { authenticateRequest } from "../auth/session";
 import { appRouter } from "../routers";
-import { dispatchDueReminderNotifications, recalculateAllReminders } from "../reminders";
+import { runScheduledReminders } from "../reminders";
 import { createContext } from "./context";
 import { assertProductionConfig, ENV } from "./env";
 
@@ -86,9 +86,14 @@ export function createApp() {
       return;
     }
     try {
-      const recalculated = await recalculateAllReminders();
-      const dispatched = await dispatchDueReminderNotifications();
-      res.json({ recalculated: { users: recalculated.users, decisions: recalculated.decisions, failures: recalculated.failures }, dispatched });
+      const run = await runScheduledReminders();
+      // Un passage déjà en cours n'est pas une erreur pour le cron : celui-ci repassera dans une heure.
+      if (run.status === "locked") {
+        res.json({ skipped: "already_running" });
+        return;
+      }
+      const { recalculated, dispatched, durationMs } = run;
+      res.json({ recalculated: { users: recalculated.users, zones: recalculated.zones, decisions: recalculated.decisions, failures: recalculated.failures }, dispatched, durationMs });
     } catch (error) {
       console.error("[scheduled/reminders] failed", error);
       res.status(500).json({ error: "failed" });

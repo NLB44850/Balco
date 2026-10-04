@@ -77,6 +77,14 @@ Il faut appeler `POST /api/scheduled/reminders` toutes les heures à la minute 3
 - **le cron de l'hébergeur**, le plus précis : `31 * * * * curl -fsS -X POST -H "Authorization: Bearer $CRON_SECRET" https://api.ton-domaine.fr/api/scheduled/reminders` ;
 - **GitHub Actions**, déjà prêt (`.github/workflows/reminders-cron.yml`) : ajoute la variable `BALCO_API_URL` et le secret `CRON_SECRET` dans les réglages du dépôt.
 
+Chaque passage récupère d'abord la météo une fois par zone d'environ 1 km (les voisins partagent la même prévision, 4 appels à Open-Meteo à la fois), puis recalcule les comptes Balco+ par lots de 20 en parallèle (`REMINDERS_CONCURRENCY`), avant d'envoyer les notifications dues. Un verrou en base (table `job_locks`) garantit qu'un seul passage tourne à la fois, même avec plusieurs instances ou si le cron est lancé deux fois : le second répond `{"skipped":"already_running"}`. Si une instance s'arrête en plein passage, le verrou se libère seul au bout de 30 minutes. Chaque passage laisse une ligne dans les journaux, par exemple :
+
+```
+[reminders] passage en 4210 ms : 830 comptes, 212 zones météo, 1240 rappels, 0 échecs, 97 notifications envoyées
+```
+
+Si la durée approche l'heure, augmente `REMINDERS_CONCURRENCY` (et `DB_POOL_SIZE` avec).
+
 ## 5. Scanner et Nora (IA)
 
 1. Crée une clé API sur https://console.anthropic.com et renseigne-la dans `ANTHROPIC_API_KEY`. Sans clé, l'app affiche « bientôt disponible » à la place du scanner et de Nora.

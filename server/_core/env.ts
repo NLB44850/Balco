@@ -52,6 +52,8 @@ export const ENV = {
     free: { scan: intEnv("AI_FREE_SCANS_PER_MONTH", PLANS.free.aiQuota.scan), chat: intEnv("AI_FREE_QUESTIONS_PER_MONTH", PLANS.free.aiQuota.chat) },
     plus: { scan: intEnv("AI_PLUS_SCANS_PER_MONTH", PLANS.plus.aiQuota.scan), chat: intEnv("AI_PLUS_QUESTIONS_PER_MONTH", PLANS.plus.aiQuota.chat) },
   },
+  /** Comptes recalculés en même temps par le cron des rappels (REMINDERS_CONCURRENCY). */
+  remindersConcurrency: Math.max(1, intEnv("REMINDERS_CONCURRENCY", 20)),
   /** Places au prix fondateur pour les premiers abonnés Balco+ (lib/plans.ts). */
   founderSeats: intEnv("BALCO_FOUNDER_SEATS", FOUNDER_OFFER.seats),
   /** Dossier de l'export web (`expo export -p web`), servi par l'API s'il existe. */

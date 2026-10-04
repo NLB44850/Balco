@@ -38,7 +38,7 @@ Tout se passe dans son GitHub Codespace (pas de Docker sur son PC).
 
 - `pnpm -s check`, `pnpm -s lint`, puis `TEST_DATABASE_URL=mysql://balco:balco@localhost:3306/balco_cal npx vitest run`
   (MariaDB locale : `service mariadb start` si elle s'est arrêtée, `apt-get install -y mariadb-server` si elle manque,
-  puis `DATABASE_URL=… npx drizzle-kit migrate` ; 368 tests à ce jour). Dans un conteneur
+  puis `DATABASE_URL=… npx drizzle-kit migrate` ; 374 tests à ce jour). Dans un conteneur
   neuf : `apt-get install -y mariadb-server`, `service mariadb start`, créer la base `balco_cal` et l'utilisateur
   `balco`/`balco`, puis `pnpm -s build && DATABASE_URL=mysql://balco:balco@localhost:3306/balco_cal node dist/migrate.mjs`.
 - `npx expo export --platform android` pour s'assurer que le bundle Android se construit.
@@ -230,6 +230,11 @@ et route réservée à `role = admin`. Balco+ sera payant (offre commerciale Ope
   attente au lieu d'échec). Limite de 20 demandes de code par heure et par IP comptée dans MySQL
   (table `rate_limits`, migration 0012, fenêtres d'une heure, IP en empreinte SHA-256) :
   `server/rate-limit.ts` (`hitRateLimit`, `purgeRateLimits` pour l'étape 10, repli en mémoire sans base).
+- Étape 9 faite : cron des rappels (`runScheduledReminders`, `server/reminders.ts`) : météo d'abord, une
+  fois par zone ~1 km (`weatherZone`, 4 appels à la fois), puis comptes par lots (`mapWithConcurrency`,
+  `server/concurrency.ts`, `REMINDERS_CONCURRENCY` = 20) ; verrou en base `job_locks` (migration 0013,
+  `server/job-lock.ts`, 30 min de durée de vie) → second passage `{ skipped: "already_running" }` ;
+  ligne `[reminders] passage en … ms : … comptes, … zones météo…` dans les journaux.
 
 
 À faire, dans l'ordre (liste du porteur, 30/09) :

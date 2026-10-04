@@ -20,7 +20,10 @@ import {
   reminderProfiles,
   users,
 } from "../drizzle/schema";
+import { ENV } from "./_core/env";
+import { mapWithConcurrency } from "./concurrency";
 import { getDb } from "./db";
+import { withJobLock } from "./job-lock";
 
 // Surchargeables pour les tests de bout en bout (serveurs simulés).
 const OPEN_METEO_URL = process.env.OPEN_METEO_URL || "https://api.open-meteo.com/v1/forecast";
@@ -298,10 +301,14 @@ function decisionKey(decision: ReminderDecision, timezone: string, now: Date) {
 
 type WeatherCache = Map<string, Promise<WeatherSnapshot>>;
 
+/** Zone d'environ 1 km : les voisins partagent la même prévision, ce qui ménage le quota Open-Meteo. */
+export function weatherZone(location: Pick<SyncLocation, "latitude" | "longitude">) {
+  return `${location.latitude.toFixed(2)},${location.longitude.toFixed(2)}`;
+}
+
 function cachedWeather(cache: WeatherCache | undefined, location: SyncLocation, now: Date) {
   if (!cache) return fetchWeather(location, now);
-  // ~1 km : les voisins partagent la même prévision, ce qui ménage le quota Open-Meteo.
-  const key = `${location.latitude.toFixed(2)},${location.longitude.toFixed(2)}`;
+  const key = weatherZone(location);
   if (!cache.has(key)) cache.set(key, fetchWeather(location, now));
   return cache.get(key)!;
 }
@@ -385,16 +392,34 @@ export async function recalculateUserReminders(userId: number, now = new Date(),
   return { userId, status: "recalculated", decisions: selected.length, weatherFetchedAt: weather.fetchedAt } as const;
 }
 
-export async function recalculateAllReminders(now = new Date()) {
+/** Appels Open-Meteo en même temps pendant le cron : modéré, pour rester poli avec le service gratuit. */
+const WEATHER_CONCURRENCY = 4;
+
+export async function recalculateAllReminders(now = new Date(), options: { concurrency?: number } = {}) {
   const db = await getDb();
-  if (!db) return { status: "skipped", reason: "database_unavailable", users: 0, decisions: 0, failures: 0 } as const;
-  const rows = await db.select({ userId: reminderProfiles.userId, plan: users.plan }).from(reminderProfiles).leftJoin(users, eq(users.id, reminderProfiles.userId)).where(eq(reminderProfiles.enabled, 1));
+  if (!db) return { status: "skipped", reason: "database_unavailable", users: 0, zones: 0, decisions: 0, failures: 0 } as const;
+  const rows = await db.select({ userId: reminderProfiles.userId, plan: users.plan, city: reminderProfiles.city, latitude: reminderProfiles.latitude, longitude: reminderProfiles.longitude, timezone: reminderProfiles.timezone, locationUpdatedAt: reminderProfiles.locationUpdatedAt })
+    .from(reminderProfiles).leftJoin(users, eq(users.id, reminderProfiles.userId)).where(eq(reminderProfiles.enabled, 1));
   // Seuls les forfaits qui ont droit aux rappels serveur sont recalculés.
   const profiles = rows.filter((row) => can(row.plan, "serverReminders"));
+
+  // 1. La météo d'abord, une fois par zone d'environ 1 km, quelques appels à la fois.
   const cache: WeatherCache = new Map();
+  const zones = new Map<string, SyncLocation>();
+  for (const row of profiles) {
+    if (!row.locationUpdatedAt) continue;
+    const location = { city: row.city, latitude: row.latitude, longitude: row.longitude, timezone: row.timezone };
+    if (!zones.has(weatherZone(location))) zones.set(weatherZone(location), location);
+  }
+  await mapWithConcurrency([...zones.values()], WEATHER_CONCURRENCY, async (location) => {
+    // Une zone sans météo fera échouer ses seuls comptes, comptés plus bas.
+    await cachedWeather(cache, location, now).catch(() => undefined);
+  });
+
+  // 2. Puis les comptes, par lots en parallèle.
   let decisions = 0;
   let failures = 0;
-  for (const profile of profiles) {
+  await mapWithConcurrency(profiles, options.concurrency ?? ENV.remindersConcurrency, async (profile) => {
     try {
       const result = await recalculateUserReminders(profile.userId, now, cache, planOf(profile.plan));
       if (result.status === "recalculated") decisions += result.decisions;
@@ -403,8 +428,32 @@ export async function recalculateAllReminders(now = new Date()) {
       failures += 1;
       console.error(`[reminders] recalculation failed for user ${profile.userId}`, error);
     }
+  });
+  return { status: "recalculated", users: profiles.length, zones: zones.size, decisions, failures } as const;
+}
+
+/** Durée de vie du verrou du cron : au-delà, un passage bloqué n'empêche plus le suivant. */
+const REMINDERS_LOCK_MS = 30 * 60 * 1000;
+
+/**
+ * Le passage horaire du cron : recalcul puis envoi, sous un verrou en base pour qu'un seul passage
+ * tourne à la fois (plusieurs instances, cron lancé deux fois). La durée est notée dans les journaux.
+ */
+export async function runScheduledReminders(now = new Date()) {
+  const started = Date.now();
+  const outcome = await withJobLock("reminders", REMINDERS_LOCK_MS, async () => {
+    const recalculated = await recalculateAllReminders(now);
+    const dispatched = await dispatchDueReminderNotifications(now);
+    return { recalculated, dispatched };
+  }, now);
+  if (!outcome.ran) {
+    console.warn("[reminders] passage ignoré : un autre passage est en cours");
+    return { status: "locked" } as const;
   }
-  return { status: "recalculated", users: profiles.length, decisions, failures } as const;
+  const durationMs = Date.now() - started;
+  const { recalculated, dispatched } = outcome.value;
+  console.log(`[reminders] passage en ${durationMs} ms : ${recalculated.users} comptes, ${recalculated.zones} zones météo, ${recalculated.decisions} rappels, ${recalculated.failures} échecs, ${dispatched.sent} notifications envoyées`);
+  return { status: "done", durationMs, ...outcome.value } as const;
 }
 
 export async function registerPushToken(userId: number, token: string, platform: string) {

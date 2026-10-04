@@ -61,6 +61,13 @@ export const rateLimits = mysqlTable("rate_limits", {
   hits: int("hits").default(0).notNull(),
 }, (table) => ({ pk: primaryKey({ name: "rate_limits_pk", columns: [table.bucket, table.windowStart] }), windowIndex: index("rate_limits_window_index").on(table.windowStart) }));
 
+/** Verrous des tâches planifiées (server/job-lock.ts) : un seul passage à la fois, toutes instances confondues. */
+export const jobLocks = mysqlTable("job_locks", {
+  name: varchar("name", { length: 64 }).primaryKey(),
+  owner: varchar("owner", { length: 64 }).notNull(),
+  lockedUntil: timestamp("lockedUntil").notNull(),
+});
+
 /**
  * Un appel à l'IA (diagnostic photo ou question à Nora). Sert aux quotas — une ligne « pending »
  * est réservée avant l'appel, pour que des requêtes simultanées ne dépassent pas la limite —
