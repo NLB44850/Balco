@@ -286,7 +286,13 @@ Points à ne pas oublier (à proposer au porteur au bon moment, noté le 30/09) 
 - **Maintenance** (02/10, fusionné dans `main` par https://github.com/NLB44850/Balco/pull/2 et copié sur
   la branche) : `.github/dependabot.yml` (dépendances chaque lundi, groupées ; pas de montée mineure ou
   majeure des paquets liés au SDK Expo) et `.github/workflows/maintenance.yml` (issue « Maintenance »
-  le 1er du mois, bilan annuel en février ; pnpm lu depuis `packageManager`). Les tâches planifiées de
+  le 1er du mois, bilan annuel en février ; pnpm lu depuis `packageManager`).
+  **Mises à jour Dependabot faites le 04/10** (une PR groupée depuis la branche) : correctifs et mineures
+  (tRPC 11.19, drizzle-orm 0.45, zod 4.6, Playwright 1.63, esbuild 0.28…, paquets Expo alignés sur
+  `node_modules/expo/bundledNativeModules.json` car `expo install --fix` ne joint pas le site d'Expo depuis
+  la session), Express 5, dotenv 18, concurrently 10, actions checkout 7 / setup-node 7 / pnpm 6.
+  Refusés : React 19.1.9 (doit rester 19.1.0, version exacte du moteur de React Native 0.81) et
+  tailwind-merge 3 (Tailwind 4 seulement, NativeWind 4 reste sur Tailwind 3) ; ignorés dans `dependabot.yml`. Les tâches planifiées de
   GitHub tournent sur `main` (le cron des rappels reste inactif tant que la variable `BALCO_API_URL`
   n'est pas définie sur GitHub).
 - Avant la publication sur le Play Store : politique de confidentialité et mentions (données du
