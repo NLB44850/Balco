@@ -38,7 +38,7 @@ Tout se passe dans son GitHub Codespace (pas de Docker sur son PC).
 
 - `pnpm -s check`, `pnpm -s lint`, puis `TEST_DATABASE_URL=mysql://balco:balco@localhost:3306/balco_cal npx vitest run`
   (MariaDB locale : `service mariadb start` si elle s'est arrêtée, `apt-get install -y mariadb-server` si elle manque,
-  puis `DATABASE_URL=… npx drizzle-kit migrate` ; 393 tests à ce jour). Dans un conteneur
+  puis `DATABASE_URL=… npx drizzle-kit migrate` ; 396 tests à ce jour). Dans un conteneur
   neuf : `apt-get install -y mariadb-server`, `service mariadb start`, créer la base `balco_cal` et l'utilisateur
   `balco`/`balco`, puis `pnpm -s build && DATABASE_URL=mysql://balco:balco@localhost:3306/balco_cal node dist/migrate.mjs`.
 - `npx expo export --platform android` pour s'assurer que le bundle Android se construit.
@@ -143,6 +143,11 @@ Livré, à valider sur son téléphone :
   s'affiche sous sa réponse. Faits et préférences : table `nora_memories` (`server/ai/memory-store.ts`,
   logique pure `lib/ai/memory.ts`). Contexte : les 90 derniers jours résumés plante par plante et par
   type de geste (`summarizeHistory` dans `server/ai/context.ts`, depuis l'étape 2 de l'audit). Question prête « Fais le point sur mes plantes ».
+  **Sur plusieurs jours** (04/10) : chaque fait retenu est daté pour Nora (« (retenu le 3 juillet) »,
+  `noteDate`), et le prompt lui dit de vérifier un fait ancien plutôt que de le tenir pour acquis. La
+  conversation est datée (`at` sur chaque message, `lib/ai/conversation.ts`) : séparateurs « Aujourd'hui /
+  Hier / Lundi 28 septembre » à l'écran (`withDaySeparators`), et seuls les échanges des 2 derniers jours
+  partent vers Nora (`conversationForNora`) ; au-delà, elle s'appuie sur ce qu'elle a retenu.
 - **Geste « Engrais »** (type `fertilizing`) : 26 plantes gourmandes seulement (`lib/plants/fertilizing.ts` :
   légumes-fruits tous les 14 j de juin à septembre, légumes-feuilles et fleurs tous les 21 j, petits
   fruits tous les 30 j au printemps…), engrais organique uniquement. Geste espacé (`everyDays`) : sur
@@ -152,7 +157,7 @@ Livré, à valider sur son téléphone :
 - **Priorité 4, progression** (logique pure `lib/garden/progress.ts`) : dans Ma semaine, eau
   économisée (« N'arrose pas » suivis × ~20 % du pot ; sur l'accueil, « Compris » sur une alerte pluie
   note désormais l'arrosage évité) et récoltes à venir ; carte « Sa progression » dans la fiche plante
-  (stade, 8 semaines en barres, étapes marquantes ; depuis le 04/10, une jeune plante n'est jugée que sur
+  (stade, 8 semaines en barres, étapes marquantes ; **validée** le 04/10 ; depuis le 04/10, une jeune plante n'est jugée que sur
   les semaines depuis son arrivée : `trackedWeeks`, `careWeeksLabel` « Soignée 4 semaines sur 5 depuis son
   arrivée », pas de barre avant) ; `celebrationFor` remplace le message après un
   geste quand il débloque un badge, un niveau, une série ou une première récolte (Aujourd'hui,
@@ -289,8 +294,8 @@ et route réservée à `role = admin`. Balco+ sera payant (offre commerciale Ope
    pour les retrouver sur un autre téléphone.
 
 **Prochaines séances (04/10)** : le porteur ne veut pas encore publier. Ordre : suggestions de saison
-(validées le 04/10), puis la carte « Sa progression » de la fiche plante (en cours), puis la mémoire de
-Nora sur plusieurs jours. État lisible pour lui : `docs/feuille-de-route.md`
+(validées le 04/10), puis la carte « Sa progression » de la fiche plante (validée le 04/10), puis la mémoire
+de Nora sur plusieurs jours (en cours : test sur 2-3 jours, protocole donné le 04/10). État lisible pour lui : `docs/feuille-de-route.md`
 (parties 2 à 4, mises à jour le 04/10).
 
 Points à ne pas oublier (à proposer au porteur au bon moment, noté le 30/09) :

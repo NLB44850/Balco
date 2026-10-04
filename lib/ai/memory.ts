@@ -2,6 +2,7 @@
  * La mémoire de Nora : niveau, préférences et faits retenus en discutant. Logique pure, partagée par
  * l'écran Nora et le serveur (qui seul enregistre, et seul construit le texte envoyé au modèle).
  */
+import { MONTH_LONG } from "../plants/catalog";
 
 export type NoraLevel = "beginner" | "curious" | "experienced";
 
@@ -116,13 +117,23 @@ export type NoraMemoryView = {
   notes: NoraNote[];
 };
 
-/** Lignes ajoutées au contexte de Nora (sans rien si la mémoire est vide). */
-export function describeMemory(memory: NoraMemoryView): string[] {
+/** « le 12 septembre », « le 3 mai 2025 » : quand Nora a retenu un fait. */
+export function noteDate(createdAt: string, now = new Date()) {
+  const date = new Date(createdAt);
+  if (!Number.isFinite(date.getTime())) return null;
+  return `le ${date.getDate()} ${MONTH_LONG[date.getMonth()]}${date.getFullYear() === now.getFullYear() ? "" : ` ${date.getFullYear()}`}`;
+}
+
+/**
+ * Lignes ajoutées au contexte de Nora (sans rien si la mémoire est vide). Chaque fait porte sa date :
+ * Nora peut ainsi voir qu'un « part en vacances en août » noté en juillet est sans doute passé.
+ */
+export function describeMemory(memory: NoraMemoryView, now = new Date()): string[] {
   const level = NORA_LEVELS.find((item) => item.id === memory.level);
   const preferences = memory.preferences.flatMap((id) => NORA_PREFERENCES.find((preference) => preference.id === id)?.prompt ?? []);
   return [
     level ? `Niveau de la personne : ${level.prompt}.` : "Niveau de la personne : non précisé, considère qu'elle débute.",
     preferences.length > 0 ? `Préférences choisies par la personne : ${preferences.join(" ; ")}.` : null,
-    memory.notes.length > 0 ? `Ce que tu as retenu de vos échanges (identifiant entre crochets) :\n${memory.notes.map((note) => `- [${note.id}] ${note.text}`).join("\n")}` : "Tu n'as encore rien retenu de vos échanges.",
+    memory.notes.length > 0 ? `Ce que tu as retenu de vos échanges (identifiant entre crochets) :\n${memory.notes.map((note) => `- [${note.id}] ${note.text}${noteDate(note.createdAt, now) ? ` (retenu ${noteDate(note.createdAt, now)})` : ""}`).join("\n")}` : "Tu n'as encore rien retenu de vos échanges.",
   ].filter((line): line is string => line !== null);
 }

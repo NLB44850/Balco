@@ -165,7 +165,7 @@ Très cohérent avec la promesse écologique.
 | Conseils pour débutants | ✅ | Niveau choisi à l'accueil, modifiable dans Réglages ou dans « Nora se souvient de toi » (Je débute / Je me lance / J'ai déjà un potager) : Nora adapte la longueur et le vocabulaire |
 | Questions rapides | ✅ | Boutons de questions prêtes à l'emploi |
 | Analyse de l'historique | ✅ | Les 90 derniers jours résumés plante par plante (allégé le 2 octobre pour réduire le coût de chaque question) : nombre de gestes par type, date du dernier, gestes conseillés jamais notés, derniers gestes, plantes retirées dans l'année. Bouton « Fais le point sur mes plantes ». Nouveau geste « Engrais » (26 plantes gourmandes, rythme par plante) : Nora sait dire « pas d'engrais depuis 3 semaines » |
-| Mémoire des préférences et du niveau | ✅ | 9 préférences à cocher (réponses courtes, animal, enfants, peu de temps, économiser l'eau…) et faits retenus en discutant (« A un chat »), affichés sous la réponse avec « Oublier », et « Tout oublier ». Stockés sur le serveur (table `nora_memories`), effacés avec le compte |
+| Mémoire des préférences et du niveau | ✅ | 9 préférences à cocher (réponses courtes, animal, enfants, peu de temps, économiser l'eau…) et faits retenus en discutant (« A un chat »), affichés sous la réponse avec « Oublier », et « Tout oublier ». Stockés sur le serveur (table `nora_memories`), effacés avec le compte. Chaque fait retenu porte sa date, et la conversation est datée jour par jour : Nora reçoit les échanges des 2 derniers jours et, pour le reste, ce qu'elle a retenu |
 
 ### 3. Scanner et diagnostic
 
@@ -260,7 +260,7 @@ L'ordre suit la priorité fixée par le porteur du projet. Chaque étape est val
 1. ✅ **Rappels intelligents fiables sur appareil réel** (reste l'envoi serveur Firebase, à la publication) : bouton « notification de test », validation sur un vrai téléphone Android, messages plus explicites, actions « reporter / ignorer / fait » dans l'app et dans la notification, envoi serveur sur Android (Firebase).
 2. ✅ **Calendrier local connecté aux tâches** : ajout du rempotage, décalage des dates selon la région, alertes météo dans le calendrier, vue par saison, une seule source pour les tâches du calendrier et de l'accueil.
 3. ✅ **Assistant IA qui se souvient** : niveau et préférences de l'utilisateur, faits retenus en discutant, analyse de l'historique complet. (Validé sur téléphone le 30 septembre, avec le geste Engrais.)
-4. ✅ **Progression plus motivante** : bilan hebdomadaire (eau économisée, récoltes à venir), progression par plante, petites victoires fêtées. (Eau économisée et petites victoires validées ; carte « Sa progression » de la fiche plante encore à valider.)
+4. ✅ **Progression plus motivante** : bilan hebdomadaire (eau économisée, récoltes à venir), progression par plante, petites victoires fêtées. (Eau économisée, petites victoires et carte « Sa progression » validées.)
 5. ✅ **Mode vacances** : dates d'absence, plan de départ, liste pour un proche, reprise automatique.
 
 **Liste du 30 septembre** :
@@ -271,7 +271,7 @@ L'ordre suit la priorité fixée par le porteur du projet. Chaque étape est val
 4. ✅ Catalogue agrandi à 100 plantes, avec une photo d'exemple pour chacune : validé.
 5. ✅ Suggestions selon la saison et le mois (Saisons, catalogue, Aujourd'hui), et Saisons rangé par type de geste : validés le 4 octobre.
 
-**Prochaines séances** (4 octobre) : la carte « Sa progression » de la fiche plante, puis la mémoire de Nora sur plusieurs jours. La publication sur les stores n'est pas encore à l'ordre du jour.
+**Prochaines séances** (4 octobre) : la mémoire de Nora sur plusieurs jours (faits datés, conversation datée), à tester sur 2 ou 3 jours. La publication sur les stores n'est pas encore à l'ordre du jour.
 
 **Version suivante**
 

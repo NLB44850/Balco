@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 
-import { cleanNote, cleanPreferences, describeMemory, mergeNotes, parseNotes, togglePreference } from "../lib/ai/memory";
+import { conversationDayLabel, conversationForNora, withDaySeparators, type DatedMessage } from "../lib/ai/conversation";
+import { cleanNote, cleanPreferences, describeMemory, mergeNotes, noteDate, parseNotes, togglePreference } from "../lib/ai/memory";
 import { describeGarden, summarizeHistory, type GardenFacts } from "../server/ai/context";
 
 const NOW = new Date("2026-09-29T12:00:00Z");
@@ -46,6 +47,50 @@ describe("Nora's memory", () => {
     expect(text).toContain("animal de compagnie");
     expect(text).toContain("[n9] A un chat");
     expect(describeMemory({ level: null, preferences: [], notes: [] }).join("\n")).toContain("non précisé");
+  });
+
+  it("dates each remembered fact, so Nora can tell an old one from a fresh one", () => {
+    const notes = [
+      { id: "n1", text: "Part en vacances en août", createdAt: "2026-07-03T09:00:00Z" },
+      { id: "n2", text: "A un chat", createdAt: "2025-05-12T09:00:00Z" },
+    ];
+    const text = describeMemory({ level: null, preferences: [], notes }, NOW).join("\n");
+    expect(text).toContain("[n1] Part en vacances en août (retenu le 3 juillet)");
+    expect(text).toContain("[n2] A un chat (retenu le 12 mai 2025)");
+    expect(noteDate("pas une date", NOW)).toBeNull();
+  });
+});
+
+describe("conversation over several days", () => {
+  const now = new Date(2026, 9, 4, 10);
+  const at = (daysAgo: number, hour = 9) => new Date(2026, 9, 4 - daysAgo, hour).toISOString();
+  const messages: DatedMessage[] = [
+    { id: "old", from: "user", text: "Question sans date" },
+    { id: "a", from: "user", text: "Mes tomates ?", at: at(6) },
+    { id: "b", from: "bot", text: "Arrose-les.", at: at(6) },
+    { id: "m", from: "memory", text: "Nora a retenu : A un chat", at: at(6) },
+    { id: "c", from: "user", text: "Et le basilic ?", at: at(1, 20) },
+    { id: "d", from: "bot", text: "Pince ses fleurs.", at: at(1, 20) },
+    { id: "n", from: "notice", text: "Quota", at: at(0) },
+    { id: "e", from: "user", text: "Merci !", at: at(0) },
+  ];
+
+  it("labels each day of the conversation", () => {
+    expect(conversationDayLabel(at(0), now)).toBe("Aujourd’hui");
+    expect(conversationDayLabel(at(1, 23), now)).toBe("Hier");
+    expect(conversationDayLabel(at(6), now)).toBe("Lundi 28 septembre");
+    expect(conversationDayLabel(new Date(2025, 4, 3).toISOString(), now)).toBe("3 mai 2025");
+    const items = withDaySeparators(messages, now);
+    expect(items.filter((item) => item.from === "day").map((item) => item.text)).toEqual(["Lundi 28 septembre", "Hier", "Aujourd’hui"]);
+    expect(items[0].id).toBe("old");
+  });
+
+  it("only sends Nora the last two days of questions and answers", () => {
+    expect(conversationForNora(messages, now)).toEqual([
+      { role: "user", content: "Et le basilic ?" },
+      { role: "assistant", content: "Pince ses fleurs." },
+      { role: "user", content: "Merci !" },
+    ]);
   });
 });
 
