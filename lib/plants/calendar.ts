@@ -26,8 +26,9 @@ export type CalendarActivity = {
 /** Le type de geste, écrit simplement (sans capitales), pour les écrans. */
 export const ACTIVITY_KIND_LABELS: Record<CalendarActivityKind, string> = { sow: "Semis", plant: "Plantation", repot: "Rempotage", harvest: "Récolte", care: "Entretien" };
 
-export type CalendarSubject = { id: string; entry: CatalogPlant; displayName: string };
-export type CalendarOptions = { climate?: ClimateInfo | null };
+/** `addedAt` : arrivée de la plante sur le balcon (absente pour les idées d'un balcon vide). */
+export type CalendarSubject = { id: string; entry: CatalogPlant; displayName: string; addedAt?: string };
+export type CalendarOptions = { climate?: ClimateInfo | null; now?: Date };
 
 const GENERIC_TASK_IDS = new Set(["check-soil", "observe", "harvest"]);
 const ORDER: Record<CalendarActivityKind, number> = { harvest: 0, care: 1, repot: 2, plant: 3, sow: 4 };
@@ -38,10 +39,15 @@ function taskHeadline(title: string) {
   return stripped.charAt(0).toUpperCase() + stripped.slice(1);
 }
 
+function sameMonth(a: Date, b: Date) {
+  return a.getFullYear() === b.getFullYear() && a.getMonth() === b.getMonth();
+}
+
 export function calendarActivities(subjects: CalendarSubject[], month: number, options: CalendarOptions = {}): CalendarActivity[] {
   const activities: CalendarActivity[] = [];
   const m = month as Month;
-  for (const { id, entry: catalogEntry, displayName } of subjects) {
+  const now = options.now ?? new Date();
+  for (const { id, entry: catalogEntry, displayName, addedAt } of subjects) {
     // Les semis et plantations des plantes frileuses suivent le climat local (Midi plus tôt, montagne plus tard).
     const entry = adaptToClimate(catalogEntry, options.climate);
     const tag = displayName.toUpperCase();
@@ -56,7 +62,10 @@ export function calendarActivities(subjects: CalendarSubject[], month: number, o
     }
     // Une vivace déjà en pot se rempote plutôt qu'elle ne se replante : un seul geste le même mois.
     const repotsThisMonth = entry.repotMonths.includes(m);
-    if (entry.plantMonths.includes(m) && !(entry.perennial && repotsThisMonth)) {
+    // Déjà sur le balcon : elle est plantée. Seule une plante arrivée ce mois-ci (achetée, ajoutée depuis
+    // une suggestion) garde son « Plante … » du mois en cours.
+    const alreadyPlanted = addedAt !== undefined && !(m === now.getMonth() + 1 && sameMonth(new Date(addedAt), now));
+    if (entry.plantMonths.includes(m) && !(entry.perennial && repotsThisMonth) && !alreadyPlanted) {
       activities.push({ ...base, key: `${id}:plant`, kind: "plant", typeLabel: "PLANTATION", title: `Plante ${entry.label}`, description: `Période de plantation : ${formatMonthRange(entry.plantMonths)}. Un terreau frais et un pot percé font la moitié du travail.`, tone: "coral", eventType: "observation" });
     }
     if (repotsThisMonth) {
@@ -100,7 +109,7 @@ export function eventForActivity(activity: CalendarActivity, now: Date): Mainten
 
 /** Pour l'accueil : les semis, plantations et rempotages du mois pas encore notés. */
 export function seasonalToDo(subjects: CalendarSubject[], events: MaintenanceEvent[], now: Date, options: CalendarOptions = {}) {
-  return calendarActivities(subjects, now.getMonth() + 1, options).filter((activity) => ["sow", "plant", "repot"].includes(activity.kind) && !activityDone(activity, events, now));
+  return calendarActivities(subjects, now.getMonth() + 1, { now, ...options }).filter((activity) => ["sow", "plant", "repot"].includes(activity.kind) && !activityDone(activity, events, now));
 }
 
 // --- Saisons -------------------------------------------------------------------

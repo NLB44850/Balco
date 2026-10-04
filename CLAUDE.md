@@ -38,7 +38,7 @@ Tout se passe dans son GitHub Codespace (pas de Docker sur son PC).
 
 - `pnpm -s check`, `pnpm -s lint`, puis `TEST_DATABASE_URL=mysql://balco:balco@localhost:3306/balco_cal npx vitest run`
   (MariaDB locale : `service mariadb start` si elle s'est arrêtée, `apt-get install -y mariadb-server` si elle manque,
-  puis `DATABASE_URL=… npx drizzle-kit migrate` ; 389 tests à ce jour). Dans un conteneur
+  puis `DATABASE_URL=… npx drizzle-kit migrate` ; 392 tests à ce jour). Dans un conteneur
   neuf : `apt-get install -y mariadb-server`, `service mariadb start`, créer la base `balco_cal` et l'utilisateur
   `balco`/`balco`, puis `pnpm -s build && DATABASE_URL=mysql://balco:balco@localhost:3306/balco_cal node dist/migrate.mjs`.
 - `npx expo export --platform android` pour s'assurer que le bundle Android se construit.
@@ -180,7 +180,9 @@ Livré, à valider sur son téléphone :
   `overlay` de `BottomSheet`). Un type d'une seule plante reste une ligne à cocher ; le filtre par plante
   garde le détail. **Aujourd'hui reste une ligne par plante** (choix du porteur). Vue « Par saison » : mois à
   venir seulement pour la saison en cours, et suggestions de la saison (`seasonSuggestions`, « En novembre ·
-  … »). À valider sur son téléphone.
+  … »). Plus de « Plante … » pour une plante déjà sur le balcon (`addedAt` du `CalendarSubject`, option
+  `now`), sauf arrivée ce mois-ci (achetée, ajoutée depuis une suggestion) ; vaut pour Saisons et
+  l'accueil (`seasonalToDo`). À valider sur son téléphone.
 - **Calendrier de culture vérifié** (02/10, à sa demande « quelles sont tes sources ») : les 100 plantes
   comparées à 2-3 pages de semenciers / sites de jardinage (recherche web, repère Paris, culture en pot ;
   un mois n'est changé que si 2 sources concordent) : 35 mois corrigés (récoltes prolongées, semis plus

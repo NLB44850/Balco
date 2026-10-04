@@ -59,7 +59,7 @@ test("une série de 3 jours se fête en grand", async ({ page }) => {
   await seedBalcony(page, { plants: ["basil", "mint"], wateredDaysAgo: 1, pastGestureDays: [1, 2] });
   await open(page, "/", "Tes plantes");
   await page.getByRole("checkbox", { name: /^Marquer comme fait : / }).first().click();
-  await expect(page.getByText("3 jours de suite")).toBeVisible();
+  await expect(page.getByText("3 jours de suite", { exact: true })).toBeVisible();
   await expect(page.getByText("Ton balcon adore ta régularité.")).toBeVisible();
   // Le message habituel reste en bas, avec « Annuler ».
   await expect(page.getByRole("button", { name: "Annuler" })).toBeVisible();

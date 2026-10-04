@@ -101,7 +101,7 @@ export default function CalendarScreen() {
   const subjects = useMemo<CalendarSubject[]>(
     () => showingIdeas
       ? recommendPlants(onboarding, { month: currentMonth }).slice(0, 4).map((entry) => ({ id: entry.id, entry, displayName: entry.name }))
-      : resolvedPlants.map((resolved) => ({ id: resolved.plant.id, entry: resolved.entry, displayName: plantDisplayName(resolved) })),
+      : resolvedPlants.map((resolved) => ({ id: resolved.plant.id, entry: resolved.entry, displayName: plantDisplayName(resolved), addedAt: resolved.plant.addedAt })),
     [currentMonth, onboarding, resolvedPlants, showingIdeas],
   );
   const resolvedById = useMemo(() => new Map<string, ResolvedPlant>(resolvedPlants.map((resolved) => [resolved.plant.id, resolved])), [resolvedPlants]);
@@ -114,8 +114,8 @@ export default function CalendarScreen() {
     return start > 0 ? season.months.slice(start) : season.months;
   }, [currentMonth, season, seasons]);
   const currentActivities = useMemo(
-    () => (view === "season" ? seasonActivities(filteredSubjects, { ...season, months: seasonMonths }, { climate }) : calendarActivities(filteredSubjects, selectedMonth, { climate })),
-    [climate, filteredSubjects, season, seasonMonths, selectedMonth, view],
+    () => (view === "season" ? seasonActivities(filteredSubjects, { ...season, months: seasonMonths }, { climate, now }) : calendarActivities(filteredSubjects, selectedMonth, { climate, now })),
+    [climate, filteredSubjects, now, season, seasonMonths, selectedMonth, view],
   );
   // Seul le mois en cours se coche : on ne note pas un semis de mars en septembre.
   const checkable = !showingIdeas && view === "month" && selectedMonth === currentMonth;

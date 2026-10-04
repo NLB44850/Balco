@@ -155,7 +155,7 @@ export default function HomeScreen() {
   const climate = useMemo(() => (weather.isFallback ? null : climateZoneFor(weather.latitude, weather.longitude, weatherSnapshot.elevationM)), [weather.isFallback, weather.latitude, weather.longitude, weatherSnapshot.elevationM]);
   // Gestes de saison du calendrier (semer, planter, rempoter) pas encore notés ce mois-ci.
   const seasonal = useMemo(
-    () => seasonalToDo(resolvedPlants.map((resolved) => ({ id: resolved.plant.id, entry: resolved.entry, displayName: plantDisplayName(resolved) })), events, now, { climate }),
+    () => seasonalToDo(resolvedPlants.map((resolved) => ({ id: resolved.plant.id, entry: resolved.entry, displayName: plantDisplayName(resolved), addedAt: resolved.plant.addedAt })), events, now, { climate, now }),
     [climate, events, now, resolvedPlants],
   );
   // Idée du mois : une plante à semer ou planter maintenant, adaptée au balcon, qu'on n'a pas encore.

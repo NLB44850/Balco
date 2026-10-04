@@ -155,3 +155,25 @@ describe("gestes rangés par type (Saisons)", () => {
   });
 });
 
+describe("plantation des plantes déjà sur le balcon", () => {
+  const OCTOBER = new Date(2026, 9, 15);
+  const mint = (addedAt?: string) => ({ ...subject("mint"), addedAt });
+  const kinds = (addedAt: string | undefined, month: number) => calendarActivities([mint(addedAt)], month, { now: OCTOBER }).map((activity) => activity.kind);
+
+  it("ne propose plus de planter une plante déjà installée", () => {
+    expect(kinds(new Date(2026, 5, 1).toISOString(), 10)).not.toContain("plant");
+    // Ni les mois suivants.
+    expect(kinds(new Date(2026, 9, 3).toISOString(), 11)).not.toContain("plant");
+  });
+
+  it("garde « Plante … » ce mois-ci pour une plante tout juste ajoutée, et pour les idées d'un balcon vide", () => {
+    expect(kinds(new Date(2026, 9, 3).toISOString(), 10)).toContain("plant");
+    expect(kinds(undefined, 10)).toContain("plant");
+  });
+
+  it("vaut aussi pour les gestes de saison de l'accueil", () => {
+    const old = { ...subject("mint"), addedAt: new Date(2026, 3, 1).toISOString() };
+    expect(seasonalToDo([old], [], OCTOBER).map((activity) => activity.kind)).not.toContain("plant");
+  });
+});
+
