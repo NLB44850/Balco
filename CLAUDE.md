@@ -225,7 +225,7 @@ et route réservée à `role = admin`. Balco+ sera payant (offre commerciale Ope
   `server/founder.ts` (`founderOffer`, `grantFounderPrice` : place vérifiée et prise en une requête).
   La synchro renvoie `access.founder` ; Réglages → Compte le mentionne. Test : `UPDATE users SET plan =
   'plus', founderSince = NOW()`.
-- Bloc B validé sur téléphone le 04/10, PR vers `main` : https://github.com/NLB44850/Balco/pull/14.
+- Bloc B validé sur téléphone le 04/10.
 - Étape 8 faite : pool mysql2 réglable (`DB_POOL_SIZE`, 10 par défaut, `poolSize()` dans `server/db.ts`,
   attente au lieu d'échec). Limite de 20 demandes de code par heure et par IP comptée dans MySQL
   (table `rate_limits`, migration 0012, fenêtres d'une heure, IP en empreinte SHA-256) :
@@ -247,7 +247,8 @@ et route réservée à `role = admin`. Balco+ sera payant (offre commerciale Ope
   (`loadForecastPayload`, partagé par Aujourd'hui et Saisons, 10 min sur le téléphone, `force` au
   rafraîchissement, repli direct sur Open-Meteo si le serveur ne répond pas ou sans adresse d'API).
   `mockWeather` (e2e) simule aussi `/api/weather`. Alias `@/` ajouté dans `vitest.config.ts`.
-  **Bloc C terminé** (étapes 8 à 11), à valider sur téléphone.
+  **Bloc C terminé** (étapes 8 à 11), validé sur téléphone le 04/10. **Audit terminé** : PR
+  https://github.com/NLB44850/Balco/pull/14 (étapes 7 à 11) fusionnée dans `main` le 04/10.
 
 
 À faire, dans l'ordre (liste du porteur, 30/09) :
