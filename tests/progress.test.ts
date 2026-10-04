@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import { resolvePlants } from "../lib/garden/garden-logic";
-import { celebrationFor, formatLiters, plantProgress, plantStage, sinceLabel, upcomingHarvests, waterSaved } from "../lib/garden/progress";
+import { careWeeksLabel, celebrationFor, formatLiters, plantProgress, plantStage, sinceLabel, upcomingHarvests, waterSaved } from "../lib/garden/progress";
 import { weekSummary } from "../lib/garden/week";
 import type { MaintenanceEvent } from "../lib/reminders/reminder-engine";
 
@@ -45,6 +45,17 @@ describe("progression d'une plante", () => {
     expect(progress.stage.label).toBe("En récolte");
     expect(progress.milestones.map((milestone) => milestone.key)).toEqual(["harvest", "photo", "feed", "added"]);
     expect(sinceLabel(70)).toBe("depuis 2 mois");
+  });
+
+  it("ne juge une jeune plante que sur les semaines où elle était là", () => {
+    // Le basilic est arrivé il y a 10 jours : 2 semaines comptent, pas 8.
+    const young = plantProgress(plants[1], [event("basil-1", "watering", 1), event("basil-1", "watering", 9)], [], NOW);
+    expect(young).toMatchObject({ trackedWeeks: 2, activeWeeks: 2 });
+    expect(careWeeksLabel(young)).toBe("Soignée 2 semaines sur 2 depuis son arrivée");
+    expect(careWeeksLabel({ activeWeeks: 3, trackedWeeks: 8 })).toBe("Soignée 3 semaines sur les 8 dernières");
+    expect(careWeeksLabel({ activeWeeks: 1, trackedWeeks: 1 })).toBe("Soignée cette semaine");
+    expect(careWeeksLabel({ activeWeeks: 0, trackedWeeks: 3 })).toBe("Depuis son arrivée : ses soins s’afficheront ici");
+    expect(plantProgress(plants[0], [], [], NOW).trackedWeeks).toBe(8);
   });
 
   it("trouve le bon stade selon la saison et l'âge de la plante", () => {

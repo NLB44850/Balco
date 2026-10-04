@@ -15,7 +15,7 @@ import { PlantPicture, stockPhoto } from "@/components/plant-picture";
 import { ScreenContainer } from "@/components/screen-container";
 import { useCelebration } from "@/components/today/celebration";
 import { UndoToast, type ToastMessage } from "@/components/today/undo-toast";
-import { celebrationFor, milestoneDate, plantProgress, sinceLabel } from "@/lib/garden/progress";
+import { careWeeksLabel, celebrationFor, milestoneDate, plantProgress, sinceLabel } from "@/lib/garden/progress";
 import { IconSymbol } from "@/components/ui/icon-symbol";
 import { Text, TextInput } from "@/components/ui/typography";
 import { useColors } from "@/hooks/use-colors";
@@ -265,14 +265,15 @@ export default function PlantScreen() {
               <Text style={[styles.stage, { color: colors.primary }]}>{progress.stage.label}</Text>
               <Text style={[styles.text, { color: colors.muted }]}>{progress.stage.detail}</Text>
               <Text style={[styles.small, { color: colors.muted }]}>Sur ton balcon {sinceLabel(progress.daysOnBalcony)}{totals ? ` · ${totals}` : ""}</Text>
-              <View style={styles.bars} accessibilityLabel={`Soignée ${progress.activeWeeks} semaine${progress.activeWeeks > 1 ? "s" : ""} sur les 8 dernières`}>
+              <View style={styles.bars} accessibilityLabel={careWeeksLabel(progress)}>
                 {progress.weeks.map((value, index) => (
                   <View key={index} style={styles.barSlot}>
-                    <View style={[styles.bar, { height: value > 0 ? 8 + (value / busiestWeek) * 40 : 4, backgroundColor: value > 0 ? colors.primary : colors.leaf }]} />
+                    {/* Avant son arrivée : pas de barre, ces semaines-là ne comptent pas. */}
+                    {index >= progress.weeks.length - progress.trackedWeeks && <View style={[styles.bar, { height: value > 0 ? 8 + (value / busiestWeek) * 40 : 4, backgroundColor: value > 0 ? colors.primary : colors.leaf }]} />}
                   </View>
                 ))}
               </View>
-              <Text style={[styles.small, { color: colors.muted }]}>{progress.activeWeeks > 0 ? `Soignée ${progress.activeWeeks} semaine${progress.activeWeeks > 1 ? "s" : ""} sur les 8 dernières` : "Les 8 dernières semaines : ses soins s’afficheront ici"}</Text>
+              <Text style={[styles.small, { color: colors.muted }]}>{careWeeksLabel(progress)}</Text>
               {progress.milestones.slice(0, 4).map((milestone) => (
                 <View key={milestone.key} style={styles.milestone}>
                   <Text style={styles.milestoneIcon}>{milestone.icon}</Text>

@@ -71,6 +71,9 @@ export type PlantProgress = {
   photos: number;
   /** Gestes par semaine, des 8 dernières semaines (la plus ancienne d'abord, la semaine en cours en dernier). */
   weeks: number[];
+  /** Semaines (sur ces 8) où la plante était déjà sur le balcon : les plus récentes. */
+  trackedWeeks: number;
+  /** Semaines soignées, parmi celles où elle était là. */
   activeWeeks: number;
   stage: PlantStage;
   milestones: PlantMilestone[];
@@ -113,6 +116,8 @@ export function plantProgress(resolved: ResolvedPlant, events: MaintenanceEvent[
     const index = WEEKS - 1 - Math.floor((end - new Date(event.completedAt).getTime()) / (7 * DAY_MS));
     if (index >= 0 && index < WEEKS) weeks[index] += 1;
   }
+  // Une plante arrivée il y a 3 semaines ne se juge pas sur 8 : seules comptent les semaines où elle était là.
+  const trackedWeeks = Number.isFinite(addedAt.getTime()) ? Math.min(WEEKS, Math.max(1, Math.ceil((end - addedAt.getTime()) / (7 * DAY_MS)))) : WEEKS;
 
   const milestones: PlantMilestone[] = [];
   if (Number.isFinite(addedAt.getTime())) milestones.push({ key: "added", icon: "🪴", label: "Arrivée sur ton balcon", date: resolved.plant.addedAt });
@@ -136,10 +141,19 @@ export function plantProgress(resolved: ResolvedPlant, events: MaintenanceEvent[
     harvests: own.filter((event) => event.type === "harvest").length,
     photos: plantPhotos.length,
     weeks,
-    activeWeeks: weeks.filter((count) => count > 0).length,
+    trackedWeeks,
+    activeWeeks: weeks.slice(WEEKS - trackedWeeks).filter((count) => count > 0).length,
     stage: plantStage(resolved, daysOnBalcony, now),
     milestones,
   };
+}
+
+/** « Soignée 3 semaines sur 4 depuis son arrivée », « Soignée 5 semaines sur les 8 dernières ». */
+export function careWeeksLabel({ activeWeeks, trackedWeeks }: Pick<PlantProgress, "activeWeeks" | "trackedWeeks">) {
+  if (trackedWeeks === 1) return activeWeeks > 0 ? "Soignée cette semaine" : "Ses soins de la semaine s’afficheront ici";
+  if (activeWeeks === 0) return trackedWeeks < WEEKS ? "Depuis son arrivée : ses soins s’afficheront ici" : "Les 8 dernières semaines : ses soins s’afficheront ici";
+  const weeksLabel = `Soignée ${activeWeeks} semaine${activeWeeks > 1 ? "s" : ""}`;
+  return trackedWeeks < WEEKS ? `${weeksLabel} sur ${trackedWeeks} depuis son arrivée` : `${weeksLabel} sur les 8 dernières`;
 }
 
 /** « depuis 12 jours », « depuis 3 mois » */

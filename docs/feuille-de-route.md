@@ -185,10 +185,10 @@ Très cohérent avec la promesse écologique.
 | Semis, plantation, récolte | ✅ | Pour les 100 plantes du catalogue, avec des variétés anciennes, originales et récentes. Dates vérifiées le 2 octobre auprès de 2 à 3 semenciers ou sites de jardinage par plante (35 mois corrigés, sources dans `docs/sources-calendrier.md`). Semis « au chaud » à l'intérieur indiqués quand il le faut (« Sème le basilic au chaud ») |
 | Rempotage | ✅ | Mois de rempotage des 24 vivaces (mars–avril par défaut, exceptions comme l'ail des ours en automne), nouveau geste « Rempotage » dans l'historique |
 | Adaptation au climat local | ✅ | Climat déduit de la ville et de l'altitude (méditerranéen, océanique, tempéré, continental, montagne) : semis et plantations des plantes frileuses un mois plus tôt dans le Midi, un mois plus tard en montagne ; date habituelle des dernières gelées |
-| Vue mensuelle / saisonnière | ✅ | « Par mois » ou « Par saison », en commençant par la saison en cours. Gestes rangés par type (« À récolter · 5 plantes ») pour une liste courte ; on coche chaque plante dans la feuille du bas (4 octobre, à valider) |
+| Vue mensuelle / saisonnière | ✅ | « Par mois » ou « Par saison », en commençant par la saison en cours. Gestes rangés par type (« À récolter · 5 plantes ») pour une liste courte ; on coche chaque plante dans la feuille du bas (validé le 4 octobre) |
 | Alertes gel / chaleur | ✅ | Alertes météo du moment (gel, orage, vent, chaleur, pluie) en haut du calendrier, regroupées par cause |
 | Lien avec les tâches du jour | ✅ | Un entretien coché dans le calendrier l'est aussi sur l'accueil ; semis, plantations et rempotages se notent une fois par mois, et l'accueil rappelle ceux du mois pas encore faits |
-| Suggestions adaptées au balcon | ✅ | Carte « À semer ou planter en octobre » dans Saisons (4 plantes selon le soleil, la place, les envies et le climat, sans celles déjà sur le balcon), ligne « Idée du mois » sur Aujourd'hui, pastille « À semer en octobre » dans le catalogue. Les suggestions changent chaque jour, et s'affichent aussi en vue « Par saison ». **Validation sur téléphone en cours** |
+| Suggestions adaptées au balcon | ✅ | Carte « À semer ou planter en octobre » dans Saisons (4 plantes selon le soleil, la place, les envies et le climat, sans celles déjà sur le balcon), ligne « Idée du mois » sur Aujourd'hui, pastille « À semer en octobre » dans le catalogue. Les suggestions changent chaque jour, et s'affichent aussi en vue « Par saison ». Validé le 4 octobre |
 
 ### 5. Progression et motivation
 
@@ -269,9 +269,9 @@ L'ordre suit la priorité fixée par le porteur du projet. Chaque étape est val
 2. ✅ Petites victoires refaites en plus grand : validées.
 3. ✅ Alertes météo qui agissent sur les gestes : vérifiées et corrigées, validées le 1ᵉʳ octobre.
 4. ✅ Catalogue agrandi à 100 plantes, avec une photo d'exemple pour chacune : validé.
-5. 🟡 Suggestions selon la saison et le mois (Saisons, catalogue, Aujourd'hui) : livrées le 2 octobre, **en cours de validation**.
+5. ✅ Suggestions selon la saison et le mois (Saisons, catalogue, Aujourd'hui), et Saisons rangé par type de geste : validés le 4 octobre.
 
-**Prochaines séances** (4 octobre) : valider les suggestions de saison, puis la carte « Sa progression » de la fiche plante, puis la mémoire de Nora sur plusieurs jours. La publication sur les stores n'est pas encore à l'ordre du jour.
+**Prochaines séances** (4 octobre) : la carte « Sa progression » de la fiche plante, puis la mémoire de Nora sur plusieurs jours. La publication sur les stores n'est pas encore à l'ordre du jour.
 
 **Version suivante**
 
