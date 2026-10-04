@@ -46,7 +46,10 @@ export default function BalconyScreen() {
   const subtitle = resolvedPlants.length === 0
     ? "Ajoute ta première plante"
     : `${resolvedPlants.length} plante${resolvedPlants.length > 1 ? "s" : ""}${watching ? ` · ${watching} à surveiller` : " · toutes en forme"}`;
-  const cardWidth = gridWidth > 0 ? (gridWidth - GAP) / 2 : 0;
+  // Arrondie vers le bas : sur Android, une largeur au demi-pixel près peut faire passer la 2ᵉ carte à la ligne.
+  const cardWidth = gridWidth > 0 ? Math.floor((gridWidth - GAP) / 2) : 0;
+  // Deux cartes par ligne, rangées à la main plutôt qu'avec un retour à la ligne automatique.
+  const rows = Array.from({ length: Math.ceil(resolvedPlants.length / 2) }, (_, index) => resolvedPlants.slice(index * 2, index * 2 + 2));
   const onGridLayout = (event: LayoutChangeEvent) => setGridWidth(event.nativeEvent.layout.width);
 
   const toneColor = (tone: "good" | "watch" | "new") => (tone === "watch" ? colors.warning : tone === "good" ? colors.primary : colors.muted);
@@ -98,7 +101,7 @@ export default function BalconyScreen() {
 
         {resolvedPlants.length > 0 && (
           <View style={styles.grid} onLayout={onGridLayout}>
-            {cardWidth > 0 && resolvedPlants.map(card)}
+            {cardWidth > 0 && rows.map((row) => <View key={row[0].plant.id} style={styles.row}>{row.map(card)}</View>)}
           </View>
         )}
 
@@ -120,7 +123,8 @@ const styles = StyleSheet.create({
   empty: { padding: 20, gap: 6 },
   emptyTitle: { fontSize: 18, fontWeight: "800" },
   small: { fontSize: 13, lineHeight: 19 },
-  grid: { flexDirection: "row", flexWrap: "wrap", gap: GAP, rowGap: 18 },
+  grid: { gap: 18 },
+  row: { flexDirection: "row", gap: GAP },
   card: { gap: 4 },
   picture: { borderRadius: 18, marginBottom: 4 },
   statusChip: { position: "absolute", top: 8, left: 8, flexDirection: "row", alignItems: "center", gap: 6, borderRadius: 999, paddingHorizontal: 9, paddingVertical: 5, backgroundColor: "rgba(255,255,255,0.9)" },
