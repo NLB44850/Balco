@@ -20,10 +20,13 @@ import { IconSymbol } from "@/components/ui/icon-symbol";
 import { Text, TextInput } from "@/components/ui/typography";
 import { useColors } from "@/hooks/use-colors";
 import { useGarden } from "@/lib/garden/garden-context";
-import { EVENT_TYPE_LABELS, POINTS_PER_GESTURE, eventForSessionTask, isScannerEvent, plantDisplayName, plantStatus, plantVariety } from "@/lib/garden/garden-logic";
-import { STATUS_LABELS, growingSince, journalByDay, nextGesture, photoDateLabel, photosForPlant, sunlightLabel } from "@/lib/garden/photos";
+import { EVENT_TYPE_LABELS, POINTS_PER_GESTURE, isScannerEvent, plantDisplayName, plantStatus, plantVariety } from "@/lib/garden/garden-logic";
+import { growingSince, journalByDay, photoDateLabel, photosForPlant, sunlightLabel } from "@/lib/garden/photos";
+import { dayOf, eventForGesture, STATUS_LEGEND } from "@/lib/garden/day-plan";
+import { useDayPlan } from "@/hooks/use-day-plan";
+import { addSnooze } from "@/lib/reminders/reminder-actions";
+import { saveReminderSnoozes } from "@/lib/reminders/local-notifications";
 import { usePlantPhotos } from "@/lib/garden/photos-context";
-import { headline } from "@/lib/garden/today";
 import { CATEGORY_LABELS, formatMonthRange } from "@/lib/plants/catalog";
 
 const clock = (iso: string) => new Date(iso).toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" });
@@ -35,6 +38,7 @@ export default function PlantScreen() {
   const { width } = useWindowDimensions();
   const { id } = useLocalSearchParams<{ id: string }>();
   const { loaded, resolvedPlants, events, logEvent, removeEvent, removePlant, renamePlant, setPlantVariety } = useGarden();
+  const { plan, snoozes, reminderSettings } = useDayPlan();
   const { photos, removePhoto } = usePlantPhotos();
   const [shownPhotoId, setShownPhotoId] = useState<string | null>(null);
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
@@ -76,11 +80,14 @@ export default function PlantScreen() {
 
   const { plant, entry } = resolved;
   const name = plantDisplayName(resolved);
-  const status = plantStatus(resolved, events, now);
-  const statusColor = status.tone === "watch" ? colors.warning : status.tone === "good" ? colors.primary : colors.muted;
+  // État et prochain geste : le plan du jour, le même qu'Aujourd'hui et la carte Balcon.
+  const day = dayOf(plan, plant.id);
+  const status = day?.status ?? { tone: "new" as const, label: "Nouvelle" };
+  const lastCare = plantStatus(resolved, events, now).meta.replace("Dernier soin · ", "dernier soin ");
+  const statusColor = status.tone === "weather" ? colors.frost : status.tone === "watch" ? colors.warning : status.tone === "good" ? colors.primary : colors.muted;
   const variety = plantVariety(resolved);
-  const gesture = nextGesture(resolved, events, now);
-  const gestureEvent = gesture?.done ? events.find((event) => event.id === gesture.eventId) : undefined;
+  const gesture = day?.first ?? null;
+  const gestureEvent = gesture?.done ? events.find((event) => event.id === gesture.doneEventId) : undefined;
   const plantPhotos = photosForPlant(photos, plant.id);
   const shown = plantPhotos.find((photo) => photo.id === shownPhotoId) ?? plantPhotos[0] ?? null;
   const days = journalByDay(events, photos, plant.id, now);
@@ -97,11 +104,14 @@ export default function PlantScreen() {
 
   const doGesture = async () => {
     if (!gesture || gesture.done) return;
-    const event = eventForSessionTask(gesture, new Date());
+    const moment = new Date();
+    const event = eventForGesture(gesture, moment);
     await logEvent(event);
+    // Un conseil météo suivi se tait jusqu'à demain, ici comme sur Aujourd'hui.
+    if (gesture.source.type === "decision") await saveReminderSnoozes(addSnooze(snoozes, gesture.source.decision, "skip", reminderSettings, moment));
     void Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => undefined);
     celebrate(celebrationFor(resolvedPlants, events, [event, ...events.filter((item) => item.id !== event.id)]));
-    showToast(`${gesture.task.doneTitle} +${POINTS_PER_GESTURE} points`, () => void removeEvent(event.id));
+    showToast(`${gesture.source.type === "task" ? gesture.source.task.task.doneTitle : `${gesture.title} : noté.`} +${POINTS_PER_GESTURE} points`, () => void removeEvent(event.id));
   };
 
   const undoGesture = async () => {
@@ -172,9 +182,17 @@ export default function PlantScreen() {
           <Text style={[styles.text, { color: colors.muted }]}>{[plant.nickname ? entry.name : null, variety?.name, CATEGORY_LABELS[entry.category]].filter(Boolean).join(" · ")}</Text>
           <View style={styles.statusRow}>
             <View style={[styles.dot, { backgroundColor: statusColor }]} />
-            <Text style={[styles.statusText, { color: statusColor }]}>{STATUS_LABELS[status.tone]}</Text>
-            <Text style={[styles.text, { color: colors.muted }]}>· {status.meta.replace("Dernier soin · ", "dernier soin ")}</Text>
+            <Text style={[styles.statusText, { color: statusColor }]}>{status.label}</Text>
+            <Text style={[styles.text, { color: colors.muted }]}>· {lastCare}</Text>
           </View>
+          <Text accessibilityLabel={`Légende : ${STATUS_LEGEND.map((item) => item.text).join(", ")}`} style={[styles.legend, { color: colors.muted }]}>
+            {STATUS_LEGEND.map((item, index) => (
+              <Text key={item.tone}>
+                {index > 0 ? "   " : ""}
+                <Text style={{ color: item.tone === "weather" ? colors.frost : item.tone === "watch" ? colors.warning : colors.primary }}>●</Text> {item.text}
+              </Text>
+            ))}
+          </Text>
 
           <View style={styles.pills}>
             {[`☀️  ${sunlightLabel(entry)}`, `🪴  Pot de ${entry.potLiters} L`, `🌱  ${growingSince(plant.addedAt, now)}`].map((label) => (
@@ -186,9 +204,9 @@ export default function PlantScreen() {
           <FadeIn delay={40} style={[styles.next, { borderColor: colors.border }]}>
             {gesture && !gesture.done && (
               <>
-                <Text style={[styles.kicker, { color: colors.primary }]}>Aujourd’hui · {gesture.task.minutes} min</Text>
-                <Text style={[styles.nextTitle, { color: colors.foreground }]}>{headline(gesture.task.title)}</Text>
-                <Text style={[styles.text, { color: colors.muted }]}>{gesture.task.instruction}</Text>
+                <Text style={[styles.kicker, { color: colors.primary }]}>Aujourd’hui · {gesture.minutes} min</Text>
+                <Text style={[styles.nextTitle, { color: colors.foreground }]}>{gesture.title}</Text>
+                <Text style={[styles.text, { color: colors.muted }]}>{gesture.instruction}</Text>
                 <Pressable accessibilityRole="button" onPress={() => void doGesture()} style={({ pressed }) => [styles.cta, { backgroundColor: colors.primary }, pressed && styles.pressed]}>
                   <Text style={styles.ctaText}>C’est fait</Text>
                 </Pressable>
@@ -198,7 +216,7 @@ export default function PlantScreen() {
               <View style={styles.doneRow}>
                 <View style={[styles.check, { backgroundColor: colors.primary }]}><Text style={styles.checkMark}>✓</Text></View>
                 <View style={styles.flex}>
-                  <Text style={[styles.nextTitle, { color: colors.foreground }]}>{headline(gesture.task.title)}</Text>
+                  <Text style={[styles.nextTitle, { color: colors.foreground }]}>{gesture.title}</Text>
                   <Text style={[styles.text, { color: colors.muted }]}>{gestureEvent ? `Fait à ${clock(gestureEvent.completedAt)}` : "Fait aujourd’hui"}</Text>
                 </View>
                 <Pressable accessibilityRole="button" onPress={() => void undoGesture()} hitSlop={8}><Text style={[styles.link, { color: colors.muted }]}>Annuler</Text></Pressable>
@@ -372,6 +390,7 @@ const styles = StyleSheet.create({
   name: { fontSize: 30, fontWeight: "800", letterSpacing: -0.8 },
   text: { fontSize: 14, lineHeight: 20 },
   small: { fontSize: 13, lineHeight: 18 },
+  legend: { fontSize: 12, marginTop: -4 },
   statusRow: { flexDirection: "row", alignItems: "center", gap: 6, flexWrap: "wrap" },
   dot: { width: 10, height: 10, borderRadius: 5 },
   statusText: { fontSize: 14, fontWeight: "700" },

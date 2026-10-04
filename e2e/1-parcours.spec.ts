@@ -56,9 +56,11 @@ test("cocher un geste, puis « Annuler »", async ({ page }) => {
 
 test("une série de 3 jours se fête en grand", async ({ page }) => {
   await mockWeather(page);
-  await seedBalcony(page, { plants: ["basil", "mint"], wateredDaysAgo: 1, pastGestureDays: [1, 2] });
+  // Arrosé il y a 4 jours (hors de la série d'hier et avant-hier) : la première case est un arrosage,
+  // et non une récolte, qui aurait sa propre fête.
+  await seedBalcony(page, { plants: ["basil", "mint"], wateredDaysAgo: 4, pastGestureDays: [1, 2] });
   await open(page, "/", "Tes plantes");
-  await page.getByRole("checkbox", { name: /^Marquer comme fait : / }).first().click();
+  await page.getByRole("checkbox", { name: /^Marquer comme fait : Arrose/ }).first().click();
   await expect(page.getByText("3 jours de suite", { exact: true })).toBeVisible();
   await expect(page.getByText("Ton balcon adore ta régularité.")).toBeVisible();
   // Le message habituel reste en bas, avec « Annuler ».

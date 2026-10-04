@@ -1,14 +1,14 @@
 import { describe, expect, it } from "vitest";
 
+import { eventForGesture, planDay } from "../lib/garden/day-plan";
+
 import {
   appendEvent,
-  buildDailySession,
   careProfileFor,
   computeBadges,
   computeProgress,
   computeStats,
   createGardenPlant,
-  eventForSessionTask,
   formatLongDate,
   gardenDay,
   greeting,
@@ -69,40 +69,33 @@ describe("plant status", () => {
   });
 });
 
-describe("daily session", () => {
+describe("daily plan", () => {
   const plants = resolvePlants([gardenPlant("basil"), gardenPlant("mint"), gardenPlant("radish"), gardenPlant("thyme")]);
 
-  it("proposes one task per plant, capped at three", () => {
-    const session = buildDailySession(plants, [], now);
-    expect(session).toHaveLength(3);
-    expect(new Set(session.map((item) => item.resolved.plant.id)).size).toBe(3);
+  it("plans every plant of the balcony, without a cap", () => {
+    expect(planDay({ plants, events: [], now }).map((day) => day.resolved.plant.id)).toEqual(plants.map(({ plant }) => plant.id));
   });
 
   it("asks to check the soil when watering is due", () => {
-    const session = buildDailySession(resolvePlants([gardenPlant("basil")]), [], now);
-    expect(session[0].task.type).toBe("watering");
-    expect(session[0].task.title).toContain("arrose le basilic");
+    const [basil] = planDay({ plants: resolvePlants([gardenPlant("basil")]), events: [], now });
+    expect(basil.first?.kind).toBe("watering");
+    expect(basil.first?.title.toLowerCase()).toContain("arrose le basilic");
   });
 
-  it("puts the most neglected plant first", () => {
-    const events = [event("basil", "watering", daysAgo(1)), event("mint", "watering", daysAgo(1)), event("thyme", "watering", daysAgo(1))];
-    expect(buildDailySession(plants, events, now)[0].resolved.plant.id).toBe("radish");
-  });
-
-  it("marks a task as done without reordering the session", () => {
-    const before = buildDailySession(plants, [], now);
-    const doneEvent = eventForSessionTask(before[0], now);
-    const after = buildDailySession(plants, [doneEvent], now);
-    expect(after.map((item) => item.eventId)).toEqual(before.map((item) => item.eventId));
-    expect(after[0].done).toBe(true);
-    expect(after.slice(1).every((item) => !item.done)).toBe(true);
-    expect(doneEvent).toMatchObject({ plantId: before[0].resolved.plant.id, type: before[0].task.type, source: "daily_task" });
+  it("marks a gesture as done without reordering the plan", () => {
+    const before = planDay({ plants, events: [], now });
+    const doneEvent = eventForGesture(before[0].first!, now);
+    const after = planDay({ plants, events: [doneEvent], now });
+    expect(after.map((day) => day.first?.key)).toEqual(before.map((day) => day.first?.key));
+    expect(after[0].first?.done).toBe(true);
+    expect(after.slice(1).every((day) => !day.first?.done)).toBe(true);
+    expect(doneEvent).toMatchObject({ plantId: before[0].resolved.plant.id, type: "watering", source: "daily_task" });
   });
 
   it("never proposes a harvest out of season", () => {
     const winter = new Date(2026, 0, 15, 10);
-    const session = buildDailySession(resolvePlants([gardenPlant("cherry-tomato")]), [], winter);
-    expect(session.every((item) => item.task.type !== "harvest")).toBe(true);
+    const [tomato] = planDay({ plants: resolvePlants([gardenPlant("cherry-tomato")]), events: [], now: winter });
+    expect(tomato.gestures.every((gesture) => gesture.kind !== "harvest")).toBe(true);
   });
 });
 

@@ -66,11 +66,11 @@ export function dayKey(date: Date) {
   return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
 }
 
-function startOfDay(date: Date) {
+export function startOfDay(date: Date) {
   return new Date(date.getFullYear(), date.getMonth(), date.getDate());
 }
 
-function dayOfYear(date: Date) {
+export function dayOfYear(date: Date) {
   return Math.floor((startOfDay(date).getTime() - new Date(date.getFullYear(), 0, 1).getTime()) / DAY_MS);
 }
 
@@ -190,39 +190,6 @@ export type SessionTask = { resolved: ResolvedPlant; task: CareTask; eventId: st
 
 export function sessionEventId(plantId: string, taskId: string, now: Date) {
   return `${plantId}:${taskId}:${dayKey(now)}`;
-}
-
-/**
- * Choisit un geste par plante pour aujourd'hui, puis garde les plus utiles.
- * Le classement ignore les gestes du jour pour que la liste ne se réordonne pas
- * au moment où l'utilisateur valide une tâche.
- */
-export function buildDailySession(plants: ResolvedPlant[], events: MaintenanceEvent[], now = new Date(), limit = 3): SessionTask[] {
-  const today = startOfDay(now);
-  const month = now.getMonth() + 1;
-  const eventIds = new Set(events.map((event) => event.id));
-
-  return plants
-    .map((resolved, index) => {
-      // Un geste espacé (engrais) n'est proposé que s'il est dû ; il passe alors avant les autres.
-      const candidates = tasksForMonth(resolved.entry, month).filter((task) => !task.everyDays || spacedTaskDue(resolved, task, events, today));
-      if (candidates.length === 0) return null;
-      const interval = resolved.entry.care.wateringIntervalHours * HOUR_MS;
-      const lastWatering = lastEventDate(events, resolved.plant.id, "watering", today);
-      const wateringTask = candidates.find((task) => task.type === "watering");
-      const wateringDue = !lastWatering || today.getTime() - lastWatering.getTime() >= interval;
-      const spaced = candidates.find((task) => task.everyDays);
-      const task = wateringTask && wateringDue ? wateringTask : spaced ?? candidates[(dayOfYear(now) + index) % candidates.length];
-
-      const lastCare = lastEventDate(events, resolved.plant.id, undefined, today);
-      const urgency = lastCare ? (today.getTime() - lastCare.getTime()) / interval : 10;
-      const eventId = sessionEventId(resolved.plant.id, task.id, now);
-      return { item: { resolved, task, eventId, done: eventIds.has(eventId) }, urgency };
-    })
-    .filter((value): value is { item: SessionTask; urgency: number } => value !== null)
-    .sort((a, b) => b.urgency - a.urgency)
-    .slice(0, limit)
-    .map(({ item }) => item);
 }
 
 /**

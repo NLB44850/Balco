@@ -38,14 +38,14 @@ Tout se passe dans son GitHub Codespace (pas de Docker sur son PC).
 
 - `pnpm -s check`, `pnpm -s lint`, puis `TEST_DATABASE_URL=mysql://balco:balco@localhost:3306/balco_cal npx vitest run`
   (MariaDB locale : `service mariadb start` si elle s'est arrêtée, `apt-get install -y mariadb-server` si elle manque,
-  puis `DATABASE_URL=… npx drizzle-kit migrate` ; 396 tests à ce jour). Dans un conteneur
+  puis `DATABASE_URL=… npx drizzle-kit migrate` ; 404 tests à ce jour). Dans un conteneur
   neuf : `apt-get install -y mariadb-server`, `service mariadb start`, créer la base `balco_cal` et l'utilisateur
   `balco`/`balco`, puis `pnpm -s build && DATABASE_URL=mysql://balco:balco@localhost:3306/balco_cal node dist/migrate.mjs`.
 - `npx expo export --platform android` pour s'assurer que le bundle Android se construit.
 - **Tests de bout en bout** (à lancer quand le porteur le demande, et avant chaque grosse évolution) :
   `bash scripts/e2e.sh` (≈ 4 min : construit l'app web avec la simulation météo, migre la base, démarre
   le vrai serveur sur le port 3100, lance Playwright). `bash scripts/e2e.sh meteo` pour un seul fichier,
-  `E2E_SKIP_BUILD=1` pour ne pas reconstruire. Scénarios dans `e2e/` (19 aujourd'hui) : parcours
+  `E2E_SKIP_BUILD=1` pour ne pas reconstruire. Scénarios dans `e2e/` (20 aujourd'hui) : parcours
   (onboarding, écrans, cocher/Annuler, fête, catalogue, fiche d'une nouvelle plante, feuille du bas qui se ferme,
   suggestions de saison, Saisons rangé par type), météo (pluie + eau économisée, gel + Saisons,
   orage, vent, canicule, « Pas aujourd'hui », retour météo réelle), compte (code de connexion lu dans
@@ -297,6 +297,28 @@ et route réservée à `role = admin`. Balco+ sera payant (offre commerciale Ope
 (validées le 04/10), puis la carte « Sa progression » de la fiche plante (validée le 04/10), puis la mémoire
 de Nora sur plusieurs jours (en cours : test sur 2-3 jours, protocole donné le 04/10). État lisible pour lui : `docs/feuille-de-route.md`
 (parties 2 à 4, mises à jour le 04/10).
+
+**Retours du test utilisateur (04/10, plan validé, 10 étapes, une par commit)** : 1 plan du jour unique
+(Aujourd'hui, Balcon, fiche, pastilles) ; 2 titres d'action sans « si besoin » + sous-titre concret ;
+3 vérifications regroupées ; 4 alertes météo en bandeau ; 5 gestes de saison dans Aujourd'hui, Saisons en
+lecture seule ; 6 cohérence Saisons / Ma semaine / Moi + libellé Idée du mois ; 7 série de « jours suivis » ;
+8 fêtes plus rares + tuile « 0 photo » masquée ; 9 Observer sans compte ; 10 textes de l'offre en bénéfices.
+Vitest pour chaque correction, scénario Playwright de cohérence (Aujourd'hui, Balcon, Saisons, Ma semaine, Moi).
+Choix du porteur : ordre des gestes alerte > arrosage > récolte > plantation/semis/rempotage > engrais >
+entretien ; gel et orage = bandeau + bouton « C'est fait », pluie = bandeau simple ; fête plein écran
+seulement pour un nouveau badge et la 1ʳᵉ récolte de chaque plante, au plus une par jour (le reste :
+animation discrète) ; Observer sans compte = 1 analyse par appareil, 3 par réseau et par jour ; Aujourd'hui :
+une ligne par plante au plus, arrosages regroupés, alertes / arrosages / récoltes toujours visibles, engrais
+et entretien repliés sous « X autres gestes, pas urgents » dès qu'il y a plus de 5 lignes. À la fin : lister
+ce qui n'a pas pu être corrigé ou demande une décision.
+- **Étape 1 faite (04/10)** : plan du jour unique `lib/garden/day-plan.ts` (`planDay` : gestes par plante dans
+  l'ordre `GESTURE_ORDER`, état `good`/`watch`/`weather`/`new` avec une couleur par sens, `gestureLine`,
+  `eventForGesture`, `STATUS_LEGEND`) lu par Aujourd'hui (`buildTodayList({ groups, plan })` : alertes météo puis
+  une ligne par plante, plus de limite à 3), Balcon, la fiche (légende sous l'état) et les pastilles, via le
+  hook partagé `hooks/use-day-plan.ts` (météo, réglages, reports, décisions). `buildDailySession` et
+  `nextGesture` supprimés. Arrosée aujourd'hui = ligne cochée même si le conseil météo s'est tu. Scénario
+  `e2e/4-coherence.spec.ts` (Aujourd'hui, Balcon, fiche ; à compléter à l'étape 6). Pastilles d'Aujourd'hui
+  avec libellé accessible « Basilic, À surveiller ».
 
 Points à ne pas oublier (à proposer au porteur au bon moment, noté le 30/09) :
 - Encore à valider sur son téléphone : la carte « Sa progression » de la fiche plante et les petites

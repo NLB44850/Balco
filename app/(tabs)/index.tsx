@@ -1,4 +1,4 @@
-import { useFocusEffect, useRouter } from "expo-router";
+import { useRouter } from "expo-router";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Animated, Platform, Pressable, ScrollView, StyleSheet, View } from "react-native";
 import { Text } from "@/components/ui/typography";
@@ -16,7 +16,7 @@ import { BottomSheet } from "@/components/today/bottom-sheet";
 import { TODAY_ROW_PICTURE, TodayRow } from "@/components/today/today-row";
 import { useCelebration } from "@/components/today/celebration";
 import { UndoToast, type ToastMessage } from "@/components/today/undo-toast";
-import { useLocalWeather } from "@/hooks/use-local-weather";
+import { useDayPlan } from "@/hooks/use-day-plan";
 import { useColors } from "@/hooks/use-colors";
 import { useVacation } from "@/hooks/use-vacation";
 import { useWeatherSimulation } from "@/hooks/use-weather-simulation";
@@ -29,37 +29,28 @@ import { celebrationFor, formatLiters, litersPerWatering } from "@/lib/garden/pr
 import { awayOn, preparationSteps, vacationRange, vacationState } from "@/lib/garden/vacation";
 import {
   POINTS_PER_GESTURE,
-  buildDailySession,
   dayKey,
-  careProfileFor,
   eventForSessionTask,
   plantDisplayName,
-  plantStatus,
   streakDays,
 } from "@/lib/garden/garden-logic";
 import { potsFor, skyScene } from "@/lib/garden/sky";
 import { publishSky } from "@/lib/garden/sky-store";
+import type { PlantTone } from "@/lib/garden/day-plan";
 import { balconyStatus, buildTodayList, doneSubtitle, type TodayItem } from "@/lib/garden/today";
 import { notificationsUnavailableReason } from "@/lib/notifications/module";
-import { eventForActivity, seasonalToDo } from "@/lib/plants/calendar";
+import { eventForActivity } from "@/lib/plants/calendar";
 import { PLANT_CATALOG, recommendPlants } from "@/lib/plants/catalog";
 import { seasonalSuggestions, type SeasonalSuggestion } from "@/lib/plants/suggestions";
-import { climateZoneFor } from "@/lib/plants/climate";
-import { addSnooze, eventForReminder, planGroupedNotification, withoutSnoozed, type ReminderSnooze } from "@/lib/reminders/reminder-actions";
-import { decideReminders, type MaintenanceEvent } from "@/lib/reminders/reminder-engine";
-import { groupReminders, selectGroups, type ReminderGroup } from "@/lib/reminders/reminder-groups";
+import { addSnooze, eventForReminder, planGroupedNotification, type ReminderSnooze } from "@/lib/reminders/reminder-actions";
+import type { MaintenanceEvent } from "@/lib/reminders/reminder-engine";
+import type { ReminderGroup } from "@/lib/reminders/reminder-groups";
 import {
   cancelBalcoReminderNotifications,
-  defaultLocalReminderSettings,
-  loadLocalReminderSettings,
-  loadReminderSnoozes,
   saveLocalReminderSettings,
   saveReminderSnoozes,
   scheduleLocalReminder,
   sendReminderPreview,
-  subscribeReminderSettings,
-  subscribeReminderSnoozes,
-  type LocalReminderSettings,
 } from "@/lib/reminders/local-notifications";
 import { scenarioLabel } from "@/lib/weather/simulation";
 
@@ -99,16 +90,12 @@ export default function HomeScreen() {
     router.push("/(tabs)/scanner");
   };
   const { covers } = usePlantPhotos();
-  const [now, setNow] = useState(() => new Date());
-  const [snoozes, setSnoozes] = useState<ReminderSnooze[]>([]);
-  const [snoozesLoaded, setSnoozesLoaded] = useState(false);
-  const [reminderSettings, setReminderSettings] = useState<LocalReminderSettings>(defaultLocalReminderSettings);
-  const [reminderSettingsLoaded, setReminderSettingsLoaded] = useState(false);
+  // Plan du jour, météo, réglages et reports : les mêmes que Balcon et la fiche plante.
+  const { weather, weatherSnapshot, now, climate, snoozes, snoozesLoaded, reminderSettings, setReminderSettings, reminderSettingsLoaded, reminderDecisions, visibleGroups, plan } = useDayPlan();
   const [sheetKey, setSheetKey] = useState<string | null>(null);
   const [toast, setToast] = useState<ToastMessage | null>(null);
   const toastId = useRef(0);
   const { celebrate, overlay: celebration } = useCelebration();
-  const { weather, weatherSnapshot } = useLocalWeather();
   const simulation = useWeatherSimulation();
   const insets = useSafeAreaInsets();
   const sky = useMemo(() => skyScene(weatherSnapshot, now, weather.isFallback), [now, weather.isFallback, weatherSnapshot]);
@@ -119,64 +106,17 @@ export default function HomeScreen() {
   const [previewStatus, setPreviewStatus] = useState<"idle" | "sent" | "denied">("idle");
   useEffect(() => setPreviewStatus("idle"), [simulation.scenario]);
 
-  // Recharge l'heure et les réglages (modifiables depuis le profil) à chaque retour sur l'écran.
-  useFocusEffect(useCallback(() => {
-    setNow(new Date());
-    let active = true;
-    loadLocalReminderSettings().then((settings) => {
-      if (!active) return;
-      setReminderSettings(settings);
-      setReminderSettingsLoaded(true);
-    });
-    return () => {
-      active = false;
-    };
-  }, []));
-
-  // Réglages modifiés depuis le profil ou un autre appareil.
-  useEffect(() => subscribeReminderSettings((settings) => setReminderSettings(settings)), []);
-
-  // Rappels mis en sommeil, ici ou depuis les boutons d'une notification.
-  useEffect(() => {
-    void loadReminderSnoozes().then((stored) => {
-      setSnoozes(stored);
-      setSnoozesLoaded(true);
-    });
-    return subscribeReminderSnoozes(setSnoozes);
-  }, []);
-
   // Le serveur a besoin de la vraie position pour les rappels app fermée ; jamais de la ville de repli.
   useEffect(() => {
     if (weather.isFallback) return;
     reportLocation({ city: weather.city, latitude: weather.latitude, longitude: weather.longitude, timezone: Intl.DateTimeFormat().resolvedOptions().timeZone || "Europe/Paris" });
   }, [reportLocation, weather.city, weather.isFallback, weather.latitude, weather.longitude]);
 
-  const session = useMemo(() => buildDailySession(resolvedPlants, events, now), [events, now, resolvedPlants]);
-  const climate = useMemo(() => (weather.isFallback ? null : climateZoneFor(weather.latitude, weather.longitude, weatherSnapshot.elevationM)), [weather.isFallback, weather.latitude, weather.longitude, weatherSnapshot.elevationM]);
-  // Gestes de saison du calendrier (semer, planter, rempoter) pas encore notés ce mois-ci.
-  const seasonal = useMemo(
-    () => seasonalToDo(resolvedPlants.map((resolved) => ({ id: resolved.plant.id, entry: resolved.entry, displayName: plantDisplayName(resolved), addedAt: resolved.plant.addedAt })), events, now, { climate, now }),
-    [climate, events, now, resolvedPlants],
-  );
   // Idée du mois : une plante à semer ou planter maintenant, adaptée au balcon, qu'on n'a pas encore.
   const monthIdea = useMemo(
     () => (resolvedPlants.length === 0 ? null : seasonalSuggestions(onboarding, { month: now.getMonth() + 1, climate, ownedCatalogIds: resolvedPlants.map((resolved) => resolved.entry.id), limit: 1, seed: dayKey(now) })[0] ?? null),
     [climate, now, onboarding, resolvedPlants],
   );
-
-  const reminderPlants = useMemo(
-    () => resolvedPlants.filter(({ plant }) => reminderSettings.enabledPlantIds.length === 0 || reminderSettings.enabledPlantIds.includes(plant.id)),
-    [reminderSettings.enabledPlantIds, resolvedPlants],
-  );
-  const reminderDecisions = useMemo(() => {
-    if (!reminderSettingsLoaded || weather.isFallback) return [];
-    // La liste du jour montre toujours les conseils ; « rappels activés » ne décide que des notifications.
-    const settings = { enabled: true, skipWateringWhenRainExpected: reminderSettings.skipWateringWhenRainExpected, maxNormalRemindersPerDay: reminderSettings.maxNormalRemindersPerDay };
-    const decisions = decideReminders(reminderPlants.map((resolved) => ({ plant: careProfileFor(resolved), history: events, weather: weatherSnapshot, settings })));
-    // Une alerte par cause météo ; toutes les alertes importantes, puis au plus N conseils ordinaires (cf. spec §6).
-    return selectGroups(groupReminders(decisions), reminderSettings.maxNormalRemindersPerDay).flatMap((group) => group.decisions);
-  }, [events, reminderPlants, reminderSettings, reminderSettingsLoaded, weather.isFallback, weatherSnapshot]);
-  const visibleReminders = useMemo(() => groupReminders(withoutSnoozed(reminderDecisions, snoozes, new Date())), [reminderDecisions, snoozes]);
 
   // Une seule notification programmée : le prochain conseil utile, à l'heure préférée ou au réveil d'un « Dans 3 h ».
   useEffect(() => {
@@ -191,22 +131,15 @@ export default function HomeScreen() {
   const away = trip.phase === "away";
   const tripPlan = useMemo(() => (vacation ? preparationSteps(resolvedPlants, vacation, now) : []), [now, resolvedPlants, vacation]);
 
-  const wateredToday = useMemo(() => events.filter((event) => event.type === "watering" && dayKey(new Date(event.completedAt)) === dayKey(now)).map((event) => event.plantId), [events, now]);
-  const items = useMemo(() => buildTodayList({ groups: visibleReminders, session, seasonal, decisions: reminderDecisions, wateredToday }), [reminderDecisions, seasonal, session, visibleReminders, wateredToday]);
+  const items = useMemo(() => buildTodayList({ groups: visibleGroups, plan }), [plan, visibleGroups]);
   const status = useMemo(() => balconyStatus(items, events, now), [events, items, now]);
   const streak = useMemo(() => streakDays(events, now), [events, now]);
   const sheetItem = items.find((item) => item.key === sheetKey) ?? null;
   const recommendations = useMemo(() => (resolvedPlants.length === 0 ? recommendPlants(onboarding, { month: now.getMonth() + 1 }).slice(0, 3) : []), [now, onboarding, resolvedPlants.length]);
 
-  // Couleur du point d'état de chaque plante : alerte en cours, soif, en forme.
-  const plantDots = useMemo(() => {
-    const dots = new Map<string, string>();
-    for (const group of visibleReminders) {
-      const color = group.cause === "heat" ? colors.terracotta : group.cause === "thirst" ? colors.warning : colors.frost;
-      group.decisions.forEach((decision) => dots.set(decision.plantId, color));
-    }
-    return dots;
-  }, [colors.frost, colors.terracotta, colors.warning, visibleReminders]);
+  // Couleur du point d'état de chaque plante : la même que sur Balcon et la fiche (plan du jour).
+  const toneColor = (tone: PlantTone) => (tone === "weather" ? colors.frost : tone === "watch" ? colors.warning : tone === "good" ? colors.primary : colors.muted);
+  const plantDots = useMemo(() => new Map(plan.map((day) => [day.resolved.plant.id, day.status])), [plan]);
 
   const showToast = (text: string, onUndo?: () => void) => {
     toastId.current += 1;
@@ -258,6 +191,12 @@ export default function HomeScreen() {
   const toggleItem = async (item: TodayItem) => {
     if (item.kind === "alert") return completeAlert(item.group);
     if (item.kind === "season") {
+      if (item.done) {
+        const id = eventForActivity(item.activity, now).id;
+        const previous = events.find((event) => event.id === id);
+        await removeEvent(id);
+        return showToast("Geste retiré de ta journée", previous ? () => void logEvent(previous) : undefined);
+      }
       const logged = [eventForActivity(item.activity, new Date())];
       const undo = await logAll(logged);
       haptic();
@@ -335,10 +274,10 @@ export default function HomeScreen() {
         {simulation.scenario !== "none" && (
           <View style={[styles.simulation, { backgroundColor: colors.surface }]}>
             <Text style={[styles.simulationTitle, { color: colors.foreground }]}>🧪 Simulation : {scenarioLabel(simulation.scenario).toLowerCase()}</Text>
-            <Text style={[styles.small, { color: colors.muted }]}>{weather.isFallback ? "La météo réelle n’a pas encore chargé : la simulation s’appliquera dès qu’elle sera là." : reminderDecisions.length === 0 ? "Aucune alerte pour ce scénario : vérifie tes plantes et leurs derniers arrosages." : visibleReminders.length === 0 ? "Alerte simulée déjà traitée aujourd’hui." : "Les alertes ci-dessous sont simulées."}</Text>
+            <Text style={[styles.small, { color: colors.muted }]}>{weather.isFallback ? "La météo réelle n’a pas encore chargé : la simulation s’appliquera dès qu’elle sera là." : reminderDecisions.length === 0 ? "Aucune alerte pour ce scénario : vérifie tes plantes et leurs derniers arrosages." : visibleGroups.length === 0 ? "Alerte simulée déjà traitée aujourd’hui." : "Les alertes ci-dessous sont simulées."}</Text>
             <View style={styles.inlineActions}>
-              {notificationsUnavailableReason === null && visibleReminders.length > 0 && (
-                <Pressable accessibilityRole="button" onPress={() => void sendReminderPreview(visibleReminders[0]).then((result) => setPreviewStatus(result === "sent" ? "sent" : "denied"))} style={({ pressed }) => [styles.pill, { backgroundColor: colors.foreground }, pressed && styles.pressed]}>
+              {notificationsUnavailableReason === null && visibleGroups.length > 0 && (
+                <Pressable accessibilityRole="button" onPress={() => void sendReminderPreview(visibleGroups[0]).then((result) => setPreviewStatus(result === "sent" ? "sent" : "denied"))} style={({ pressed }) => [styles.pill, { backgroundColor: colors.foreground }, pressed && styles.pressed]}>
                   <Text style={[styles.pillText, { color: colors.background }]}>Me notifier dans 5 s</Text>
                 </Pressable>
               )}
@@ -446,10 +385,10 @@ export default function HomeScreen() {
             </View>
             <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.shelfRow}>
               {resolvedPlants.map((resolved) => {
-                const tone = plantStatus(resolved, events, now).tone;
-                const dot = plantDots.get(resolved.plant.id) ?? (tone === "good" ? colors.primary : tone === "watch" ? colors.warning : colors.border);
+                const state = plantDots.get(resolved.plant.id) ?? { tone: "new" as const, label: "Nouvelle" };
+                const dot = toneColor(state.tone);
                 return (
-                  <Pressable key={resolved.plant.id} accessibilityRole="button" accessibilityLabel={plantDisplayName(resolved)} onPress={() => router.push({ pathname: "/garden/[id]", params: { id: resolved.plant.id } })} style={({ pressed }) => [styles.plant, pressed && styles.pressed]}>
+                  <Pressable key={resolved.plant.id} accessibilityRole="button" accessibilityLabel={`${plantDisplayName(resolved)}, ${state.label}`} onPress={() => router.push({ pathname: "/garden/[id]", params: { id: resolved.plant.id } })} style={({ pressed }) => [styles.plant, pressed && styles.pressed]}>
                     <View>
                       <PlantPicture resolved={resolved} style={styles.plantBubble} />
                       <View style={[styles.plantDot, { backgroundColor: dot, borderColor: colors.background }]} />

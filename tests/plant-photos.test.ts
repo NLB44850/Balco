@@ -1,7 +1,9 @@
 import { describe, expect, it } from "vitest";
 
+import { eventForGesture, planDay } from "../lib/garden/day-plan";
+
 import { createGardenPlant, eventForSessionTask, resolvePlants } from "../lib/garden/garden-logic";
-import { addPhoto, coverPhotos, growingSince, journalByDay, nextGesture, orphanPhotos, photoDateLabel, photosForPlant, sunlightLabel, type PlantPhoto } from "../lib/garden/photos";
+import { addPhoto, coverPhotos, growingSince, journalByDay, orphanPhotos, photoDateLabel, photosForPlant, sunlightLabel, type PlantPhoto } from "../lib/garden/photos";
 import { getCatalogPlant } from "../lib/plants/catalog";
 import type { MaintenanceEvent } from "../lib/reminders/reminder-engine";
 
@@ -63,12 +65,12 @@ describe("photos des plantes", () => {
 describe("fiche plante", () => {
   const [basil] = resolvePlants([{ ...createGardenPlant("basil", daysAgo(10)), id: "basil-1" }]);
 
-  it("propose le prochain geste du jour, puis le montre fait une fois coché", () => {
-    const gesture = nextGesture(basil, [], now);
+  it("propose le prochain geste du jour (le plan du jour), puis le montre fait une fois coché", () => {
+    const gesture = planDay({ plants: [basil], events: [], now })[0].first;
     expect(gesture).not.toBeNull();
     expect(gesture!.done).toBe(false);
-    const events = [eventForSessionTask(gesture!, now)];
-    expect(nextGesture(basil, events, now)?.done).toBe(true);
+    const events = [eventForGesture(gesture!, now)];
+    expect(planDay({ plants: [basil], events, now })[0].first?.done).toBe(true);
   });
 
   it("mêle photos et gestes jour par jour, du plus récent au plus ancien", () => {

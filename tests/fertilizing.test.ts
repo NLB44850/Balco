@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 
-import { buildDailySession, resolvePlants, spacedTaskDue } from "../lib/garden/garden-logic";
+import { eventForGesture, planDay } from "../lib/garden/day-plan";
+import { resolvePlants, spacedTaskDue } from "../lib/garden/garden-logic";
 import { calendarActivities } from "../lib/plants/calendar";
 import { getCatalogPlant, PLANT_CATALOG } from "../lib/plants/catalog";
 import { FERTILIZING } from "../lib/plants/fertilizing";
@@ -32,12 +33,14 @@ describe("le geste « Engrais »", () => {
     expect(spacedTaskDue(tomato(5), feedTask(), [], NOW)).toBe(false);
   });
 
-  it("passe en tête de l'accueil quand il est dû, et reste coché le jour même", () => {
-    expect(buildDailySession([tomato()], [watered, fed(20)], NOW)[0].task.id).toBe("feed");
-    expect(buildDailySession([tomato()], [watered, fed(3)], NOW)[0].task.id).not.toBe("feed");
-    const session = buildDailySession([tomato()], [watered], NOW);
-    const doneToday: MaintenanceEvent = { id: session[0].eventId, plantId: "tomato-1", type: "fertilizing", completedAt: NOW.toISOString(), source: "daily_task" };
-    expect(buildDailySession([tomato()], [watered, doneToday], NOW)[0]).toMatchObject({ done: true, task: { id: "feed" } });
+  it("s'ajoute aux gestes du jour quand il est dû, après la récolte, et reste coché le jour même", () => {
+    const feed = (events: MaintenanceEvent[]) => planDay({ plants: [tomato()], events, now: NOW })[0].gestures.find((gesture) => gesture.kind === "fertilizing");
+    expect(feed([watered, fed(20)])).toBeDefined();
+    expect(feed([watered, fed(3)])).toBeUndefined();
+    const kinds = planDay({ plants: [tomato()], events: [watered, fed(20)], now: NOW })[0].gestures.map((gesture) => gesture.kind);
+    expect(kinds.indexOf("fertilizing")).toBeGreaterThan(kinds.indexOf("harvest"));
+    const doneToday = eventForGesture(feed([watered])!, NOW);
+    expect(feed([watered, doneToday])).toMatchObject({ done: true });
   });
 
   it("apparaît dans Saisons avec son rythme, seulement aux bons mois", () => {

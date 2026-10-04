@@ -52,7 +52,7 @@ describe("Balco MVP content", () => {
     expect(home).toContain("useGarden");
     expect(home).toContain("recommendPlants");
     expect(home).toContain("Voir les {PLANT_CATALOG.length} plantes");
-    expect(home).toContain("buildDailySession");
+    expect(home).toContain("useDayPlan");
     expect(home).toContain("buildTodayList");
     expect(home).toContain("balconyStatus");
     expect(home).toContain("BottomSheet");
@@ -174,10 +174,12 @@ describe("Balco MVP content", () => {
 
   it("supports grouped reminders for several garden plants", () => {
     const home = readProjectFile("app/(tabs)/index.tsx");
+    // Les conseils sont calculés une fois pour Aujourd'hui, Balcon et la fiche (hooks/use-day-plan.ts).
+    const plan = readProjectFile("hooks/use-day-plan.ts");
     const card = readProjectFile("components/contextual-reminder-card.tsx");
     expect(home).toContain("reminderDecisions");
-    expect(home).toContain("groupReminders");
-    expect(home).toContain("decideReminders");
+    expect(plan).toContain("groupReminders");
+    expect(plan).toContain("decideReminders");
     expect(card).toContain("onComplete");
     expect(card).toContain("onSnooze");
     expect(card).toContain("Pas aujourd’hui");
