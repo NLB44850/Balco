@@ -38,16 +38,16 @@ Tout se passe dans son GitHub Codespace (pas de Docker sur son PC).
 
 - `pnpm -s check`, `pnpm -s lint`, puis `TEST_DATABASE_URL=mysql://balco:balco@localhost:3306/balco_cal npx vitest run`
   (MariaDB locale : `service mariadb start` si elle s'est arrêtée, `apt-get install -y mariadb-server` si elle manque,
-  puis `DATABASE_URL=… npx drizzle-kit migrate` ; 383 tests à ce jour). Dans un conteneur
+  puis `DATABASE_URL=… npx drizzle-kit migrate` ; 389 tests à ce jour). Dans un conteneur
   neuf : `apt-get install -y mariadb-server`, `service mariadb start`, créer la base `balco_cal` et l'utilisateur
   `balco`/`balco`, puis `pnpm -s build && DATABASE_URL=mysql://balco:balco@localhost:3306/balco_cal node dist/migrate.mjs`.
 - `npx expo export --platform android` pour s'assurer que le bundle Android se construit.
 - **Tests de bout en bout** (à lancer quand le porteur le demande, et avant chaque grosse évolution) :
   `bash scripts/e2e.sh` (≈ 4 min : construit l'app web avec la simulation météo, migre la base, démarre
   le vrai serveur sur le port 3100, lance Playwright). `bash scripts/e2e.sh meteo` pour un seul fichier,
-  `E2E_SKIP_BUILD=1` pour ne pas reconstruire. Scénarios dans `e2e/` (18 aujourd'hui) : parcours
+  `E2E_SKIP_BUILD=1` pour ne pas reconstruire. Scénarios dans `e2e/` (19 aujourd'hui) : parcours
   (onboarding, écrans, cocher/Annuler, fête, catalogue, fiche d'une nouvelle plante, feuille du bas qui se ferme,
-  suggestions de saison), météo (pluie + eau économisée, gel + Saisons,
+  suggestions de saison, Saisons rangé par type), météo (pluie + eau économisée, gel + Saisons,
   orage, vent, canicule, « Pas aujourd'hui », retour météo réelle), compte (code de connexion lu dans
   `dist/e2e-server.log`, balcon retrouvé sur un 2ᵉ téléphone, le 1ᵉʳ prévenu « sauvegardé depuis un autre téléphone ») et vacances. Open-Meteo est simulé
   (`e2e/helpers.ts`, `mockWeather`), le balcon est posé dans le stockage (`seedBalcony`). Les cases à
@@ -173,6 +173,14 @@ Livré, à valider sur son téléphone :
   **Les suggestions tournent chaque jour** (à sa demande, « que l'app ne paraisse pas figée ») : tirage
   du jour (`seed: dayKey(now)`) parmi les 12 mieux adaptées, stable dans la journée, et l'Idée du mois
   d'Aujourd'hui est toujours la 1ʳᵉ suggestion de Saisons.
+  **Saisons rangé par type de geste** (04/10, à sa demande « liste trop longue ») : une ligne par type
+  (`groupActivities`, `activityGroupTitle`, `activityGroupSummary` dans `lib/plants/calendar.ts` : « À récolter
+  · 5 plantes », « Entretien · 3 gestes », Engrais à part), « 2 sur 5 faits · menthe, thym… » ; la ligne ouvre
+  une feuille du bas où l'on coche chaque plante (« Annuler » et fête s'affichent par-dessus grâce à
+  `overlay` de `BottomSheet`). Un type d'une seule plante reste une ligne à cocher ; le filtre par plante
+  garde le détail. **Aujourd'hui reste une ligne par plante** (choix du porteur). Vue « Par saison » : mois à
+  venir seulement pour la saison en cours, et suggestions de la saison (`seasonSuggestions`, « En novembre ·
+  … »). À valider sur son téléphone.
 - **Calendrier de culture vérifié** (02/10, à sa demande « quelles sont tes sources ») : les 100 plantes
   comparées à 2-3 pages de semenciers / sites de jardinage (recherche web, repère Paris, culture en pot ;
   un mois n'est changé que si 2 sources concordent) : 35 mois corrigés (récoltes prolongées, semis plus

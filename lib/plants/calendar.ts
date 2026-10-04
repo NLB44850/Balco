@@ -147,3 +147,45 @@ export function upcomingMonths(now = new Date()) {
   const current = now.getMonth();
   return Array.from({ length: 12 }, (_, offset) => ((current + offset) % 12) + 1);
 }
+
+// --- Regroupement par type de geste (Saisons) ------------------------------------
+
+/** L'engrais se range à part de l'entretien : c'est un geste à lui seul, avec son propre rythme. */
+export type ActivityGroupKind = CalendarActivityKind | "fertilize";
+
+export type ActivityGroup = { key: ActivityGroupKind; label: string; activities: CalendarActivity[] };
+
+const GROUP_LABELS: Record<ActivityGroupKind, string> = { harvest: "À récolter", care: "Entretien", fertilize: "Engrais", repot: "À rempoter", plant: "À planter", sow: "À semer" };
+
+export function activityGroupKind(activity: CalendarActivity): ActivityGroupKind {
+  return activity.kind === "care" && activity.eventType === "fertilizing" ? "fertilize" : activity.kind;
+}
+
+/** Les gestes rangés par type, dans l'ordre de la liste (récoltes d'abord, semis à la fin). */
+export function groupActivities(activities: CalendarActivity[]): ActivityGroup[] {
+  const groups = new Map<ActivityGroupKind, ActivityGroup>();
+  for (const activity of activities) {
+    const key = activityGroupKind(activity);
+    const group = groups.get(key) ?? { key, label: GROUP_LABELS[key], activities: [] };
+    group.activities.push(activity);
+    groups.set(key, group);
+  }
+  return [...groups.values()];
+}
+
+/** « À récolter · 5 plantes », « Entretien · 3 gestes ». */
+export function activityGroupTitle(group: ActivityGroup) {
+  const count = group.activities.length;
+  // L'entretien regroupe des gestes différents, parfois plusieurs pour la même plante.
+  const unit = group.key === "care" ? "geste" : "plante";
+  return `${group.label} · ${count} ${unit}${count > 1 ? "s" : ""}`;
+}
+
+/** « basilic, menthe, thym et 2 autres » : de quoi reconnaître le groupe sans l'ouvrir. */
+export function activityGroupSummary(names: string[], shown = 3) {
+  const [first, ...others] = names;
+  if (!first) return "";
+  const listed = [first, ...others.slice(0, shown - 1).map((name) => name.charAt(0).toLowerCase() + name.slice(1))];
+  const rest = names.length - listed.length;
+  return `${listed.join(", ")}${rest > 0 ? ` et ${rest} autre${rest > 1 ? "s" : ""}` : ""}`;
+}
