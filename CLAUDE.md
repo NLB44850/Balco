@@ -315,10 +315,10 @@ Points à ne pas oublier (à proposer au porteur au bon moment, noté le 30/09) 
   la session), Express 5, dotenv 18, concurrently 10, actions checkout 7 / setup-node 7 / pnpm 6.
   Refusés : React 19.1.9 (doit rester 19.1.0, version exacte du moteur de React Native 0.81) et
   tailwind-merge 3 (Tailwind 4 seulement, NativeWind 4 reste sur Tailwind 3) ; ignorés dans `dependabot.yml`.
-  **Nouvelles PR Dependabot #16 à #21 (04/10), à traiter plus tard** en une PR groupée : `babel-preset-expo`
-  et `eslint-config-expo` 57 sont liés au SDK Expo (à refuser et ajouter aux exclusions de `dependabot.yml`,
-  leurs noms ne commencent pas par « expo ») ; aussi cross-env 10, @types/node 26, upload-artifact 7, et un
-  groupe de 5 correctifs. Les tâches planifiées de
+  **Deuxième vague (04/10, PR #16 à #21)** : repris @anthropic-ai/sdk 0.131, reanimated 4.1.7,
+  react-native-web 0.21.3, tailwind-merge 2.6.1, cross-env 10, upload-artifact 7 ; refusés et ajoutés aux
+  exclusions de `dependabot.yml` : react-native 0.81.6 (version exacte du SDK), babel-preset-expo et
+  eslint-config-expo 57 (suivent le SDK), @types/node 26 (le serveur est en Node 22). Les tâches planifiées de
   GitHub tournent sur `main` (le cron des rappels reste inactif tant que la variable `BALCO_API_URL`
   n'est pas définie sur GitHub).
 - Avant la publication sur le Play Store : politique de confidentialité et mentions (données du
