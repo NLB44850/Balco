@@ -27,6 +27,16 @@ updates:
       - dependency-name: "react"
       - dependency-name: "react-dom"
       - dependency-name: "react-native-worklets"
+      # React Native suit la version exacte fixée par le SDK Expo (0.81.5 pour le SDK 54), correctifs compris.
+      - dependency-name: "react-native"
+      # Outils d'Expo dont le nom ne commence pas par « expo » : ils suivent eux aussi la montée de SDK.
+      - dependency-name: "babel-preset-expo"
+        update-types: ["version-update:semver-major", "version-update:semver-minor"]
+      - dependency-name: "eslint-config-expo"
+        update-types: ["version-update:semver-major", "version-update:semver-minor"]
+      # Les types de Node suivent la version du serveur (Node 22 dans le Dockerfile et la CI).
+      - dependency-name: "@types/node"
+        update-types: ["version-update:semver-major"]
       # Versions imposées par le SDK Expo (expo install --check) : elles suivent la montée de SDK.
       - dependency-name: "@react-native-async-storage/*"
         update-types: ["version-update:semver-major", "version-update:semver-minor"]
