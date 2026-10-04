@@ -22,10 +22,11 @@ updates:
         update-types: ["version-update:semver-major", "version-update:semver-minor"]
       - dependency-name: "react-native*"
         update-types: ["version-update:semver-major", "version-update:semver-minor"]
+      # React est figé à la version exacte du moteur de React Native (19.1.0 pour le SDK 54) : même un
+      # correctif (19.1.9) casserait l'app au démarrage. Il ne bouge qu'avec le SDK.
       - dependency-name: "react"
-        update-types: ["version-update:semver-major", "version-update:semver-minor"]
       - dependency-name: "react-dom"
-        update-types: ["version-update:semver-major", "version-update:semver-minor"]
+      - dependency-name: "react-native-worklets"
       # Versions imposées par le SDK Expo (expo install --check) : elles suivent la montée de SDK.
       - dependency-name: "@react-native-async-storage/*"
         update-types: ["version-update:semver-major", "version-update:semver-minor"]
@@ -35,6 +36,11 @@ updates:
         update-types: ["version-update:semver-major", "version-update:semver-minor"]
       - dependency-name: "typescript"
         update-types: ["version-update:semver-major", "version-update:semver-minor"]
+      # NativeWind 4 s'appuie sur Tailwind CSS 3 ; tailwind-merge 3 ne gère que Tailwind 4.
+      - dependency-name: "tailwindcss"
+        update-types: ["version-update:semver-major"]
+      - dependency-name: "tailwind-merge"
+        update-types: ["version-update:semver-major"]
     groups:
       # Une seule PR par semaine pour les petites mises à jour
       correctifs-et-mineures:

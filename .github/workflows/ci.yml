@@ -22,9 +22,9 @@ jobs:
       # Active les tests d'intégration (synchro, rappels, authentification) sur une vraie base.
       TEST_DATABASE_URL: mysql://root:root@127.0.0.1:3306/balco_test
     steps:
-      - uses: actions/checkout@v4
-      - uses: pnpm/action-setup@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@v7
+      - uses: pnpm/action-setup@v6
+      - uses: actions/setup-node@v7
         with:
           node-version: 22
           cache: pnpm
@@ -38,6 +38,6 @@ jobs:
   docker:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - name: Image de production (API + app web)
         run: docker build -t balco:ci .
