@@ -26,8 +26,9 @@ export type CalendarActivity = {
 /** Le type de geste, écrit simplement (sans capitales), pour les écrans. */
 export const ACTIVITY_KIND_LABELS: Record<CalendarActivityKind, string> = { sow: "Semis", plant: "Plantation", repot: "Rempotage", harvest: "Récolte", care: "Entretien" };
 
-export type CalendarSubject = { id: string; entry: CatalogPlant; displayName: string };
-export type CalendarOptions = { climate?: ClimateInfo | null };
+/** `addedAt` : arrivée de la plante sur le balcon (absente pour les idées d'un balcon vide). */
+export type CalendarSubject = { id: string; entry: CatalogPlant; displayName: string; addedAt?: string };
+export type CalendarOptions = { climate?: ClimateInfo | null; now?: Date };
 
 const GENERIC_TASK_IDS = new Set(["check-soil", "observe", "harvest"]);
 const ORDER: Record<CalendarActivityKind, number> = { harvest: 0, care: 1, repot: 2, plant: 3, sow: 4 };
@@ -38,10 +39,15 @@ function taskHeadline(title: string) {
   return stripped.charAt(0).toUpperCase() + stripped.slice(1);
 }
 
+function sameMonth(a: Date, b: Date) {
+  return a.getFullYear() === b.getFullYear() && a.getMonth() === b.getMonth();
+}
+
 export function calendarActivities(subjects: CalendarSubject[], month: number, options: CalendarOptions = {}): CalendarActivity[] {
   const activities: CalendarActivity[] = [];
   const m = month as Month;
-  for (const { id, entry: catalogEntry, displayName } of subjects) {
+  const now = options.now ?? new Date();
+  for (const { id, entry: catalogEntry, displayName, addedAt } of subjects) {
     // Les semis et plantations des plantes frileuses suivent le climat local (Midi plus tôt, montagne plus tard).
     const entry = adaptToClimate(catalogEntry, options.climate);
     const tag = displayName.toUpperCase();
@@ -56,7 +62,10 @@ export function calendarActivities(subjects: CalendarSubject[], month: number, o
     }
     // Une vivace déjà en pot se rempote plutôt qu'elle ne se replante : un seul geste le même mois.
     const repotsThisMonth = entry.repotMonths.includes(m);
-    if (entry.plantMonths.includes(m) && !(entry.perennial && repotsThisMonth)) {
+    // Déjà sur le balcon : elle est plantée. Seule une plante arrivée ce mois-ci (achetée, ajoutée depuis
+    // une suggestion) garde son « Plante … » du mois en cours.
+    const alreadyPlanted = addedAt !== undefined && !(m === now.getMonth() + 1 && sameMonth(new Date(addedAt), now));
+    if (entry.plantMonths.includes(m) && !(entry.perennial && repotsThisMonth) && !alreadyPlanted) {
       activities.push({ ...base, key: `${id}:plant`, kind: "plant", typeLabel: "PLANTATION", title: `Plante ${entry.label}`, description: `Période de plantation : ${formatMonthRange(entry.plantMonths)}. Un terreau frais et un pot percé font la moitié du travail.`, tone: "coral", eventType: "observation" });
     }
     if (repotsThisMonth) {
@@ -100,7 +109,7 @@ export function eventForActivity(activity: CalendarActivity, now: Date): Mainten
 
 /** Pour l'accueil : les semis, plantations et rempotages du mois pas encore notés. */
 export function seasonalToDo(subjects: CalendarSubject[], events: MaintenanceEvent[], now: Date, options: CalendarOptions = {}) {
-  return calendarActivities(subjects, now.getMonth() + 1, options).filter((activity) => ["sow", "plant", "repot"].includes(activity.kind) && !activityDone(activity, events, now));
+  return calendarActivities(subjects, now.getMonth() + 1, { now, ...options }).filter((activity) => ["sow", "plant", "repot"].includes(activity.kind) && !activityDone(activity, events, now));
 }
 
 // --- Saisons -------------------------------------------------------------------
@@ -146,4 +155,46 @@ export function describeMonths(months: Month[]) {
 export function upcomingMonths(now = new Date()) {
   const current = now.getMonth();
   return Array.from({ length: 12 }, (_, offset) => ((current + offset) % 12) + 1);
+}
+
+// --- Regroupement par type de geste (Saisons) ------------------------------------
+
+/** L'engrais se range à part de l'entretien : c'est un geste à lui seul, avec son propre rythme. */
+export type ActivityGroupKind = CalendarActivityKind | "fertilize";
+
+export type ActivityGroup = { key: ActivityGroupKind; label: string; activities: CalendarActivity[] };
+
+const GROUP_LABELS: Record<ActivityGroupKind, string> = { harvest: "À récolter", care: "Entretien", fertilize: "Engrais", repot: "À rempoter", plant: "À planter", sow: "À semer" };
+
+export function activityGroupKind(activity: CalendarActivity): ActivityGroupKind {
+  return activity.kind === "care" && activity.eventType === "fertilizing" ? "fertilize" : activity.kind;
+}
+
+/** Les gestes rangés par type, dans l'ordre de la liste (récoltes d'abord, semis à la fin). */
+export function groupActivities(activities: CalendarActivity[]): ActivityGroup[] {
+  const groups = new Map<ActivityGroupKind, ActivityGroup>();
+  for (const activity of activities) {
+    const key = activityGroupKind(activity);
+    const group = groups.get(key) ?? { key, label: GROUP_LABELS[key], activities: [] };
+    group.activities.push(activity);
+    groups.set(key, group);
+  }
+  return [...groups.values()];
+}
+
+/** « À récolter · 5 plantes », « Entretien · 3 gestes ». */
+export function activityGroupTitle(group: ActivityGroup) {
+  const count = group.activities.length;
+  // L'entretien regroupe des gestes différents, parfois plusieurs pour la même plante.
+  const unit = group.key === "care" ? "geste" : "plante";
+  return `${group.label} · ${count} ${unit}${count > 1 ? "s" : ""}`;
+}
+
+/** « basilic, menthe, thym et 2 autres » : de quoi reconnaître le groupe sans l'ouvrir. */
+export function activityGroupSummary(names: string[], shown = 3) {
+  const [first, ...others] = names;
+  if (!first) return "";
+  const listed = [first, ...others.slice(0, shown - 1).map((name) => name.charAt(0).toLowerCase() + name.slice(1))];
+  const rest = names.length - listed.length;
+  return `${listed.join(", ")}${rest > 0 ? ` et ${rest} autre${rest > 1 ? "s" : ""}` : ""}`;
 }

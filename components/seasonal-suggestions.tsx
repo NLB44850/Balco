@@ -14,7 +14,14 @@ import { MONTH_LONG } from "@/lib/plants/catalog";
 import { suggestionsHeading, type SeasonalSuggestion } from "@/lib/plants/suggestions";
 
 type Props = {
+  /** Mois du lien vers le catalogue (et du titre, sauf `heading`). */
   month: number;
+  /** Titre à la place de « À semer ou planter en octobre » (vue par saison). */
+  heading?: string;
+  /** « en automne » : la période, pour la phrase des mois calmes (vue par saison). */
+  periodName?: string;
+  /** Une saison compte plusieurs mois : chaque ligne dit le sien (« En novembre · … »). */
+  showMonth?: boolean;
   suggestions: SeasonalSuggestion[];
   /** Prochain mois avec des semis ou plantations, quand celui-ci est calme. */
   nextMonth?: number | null;
@@ -24,11 +31,11 @@ type Props = {
   onOpen: (suggestion: SeasonalSuggestion) => void;
 };
 
-export function SeasonalSuggestions({ month, suggestions, nextMonth, current, onAdd, onOpen }: Props) {
+export function SeasonalSuggestions({ month, heading, periodName, showMonth, suggestions, nextMonth, current, onAdd, onOpen }: Props) {
   const colors = useColors();
   const router = useRouter();
   const intro = suggestions.length === 0
-    ? `Rien de nouveau à lancer ${current ? "ce mois-ci" : `en ${MONTH_LONG[month - 1]}`} pour ton balcon.${nextMonth ? ` Les prochains semis reprennent en ${MONTH_LONG[nextMonth - 1]}.` : ""}`
+    ? `Rien de nouveau à lancer ${periodName ?? (current ? "ce mois-ci" : `en ${MONTH_LONG[month - 1]}`)} pour ton balcon.${nextMonth ? ` Les prochains semis reprennent en ${MONTH_LONG[nextMonth - 1]}.` : ""}`
     : current ? "Choisies pour ton balcon et ton climat." : "Pour t’organiser : achète graines et plants à l’avance.";
   // Le lien mène au mois où il y a quelque chose à faire ; « d’octobre », « de mars ».
   const linkMonth = suggestions.length === 0 && nextMonth ? nextMonth : month;
@@ -38,7 +45,7 @@ export function SeasonalSuggestions({ month, suggestions, nextMonth, current, on
   return (
     <View style={styles.wrap}>
       <View style={styles.head}>
-        <Text style={[styles.title, { color: colors.foreground }]}>{suggestionsHeading(month)}</Text>
+        <Text style={[styles.title, { color: colors.foreground }]}>{heading ?? suggestionsHeading(month)}</Text>
         <Text style={[styles.intro, { color: colors.muted }]}>{intro}</Text>
       </View>
       {suggestions.length > 0 && (
@@ -49,7 +56,7 @@ export function SeasonalSuggestions({ month, suggestions, nextMonth, current, on
                 <CatalogPicture entry={suggestion.entry} style={styles.picture} />
                 <View style={styles.flex}>
                   <Text style={[styles.name, { color: colors.foreground }]} numberOfLines={1}>{suggestion.title}</Text>
-                  <Text style={[styles.reason, { color: colors.muted }]} numberOfLines={2}>{suggestion.reason}</Text>
+                  <Text style={[styles.reason, { color: colors.muted }]} numberOfLines={2}>{showMonth ? `En ${MONTH_LONG[suggestion.month - 1]} · ${suggestion.reason.charAt(0).toLowerCase()}${suggestion.reason.slice(1)}` : suggestion.reason}</Text>
                 </View>
               </Pressable>
               <Pressable accessibilityRole="button" accessibilityLabel={`Ajouter ${suggestion.entry.name} à mon balcon`} hitSlop={8} onPress={() => onAdd(suggestion)} style={({ pressed }) => [styles.add, { backgroundColor: colors.primary }, pressed && styles.pressed]}>

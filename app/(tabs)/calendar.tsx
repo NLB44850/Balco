@@ -1,9 +1,10 @@
 /**
  * Onglet « Saisons » : les gestes de saison de tes plantes (semis, plantation, rempotage, récolte,
- * entretien), en une liste à cocher comme sur Aujourd'hui. Le mois en cours se coche ; les mois et
+ * entretien), rangés par type (« À récolter · 5 plantes ») pour que la liste reste courte ; un type qui
+ * ne concerne qu'une plante reste une ligne à cocher, comme sur Aujourd'hui. Le mois en cours se coche ; les mois et
  * les saisons à venir se lisent. Le détail s'ouvre dans la feuille du bas, avec « Annuler » après
  * chaque geste, et « Tout est fait » quand le mois est bouclé. Sous la liste, « À semer ou planter
- * en … » propose des plantes de saison pour ton balcon, à ajouter d'un « + ».
+ * en … » propose des plantes de saison pour ton balcon (par mois ou par saison), à ajouter d'un « + ».
  */
 import { useRouter } from "expo-router";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
@@ -29,17 +30,22 @@ import { careProfileFor, dayKey, plantDisplayName, type ResolvedPlant } from "@/
 import {
   ACTIVITY_KIND_LABELS,
   activityDone,
+  activityGroupSummary,
+  activityGroupTitle,
   calendarActivities,
   describeMonths,
   eventForActivity,
+  groupActivities,
   seasonActivities,
   upcomingMonths,
   upcomingSeasons,
+  type ActivityGroup,
+  type ActivityGroupKind,
   type CalendarActivity,
   type CalendarSubject,
 } from "@/lib/plants/calendar";
 import { describeSowing, formatMonthRange, MONTH_LONG, MONTH_SHORT, recommendPlants } from "@/lib/plants/catalog";
-import { nextSuggestionMonth, seasonalSuggestions, suggestionActionLabel, type SeasonalSuggestion } from "@/lib/plants/suggestions";
+import { nextSuggestionMonth, seasonalSuggestions, seasonSuggestions, suggestionActionLabel, type SeasonalSuggestion } from "@/lib/plants/suggestions";
 import { climateSummary, climateZoneFor } from "@/lib/plants/climate";
 import { decideReminders } from "@/lib/reminders/reminder-engine";
 import { withoutSnoozed, type ReminderSnooze } from "@/lib/reminders/reminder-actions";
@@ -49,6 +55,7 @@ import { loadReminderSnoozes, subscribeReminderSnoozes } from "@/lib/reminders/l
 type PlantFilter = "all" | string;
 
 const KIND_ICONS: Record<CalendarActivity["kind"], string> = { sow: "🌱", plant: "🪴", repot: "🪴", harvest: "🧺", care: "✂" };
+const GROUP_ICONS: Record<ActivityGroupKind, string> = { ...KIND_ICONS, fertilize: "🌿" };
 const SEASON_IN: Record<"spring" | "summer" | "autumn" | "winter", string> = { spring: "au printemps", summer: "en été", autumn: "en automne", winter: "en hiver" };
 const capitalize = (value: string) => value.charAt(0).toUpperCase() + value.slice(1);
 
@@ -73,6 +80,7 @@ export default function CalendarScreen() {
   const seasons = useMemo(() => upcomingSeasons(now), [now]);
   const [selectedSeason, setSelectedSeason] = useState(seasons[0].id);
   const [sheetKey, setSheetKey] = useState<string | null>(null);
+  const [groupKey, setGroupKey] = useState<ActivityGroupKind | null>(null);
   const [toast, setToast] = useState<ToastMessage | null>(null);
   const toastId = useRef(0);
   const { celebrate, overlay: celebration } = useCelebration();
@@ -93,16 +101,21 @@ export default function CalendarScreen() {
   const subjects = useMemo<CalendarSubject[]>(
     () => showingIdeas
       ? recommendPlants(onboarding, { month: currentMonth }).slice(0, 4).map((entry) => ({ id: entry.id, entry, displayName: entry.name }))
-      : resolvedPlants.map((resolved) => ({ id: resolved.plant.id, entry: resolved.entry, displayName: plantDisplayName(resolved) })),
+      : resolvedPlants.map((resolved) => ({ id: resolved.plant.id, entry: resolved.entry, displayName: plantDisplayName(resolved), addedAt: resolved.plant.addedAt })),
     [currentMonth, onboarding, resolvedPlants, showingIdeas],
   );
   const resolvedById = useMemo(() => new Map<string, ResolvedPlant>(resolvedPlants.map((resolved) => [resolved.plant.id, resolved])), [resolvedPlants]);
   const activeFilter = selectedPlant === "all" || subjects.some((subject) => subject.id === selectedPlant) ? selectedPlant : "all";
   const filteredSubjects = useMemo(() => (activeFilter === "all" ? subjects : subjects.filter((subject) => subject.id === activeFilter)), [activeFilter, subjects]);
   const season = seasons.find((item) => item.id === selectedSeason) ?? seasons[0];
+  // Vue par saison : ses mois, à partir de maintenant pour la saison en cours (septembre est passé).
+  const seasonMonths = useMemo(() => {
+    const start = season.id === seasons[0].id ? season.months.indexOf(currentMonth as (typeof season.months)[number]) : -1;
+    return start > 0 ? season.months.slice(start) : season.months;
+  }, [currentMonth, season, seasons]);
   const currentActivities = useMemo(
-    () => (view === "season" ? seasonActivities(filteredSubjects, season, { climate }) : calendarActivities(filteredSubjects, selectedMonth, { climate })),
-    [climate, filteredSubjects, season, selectedMonth, view],
+    () => (view === "season" ? seasonActivities(filteredSubjects, { ...season, months: seasonMonths }, { climate, now }) : calendarActivities(filteredSubjects, selectedMonth, { climate, now })),
+    [climate, filteredSubjects, now, season, seasonMonths, selectedMonth, view],
   );
   // Seul le mois en cours se coche : on ne note pas un semis de mars en septembre.
   const checkable = !showingIdeas && view === "month" && selectedMonth === currentMonth;
@@ -111,6 +124,11 @@ export default function CalendarScreen() {
   // Ce qui reste à faire d'abord, ce qui est fait ensuite (comme sur Aujourd'hui).
   const ordered = checkable ? [...currentActivities.filter((activity) => !activityDone(activity, events, now)), ...currentActivities.filter((activity) => activityDone(activity, events, now))] : currentActivities;
   const sheetActivity = currentActivities.find((activity) => activity.key === sheetKey) ?? null;
+  // Rangés par type de geste, sauf quand on regarde une seule plante (on veut alors tout son détail).
+  const grouped = !showingIdeas && activeFilter === "all";
+  const groups = grouped ? groupActivities(ordered) : [];
+  // Dans la feuille, l'ordre ne bouge pas quand on coche : les plantes ne sautent pas sous le doigt.
+  const sheetGroup = useMemo(() => (groupKey ? groupActivities(currentActivities).find((group) => group.key === groupKey) ?? null : null), [currentActivities, groupKey]);
 
   // Les alertes déjà traitées sur Aujourd'hui (« Fait », « Pas aujourd'hui », « Dans 3 h ») ne s'affichent plus ici.
   const [snoozes, setSnoozes] = useState<ReminderSnooze[]>([]);
@@ -124,6 +142,10 @@ export default function CalendarScreen() {
   const suggestionOptions = useMemo(() => ({ month: selectedMonth, climate, ownedCatalogIds: resolvedPlants.map((resolved) => resolved.entry.id), limit: 4, seed: dayKey(now) }), [climate, now, resolvedPlants, selectedMonth]);
   const suggestions = useMemo(() => (showingIdeas ? [] : seasonalSuggestions(onboarding, suggestionOptions)), [onboarding, showingIdeas, suggestionOptions]);
   const nextMonth = useMemo(() => (suggestions.length === 0 && !showingIdeas ? nextSuggestionMonth(onboarding, suggestionOptions) : null), [onboarding, showingIdeas, suggestionOptions, suggestions.length]);
+  const seasonIdeas = useMemo(
+    () => (view === "season" && !showingIdeas ? seasonSuggestions(onboarding, { months: seasonMonths, climate, ownedCatalogIds: suggestionOptions.ownedCatalogIds, limit: 4, seed: dayKey(now) }) : []),
+    [climate, now, onboarding, seasonMonths, showingIdeas, suggestionOptions.ownedCatalogIds, view],
+  );
   const [sheetSuggestion, setSheetSuggestion] = useState<SeasonalSuggestion | null>(null);
 
   // Alertes météo du moment (gel, orage, vent, chaleur, pluie), une par cause, pour les plantes du balcon.
@@ -186,6 +208,34 @@ export default function CalendarScreen() {
     return [activity.eventType === "fertilizing" ? "Engrais" : ACTIVITY_KIND_LABELS[activity.kind], when ?? subject].filter(Boolean).join(" · ");
   };
   const periodLabel = view === "season" ? SEASON_IN[season.id] : `en ${MONTH_LONG[selectedMonth - 1]}`;
+  const groupDoneCount = (group: ActivityGroup) => (checkable ? group.activities.filter((activity) => activityDone(activity, events, now)).length : 0);
+  const groupSubtitle = (group: ActivityGroup) => {
+    // L'entretien réunit des gestes différents : on les nomme ; ailleurs, les plantes suffisent.
+    const names = group.key === "care" ? group.activities.map((activity) => activity.title) : group.activities.map((activity) => subjects.find((item) => item.id === activity.subjectId)?.displayName ?? activity.entry.name);
+    const summary = activityGroupSummary(names);
+    return checkable ? `${groupDoneCount(group)} sur ${group.activities.length} fait${groupDoneCount(group) > 1 ? "s" : ""} · ${summary}` : summary;
+  };
+  const memberSubtitle = (activity: CalendarActivity) => {
+    const subject = subjects.find((item) => item.id === activity.subjectId)?.displayName ?? activity.entry.name;
+    return view === "season" && activity.months ? `${subject} · ${describeMonths(activity.months)}` : subject;
+  };
+  const activityRow = (activity: CalendarActivity) => {
+    const done = checkable && activityDone(activity, events, now);
+    return (
+      <TodayRow
+        key={`${activeFilter}-${view}-${activity.key}`}
+        icon={showingIdeas ? activity.entry.emoji : KIND_ICONS[activity.kind]}
+        picture={picture(activity)}
+        tone="season"
+        title={activity.title}
+        subtitle={rowSubtitle(activity)}
+        done={done}
+        checkLabel={done ? "Annuler ce geste" : "Noter comme fait"}
+        onToggle={checkable ? () => void toggleActivity(activity) : undefined}
+        onOpen={() => setSheetKey(activity.key)}
+      />
+    );
+  };
   const climateLine = weather.isFallback || !climate ? "Paris par défaut : choisis ta ville pour des dates justes." : climateSummary(climate);
 
   return (
@@ -271,29 +321,22 @@ export default function CalendarScreen() {
 
         {ordered.length > 0 && (
           <View style={[glass.card, styles.list]}>
-            {ordered.map((activity) => {
-              const done = checkable && activityDone(activity, events, now);
-              return (
-                <TodayRow
-                  key={`${activeFilter}-${view}-${activity.key}`}
-                  icon={showingIdeas ? activity.entry.emoji : KIND_ICONS[activity.kind]}
-                  picture={picture(activity)}
-                  tone="season"
-                  title={activity.title}
-                  subtitle={rowSubtitle(activity)}
-                  done={done}
-                  checkLabel={done ? "Annuler ce geste" : "Noter comme fait"}
-                  onToggle={checkable ? () => void toggleActivity(activity) : undefined}
-                  onOpen={() => setSheetKey(activity.key)}
-                />
-              );
-            })}
+            {grouped
+              ? groups.map((group) => {
+                if (group.activities.length === 1) return activityRow(group.activities[0]);
+                const done = checkable && groupDoneCount(group) === group.activities.length;
+                return <TodayRow key={`group-${view}-${group.key}`} icon={GROUP_ICONS[group.key]} tone="season" title={activityGroupTitle(group)} subtitle={groupSubtitle(group)} done={done} onOpen={() => setGroupKey(group.key)} />;
+              })
+              : ordered.map(activityRow)}
           </View>
         )}
         {ordered.length === 0 && <Text style={[styles.text, styles.empty, { color: colors.muted }]}>Rien de prévu {periodLabel} : tes plantes se reposent.{view === "month" ? " Regarde les mois suivants." : ""}</Text>}
 
         {view === "month" && !showingIdeas && (
           <SeasonalSuggestions month={selectedMonth} current={selectedMonth === currentMonth} suggestions={suggestions} nextMonth={nextMonth} onAdd={(suggestion) => void addSuggestion(suggestion)} onOpen={setSheetSuggestion} />
+        )}
+        {view === "season" && !showingIdeas && (
+          <SeasonalSuggestions month={seasonMonths[0]} heading={`À semer ou planter ${SEASON_IN[season.id]}`} periodName={SEASON_IN[season.id]} showMonth current={season.id === seasons[0].id} suggestions={seasonIdeas} onAdd={(suggestion) => void addSuggestion(suggestion)} onOpen={setSheetSuggestion} />
         )}
       </ScrollView>
 
@@ -321,10 +364,47 @@ export default function CalendarScreen() {
         })()}
       </BottomSheet>
 
+      <BottomSheet
+        visible={sheetGroup !== null}
+        onClose={() => setGroupKey(null)}
+        overlay={<><UndoToast message={toast} onDone={hideToast} />{celebration}</>}
+      >
+        {sheetGroup && (
+          <View style={styles.sheet}>
+            <Text style={[styles.sheetKind, { color: colors.primary }]}>{checkable ? `${groupDoneCount(sheetGroup)} sur ${sheetGroup.activities.length} fait${groupDoneCount(sheetGroup) > 1 ? "s" : ""}` : capitalize(periodLabel)}</Text>
+            <Text style={[styles.sheetTitle, { color: colors.foreground }]}>{sheetGroup.label} {periodLabel}</Text>
+            <Text style={[styles.sheetBody, { color: colors.muted }]}>{checkable ? "Coche chaque geste une fois fait. Touche une ligne pour le détail." : "Tu pourras les cocher le moment venu. Touche une ligne pour le détail."}</Text>
+            <View>
+              {sheetGroup.activities.map((activity) => {
+                const done = checkable && activityDone(activity, events, now);
+                return (
+                  <TodayRow
+                    key={`sheet-${activity.key}`}
+                    icon={KIND_ICONS[activity.kind]}
+                    picture={picture(activity)}
+                    tone="season"
+                    title={activity.title}
+                    subtitle={memberSubtitle(activity)}
+                    done={done}
+                    checkLabel={done ? "Annuler ce geste" : "Noter comme fait"}
+                    onToggle={checkable ? () => void toggleActivity(activity) : undefined}
+                    onOpen={() => {
+                      // La feuille du geste s'ouvre une fois celle du groupe repliée.
+                      setGroupKey(null);
+                      setTimeout(() => setSheetKey(activity.key), 320);
+                    }}
+                  />
+                );
+              })}
+            </View>
+          </View>
+        )}
+      </BottomSheet>
+
       <BottomSheet visible={sheetSuggestion !== null} onClose={() => setSheetSuggestion(null)}>
         {sheetSuggestion && (
           <View style={styles.sheet}>
-            <Text style={[styles.sheetKind, { color: colors.primary }]}>{suggestionActionLabel(sheetSuggestion)} {periodLabel}</Text>
+            <Text style={[styles.sheetKind, { color: colors.primary }]}>{suggestionActionLabel(sheetSuggestion)} en {MONTH_LONG[sheetSuggestion.month - 1]}</Text>
             <Text style={[styles.sheetTitle, { color: colors.foreground }]}>{sheetSuggestion.title}</Text>
             <Text style={[styles.sheetBody, { color: colors.muted }]}>{sheetSuggestion.entry.pitch}</Text>
             <Text style={[styles.small, { color: colors.foreground }]}>
@@ -344,8 +424,9 @@ export default function CalendarScreen() {
       <Modal visible={cityModalVisible} transparent animationType="slide" onRequestClose={() => setCityModalVisible(false)}>
         <View style={styles.modalBackdrop}><View style={[styles.modalCard, { backgroundColor: colors.surface }]}><View style={styles.modalHeader}><View><Text style={[styles.modalOverline, { color: colors.muted }]}>Ta ville</Text><Text style={[styles.modalTitle, { color: colors.foreground }]}>Où pousse ton jardin ?</Text></View><Pressable onPress={() => setCityModalVisible(false)} style={styles.closeButton}><Text style={[styles.closeText, { color: colors.muted }]}>×</Text></Pressable></View><Text style={[styles.modalIntro, { color: colors.muted }]}>Choisis une ville pour adapter la météo et les conseils de culture.</Text><TextInput value={cityQuery} onChangeText={setCityQuery} onSubmitEditing={() => void searchManualCity()} placeholder="Rechercher une ville…" placeholderTextColor={colors.muted} returnKeyType="search" style={[styles.cityInput, { borderColor: colors.border, color: colors.foreground, backgroundColor: colors.background }]} /><Pressable onPress={() => void searchManualCity()} style={({ pressed }) => [styles.searchButton, { backgroundColor: colors.primary }, pressed && styles.pressed]}><Text style={styles.searchButtonText}>{citySearchLoading ? "Recherche…" : "Rechercher"}</Text></Pressable>{citySearchError && <Text style={[styles.searchError, { color: colors.error }]}>{citySearchError}</Text>}<View style={styles.resultList}>{cityResults.map((city) => <Pressable key={`${city.id}-${city.latitude}`} onPress={() => void chooseCity(city)} style={({ pressed }) => [styles.resultRow, { borderColor: colors.border }, pressed && styles.pressed]}><Text style={[styles.resultName, { color: colors.foreground }]}>{city.name}</Text><Text style={[styles.resultMeta, { color: colors.muted }]}>{[city.admin1, city.country].filter(Boolean).join(" · ")}</Text></Pressable>)}</View><Pressable onPress={() => { setCityModalVisible(false); void requestDeviceLocation(); }} style={({ pressed }) => [styles.deviceLink, pressed && styles.pressed]}><Text style={[styles.deviceLinkText, { color: colors.primary }]}>⌖ Utiliser ma position actuelle</Text></Pressable></View></View>
       </Modal>
-      <UndoToast message={toast} onDone={hideToast} />
-      {celebration}
+      {/* Pendant que la feuille d'un groupe est ouverte, ils s'affichent par-dessus elle. */}
+      {sheetGroup === null && <UndoToast message={toast} onDone={hideToast} />}
+      {sheetGroup === null && celebration}
     </LightScreen>
   );
 }

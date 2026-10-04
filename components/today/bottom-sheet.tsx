@@ -9,6 +9,8 @@ type BottomSheetProps = {
   visible: boolean;
   onClose: () => void;
   children: React.ReactNode;
+  /** Affiché par-dessus la feuille (message « Annuler », fête), qui sinon le cacherait. */
+  overlay?: React.ReactNode;
 };
 
 /** Au-delà de ce glissement vers le bas (ou d'un geste rapide), la feuille se replie. */
@@ -19,7 +21,7 @@ const CLOSE_DISTANCE = 90;
  * glissant vers le bas (depuis la poignée, ou depuis le contenu quand il est tout en haut). Elle ne
  * dépasse jamais l'écran : un contenu trop long défile à l'intérieur.
  */
-export function BottomSheet({ visible, onClose, children }: BottomSheetProps) {
+export function BottomSheet({ visible, onClose, children, overlay }: BottomSheetProps) {
   const colors = useColors();
   const insets = useSafeAreaInsets();
   const { height } = useWindowDimensions();
@@ -80,6 +82,7 @@ export function BottomSheet({ visible, onClose, children }: BottomSheetProps) {
             {children}
           </ScrollView>
         </Animated.View>
+        {overlay}
       </View>
     </Modal>
   );

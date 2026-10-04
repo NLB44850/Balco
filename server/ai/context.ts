@@ -199,7 +199,7 @@ export function describeGarden(facts: GardenFacts, now = new Date()) {
     facts.position ? `Position du balcon : ${Math.abs(facts.position.latitude)}° ${facts.position.latitude >= 0 ? "N" : "S"}, ${Math.abs(facts.position.longitude)}° ${facts.position.longitude >= 0 ? "E" : "O"}${facts.city ? "" : " (déduis-en la ville ou la région)"}.` : null,
     facts.space || facts.sunlight ? `Balcon : ${[facts.space, facts.sunlight ? `exposition ${facts.sunlight.toLowerCase()}` : null].filter(Boolean).join(", ")}.` : null,
     facts.goals.length > 0 ? `Envies choisies à l'inscription : ${facts.goals.join(", ")}.` : null,
-    ...describeMemory(facts.memory),
+    ...describeMemory(facts.memory, now),
     facts.vacation && facts.vacation.end >= `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}` ? `Mode vacances : absence ${vacationRange(facts.vacation)}, ${facts.vacation.helper ? "un proche passe arroser" : "personne ne passe arroser"}.` : null,
     facts.plants.length > 0 ? `Plantes cultivées : ${facts.plants.map((plant) => plant.name).join(", ")}.` : "Aucune plante enregistrée pour l'instant.",
     totals.events > 0 ? `Gestes notés dans Balco ces ${HISTORY_DAYS} derniers jours : ${totals.events}, dont ${totals.last30Days} ces 30 derniers jours.` : null,

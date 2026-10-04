@@ -5,7 +5,7 @@
  * les suggestions tournent chaque jour parmi les meilleures, pour que l'app ne propose pas toujours les
  * mêmes ; le même jour, elles restent identiques partout (Aujourd'hui montre la 1ʳᵉ de Saisons). Logique pure.
  */
-import { formatMonthRange, MONTH_LONG, recommendPlants, sowsIndoors, type CatalogPlant, type Month, type OnboardingAnswers } from "./catalog";
+import { formatMonthRange, getCatalogPlant, MONTH_LONG, recommendPlants, sowsIndoors, type CatalogPlant, type Month, type OnboardingAnswers } from "./catalog";
 import { adaptToClimate, type ClimateInfo } from "./climate";
 
 export type SuggestionAction = "sow" | "plant" | "both";
@@ -21,6 +21,8 @@ export type SeasonalSuggestion = {
   title: string;
   /** « Récolte juin–septembre · dernier mois ». */
   reason: string;
+  /** Le mois de la suggestion (utile pour une saison, qui en compte plusieurs). */
+  month: number;
 };
 
 export type SuggestionOptions = {
@@ -76,7 +78,7 @@ export function suggestionFor(catalogEntry: CatalogPlant, month: number, climate
   const parts = [harvest === "toute l’année" ? `${verb} toute l’année` : `${verb} ${harvest}`, lastChance ? "dernier mois" : entry.difficulty === "easy" ? "facile" : null];
   const indoors = sow && sowsIndoors(entry, m);
   const title = !indoors ? `${VERBS[action]} ${entry.label}` : action === "sow" ? `Sème ${entry.label} au chaud` : `Sème au chaud ou plante ${entry.label}`;
-  return { entry, action, lastChance, indoors, title, reason: parts.filter(Boolean).join(" · ") };
+  return { entry, action, lastChance, indoors, title, reason: parts.filter(Boolean).join(" · "), month };
 }
 
 export function seasonalSuggestions(answers: OnboardingAnswers | null, options: SuggestionOptions): SeasonalSuggestion[] {
@@ -94,6 +96,33 @@ export function seasonalSuggestions(answers: OnboardingAnswers | null, options: 
   }
   if (!seed) return suggestions;
   return suggestions
+    .map((suggestion) => ({ suggestion, rank: hash(`${seed}:${suggestion.entry.id}`) }))
+    .sort((a, b) => a.rank - b.rank)
+    .slice(0, limit)
+    .map(({ suggestion }) => suggestion);
+}
+
+/**
+ * Les suggestions d'une saison : ce qui se sème ou se plante dans l'un de ses mois (à partir du mois en
+ * cours pour la saison en cours), chaque plante une seule fois, au premier mois où c'est possible.
+ */
+export function seasonSuggestions(answers: OnboardingAnswers | null, options: Omit<SuggestionOptions, "month"> & { months: number[] }) {
+  const { months, limit = 5, seed, ...rest } = options;
+  const byPlant = new Map<string, SeasonalSuggestion>();
+  for (const month of months) {
+    for (const suggestion of seasonalSuggestions(answers, { ...rest, month, limit: ROTATION_POOL })) {
+      if (byPlant.has(suggestion.entry.id)) continue;
+      // Retenue en novembre mais déjà possible en octobre : on la propose pour octobre.
+      // (Depuis la fiche du catalogue : celle de la suggestion a déjà ses dates adaptées au climat.)
+      const original = getCatalogPlant(suggestion.entry.id) ?? suggestion.entry;
+      const earliest = months.map((candidate) => suggestionFor(original, candidate, rest.climate)).find(Boolean);
+      byPlant.set(suggestion.entry.id, earliest ?? suggestion);
+    }
+  }
+  // Comme pour un mois : le tirage du jour se fait parmi les mieux adaptées.
+  const all = [...byPlant.values()].slice(0, seed ? Math.max(limit, ROTATION_POOL) : limit);
+  if (!seed) return all;
+  return all
     .map((suggestion) => ({ suggestion, rank: hash(`${seed}:${suggestion.entry.id}`) }))
     .sort((a, b) => a.rank - b.rank)
     .slice(0, limit)

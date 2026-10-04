@@ -10,6 +10,7 @@ import { MemorySheet, memorySummary } from "@/components/nora/memory-sheet";
 import { ScreenHeader } from "@/components/screen-header";
 import { glass } from "@/components/ui/glass";
 import { useColors } from "@/hooks/use-colors";
+import { conversationForNora, withDaySeparators, type ConversationItem } from "@/lib/ai/conversation";
 import { isNoraLevel, type NoraMemoryView } from "@/lib/ai/memory";
 import { quickQuestions } from "@/lib/ai/quick-questions";
 import { quotaLabel } from "@/lib/ai/quota-text";
@@ -20,7 +21,8 @@ import { trpc } from "@/lib/trpc";
  * « notice » : message de l'app (erreur, quota) ; « memory » : ce que Nora vient de retenir ou
  * d'oublier. Affichés, mais jamais renvoyés à Nora.
  */
-type Message = { id: string; from: "bot" | "user" | "notice" | "memory"; text: string; time: string; noteId?: string };
+/** `at` : date du message (absente des messages enregistrés avant le 4 octobre 2026). */
+type Message = { id: string; from: "bot" | "user" | "notice" | "memory"; text: string; time: string; noteId?: string; at?: string };
 
 const HISTORY_STORAGE_KEY = "balco.assistant.history.v1";
 const MAX_STORED_MESSAGES = 40;
@@ -51,7 +53,7 @@ export default function AssistantScreen() {
   const [messages, setMessages] = useState<Message[]>([]);
   const [loaded, setLoaded] = useState(false);
   const [draft, setDraft] = useState("");
-  const listRef = useRef<FlatList<Message>>(null);
+  const listRef = useRef<FlatList<ConversationItem<Message>>>(null);
 
   useEffect(() => {
     AsyncStorage.getItem(HISTORY_STORAGE_KEY)
@@ -87,26 +89,28 @@ export default function AssistantScreen() {
       return;
     }
     if (!canAsk) return;
-    const userMessage: Message = { id: `${Date.now()}-user`, from: "user", text: clean, time: clock() };
+    const userMessage: Message = { id: `${Date.now()}-user`, from: "user", text: clean, time: clock(), at: new Date().toISOString() };
     const next = [...messages, userMessage];
     setMessages(next);
     setDraft("");
-    // Seuls les vrais échanges partent (ni notices ni souvenirs), en commençant par une question.
-    const history = next.filter((message) => message.from === "user" || message.from === "bot").map((message) => ({ role: message.from === "user" ? ("user" as const) : ("assistant" as const), content: message.text.slice(0, 2000) }));
+    // Seuls les vrais échanges des deux derniers jours partent (ni notices ni souvenirs) ; pour le reste,
+    // Nora s'appuie sur ce qu'elle a retenu.
+    const history = conversationForNora(next);
     // Les derniers gestes et la ville partent d'abord : Nora répond sur un balcon à jour.
     setSyncing(true);
     void syncNow().catch(() => undefined).finally(() => ask.mutate({ messages: history }, {
       onSuccess: (result) => {
         const now = Date.now();
+        const at = new Date(now).toISOString();
         setMessages((current) => [
           ...current,
-          { id: `${now}-bot`, from: "bot", text: result.answer, time: clock() },
-          ...result.remembered.map((note): Message => ({ id: `${now}-memory-${note.id}`, from: "memory", text: `Nora a retenu : ${note.text}`, time: "", noteId: note.id })),
-          ...result.forgotten.map((note): Message => ({ id: `${now}-forgot-${note.id}`, from: "memory", text: `Nora a oublié : ${note.text}`, time: "" })),
+          { id: `${now}-bot`, from: "bot", text: result.answer, time: clock(), at },
+          ...result.remembered.map((note): Message => ({ id: `${now}-memory-${note.id}`, from: "memory", text: `Nora a retenu : ${note.text}`, time: "", noteId: note.id, at })),
+          ...result.forgotten.map((note): Message => ({ id: `${now}-forgot-${note.id}`, from: "memory", text: `Nora a oublié : ${note.text}`, time: "", at })),
         ]);
         if (result.remembered.length > 0 || result.forgotten.length > 0) void utils.ai.memory.invalidate();
       },
-      onError: (error) => setMessages((current) => [...current, { id: `${Date.now()}-notice`, from: "notice", text: error.message, time: clock() }]),
+      onError: (error) => setMessages((current) => [...current, { id: `${Date.now()}-notice`, from: "notice", text: error.message, time: clock(), at: new Date().toISOString() }]),
       onSettled: () => setSyncing(false),
     }));
   };
@@ -182,13 +186,15 @@ export default function AssistantScreen() {
       <KeyboardAvoidingView style={styles.flex} behavior={Platform.OS === "ios" ? "padding" : undefined}>
         <FlatList
           ref={listRef}
-          data={[...welcome, ...messages]}
+          data={[...welcome, ...withDaySeparators(messages)]}
           keyExtractor={(item) => item.id}
           ListHeaderComponent={header}
           ListFooterComponent={footer}
           showsVerticalScrollIndicator={false}
           contentContainerStyle={[styles.content, { paddingTop: insets.top + 14 }]}
-          renderItem={({ item }) => item.from === "memory" ? (
+          renderItem={({ item }) => item.from === "day" ? (
+            <Text accessibilityRole="header" style={[styles.dayLabel, { color: colors.muted }]}>{item.text}</Text>
+          ) : item.from === "memory" ? (
             <View style={[glass.soft, styles.memoryRow]}>
               <Text style={[styles.memoryText, { color: colors.muted }]}>💭 {item.text}</Text>
               {item.noteId && (
@@ -241,6 +247,7 @@ export default function AssistantScreen() {
 }
 
 const styles = StyleSheet.create({
+  dayLabel: { alignSelf: "center", fontSize: 12, fontWeight: "700", paddingVertical: 4 },
   flex: { flex: 1 },
   header: { marginBottom: 14 },
   clearButton: { paddingHorizontal: 6, paddingVertical: 8 },

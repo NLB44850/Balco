@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import { describeSowing, getCatalogPlant, PLANT_CATALOG } from "../lib/plants/catalog";
 import { climateZoneFor } from "../lib/plants/climate";
-import { nextSuggestionMonth, seasonalSuggestions, suggestionActionLabel, suggestionFor, suggestionsHeading } from "../lib/plants/suggestions";
+import { nextSuggestionMonth, seasonalSuggestions, seasonSuggestions, suggestionActionLabel, suggestionFor, suggestionsHeading } from "../lib/plants/suggestions";
 import { calendarActivities } from "../lib/plants/calendar";
 
 describe("suggestions de saison", () => {
@@ -95,6 +95,38 @@ describe("suggestions de saison", () => {
       for (const url of entry.sources) expect(url).toMatch(/^https?:\/\//u);
       for (const month of entry.indoorSowMonths) expect(entry.sowMonths, entry.id).toContain(month);
     }
+  });
+});
+
+describe("suggestions d'une saison", () => {
+  it("réunit les mois de la saison, chaque plante une fois, au premier mois possible", () => {
+    const autumn = seasonSuggestions(null, { months: [10, 11], limit: 99 });
+    expect(autumn.length).toBeGreaterThan(0);
+    expect(new Set(autumn.map((suggestion) => suggestion.entry.id)).size).toBe(autumn.length);
+    for (const suggestion of autumn) {
+      expect([10, 11]).toContain(suggestion.month);
+      expect([...suggestion.entry.sowMonths, ...suggestion.entry.plantMonths]).toContain(suggestion.month);
+      // Possible dès octobre : la suggestion le dit pour octobre, pas pour novembre.
+      if (suggestion.month === 11) expect(suggestionFor(suggestion.entry, 10)).toBeNull();
+    }
+  });
+
+  it("tourne chaque jour, sans les plantes du balcon, dans la limite demandée", () => {
+    const spring = seasonSuggestions(null, { months: [3, 4, 5], limit: 4, seed: "2026-10-04", ownedCatalogIds: ["basil"] });
+    expect(spring).toHaveLength(4);
+    expect(spring.map((suggestion) => suggestion.entry.id)).not.toContain("basil");
+    expect(seasonSuggestions(null, { months: [3, 4, 5], limit: 4, seed: "2026-10-04", ownedCatalogIds: ["basil"] })).toEqual(spring);
+  });
+
+  it("avec un climat, garde les dates décalées une seule fois", () => {
+    const south = climateZoneFor(43.3, 5.37, 20);
+    for (const suggestion of seasonSuggestions(null, { months: [3, 4, 5], limit: 99, climate: south })) {
+      expect(suggestion).toEqual(suggestionFor(getCatalogPlant(suggestion.entry.id)!, suggestion.month, south));
+    }
+  });
+
+  it("chaque suggestion connaît son mois", () => {
+    expect(seasonalSuggestions(null, { month: 4, limit: 3 }).every((suggestion) => suggestion.month === 4)).toBe(true);
   });
 });
 

@@ -38,16 +38,16 @@ Tout se passe dans son GitHub Codespace (pas de Docker sur son PC).
 
 - `pnpm -s check`, `pnpm -s lint`, puis `TEST_DATABASE_URL=mysql://balco:balco@localhost:3306/balco_cal npx vitest run`
   (MariaDB locale : `service mariadb start` si elle s'est arrêtée, `apt-get install -y mariadb-server` si elle manque,
-  puis `DATABASE_URL=… npx drizzle-kit migrate` ; 383 tests à ce jour). Dans un conteneur
+  puis `DATABASE_URL=… npx drizzle-kit migrate` ; 396 tests à ce jour). Dans un conteneur
   neuf : `apt-get install -y mariadb-server`, `service mariadb start`, créer la base `balco_cal` et l'utilisateur
   `balco`/`balco`, puis `pnpm -s build && DATABASE_URL=mysql://balco:balco@localhost:3306/balco_cal node dist/migrate.mjs`.
 - `npx expo export --platform android` pour s'assurer que le bundle Android se construit.
 - **Tests de bout en bout** (à lancer quand le porteur le demande, et avant chaque grosse évolution) :
   `bash scripts/e2e.sh` (≈ 4 min : construit l'app web avec la simulation météo, migre la base, démarre
   le vrai serveur sur le port 3100, lance Playwright). `bash scripts/e2e.sh meteo` pour un seul fichier,
-  `E2E_SKIP_BUILD=1` pour ne pas reconstruire. Scénarios dans `e2e/` (18 aujourd'hui) : parcours
+  `E2E_SKIP_BUILD=1` pour ne pas reconstruire. Scénarios dans `e2e/` (19 aujourd'hui) : parcours
   (onboarding, écrans, cocher/Annuler, fête, catalogue, fiche d'une nouvelle plante, feuille du bas qui se ferme,
-  suggestions de saison), météo (pluie + eau économisée, gel + Saisons,
+  suggestions de saison, Saisons rangé par type), météo (pluie + eau économisée, gel + Saisons,
   orage, vent, canicule, « Pas aujourd'hui », retour météo réelle), compte (code de connexion lu dans
   `dist/e2e-server.log`, balcon retrouvé sur un 2ᵉ téléphone, le 1ᵉʳ prévenu « sauvegardé depuis un autre téléphone ») et vacances. Open-Meteo est simulé
   (`e2e/helpers.ts`, `mockWeather`), le balcon est posé dans le stockage (`seedBalcony`). Les cases à
@@ -143,6 +143,11 @@ Livré, à valider sur son téléphone :
   s'affiche sous sa réponse. Faits et préférences : table `nora_memories` (`server/ai/memory-store.ts`,
   logique pure `lib/ai/memory.ts`). Contexte : les 90 derniers jours résumés plante par plante et par
   type de geste (`summarizeHistory` dans `server/ai/context.ts`, depuis l'étape 2 de l'audit). Question prête « Fais le point sur mes plantes ».
+  **Sur plusieurs jours** (04/10) : chaque fait retenu est daté pour Nora (« (retenu le 3 juillet) »,
+  `noteDate`), et le prompt lui dit de vérifier un fait ancien plutôt que de le tenir pour acquis. La
+  conversation est datée (`at` sur chaque message, `lib/ai/conversation.ts`) : séparateurs « Aujourd'hui /
+  Hier / Lundi 28 septembre » à l'écran (`withDaySeparators`), et seuls les échanges des 2 derniers jours
+  partent vers Nora (`conversationForNora`) ; au-delà, elle s'appuie sur ce qu'elle a retenu.
 - **Geste « Engrais »** (type `fertilizing`) : 26 plantes gourmandes seulement (`lib/plants/fertilizing.ts` :
   légumes-fruits tous les 14 j de juin à septembre, légumes-feuilles et fleurs tous les 21 j, petits
   fruits tous les 30 j au printemps…), engrais organique uniquement. Geste espacé (`everyDays`) : sur
@@ -152,7 +157,9 @@ Livré, à valider sur son téléphone :
 - **Priorité 4, progression** (logique pure `lib/garden/progress.ts`) : dans Ma semaine, eau
   économisée (« N'arrose pas » suivis × ~20 % du pot ; sur l'accueil, « Compris » sur une alerte pluie
   note désormais l'arrosage évité) et récoltes à venir ; carte « Sa progression » dans la fiche plante
-  (stade, 8 semaines en barres, étapes marquantes) ; `celebrationFor` remplace le message après un
+  (stade, 8 semaines en barres, étapes marquantes ; **validée** le 04/10 ; depuis le 04/10, une jeune plante n'est jugée que sur
+  les semaines depuis son arrivée : `trackedWeeks`, `careWeeksLabel` « Soignée 4 semaines sur 5 depuis son
+  arrivée », pas de barre avant) ; `celebrationFor` remplace le message après un
   geste quand il débloque un badge, un niveau, une série ou une première récolte (Aujourd'hui,
   Saisons, fiche plante).
 - **Petites victoires en grand** (01/10, demande « pas d'effet waouh ») : chaque coche (`TodayRow`) fait
@@ -173,6 +180,16 @@ Livré, à valider sur son téléphone :
   **Les suggestions tournent chaque jour** (à sa demande, « que l'app ne paraisse pas figée ») : tirage
   du jour (`seed: dayKey(now)`) parmi les 12 mieux adaptées, stable dans la journée, et l'Idée du mois
   d'Aujourd'hui est toujours la 1ʳᵉ suggestion de Saisons.
+  **Saisons rangé par type de geste** (04/10, à sa demande « liste trop longue ») : une ligne par type
+  (`groupActivities`, `activityGroupTitle`, `activityGroupSummary` dans `lib/plants/calendar.ts` : « À récolter
+  · 5 plantes », « Entretien · 3 gestes », Engrais à part), « 2 sur 5 faits · menthe, thym… » ; la ligne ouvre
+  une feuille du bas où l'on coche chaque plante (« Annuler » et fête s'affichent par-dessus grâce à
+  `overlay` de `BottomSheet`). Un type d'une seule plante reste une ligne à cocher ; le filtre par plante
+  garde le détail. **Aujourd'hui reste une ligne par plante** (choix du porteur). Vue « Par saison » : mois à
+  venir seulement pour la saison en cours, et suggestions de la saison (`seasonSuggestions`, « En novembre ·
+  … »). Plus de « Plante … » pour une plante déjà sur le balcon (`addedAt` du `CalendarSubject`, option
+  `now`), sauf arrivée ce mois-ci (achetée, ajoutée depuis une suggestion) ; vaut pour Saisons et
+  l'accueil (`seasonalToDo`). **Validé** sur son téléphone le 04/10.
 - **Calendrier de culture vérifié** (02/10, à sa demande « quelles sont tes sources ») : les 100 plantes
   comparées à 2-3 pages de semenciers / sites de jardinage (recherche web, repère Paris, culture en pot ;
   un mois n'est changé que si 2 sources concordent) : 35 mois corrigés (récoltes prolongées, semis plus
@@ -271,17 +288,22 @@ et route réservée à `role = admin`. Balco+ sera payant (offre commerciale Ope
    `tests/stock-photos.test.ts`, puis candidates / `choix.json` / `--final`, recompression en 800 px
    qualité 74 (`convert -resize '800x800>' -strip -quality 74`) et `node scripts/photos/generer-index.mjs`.
 5. Suggestions selon le mois : livrées le 02/10 dans Saisons, le catalogue et Aujourd'hui (« Idée du
-   mois », à sa demande), **à valider** sur son téléphone.
+   mois », à sa demande), avec Saisons rangé par type de geste : **validé** le 04/10.
 6. À la publication : notifications serveur sur Android (Firebase/FCM) ; synchroniser les reports
    (« Dans 3 h ») avec le serveur ; envoyer les photos des plantes sur le serveur (stockage d'images)
    pour les retrouver sur un autre téléphone.
 
+**Prochaines séances (04/10)** : le porteur ne veut pas encore publier. Ordre : suggestions de saison
+(validées le 04/10), puis la carte « Sa progression » de la fiche plante (validée le 04/10), puis la mémoire
+de Nora sur plusieurs jours (en cours : test sur 2-3 jours, protocole donné le 04/10). État lisible pour lui : `docs/feuille-de-route.md`
+(parties 2 à 4, mises à jour le 04/10).
+
 Points à ne pas oublier (à proposer au porteur au bon moment, noté le 30/09) :
 - Encore à valider sur son téléphone : la carte « Sa progression » de la fiche plante et les petites
   victoires (priorité 4), la mémoire de Nora sur plusieurs jours.
-- **Branche fusionnée dans `main`** le 02/10 (https://github.com/NLB44850/Balco/pull/1, jusqu'à l'étape 6
-  de l'audit). Le travail continue sur `claude/eloquent-gates-g7xc6x` ; proposer une nouvelle PR vers `main`
-  à la fin de chaque bloc validé. (La session clone le dépôt en partiel : `git fetch --unshallow` avant
+- **Branche fusionnée dans `main`** : PR #1 (02/10, jusqu'à l'étape 6 de l'audit), #14 (04/10, étapes 7
+  à 11) et #15 (04/10, mises à jour Dependabot) ; la branche est au niveau de `main`. Le travail continue
+  sur `claude/eloquent-gates-g7xc6x` ; proposer une nouvelle PR vers `main` à la fin de chaque bloc validé. (La session clone le dépôt en partiel : `git fetch --unshallow` avant
   toute comparaison d'historique avec `main`.)
 - **Maintenance** (02/10, fusionné dans `main` par https://github.com/NLB44850/Balco/pull/2 et copié sur
   la branche) : `.github/dependabot.yml` (dépendances chaque lundi, groupées ; pas de montée mineure ou

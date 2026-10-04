@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { calendarActivities, upcomingMonths } from "../lib/plants/calendar";
+import { activityGroupSummary, activityGroupTitle, calendarActivities, groupActivities, upcomingMonths } from "../lib/plants/calendar";
 import { getCatalogPlant } from "../lib/plants/catalog";
 
 const subject = (catalogId: string, id = catalogId) => ({ id, entry: getCatalogPlant(catalogId)!, displayName: getCatalogPlant(catalogId)!.name });
@@ -128,3 +128,52 @@ describe("vue par saison", () => {
     expect(describeMonths([6, 7, 8])).toBe("de juin à août");
   });
 });
+
+describe("gestes rangés par type (Saisons)", () => {
+  const balcony = ["cherry-tomato", "basil", "strawberry", "mint", "thyme"].map((id) => subject(id));
+
+  it("une ligne par type de geste, récoltes d'abord, l'engrais à part de l'entretien", () => {
+    const activities = calendarActivities(balcony, 7);
+    const groups = groupActivities(activities);
+    expect(groups.length).toBeLessThan(activities.length);
+    expect(groups[0].key).toBe("harvest");
+    expect(new Set(groups.map((group) => group.key)).size).toBe(groups.length);
+    expect(groups.flatMap((group) => group.activities)).toHaveLength(activities.length);
+    const feed = groups.find((group) => group.key === "fertilize");
+    expect(feed?.activities.every((activity) => activity.eventType === "fertilizing")).toBe(true);
+    expect(groups.find((group) => group.key === "care")?.activities.some((activity) => activity.eventType === "fertilizing")).toBe(false);
+  });
+
+  it("des titres et des résumés courts, en français", () => {
+    const [harvest] = groupActivities(calendarActivities(balcony, 7));
+    expect(activityGroupTitle(harvest)).toMatch(/^À récolter · \d+ plantes$/);
+    expect(activityGroupTitle({ key: "care", label: "Entretien", activities: [harvest.activities[0]] })).toBe("Entretien · 1 geste");
+    expect(activityGroupSummary(["Basilic", "Menthe"])).toBe("Basilic, menthe");
+    expect(activityGroupSummary(["Basilic", "Menthe", "Thym", "Fraisier", "Sauge"])).toBe("Basilic, menthe, thym et 2 autres");
+    expect(activityGroupSummary(["Basilic", "Menthe", "Thym", "Fraisier"])).toBe("Basilic, menthe, thym et 1 autre");
+    expect(activityGroupSummary([])).toBe("");
+  });
+});
+
+describe("plantation des plantes déjà sur le balcon", () => {
+  const OCTOBER = new Date(2026, 9, 15);
+  const mint = (addedAt?: string) => ({ ...subject("mint"), addedAt });
+  const kinds = (addedAt: string | undefined, month: number) => calendarActivities([mint(addedAt)], month, { now: OCTOBER }).map((activity) => activity.kind);
+
+  it("ne propose plus de planter une plante déjà installée", () => {
+    expect(kinds(new Date(2026, 5, 1).toISOString(), 10)).not.toContain("plant");
+    // Ni les mois suivants.
+    expect(kinds(new Date(2026, 9, 3).toISOString(), 11)).not.toContain("plant");
+  });
+
+  it("garde « Plante … » ce mois-ci pour une plante tout juste ajoutée, et pour les idées d'un balcon vide", () => {
+    expect(kinds(new Date(2026, 9, 3).toISOString(), 10)).toContain("plant");
+    expect(kinds(undefined, 10)).toContain("plant");
+  });
+
+  it("vaut aussi pour les gestes de saison de l'accueil", () => {
+    const old = { ...subject("mint"), addedAt: new Date(2026, 3, 1).toISOString() };
+    expect(seasonalToDo([old], [], OCTOBER).map((activity) => activity.kind)).not.toContain("plant");
+  });
+});
+
