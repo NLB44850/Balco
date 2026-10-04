@@ -276,12 +276,17 @@ et route réservée à `role = admin`. Balco+ sera payant (offre commerciale Ope
    (« Dans 3 h ») avec le serveur ; envoyer les photos des plantes sur le serveur (stockage d'images)
    pour les retrouver sur un autre téléphone.
 
+**Prochaines séances (04/10)** : le porteur ne veut pas encore publier. Ordre : valider les suggestions
+de saison (point 5 ci-dessus, liste de vérification donnée le 04/10), puis la carte « Sa progression » de la
+fiche plante, puis la mémoire de Nora sur plusieurs jours. État lisible pour lui : `docs/feuille-de-route.md`
+(parties 2 à 4, mises à jour le 04/10).
+
 Points à ne pas oublier (à proposer au porteur au bon moment, noté le 30/09) :
 - Encore à valider sur son téléphone : la carte « Sa progression » de la fiche plante et les petites
   victoires (priorité 4), la mémoire de Nora sur plusieurs jours.
-- **Branche fusionnée dans `main`** le 02/10 (https://github.com/NLB44850/Balco/pull/1, jusqu'à l'étape 6
-  de l'audit). Le travail continue sur `claude/eloquent-gates-g7xc6x` ; proposer une nouvelle PR vers `main`
-  à la fin de chaque bloc validé. (La session clone le dépôt en partiel : `git fetch --unshallow` avant
+- **Branche fusionnée dans `main`** : PR #1 (02/10, jusqu'à l'étape 6 de l'audit), #14 (04/10, étapes 7
+  à 11) et #15 (04/10, mises à jour Dependabot) ; la branche est au niveau de `main`. Le travail continue
+  sur `claude/eloquent-gates-g7xc6x` ; proposer une nouvelle PR vers `main` à la fin de chaque bloc validé. (La session clone le dépôt en partiel : `git fetch --unshallow` avant
   toute comparaison d'historique avec `main`.)
 - **Maintenance** (02/10, fusionné dans `main` par https://github.com/NLB44850/Balco/pull/2 et copié sur
   la branche) : `.github/dependabot.yml` (dépendances chaque lundi, groupées ; pas de montée mineure ou
