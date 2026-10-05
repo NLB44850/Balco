@@ -19,7 +19,7 @@ export type SeasonalSuggestion = {
   indoors: boolean;
   /** « Sème le basilic au chaud », « Plante le thym », « Sème ou plante la menthe ». */
   title: string;
-  /** « Récolte juin–septembre · dernier mois ». */
+  /** « Dernier mois pour la planter · récolte de mai à septembre », « Récolte de juin à septembre · facile ». */
   reason: string;
   /** Le mois de la suggestion (utile pour une saison, qui en compte plusieurs). */
   month: number;
@@ -63,6 +63,32 @@ function isLastMonth(months: Month[], month: Month) {
   return months.includes(month) && !months.includes(next);
 }
 
+const capitalize = (text: string) => text.charAt(0).toUpperCase() + text.slice(1);
+
+/** « de mai à septembre », « d’août à octobre », « en juillet », « d’avril à juin et d’octobre à novembre ». */
+export function monthSpan(months: number[]) {
+  const range = formatMonthRange(months);
+  if (range === "toute l’année" || range === "") return range;
+  const from = (month: string) => (/^[aeiouo]/u.test(month) ? `d’${month}` : `de ${month}`);
+  return range
+    .split(", ")
+    .map((run) => {
+      const [start, end] = run.split("–");
+      return end ? `${from(start)} à ${end}` : `en ${start}`;
+    })
+    .join(" et ");
+}
+
+const INFINITIVES: Record<SuggestionAction, string> = { sow: "semer", plant: "planter", both: "semer ou planter" };
+
+/** « Dernier mois pour la planter », « pour les semer » ; « pour planter l’aubergine » quand l’article ne dit pas le genre. */
+export function lastChanceText(label: string, action: SuggestionAction) {
+  const verb = INFINITIVES[action];
+  const article = label.split(" ")[0];
+  if (article === "le" || article === "la" || article === "les") return `Dernier mois pour ${article} ${verb}`;
+  return `Dernier mois pour ${verb} ${label}`;
+}
+
 export function suggestionFor(catalogEntry: CatalogPlant, month: number, climate?: ClimateInfo | null): SeasonalSuggestion | null {
   const entry = adaptToClimate(catalogEntry, climate);
   const m = month as Month;
@@ -72,10 +98,9 @@ export function suggestionFor(catalogEntry: CatalogPlant, month: number, climate
   const action: SuggestionAction = sow && plant ? "both" : sow ? "sow" : "plant";
   // « Dernier mois » seulement si plus aucune des deux façons de faire n'est possible le mois suivant.
   const lastChance = (!sow || isLastMonth(entry.sowMonths, m)) && (!plant || isLastMonth(entry.plantMonths, m));
-  const harvest = formatMonthRange(entry.harvestMonths);
   // Une fleur ne se récolte pas : on dit quand elle fleurit.
-  const verb = entry.category === "flower" ? "Fleurit" : "Récolte";
-  const parts = [harvest === "toute l’année" ? `${verb} toute l’année` : `${verb} ${harvest}`, lastChance ? "dernier mois" : entry.difficulty === "easy" ? "facile" : null];
+  const harvest = `${entry.category === "flower" ? "fleurit" : "récolte"} ${monthSpan(entry.harvestMonths)}`;
+  const parts = lastChance ? [lastChanceText(entry.label, action), harvest] : [capitalize(harvest), entry.difficulty === "easy" ? "facile" : null];
   const indoors = sow && sowsIndoors(entry, m);
   const title = !indoors ? `${VERBS[action]} ${entry.label}` : action === "sow" ? `Sème ${entry.label} au chaud` : `Sème au chaud ou plante ${entry.label}`;
   return { entry, action, lastChance, indoors, title, reason: parts.filter(Boolean).join(" · "), month };

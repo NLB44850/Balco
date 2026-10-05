@@ -38,14 +38,14 @@ Tout se passe dans son GitHub Codespace (pas de Docker sur son PC).
 
 - `pnpm -s check`, `pnpm -s lint`, puis `TEST_DATABASE_URL=mysql://balco:balco@localhost:3306/balco_cal npx vitest run`
   (MariaDB locale : `service mariadb start` si elle s'est arrêtée, `apt-get install -y mariadb-server` si elle manque,
-  puis `DATABASE_URL=… npx drizzle-kit migrate` ; 421 tests à ce jour). Dans un conteneur
+  puis `DATABASE_URL=… npx drizzle-kit migrate` ; 422 tests à ce jour). Dans un conteneur
   neuf : `apt-get install -y mariadb-server`, `service mariadb start`, créer la base `balco_cal` et l'utilisateur
   `balco`/`balco`, puis `pnpm -s build && DATABASE_URL=mysql://balco:balco@localhost:3306/balco_cal node dist/migrate.mjs`.
 - `npx expo export --platform android` pour s'assurer que le bundle Android se construit.
 - **Tests de bout en bout** (à lancer quand le porteur le demande, et avant chaque grosse évolution) :
   `bash scripts/e2e.sh` (≈ 4 min : construit l'app web avec la simulation météo, migre la base, démarre
   le vrai serveur sur le port 3100, lance Playwright). `bash scripts/e2e.sh meteo` pour un seul fichier,
-  `E2E_SKIP_BUILD=1` pour ne pas reconstruire. Scénarios dans `e2e/` (21 aujourd'hui) : parcours
+  `E2E_SKIP_BUILD=1` pour ne pas reconstruire. Scénarios dans `e2e/` (22 aujourd'hui) : parcours
   (onboarding, écrans, cocher/Annuler, fête, catalogue, fiche d'une nouvelle plante, feuille du bas qui se ferme,
   suggestions de saison, Saisons rangé par type), météo (pluie + eau économisée, gel + Saisons,
   orage, vent, canicule, « Pas aujourd'hui », retour météo réelle), compte (code de connexion lu dans
@@ -336,7 +336,7 @@ ce qui n'a pas pu être corrigé ou demande une décision.
   unique (radis, carottes, salades pommées…), proposer « Tout récolté ? » → « Ressemer » ou « Libérer le pot ».
   **Validée** sur téléphone le 05/10.
 
-**Reprise dans une nouvelle conversation (05/10) : étapes 4 et 5 livrées le 05/10 (le porteur a dit de passer à la 5 et accepté de régler les points de la pluie à l'étape 7) ; étape 5 à valider sur son téléphone, ensuite l'étape 6.** Détail des étapes restantes,
+**Reprise dans une nouvelle conversation (05/10) : étapes 4 et 5 livrées le 05/10 (le porteur a dit de passer à la 5 et accepté de régler les points de la pluie à l'étape 7) ; étape 5 validée ; étape 6 livrée le 05/10, à valider, ensuite l'étape 7.** Détail des étapes restantes,
 tel que validé par le porteur (une étape = un commit testé : check, lint, vitest, e2e complet avec
 reconstruction, export Android ; puis compte rendu en français avec ce qu'il doit taper et regarder, et
 attendre sa validation avant l'étape suivante) :
@@ -359,7 +359,11 @@ attendre sa validation avant l'étape suivante) :
    **Gestes de saison dans Aujourd'hui, Saisons en lecture seule** : Saisons ne se coche plus, phrase
    « Ton calendrier : ce qui t'attend dans les prochains mois » ; les gestes du mois (semis, plantation,
    rempotage, récolte) se font depuis Aujourd'hui. Adapter les e2e Saisons (`1-parcours.spec.ts`).
-6. **Cohérence Saisons / Ma semaine / Moi** : Moi montre les chiffres de la semaine avec le même calcul que
+6. ✅ (livrée, à valider : Moi affiche « gestes cette semaine » et « jours de suite » tirés de `weekSummary`,
+   comme Ma semaine ; Idée du mois et suggestions : `lastChanceText` / `monthSpan` dans `lib/plants/suggestions.ts`,
+   « Dernier mois pour la planter · récolte de mai à septembre », « Récolte d'août à octobre · facile » ; 2ᵉ scénario
+   de `e2e/4-coherence.spec.ts` : une récolte sur Aujourd'hui se voit dans Saisons, Ma semaine et Moi)
+   **Cohérence Saisons / Ma semaine / Moi** : Moi montre les chiffres de la semaine avec le même calcul que
    Ma semaine ; libellé de l'Idée du mois « Dernier mois pour la planter · récolte de mai à septembre » ;
    tests des points 3 et 5 ; compléter `e2e/4-coherence.spec.ts` avec Saisons, Ma semaine et Moi.
 7. **Série de « jours suivis »** : un jour compte s'il n'y avait rien à faire, ou si tous les gestes

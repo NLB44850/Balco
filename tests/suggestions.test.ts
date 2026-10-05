@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import { describeSowing, getCatalogPlant, PLANT_CATALOG } from "../lib/plants/catalog";
 import { climateZoneFor } from "../lib/plants/climate";
-import { nextSuggestionMonth, seasonalSuggestions, seasonSuggestions, suggestionActionLabel, suggestionFor, suggestionsHeading } from "../lib/plants/suggestions";
+import { nextSuggestionMonth, seasonalSuggestions, seasonSuggestions, lastChanceText, monthSpan, suggestionActionLabel, suggestionFor, suggestionsHeading } from "../lib/plants/suggestions";
 import { calendarActivities } from "../lib/plants/calendar";
 
 describe("suggestions de saison", () => {
@@ -38,10 +38,25 @@ describe("suggestions de saison", () => {
     expect(suggestionFor(getCatalogPlant("cherry-tomato")!, 12)).toBeNull();
 
     const lastSow = PLANT_CATALOG.map((entry) => suggestionFor(entry, 10)).find((suggestion) => suggestion?.lastChance);
-    expect(lastSow?.reason).toContain("dernier mois");
+    expect(lastSow?.reason).toMatch(/^Dernier mois pour .+ · récolte /u);
 
     const flower = PLANT_CATALOG.find((entry) => entry.category === "flower" && entry.sowMonths.includes(4))!;
     expect(suggestionFor(flower, 4)!.reason).toMatch(/^Fleurit /u);
+  });
+
+  it("écrit l'Idée du mois comme une phrase : « Dernier mois pour la planter · récolte de mai à septembre »", () => {
+    expect(lastChanceText("la mélisse", "plant")).toBe("Dernier mois pour la planter");
+    expect(lastChanceText("les fraisiers des bois", "plant")).toBe("Dernier mois pour les planter");
+    expect(lastChanceText("le persil", "both")).toBe("Dernier mois pour le semer ou planter");
+    expect(lastChanceText("l’aubergine", "sow")).toBe("Dernier mois pour semer l’aubergine");
+    expect(monthSpan([5, 6, 7, 8, 9])).toBe("de mai à septembre");
+    expect(monthSpan([7])).toBe("en juillet");
+    expect(monthSpan([1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12])).toBe("toute l’année");
+    const melissa = suggestionFor(getCatalogPlant("lemon-balm")!, 10);
+    if (melissa?.lastChance) expect(melissa.reason).toBe(`Dernier mois pour la planter · récolte ${monthSpan(melissa.entry.harvestMonths)}`);
+    expect(suggestionFor(getCatalogPlant("cherry-tomato")!, 3)!.reason).toBe("Récolte de juillet à octobre · facile");
+    expect(monthSpan([8, 9, 10])).toBe("d’août à octobre");
+    expect(monthSpan([4, 5, 6, 10, 11])).toBe("d’avril à juin et d’octobre à novembre");
   });
 
   it("suit le climat : les tomates se sèment plus tard en montagne", () => {

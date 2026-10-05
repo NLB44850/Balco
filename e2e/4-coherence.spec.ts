@@ -4,7 +4,8 @@ import { mockWeather, open, seedBalcony, trackErrors, wateringGroup } from "./he
 
 /**
  * Cohérence entre les écrans, sur le balcon de démonstration du test utilisateur : chaque plante a le
- * même geste du jour et le même état sur Aujourd'hui, la carte Balcon et sa fiche.
+ * même geste du jour et le même état sur Aujourd'hui, la carte Balcon et sa fiche ; un geste fait se voit
+ * dans Saisons, Ma semaine et Moi, avec les mêmes chiffres.
  */
 const DEMO = { plants: ["basil", "mint", "thyme", "cherry-tomato", "strawberry"], wateredDaysAgo: 3, pastGestureDays: [1, 2, 4] };
 const NAMES: Record<string, string> = { basil: "Basilic", mint: "Menthe", thyme: "Thym", "cherry-tomato": "Tomates cerises", strawberry: "Fraisier" };
@@ -51,5 +52,47 @@ test("cohérence : Aujourd'hui, Balcon et la fiche disent la même chose de chaq
     await expect(page.getByText(status, { exact: true }).filter({ visible: true }).first()).toBeVisible();
     await expect(page.getByText(line, { exact: true }).filter({ visible: true }).first()).toBeVisible();
   }
+  expect(errors).toEqual([]);
+});
+
+/** Un chiffre affiché au-dessus de son libellé (« 5 » puis « gestes »), lu dans le texte de l'écran. */
+async function figure(page: import("@playwright/test").Page, label: RegExp) {
+  const text = await page.locator("body").innerText();
+  const match = text.match(new RegExp(`(\\d+)\\n${label.source}`, "u"));
+  return match ? Number(match[1]) : null;
+}
+
+test("cohérence : une récolte sur Aujourd'hui se voit dans Saisons, Ma semaine et Moi, avec les mêmes chiffres", async ({ page }) => {
+  const errors = trackErrors(page);
+  await mockWeather(page);
+  // Arrosées ce matin : la récolte du mois est le geste proposé.
+  await seedBalcony(page, { plants: ["mint", "thyme", "chives"], wateredDaysAgo: 0, pastGestureDays: [1, 2, 4] });
+
+  await open(page, "/week", "Ma semaine");
+  const before = { gestures: await figure(page, /gestes?\n/), streak: await figure(page, /jours? de suite/), harvests: await figure(page, /récoltes?\n/) };
+  expect(before.gestures).not.toBeNull();
+  expect(before.streak).not.toBeNull();
+
+  // Moi montre les mêmes chiffres que Ma semaine.
+  await open(page, "/profile", "Mode vacances");
+  expect(await figure(page, /gestes? cette semaine/)).toBe(before.gestures);
+  expect(await figure(page, /jours? de suite/)).toBe(before.streak);
+
+  // Une récolte sur Aujourd'hui…
+  await open(page, "/", "Tes plantes");
+  const harvest = page.getByRole("checkbox", { name: /^Marquer comme fait : Récolte / }).filter({ visible: true }).first();
+  await harvest.click();
+  await expect(page.getByRole("checkbox", { name: /^Annuler ce geste : Récolte / }).filter({ visible: true }).first()).toBeVisible();
+
+  // … se voit dans Saisons (sans rien à cocher)…
+  await page.getByRole("tab", { name: /Saisons/ }).click();
+  await expect(page.getByText(/^1 sur \d+ déjà fait · /u).filter({ visible: true })).toBeVisible();
+
+  // … et compte une fois de plus dans Ma semaine et dans Moi.
+  await open(page, "/week", "Ma semaine");
+  expect(await figure(page, /gestes?\n/)).toBe((before.gestures ?? 0) + 1);
+  expect(await figure(page, /récoltes?\n/)).toBe((before.harvests ?? 0) + 1);
+  await open(page, "/profile", "Mode vacances");
+  expect(await figure(page, /gestes? cette semaine/)).toBe((before.gestures ?? 0) + 1);
   expect(errors).toEqual([]);
 });
