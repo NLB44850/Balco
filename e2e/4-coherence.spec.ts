@@ -1,6 +1,6 @@
 import { expect, test } from "@playwright/test";
 
-import { mockWeather, open, seedBalcony, trackErrors } from "./helpers";
+import { mockWeather, open, seedBalcony, trackErrors, wateringGroup } from "./helpers";
 
 /**
  * Cohérence entre les écrans, sur le balcon de démonstration du test utilisateur : chaque plante a le
@@ -32,7 +32,16 @@ test("cohérence : Aujourd'hui, Balcon et la fiche disent la même chose de chaq
     const { status, line } = balcony.get(id)!;
     await expect(page.getByRole("button", { name: `${name}, ${status}` })).toBeVisible();
     // Les onglets restent montés, cachés : on ne regarde que ce qui est à l'écran.
-    if (line !== NOTHING && !line.startsWith("✓")) await expect(page.getByText(line, { exact: true }).filter({ visible: true }).first()).toBeVisible();
+    if (line !== NOTHING && !line.startsWith("✓") && !line.startsWith("Arrose")) await expect(page.getByText(line, { exact: true }).filter({ visible: true }).first()).toBeVisible();
+  }
+  // Les arrosages sont regroupés : chacun se retrouve dans la feuille « Vérifie la terre de N plantes ».
+  const waterings = [...balcony.values()].map(({ line }) => line).filter((line) => line.startsWith("Arrose"));
+  if (waterings.length > 1) {
+    await wateringGroup(page).click();
+    for (const line of waterings) await expect(page.getByRole("checkbox", { name: `Marquer comme fait : ${line}` })).toBeVisible();
+    await page.keyboard.press("Escape");
+  } else {
+    for (const line of waterings) await expect(page.getByText(line, { exact: true }).filter({ visible: true }).first()).toBeVisible();
   }
 
   // 3. La fiche de chaque plante : même état, même prochain geste.

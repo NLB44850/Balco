@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import { eventForGesture, planDay } from "../lib/garden/day-plan";
 import { careProfileFor, resolvePlants } from "../lib/garden/garden-logic";
-import { balconyStatus, buildTodayList, doneSubtitle, headline } from "../lib/garden/today";
+import { balconyStatus, buildTodayList, doneSubtitle, headline, layoutTodayList } from "../lib/garden/today";
 import { decideReminders, type MaintenanceEvent, type WeatherSnapshot } from "../lib/reminders/reminder-engine";
 import { groupReminders } from "../lib/reminders/reminder-groups";
 
@@ -116,3 +116,57 @@ describe("état du balcon", () => {
   });
 });
 
+
+describe("liste affichée : arrosages regroupés, gestes pas urgents repliés", () => {
+  type Item = ReturnType<typeof buildTodayList>[number];
+  const item = (key: string, gesture: Item["gesture"], plantName: string, done = false) =>
+    ({ kind: "task", key, tone: "care", icon: "•", title: `${gesture} ${plantName}`, subtitle: "", gesture, plantName, done }) as unknown as Item;
+
+  it("regroupe les arrosages en une ligne « Vérifie la terre de N plantes » qui garde chaque plante", () => {
+    const { items } = list(12, []);
+    const lines = layoutTodayList(items);
+    const group = lines.find((line) => line.type === "watering");
+    expect(group).toMatchObject({ title: "Vérifie la terre de 3 plantes", done: false });
+    expect(group?.type === "watering" && group.subtitle).toMatch(/^Sèche \? Arrose · /u);
+    expect(group?.type === "watering" && group.items).toHaveLength(wateringRows(items).length);
+    expect(lines.filter((line) => line.type === "item" && line.item.gesture === "watering")).toHaveLength(0);
+  });
+
+  it("laisse un arrosage seul tel quel", () => {
+    const lines = layoutTodayList([item("a", "watering", "Basilic"), item("b", "harvest", "Thym")]);
+    expect(lines.map((line) => line.type)).toEqual(["item", "item"]);
+  });
+
+  it("compte les arrosages faits, et passe le groupe en bas une fois tout fait", () => {
+    const partial = layoutTodayList([item("a", "watering", "Basilic", true), item("b", "watering", "Menthe"), item("c", "harvest", "Thym")]);
+    expect(partial[0]).toMatchObject({ type: "watering", subtitle: "1 sur 2 faites · Basilic, menthe", done: false });
+    const all = layoutTodayList([item("a", "watering", "Basilic", true), item("b", "watering", "Menthe", true), item("c", "harvest", "Thym")]);
+    expect(all.map((line) => line.key)).toEqual(["c", "watering"]);
+  });
+
+  it("au-delà de 5 lignes, replie engrais et entretien, jamais alertes, arrosages ni récoltes", () => {
+    const items = [
+      item("alert", "alert", "Basilic"),
+      item("w1", "watering", "Basilic"),
+      item("w2", "watering", "Menthe"),
+      ...["Thym", "Fraisier", "Tomates"].map((name) => item(`h-${name}`, "harvest", name)),
+      item("f", "fertilizing", "Rosier"),
+      item("c", "care", "Lavande"),
+    ];
+    const lines = layoutTodayList(items);
+    expect(lines.map((line) => line.key)).toEqual(["alert", "watering", "h-Thym", "h-Fraisier", "h-Tomates", "more"]);
+    expect(lines.at(-1)).toMatchObject({ type: "more", title: "2 autres gestes, pas urgents", subtitle: "Rosier, lavande" });
+  });
+
+  it("ne replie rien jusqu'à 5 lignes", () => {
+    const lines = layoutTodayList([item("h", "harvest", "Thym"), item("f", "fertilizing", "Rosier"), item("c", "care", "Lavande"), item("s", "season", "Ail"), item("c2", "care", "Menthe")]);
+    expect(lines.some((line) => line.type === "more")).toBe(false);
+    expect(lines).toHaveLength(5);
+  });
+
+  it("garde une seule ligne par plante sur le balcon du test utilisateur", () => {
+    const { items } = list(12, []);
+    const names = layoutTodayList(items).flatMap((line) => (line.type === "item" ? [line.item] : line.items)).filter((entry) => entry.kind !== "alert" || entry.group.cause === "thirst").map((entry) => entry.plantName);
+    expect(new Set(names).size).toBe(names.length);
+  });
+});

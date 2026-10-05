@@ -37,7 +37,7 @@ import {
 import { potsFor, skyScene } from "@/lib/garden/sky";
 import { publishSky } from "@/lib/garden/sky-store";
 import type { PlantTone } from "@/lib/garden/day-plan";
-import { balconyStatus, buildTodayList, doneSubtitle, type TodayItem } from "@/lib/garden/today";
+import { balconyStatus, buildTodayList, doneSubtitle, layoutTodayList, type TodayItem } from "@/lib/garden/today";
 import { notificationsUnavailableReason } from "@/lib/notifications/module";
 import { eventForActivity } from "@/lib/plants/calendar";
 import { PLANT_CATALOG, recommendPlants } from "@/lib/plants/catalog";
@@ -135,6 +135,12 @@ export default function HomeScreen() {
   const status = useMemo(() => balconyStatus(items, events, now), [events, items, now]);
   const streak = useMemo(() => streakDays(events, now), [events, now]);
   const sheetItem = items.find((item) => item.key === sheetKey) ?? null;
+  // Arrosages regroupés, gestes pas urgents repliés au-delà de 5 lignes (lib/garden/today.ts).
+  const lines = useMemo(() => layoutTodayList(items), [items]);
+  const [wateringOpen, setWateringOpen] = useState(false);
+  const [moreOpen, setMoreOpen] = useState(false);
+  const wateringLine = lines.find((line) => line.type === "watering") ?? null;
+  const wateringSheet = wateringOpen && wateringLine ? wateringLine : null;
   const recommendations = useMemo(() => (resolvedPlants.length === 0 ? recommendPlants(onboarding, { month: now.getMonth() + 1 }).slice(0, 3) : []), [now, onboarding, resolvedPlants.length]);
 
   // Couleur du point d'état de chaque plante : la même que sur Balcon et la fiche (plan du jour).
@@ -237,6 +243,20 @@ export default function HomeScreen() {
   };
 
   const closeSheet = () => setSheetKey(null);
+  const itemRow = (item: TodayItem) => (
+    <TodayRow
+      key={item.key}
+      icon={item.icon}
+      tone={item.tone}
+      title={item.title}
+      subtitle={item.done ? doneSubtitle(item, events) : item.subtitle}
+      done={item.done}
+      checkLabel={item.kind === "alert" && item.group.action === "skip" ? "Compris" : undefined}
+      picture={seasonPicture(item)}
+      onToggle={() => void toggleItem(item)}
+      onOpen={() => setSheetKey(item.key)}
+    />
+  );
   const evening = now.getHours() >= 17;
   const metaLine = weather.isFallback
     ? weather.city
@@ -333,20 +353,18 @@ export default function HomeScreen() {
 
         {items.length > 0 && !away && (
           <View>
-            {items.map((item) => (
-              <TodayRow
-                key={item.key}
-                icon={item.icon}
-                tone={item.tone}
-                title={item.title}
-                subtitle={item.done ? doneSubtitle(item, events) : item.subtitle}
-                done={item.done}
-                checkLabel={item.kind === "alert" && item.group.action === "skip" ? "Compris" : undefined}
-                picture={seasonPicture(item)}
-                onToggle={() => void toggleItem(item)}
-                onOpen={() => setSheetKey(item.key)}
-              />
-            ))}
+            {lines.map((line) => {
+              if (line.type === "item") return itemRow(line.item);
+              if (line.type === "watering") {
+                return <TodayRow key={line.key} icon="💧" tone="water" title={line.title} subtitle={line.subtitle} done={line.done} onOpen={() => setWateringOpen(true)} />;
+              }
+              return (
+                <View key={line.key}>
+                  <TodayRow icon="🌿" tone="care" title={line.title} subtitle={moreOpen ? "Touche pour les replier" : line.subtitle} done={false} onOpen={() => setMoreOpen((open) => !open)} />
+                  {moreOpen && line.items.map(itemRow)}
+                </View>
+              );
+            })}
           </View>
         )}
 
@@ -433,8 +451,41 @@ export default function HomeScreen() {
         {sheetItem && <SheetContent item={sheetItem} events={events} onClose={closeSheet} onToggle={() => { closeSheet(); void toggleItem(sheetItem); }} onSnooze={(kind) => { closeSheet(); if (sheetItem.kind === "alert") void snoozeAlert(sheetItem.group, kind); }} onOpenPlant={(id) => { closeSheet(); router.push({ pathname: "/garden/[id]", params: { id } }); }} onOpenCalendar={() => { closeSheet(); router.push("/(tabs)/calendar"); }} />}
       </BottomSheet>
 
-      <UndoToast message={toast} onDone={hideToast} />
-      {celebration}
+      <BottomSheet
+        visible={wateringSheet !== null}
+        onClose={() => setWateringOpen(false)}
+        overlay={<><UndoToast message={toast} onDone={hideToast} />{celebration}</>}
+      >
+        {wateringSheet && (
+          <View style={styles.sheet}>
+            <Text style={[styles.sheetKind, { color: colors.primary }]}>💧  {wateringSheet.items.filter((item) => item.done).length} sur {wateringSheet.items.length} faites</Text>
+            <Text style={[styles.sheetTitle, { color: colors.foreground }]}>{wateringSheet.title}</Text>
+            <Text style={[styles.sheetBody, { color: colors.muted }]}>Enfonce ton doigt dans la terre de chaque pot : si elle est sèche, arrose au pied et coche. Touche une ligne pour le détail.</Text>
+            <View>
+              {wateringSheet.items.map((item) => (
+                <TodayRow
+                  key={`sheet-${item.key}`}
+                  icon={item.icon}
+                  tone={item.tone}
+                  title={item.title}
+                  subtitle={item.done ? doneSubtitle(item, events) : item.subtitle}
+                  done={item.done}
+                  onToggle={() => void toggleItem(item)}
+                  onOpen={() => {
+                    // Le détail s'ouvre une fois la feuille des arrosages repliée.
+                    setWateringOpen(false);
+                    setTimeout(() => setSheetKey(item.key), 320);
+                  }}
+                />
+              ))}
+            </View>
+          </View>
+        )}
+      </BottomSheet>
+
+      {/* Pendant que la feuille des arrosages est ouverte, ils s'affichent par-dessus elle. */}
+      {wateringSheet === null && <UndoToast message={toast} onDone={hideToast} />}
+      {wateringSheet === null && celebration}
     </ScreenContainer>
   );
 }

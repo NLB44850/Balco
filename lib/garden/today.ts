@@ -3,7 +3,7 @@
  * plan du jour (le même que Balcon et la fiche), en une seule liste à cocher, avec l'état du balcon.
  * Logique pure.
  */
-import type { CalendarActivity } from "../plants/calendar";
+import { activityGroupSummary, type CalendarActivity } from "../plants/calendar";
 import { soilCheckDepthCm, soilCheckText } from "../plants/catalog";
 import type { MaintenanceEvent } from "../reminders/reminder-engine";
 import type { ReminderGroup } from "../reminders/reminder-groups";
@@ -12,10 +12,22 @@ import { dayKey, plantDisplayName, type SessionTask } from "./garden-logic";
 
 export type TodayTone = "frost" | "heat" | "rain" | "storm" | "wind" | "water" | "care" | "season";
 
+/** Ce que toutes les lignes ont en commun : le type de geste (pour l'ordre et le regroupement) et la plante. */
+type TodayBase = { key: string; tone: TodayTone; icon: string; title: string; subtitle: string; gesture: GestureKind; plantName?: string };
+
 export type TodayItem =
-  | { kind: "alert"; key: string; tone: TodayTone; icon: string; title: string; subtitle: string; done: false; group: ReminderGroup }
-  | { kind: "task"; key: string; tone: TodayTone; icon: string; title: string; subtitle: string; done: boolean; task: SessionTask }
-  | { kind: "season"; key: string; tone: TodayTone; icon: string; title: string; subtitle: string; done: boolean; activity: CalendarActivity };
+  | (TodayBase & { kind: "alert"; done: false; group: ReminderGroup })
+  | (TodayBase & { kind: "task"; done: boolean; task: SessionTask })
+  | (TodayBase & { kind: "season"; done: boolean; activity: CalendarActivity });
+
+/**
+ * Une ligne de l'écran : un geste seul, les arrosages regroupés (« Vérifie la terre de 3 plantes », qui
+ * s'ouvre sur la feuille du bas), ou les gestes pas urgents repliés (« 2 autres gestes, pas urgents »).
+ */
+export type TodayLine =
+  | { type: "item"; key: string; item: TodayItem }
+  | { type: "watering"; key: "watering"; title: string; subtitle: string; done: boolean; items: TodayItem[] }
+  | { type: "more"; key: "more"; title: string; subtitle: string; items: TodayItem[] };
 
 export type BalconyStatus = { label: string; remaining: number; doneToday: number; progress: number; allDone: boolean };
 
@@ -77,7 +89,7 @@ export function buildTodayList({ groups, plan }: BuildTodayInput): TodayItem[] {
     .filter((group) => group.cause && group.cause !== "thirst")
     .map((group) => {
       const look = ALERT_LOOK[group.cause ?? "thirst"] ?? ALERT_LOOK.thirst;
-      return { kind: "alert", key: `alert:${group.key}`, ...look, title: group.title, subtitle: alertSubtitle(group), done: false, group };
+      return { kind: "alert", key: `alert:${group.key}`, ...look, title: group.title, subtitle: alertSubtitle(group), gesture: "alert", done: false, group };
     });
   const rows: Array<{ item: TodayItem; rank: number }> = [];
   for (const day of plan) {
@@ -85,11 +97,12 @@ export function buildTodayList({ groups, plan }: BuildTodayInput): TodayItem[] {
     if (!gesture) continue;
     const rank = KIND_RANK[gesture.kind];
     const source = gesture.source;
+    const common = { gesture: gesture.kind, plantName: plantDisplayName(day.resolved) };
     if (source.type === "decision") {
       const group = groups.find((candidate) => candidate.decisions.some((decision) => decision.plantId === source.decision.plantId && decision.cause === source.decision.cause));
       if (!group) continue;
       // Le titre dit l'action (« Arrose le basilic ») ; le sous-titre, comment vérifier.
-      rows.push({ rank, item: { kind: "alert", key: `alert:${group.key}`, ...ALERT_LOOK.thirst, title: group.title, subtitle: soilCheckText(soilCheckDepthCm(day.resolved.entry)), done: false, group } });
+      rows.push({ rank, item: { kind: "alert", key: `alert:${group.key}`, ...common, ...ALERT_LOOK.thirst, title: group.title, subtitle: soilCheckText(soilCheckDepthCm(day.resolved.entry)), done: false, group } });
     } else if (source.type === "task") {
       const item = source.task;
       rows.push({
@@ -97,6 +110,7 @@ export function buildTodayList({ groups, plan }: BuildTodayInput): TodayItem[] {
         item: {
           kind: "task",
           key: `task:${item.eventId}`,
+          ...common,
           tone: gesture.kind === "watering" ? "water" : "care",
           icon: TASK_ICONS[item.task.type] ?? "•",
           title: gesture.title,
@@ -106,11 +120,60 @@ export function buildTodayList({ groups, plan }: BuildTodayInput): TodayItem[] {
         },
       });
     } else {
-      rows.push({ rank, item: { kind: "season", key: `season:${source.activity.key}`, tone: "season", icon: source.activity.entry.emoji, title: gesture.title, subtitle: "De saison · à faire ce mois-ci", done: gesture.done, activity: source.activity } });
+      rows.push({ rank, item: { kind: "season", key: `season:${source.activity.key}`, ...common, tone: "season", icon: source.activity.entry.emoji, title: gesture.title, subtitle: "De saison · à faire ce mois-ci", done: gesture.done, activity: source.activity } });
     }
   }
   const sorted = rows.sort((a, b) => a.rank - b.rank).map(({ item }) => item);
   return [...alerts, ...sorted.filter((item) => !item.done), ...sorted.filter((item) => item.done)];
+}
+
+/** Au-delà de ce nombre de lignes à faire, l'engrais et l'entretien se replient. */
+export const MAX_TODAY_LINES = 5;
+const NOT_URGENT: GestureKind[] = ["fertilizing", "care"];
+
+/**
+ * La liste telle qu'elle s'affiche : alertes, arrosages regroupés dès qu'il y en a deux (une seule ligne
+ * « Vérifie la terre de N plantes »), récoltes et gestes de saison, puis, au-delà de 5 lignes à faire,
+ * l'engrais et l'entretien repliés sous « X autres gestes, pas urgents ». Ce qui est fait passe à la fin.
+ * Alertes, arrosages et récoltes restent toujours visibles.
+ */
+export function layoutTodayList(items: TodayItem[]): TodayLine[] {
+  const waterings = items.filter((item) => item.gesture === "watering");
+  const grouped = waterings.length >= 2;
+  const single = (item: TodayItem): TodayLine => ({ type: "item", key: item.key, item });
+  const loose = items.filter((item) => !(grouped && item.gesture === "watering"));
+  const pending = loose.filter((item) => !item.done);
+
+  let group: Extract<TodayLine, { type: "watering" }> | null = null;
+  if (grouped) {
+    const doneCount = waterings.filter((item) => item.done).length;
+    const names = activityGroupSummary(waterings.map((item) => item.plantName ?? item.title));
+    group = {
+      type: "watering",
+      key: "watering",
+      title: `Vérifie la terre de ${waterings.length} plantes`,
+      subtitle: doneCount > 0 ? `${doneCount} sur ${waterings.length} faites · ${names}` : `Sèche ? Arrose · ${names}`,
+      done: doneCount === waterings.length,
+      items: waterings,
+    };
+  }
+
+  const alerts = pending.filter((item) => item.gesture === "alert").map(single);
+  const others = pending.filter((item) => item.gesture !== "alert");
+  const lines: TodayLine[] = [...alerts, ...(group && !group.done ? [group] : []), ...others.map(single)];
+  const folded = others.filter((item) => NOT_URGENT.includes(item.gesture));
+  if (lines.length > MAX_TODAY_LINES && folded.length > 0) {
+    const kept = lines.filter((line) => line.type !== "item" || !folded.includes(line.item));
+    kept.push({
+      type: "more",
+      key: "more",
+      title: folded.length > 1 ? `${folded.length} autres gestes, pas urgents` : "1 autre geste, pas urgent",
+      subtitle: activityGroupSummary(folded.map((item) => item.plantName ?? item.title)),
+      items: folded,
+    });
+    lines.splice(0, lines.length, ...kept);
+  }
+  return [...lines, ...(group?.done ? [group] : []), ...loose.filter((item) => item.done).map(single)];
 }
 
 /** Le sous-titre d'un geste déjà fait : l'heure à laquelle il a été noté. */

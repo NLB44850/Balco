@@ -1,6 +1,6 @@
 import { expect, test } from "@playwright/test";
 
-import { checkboxOf, mockWeather, open, seedBalcony, trackErrors } from "./helpers";
+import { checkboxOf, mockWeather, open, seedBalcony, trackErrors, wateringGroup } from "./helpers";
 
 /** Le parcours de tous les jours : arriver, créer son balcon, cocher, annuler, ajouter une plante. */
 
@@ -60,6 +60,8 @@ test("une série de 3 jours se fête en grand", async ({ page }) => {
   // et non une récolte, qui aurait sa propre fête.
   await seedBalcony(page, { plants: ["basil", "mint"], wateredDaysAgo: 4, pastGestureDays: [1, 2] });
   await open(page, "/", "Tes plantes");
+  // Les deux arrosages sont regroupés : la ligne ouvre la feuille où l'on coche chaque plante.
+  await wateringGroup(page).click();
   await page.getByRole("checkbox", { name: /^Marquer comme fait : Arrose/ }).first().click();
   await expect(page.getByText("3 jours de suite", { exact: true })).toBeVisible();
   await expect(page.getByText("Ton balcon adore ta régularité.")).toBeVisible();

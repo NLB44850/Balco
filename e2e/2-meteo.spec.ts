@@ -19,8 +19,8 @@ async function simulate(page: Page, scenario: Scenario) {
   await expect(page.getByText("Tes plantes")).toBeVisible({ timeout: 20_000 });
 }
 
-/** Les « Arrose … » encore à cocher sur Aujourd’hui. */
-const wateringRows = (page: Page) => page.getByRole("checkbox", { name: /^Marquer comme fait : Arrose / });
+/** Les arrosages encore à faire sur Aujourd’hui : « Arrose … » seul, ou regroupés dans « Vérifie la terre de N plantes ». */
+const wateringRows = (page: Page) => page.getByRole("button", { name: /^(Arrose .+|Vérifie la terre de \d+ plantes), détail$/ }).filter({ visible: true });
 
 test.describe("alertes météo", () => {
   test("sans alerte, les arrosages du jour sont proposés", async ({ page }) => {
@@ -102,7 +102,9 @@ test.describe("alertes météo", () => {
     await page.reload();
     await expect(page.getByText("Tes plantes")).toBeVisible({ timeout: 20_000 });
     await expect(page.getByText("35 °C aujourd’hui : pense à tes plantes")).toHaveCount(0);
-    await expect(wateringRows(page)).toHaveCount(0);
+    // Les arrosages restent dans la liste, cochés, regroupés en une ligne faite.
+    await expect(page.getByText(/^3 sur 3 faites · /u).filter({ visible: true })).toBeVisible();
+    await expect(page.getByRole("checkbox", { name: /^Marquer comme fait : Arrose / })).toHaveCount(0);
   });
 
   test("« Pas aujourd'hui » fait taire l'alerte jusqu'à demain", async ({ page }) => {

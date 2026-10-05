@@ -94,6 +94,11 @@ export function checkboxOf(page: Page, title: string | RegExp) {
   return page.getByRole("checkbox", { name: title }).first();
 }
 
+/** La ligne qui regroupe les arrosages du jour (« Vérifie la terre de 3 plantes »), dès qu'il y en a deux. */
+export function wateringGroup(page: Page) {
+  return page.getByRole("button", { name: /^Vérifie la terre de \d+ plantes, détail$/ }).filter({ visible: true });
+}
+
 /** Les erreurs JavaScript de la page : un écran qui plante fait échouer le test. */
 export function trackErrors(page: Page) {
   const errors: string[] = [];

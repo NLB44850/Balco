@@ -38,7 +38,7 @@ Tout se passe dans son GitHub Codespace (pas de Docker sur son PC).
 
 - `pnpm -s check`, `pnpm -s lint`, puis `TEST_DATABASE_URL=mysql://balco:balco@localhost:3306/balco_cal npx vitest run`
   (MariaDB locale : `service mariadb start` si elle s'est arrêtée, `apt-get install -y mariadb-server` si elle manque,
-  puis `DATABASE_URL=… npx drizzle-kit migrate` ; 406 tests à ce jour). Dans un conteneur
+  puis `DATABASE_URL=… npx drizzle-kit migrate` ; 412 tests à ce jour). Dans un conteneur
   neuf : `apt-get install -y mariadb-server`, `service mariadb start`, créer la base `balco_cal` et l'utilisateur
   `balco`/`balco`, puis `pnpm -s build && DATABASE_URL=mysql://balco:balco@localhost:3306/balco_cal node dist/migrate.mjs`.
 - `npx expo export --platform android` pour s'assurer que le bundle Android se construit.
@@ -327,6 +327,13 @@ ce qui n'a pas pu être corrigé ou demande une décision.
   `soilCheckCm` du profil de soin) ; plus de sous-titre qui répète le titre. `ready` dans `useDayPlan` : Balcon et
   la fiche n'affichent l'état et le geste qu'une fois météo, réglages et reports chargés (plus de « En forme »
   qui devient « À surveiller »).
+- **Étape 3 faite (05/10)** : `layoutTodayList` (`lib/garden/today.ts`, lignes `TodayLine` : `item`, `watering`,
+  `more`) : dès 2 arrosages, une ligne « Vérifie la terre de N plantes » (« Sèche ? Arrose · basilic, menthe… »,
+  « 1 sur 3 faites ») qui ouvre une feuille du bas où l'on coche chaque plante ; au-delà de 5 lignes à faire
+  (`MAX_TODAY_LINES`), engrais et entretien repliés sous « X autres gestes, pas urgents » (se déplie sur place).
+  Chaque `TodayItem` porte `gesture` et `plantName`. E2e : `wateringGroup(page)` dans `e2e/helpers.ts`.
+  **Noté pour la fin** (question du porteur, 05/10) : pas de cycle après récolte ; pour les plantes à récolte
+  unique (radis, carottes, salades pommées…), proposer « Tout récolté ? » → « Ressemer » ou « Libérer le pot ».
 
 Points à ne pas oublier (à proposer au porteur au bon moment, noté le 30/09) :
 - Encore à valider sur son téléphone : la carte « Sa progression » de la fiche plante et les petites
