@@ -298,3 +298,13 @@ describe("decideReminder", () => {
     expect(decideReminder({ plant, history: [], weather: weather(), now })).toBeNull();
   });
 });
+
+describe("décocher un geste noté depuis un conseil météo", () => {
+  it("réveille le conseil de cette plante seulement", async () => {
+    const { wakeSnoozeFor } = await import("../lib/reminders/reminder-actions");
+    const snoozes = [{ key: "mint-1:watering", kind: "skip" as const, until: "2099-01-01T00:00:00.000Z" }, { key: "basil-1:watering", kind: "skip" as const, until: "2099-01-01T00:00:00.000Z" }];
+    const event = { id: "reminder:mint-1:watering:2026-10-05", plantId: "mint-1", type: "watering" as const, completedAt: "2026-10-05T08:00:00.000Z", source: "reminder" as const };
+    expect(wakeSnoozeFor(snoozes, event).map((snooze) => snooze.key)).toEqual(["basil-1:watering"]);
+    expect(wakeSnoozeFor(snoozes, { ...event, source: "manual" })).toHaveLength(2);
+  });
+});

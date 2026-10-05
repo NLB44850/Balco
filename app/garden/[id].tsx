@@ -24,7 +24,7 @@ import { EVENT_TYPE_LABELS, POINTS_PER_GESTURE, isScannerEvent, plantDisplayName
 import { growingSince, journalByDay, photoDateLabel, photosForPlant, sunlightLabel } from "@/lib/garden/photos";
 import { dayOf, eventForGesture, STATUS_LEGEND } from "@/lib/garden/day-plan";
 import { useDayPlan } from "@/hooks/use-day-plan";
-import { addSnooze } from "@/lib/reminders/reminder-actions";
+import { addSnooze, wakeSnoozeFor } from "@/lib/reminders/reminder-actions";
 import { saveReminderSnoozes } from "@/lib/reminders/local-notifications";
 import { usePlantPhotos } from "@/lib/garden/photos-context";
 import { CATEGORY_LABELS, formatMonthRange } from "@/lib/plants/catalog";
@@ -116,8 +116,11 @@ export default function PlantScreen() {
 
   const undoGesture = async () => {
     if (!gestureEvent) return;
+    const previousSnoozes = snoozes;
     await removeEvent(gestureEvent.id);
-    showToast("Geste retiré de ta journée", () => void logEvent(gestureEvent));
+    // Noté depuis un conseil météo : décoché, le conseil revient (ici comme sur Aujourd'hui).
+    await saveReminderSnoozes(wakeSnoozeFor(snoozes, gestureEvent));
+    showToast("Geste retiré de ta journée", () => { void logEvent(gestureEvent); void saveReminderSnoozes(previousSnoozes); });
   };
 
   const saveName = async () => {

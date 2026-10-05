@@ -66,6 +66,16 @@ export function addSnooze(snoozes: ReminderSnooze[], decision: DecisionRef, kind
   return [...activeSnoozes(snoozes, now).filter((snooze) => snooze.key !== key), next];
 }
 
+/**
+ * Un geste noté depuis un conseil météo, puis décoché : le conseil se réveille (sinon « Arrose la
+ * menthe » ne reviendrait plus de la journée). Sans effet pour un geste qui ne vient pas d'un conseil.
+ */
+export function wakeSnoozeFor(snoozes: ReminderSnooze[], event: MaintenanceEvent): ReminderSnooze[] {
+  if (event.source !== "reminder") return snoozes;
+  const key = reminderKey({ plantId: event.plantId, taskType: event.type });
+  return snoozes.filter((snooze) => snooze.key !== key);
+}
+
 /** Les rappels à montrer maintenant : ceux que l'utilisateur n'a pas mis en sommeil. */
 export function withoutSnoozed<T extends DecisionRef>(decisions: T[], snoozes: ReminderSnooze[], now: Date): T[] {
   const sleeping = new Set(activeSnoozes(snoozes, now).map((snooze) => snooze.key));

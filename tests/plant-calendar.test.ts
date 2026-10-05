@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { activityDoneLabel, activityDoneSoFar, activityGroupSummary, activityGroupTitle, calendarActivities, eventForActivity, groupActivities, upcomingMonths } from "../lib/plants/calendar";
+import { activityDoneLabel, activityDoneSoFar, activityGroupSummary, activityGroupTitle, calendarActivities, groupActivities, upcomingMonths } from "../lib/plants/calendar";
 import { getCatalogPlant } from "../lib/plants/catalog";
 
 const subject = (catalogId: string, id = catalogId) => ({ id, entry: getCatalogPlant(catalogId)!, displayName: getCatalogPlant(catalogId)!.name });

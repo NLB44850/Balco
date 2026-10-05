@@ -185,7 +185,7 @@ test("Saisons : calendrier à lire, rangé par type ; les gestes du mois se font
   expect(errors).toEqual([]);
 });
 
-test("Aujourd'hui : une fois la plante arrosée, sa récolte du mois prend la place", async ({ page }) => {
+test("Aujourd'hui : une fois la plante arrosée, sa récolte du mois prend la place ; décocher se voit partout", async ({ page }) => {
   await mockWeather(page);
   await seedBalcony(page, { plants: ["mint"], wateredDaysAgo: 3 });
   await open(page, "/", "Tes plantes");
@@ -197,4 +197,14 @@ test("Aujourd'hui : une fois la plante arrosée, sa récolte du mois prend la pl
   await checkboxOf(page, /^Marquer comme fait : Récolte la menthe/).click();
   await page.getByRole("tab", { name: /Saisons/ }).click();
   await expect(page.getByText("✓ Faite aujourd’hui").filter({ visible: true })).toBeVisible();
+
+  // Décocher sur Aujourd'hui se voit partout : la récolte revient, puis l'arrosage revient.
+  await page.getByRole("tab", { name: /Aujourd’hui/ }).click();
+  await checkboxOf(page, /^Annuler ce geste : Récolte la menthe/).click();
+  await expect(checkboxOf(page, /^Marquer comme fait : Récolte la menthe/)).toBeVisible();
+  await page.getByRole("tab", { name: /Saisons/ }).click();
+  await expect(page.getByText("✓ Faite aujourd’hui").filter({ visible: true })).toHaveCount(0);
+  await page.getByRole("tab", { name: /Aujourd’hui/ }).click();
+  await checkboxOf(page, /^Annuler ce geste : Arrose la menthe/).click();
+  await expect(checkboxOf(page, /^Marquer comme fait : Arrose la menthe/)).toBeVisible();
 });

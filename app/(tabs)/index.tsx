@@ -43,7 +43,7 @@ import { notificationsUnavailableReason } from "@/lib/notifications/module";
 import { eventForActivity } from "@/lib/plants/calendar";
 import { PLANT_CATALOG, recommendPlants } from "@/lib/plants/catalog";
 import { seasonalSuggestions, type SeasonalSuggestion } from "@/lib/plants/suggestions";
-import { addSnooze, eventForReminder, planGroupedNotification, type ReminderSnooze } from "@/lib/reminders/reminder-actions";
+import { addSnooze, eventForReminder, planGroupedNotification, wakeSnoozeFor, type ReminderSnooze } from "@/lib/reminders/reminder-actions";
 import type { MaintenanceEvent } from "@/lib/reminders/reminder-engine";
 import type { ReminderGroup } from "@/lib/reminders/reminder-groups";
 import {
@@ -235,8 +235,11 @@ export default function HomeScreen() {
     }
     if (item.done) {
       const previous = events.find((event) => event.id === item.task.eventId);
+      const previousSnoozes = snoozes;
       await removeEvent(item.task.eventId);
-      return showToast("Geste retiré de ta journée", previous ? () => void logEvent(previous) : undefined);
+      // Noté depuis un conseil météo (« Arrose la menthe ») : décoché, le conseil revient.
+      if (previous) await saveReminderSnoozes(wakeSnoozeFor(snoozes, previous));
+      return showToast("Geste retiré de ta journée", previous ? () => { void logEvent(previous); void saveReminderSnoozes(previousSnoozes); } : undefined);
     }
     const logged = [eventForSessionTask(item.task, new Date())];
     const undo = await logAll(logged);
