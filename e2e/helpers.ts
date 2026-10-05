@@ -48,6 +48,8 @@ type Seed = {
   plants: string[];
   /** Arrosage de toutes les plantes il y a N jours (absent : jamais arrosées dans l'app). */
   wateredDaysAgo?: number;
+  /** Arrosages par plante, en jours passés (« thyme »: [2, 8]), pour une série par exemple. */
+  waterings?: Record<string, number[]>;
   /** Gestes déjà notés, en jours passés (pour une série, par exemple). */
   pastGestureDays?: number[];
   scenario?: Scenario;
@@ -65,6 +67,7 @@ export async function seedBalcony(page: Page, seed: Seed) {
   const plants = seed.plants.map((catalogId, index) => ({ id: `${catalogId}-e2e`, catalogId, addedAt: new Date(now - (30 - index) * DAY_MS).toISOString() }));
   const events = [
     ...(seed.wateredDaysAgo === undefined ? [] : plants.map((plant) => ({ id: `w-${plant.id}`, plantId: plant.id, type: "watering", completedAt: new Date(now - seed.wateredDaysAgo! * DAY_MS).toISOString(), source: "manual" }))),
+    ...Object.entries(seed.waterings ?? {}).flatMap(([catalogId, days]) => days.map((days) => ({ id: `w-${catalogId}-${days}`, plantId: `${catalogId}-e2e`, type: "watering", completedAt: new Date(now - days * DAY_MS).toISOString(), source: "manual" }))),
     ...(seed.pastGestureDays ?? []).map((days) => ({ id: `past-${days}`, plantId: plants[0].id, type: "observation", completedAt: new Date(now - days * DAY_MS).toISOString(), source: "manual" })),
   ];
   const storage: Record<string, string> = {

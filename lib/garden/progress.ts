@@ -5,7 +5,7 @@
  */
 import { MONTH_LONG, type Month } from "../plants/catalog";
 import type { MaintenanceEvent } from "../reminders/reminder-engine";
-import { computeBadges, computeProgress, computeStats, dayKey, daysBetween, plantDisplayName, streakDays, type ResolvedPlant } from "./garden-logic";
+import { computeBadges, computeProgress, computeStats, dayKey, daysBetween, followedDays, isAvoidedWatering, plantDisplayName, type ResolvedPlant } from "./garden-logic";
 import type { PlantPhoto } from "./photos";
 
 const DAY_MS = 86_400_000;
@@ -14,10 +14,7 @@ const WATERING_SHARE_OF_POT = 0.2;
 
 // --- Eau économisée -------------------------------------------------------------
 
-/** Un « N'arrose pas, il va pleuvoir » suivi : l'arrosage évité est noté comme une observation. */
-export function isAvoidedWatering(event: MaintenanceEvent) {
-  return event.source === "reminder" && event.type === "observation" && /^N[’']arrose pas/u.test(event.note ?? "");
-}
+export { isAvoidedWatering } from "./garden-logic";
 
 export function litersPerWatering(resolved: ResolvedPlant) {
   return Math.round(resolved.entry.potLiters * WATERING_SHARE_OF_POT * 10) / 10;
@@ -185,9 +182,8 @@ export function celebrationFor(plants: ResolvedPlant[], before: MaintenanceEvent
   const afterLevel = computeProgress(afterStats, afterBadges);
   if (afterLevel.level > beforeLevel.level) return { kind: "level", emoji: "🌟", title: `Niveau ${afterLevel.level}`, detail: `Te voilà ${afterLevel.levelTitle}. Ton balcon te dit merci !` };
 
-  const ids = new Set(plants.map(({ plant }) => plant.id));
-  const streakBefore = streakDays(before.filter((event) => ids.has(event.plantId)), now);
-  const streakAfter = streakDays(after.filter((event) => ids.has(event.plantId)), now);
+  const streakBefore = followedDays(plants, before, now);
+  const streakAfter = followedDays(plants, after, now);
   const step = STREAK_STEPS.find((days) => streakAfter >= days && streakBefore < days);
   if (step) return { kind: "streak", emoji: "🔥", title: `${step} jours de suite`, detail: "Ton balcon adore ta régularité." };
 

@@ -75,13 +75,17 @@ describe("petites victoires", () => {
     expect(celebrationFor(plants, [harvest], [second, harvest], NOW)).toMatchObject({ kind: "harvest", title: "Récolte de Tomates cerises" });
     expect(celebrationFor(plants, [harvest], [event("basil-1", "pruning", 0), harvest], NOW)).toBeNull();
 
-    const week = [1, 2, 3, 4, 5, 6].map((days) => event("basil-1", "watering", days));
-    const withBadge = [event("tomato-1", "harvest", 30), ...week];
-    expect(title(plants, withBadge, [event("basil-1", "watering", 0), ...withBadge], NOW)).toBe("Nouveau badge : Main Verte");
+    // Série de jours suivis (chaque plante assoiffée arrosée) : 6 jours, puis l'arrosage du jour fait le 7ᵉ.
+    const basilOnly = plants.filter(({ plant }) => plant.id === "basil-1");
+    const week = [3, 5, 6].map((days) => event("basil-1", "watering", days));
+    expect(title(basilOnly, week, [event("basil-1", "watering", 0), ...week], NOW)).toBe("Nouveau badge : Main Verte");
 
-    const two = [1, 2].map((days) => event("basil-1", "pruning", days));
-    const base = [event("tomato-1", "harvest", 30), ...two];
-    expect(title(plants, base, [event("basil-1", "pruning", 0), ...base], NOW)).toBe("3 jours de suite");
+    // Thym arrosé il y a 2 jours (et 8), ciboulette il y a 3 jours : 2 jours suivis, l'arrosage de la ciboulette fait le 3ᵉ.
+    const pair = resolvePlants([{ id: "thyme-1", catalogId: "thyme", addedAt: at(20) }, { id: "chives-1", catalogId: "chives", addedAt: at(20) }]);
+    const base = [event("thyme-1", "watering", 2), event("thyme-1", "watering", 8), event("chives-1", "watering", 3)];
+    expect(title(pair, base, [event("chives-1", "watering", 0), ...base], NOW)).toBe("3 jours de suite");
+    // Une taille (bonus) ne fait pas avancer la série.
+    expect(celebrationFor(pair, base, [event("chives-1", "pruning", 0), ...base], NOW)).toBeNull();
 
     const pepperHarvest = event("pepper-1", "harvest", 0);
     const quiet = [event("tomato-1", "harvest", 30), event("basil-1", "pruning", 4)];

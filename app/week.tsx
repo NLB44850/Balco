@@ -77,6 +77,7 @@ export default function WeekScreen() {
             </FadeIn>
           ))}
         </View>
+        <Text style={[styles.text, { color: colors.muted }]}>Jours de suite : un jour compte quand chaque plante qui avait soif a été arrosée (ou que la pluie s’en est chargée), ou quand il n’y avait rien à arroser.</Text>
         {summary.weatherTips > 0 && (
           <Text style={[styles.text, { color: colors.muted }]}>🌦  {plural(summary.weatherTips, "conseil")} météo suivi{summary.weatherTips > 1 ? "s" : ""} : tu as agi au bon moment.</Text>
         )}

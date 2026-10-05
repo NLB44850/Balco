@@ -56,13 +56,11 @@ test("cocher un geste, puis « Annuler »", async ({ page }) => {
 
 test("une série de 3 jours se fête en grand", async ({ page }) => {
   await mockWeather(page);
-  // Arrosé il y a 4 jours (hors de la série d'hier et avant-hier) : la première case est un arrosage,
-  // et non une récolte, qui aurait sa propre fête.
-  await seedBalcony(page, { plants: ["basil", "mint"], wateredDaysAgo: 4, pastGestureDays: [1, 2] });
+  // Thym arrosé il y a 2 jours (et 8), ciboulette il y a 3 jours : hier et avant-hier sont des jours
+  // suivis, il y a 3 jours le thym avait soif. Aujourd'hui, seule la ciboulette est à arroser.
+  await seedBalcony(page, { plants: ["thyme", "chives"], waterings: { thyme: [2, 8], chives: [3] } });
   await open(page, "/", "Tes plantes");
-  // Les deux arrosages sont regroupés : la ligne ouvre la feuille où l'on coche chaque plante.
-  await wateringGroup(page).click();
-  await page.getByRole("checkbox", { name: /^Marquer comme fait : Arrose/ }).first().click();
+  await page.getByRole("checkbox", { name: /^Marquer comme fait : Arrose la ciboulette/ }).click();
   await expect(page.getByText("3 jours de suite", { exact: true })).toBeVisible();
   await expect(page.getByText("Ton balcon adore ta régularité.")).toBeVisible();
   // Le message habituel reste en bas, avec « Annuler ».

@@ -4,7 +4,7 @@
  * d'avant. Logique pure.
  */
 import type { MaintenanceEvent } from "../reminders/reminder-engine";
-import { dayKey, plantDisplayName, streakDays, type ResolvedPlant } from "./garden-logic";
+import { dayKey, followedDays, isAvoidedWatering, plantDisplayName, type ResolvedPlant } from "./garden-logic";
 import type { PlantPhoto } from "./photos";
 import { upcomingHarvests, waterSaved, type UpcomingHarvest } from "./progress";
 
@@ -59,7 +59,9 @@ export function weekSummary(plants: ResolvedPlant[], events: MaintenanceEvent[],
   const monday = startOfWeek(now);
   const nextMonday = addDays(monday, 7);
   const previousMonday = addDays(monday, -7);
-  const thisWeek = own.filter((event) => inRange(event.completedAt, monday, nextMonday));
+  // L'arrosage évité grâce à la pluie est compté tout seul : il compte dans l'eau économisée, pas dans les gestes.
+  const gesturesOnly = own.filter((event) => !isAvoidedWatering(event));
+  const thisWeek = gesturesOnly.filter((event) => inRange(event.completedAt, monday, nextMonday));
   const weekPhotos = photos.filter((photo) => plantIds.has(photo.plantId) && inRange(photo.takenAt, monday, nextMonday));
   const todayKey = dayKey(now);
 
@@ -83,7 +85,7 @@ export function weekSummary(plants: ResolvedPlant[], events: MaintenanceEvent[],
     .sort((a, b) => b.gestures - a.gestures || b.photos - a.photos);
 
   const gestures = thisWeek.length;
-  const previousGestures = own.filter((event) => inRange(event.completedAt, previousMonday, monday)).length;
+  const previousGestures = gesturesOnly.filter((event) => inRange(event.completedAt, previousMonday, monday)).length;
   const activeDays = days.filter((day) => day.gestures > 0).length;
   const water = waterSaved(plants, own, monday, nextMonday);
   const { title, message } = weekWords({ gestures, previousGestures, activeDays, top: weekPlants[0], plantCount: plants.length });
@@ -95,8 +97,8 @@ export function weekSummary(plants: ResolvedPlant[], events: MaintenanceEvent[],
     activeDays,
     harvests: thisWeek.filter((event) => event.type === "harvest").length,
     photos: weekPhotos.length,
-    weatherTips: thisWeek.filter((event) => event.source === "reminder").length,
-    streak: streakDays(own, now),
+    weatherTips: own.filter((event) => event.source === "reminder" && inRange(event.completedAt, monday, nextMonday)).length,
+    streak: followedDays(plants, own, now),
     avoidedWaterings: water.avoided,
     waterSavedLiters: water.liters,
     upcoming: upcomingHarvests(plants, now),

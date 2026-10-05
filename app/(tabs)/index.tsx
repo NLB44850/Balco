@@ -33,7 +33,7 @@ import {
   dayKey,
   eventForSessionTask,
   plantDisplayName,
-  streakDays,
+  followedDays,
 } from "@/lib/garden/garden-logic";
 import { potsFor, skyScene } from "@/lib/garden/sky";
 import { publishSky } from "@/lib/garden/sky-store";
@@ -143,7 +143,7 @@ export default function HomeScreen() {
   // Les alertes météo en bandeaux tout en haut, les gestes dans la liste (lib/garden/today.ts).
   const { banners, rest } = useMemo(() => splitTodayList(items), [items]);
   const status = useMemo(() => balconyStatus(items, events, now), [events, items, now]);
-  const streak = useMemo(() => streakDays(events, now), [events, now]);
+  const streak = useMemo(() => followedDays(resolvedPlants, events, now), [events, now, resolvedPlants]);
   const sheetItem = items.find((item) => item.key === sheetKey) ?? null;
   // Arrosages regroupés, gestes pas urgents repliés au-delà de 5 lignes (lib/garden/today.ts).
   const lines = useMemo(() => layoutTodayList(rest), [rest]);
