@@ -2,7 +2,8 @@ import { describe, expect, it } from "vitest";
 
 import { eventForGesture, planDay } from "../lib/garden/day-plan";
 import { careProfileFor, resolvePlants } from "../lib/garden/garden-logic";
-import { balconyStatus, buildTodayList, doneSubtitle, headline, layoutTodayList } from "../lib/garden/today";
+import { isAvoidedWatering } from "../lib/garden/progress";
+import { balconyStatus, buildTodayList, doneSubtitle, headline, isInfoBanner, layoutTodayList, rainSavingsToLog, splitTodayList } from "../lib/garden/today";
 import { decideReminders, type MaintenanceEvent, type WeatherSnapshot } from "../lib/reminders/reminder-engine";
 import { groupReminders } from "../lib/reminders/reminder-groups";
 
@@ -96,6 +97,50 @@ describe("liste « Aujourd'hui »", () => {
 
   it("raccourcit les titres des gestes du catalogue", () => {
     expect(headline("Aujourd’hui, pince les fleurs du basilic.")).toBe("Pince les fleurs du basilic");
+  });
+});
+
+describe("alertes météo en bandeaux", () => {
+  it("sort le gel de la liste pour le mettre en bandeau, avec un bouton à faire", () => {
+    const { items } = list(-2);
+    const { banners, rest } = splitTodayList(items);
+    expect(banners).toHaveLength(1);
+    expect(banners[0]).toMatchObject({ tone: "frost", title: "Gel cette nuit : protège 2 plantes" });
+    expect(isInfoBanner(banners[0])).toBe(false);
+    expect(rest.some((item) => item.kind === "alert" && item.group.cause === "frost")).toBe(false);
+    expect(rest.length).toBe(items.length - 1);
+  });
+
+  it("garde la soif d'une plante dans la liste, pas en bandeau", () => {
+    const { items } = list(12);
+    const { banners, rest } = splitTodayList(items);
+    expect(banners).toHaveLength(0);
+    expect(rest.some((item) => item.kind === "alert" && item.group.cause === "thirst")).toBe(true);
+  });
+
+  it("pluie : bandeau à lire seulement, qui ne compte pas comme un geste à faire", () => {
+    const { items } = list(12, watered, 8);
+    const { banners } = splitTodayList(items);
+    expect(banners[0]).toMatchObject({ tone: "rain", title: "N’arrose pas tes plantes aujourd’hui" });
+    expect(isInfoBanner(banners[0])).toBe(true);
+    const status = balconyStatus(items, watered, now);
+    expect(status.remaining).toBe(items.filter((item) => !isInfoBanner(item)).length);
+  });
+
+  it("pluie : l'arrosage évité est compté tout seul, une fois par plante et par jour", () => {
+    const { items } = list(12, watered, 8);
+    const { banners } = splitTodayList(items);
+    const toLog = rainSavingsToLog(banners, watered, now);
+    expect(toLog).toHaveLength(banners[0].group.decisions.length);
+    expect(toLog.every(isAvoidedWatering)).toBe(true);
+    expect(rainSavingsToLog(banners, [...watered, ...toLog], now)).toHaveLength(0);
+    // Compté tout seul, ce n'est pas un geste de la journée.
+    expect(balconyStatus([], toLog, now)).toMatchObject({ doneToday: 0, label: "rien à faire aujourd’hui" });
+  });
+
+  it("rien à compter sans pluie", () => {
+    const { banners } = splitTodayList(list(-2).items);
+    expect(rainSavingsToLog(banners, watered, now)).toHaveLength(0);
   });
 });
 

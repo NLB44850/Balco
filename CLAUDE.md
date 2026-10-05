@@ -336,11 +336,13 @@ ce qui n'a pas pu être corrigé ou demande une décision.
   unique (radis, carottes, salades pommées…), proposer « Tout récolté ? » → « Ressemer » ou « Libérer le pot ».
   **Validée** sur téléphone le 05/10.
 
-**Reprise dans une nouvelle conversation (05/10) : commencer par l'étape 4.** Détail des étapes restantes,
+**Reprise dans une nouvelle conversation (05/10) : étape 4 livrée le 05/10, à valider sur son téléphone ; ensuite l'étape 5.** Détail des étapes restantes,
 tel que validé par le porteur (une étape = un commit testé : check, lint, vitest, e2e complet avec
 reconstruction, export Android ; puis compte rendu en français avec ce qu'il doit taper et regarder, et
 attendre sa validation avant l'étape suivante) :
-4. **Alertes météo en bandeau** en haut d'Aujourd'hui (au-dessus de la liste, plus des lignes à cocher) :
+4. ✅ (livrée, à valider : `components/today/weather-banner.tsx`, `splitTodayList` / `rainSavingsToLog` dans
+   `lib/garden/today.ts` ; l'arrosage évité compte encore comme geste suivi dans les points et la série,
+   à revoir avec l'étape 7) **Alertes météo en bandeau** en haut d'Aujourd'hui (au-dessus de la liste, plus des lignes à cocher) :
    gel et orage = bandeau + bouton « C'est fait » (l'action demandée : rentrer / protéger), pluie = bandeau
    simple sans bouton (« N'arrose pas aujourd'hui »), et les jours de pluie l'eau économisée est comptée
    toute seule (plus besoin de cocher « Compris ») ; vent et canicule : à traiter comme gel/orage (bouton).

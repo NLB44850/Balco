@@ -5,10 +5,12 @@
  */
 import { activityGroupSummary, type CalendarActivity } from "../plants/calendar";
 import { soilCheckDepthCm, soilCheckText } from "../plants/catalog";
+import { eventForReminder } from "../reminders/reminder-actions";
 import type { MaintenanceEvent } from "../reminders/reminder-engine";
 import type { ReminderGroup } from "../reminders/reminder-groups";
 import { GESTURE_ORDER, type GestureKind, type PlantDay } from "./day-plan";
 import { dayKey, plantDisplayName, type SessionTask } from "./garden-logic";
+import { isAvoidedWatering } from "./progress";
 
 export type TodayTone = "frost" | "heat" | "rain" | "storm" | "wind" | "water" | "care" | "season";
 
@@ -127,6 +129,38 @@ export function buildTodayList({ groups, plan }: BuildTodayInput): TodayItem[] {
   return [...alerts, ...sorted.filter((item) => !item.done), ...sorted.filter((item) => item.done)];
 }
 
+export type TodayAlert = Extract<TodayItem, { kind: "alert" }>;
+
+/** Une alerte météo (gel, orage, vent, chaleur, pluie), par opposition à la soif d'une plante. */
+export function isWeatherBanner(item: TodayItem): item is TodayAlert {
+  return item.kind === "alert" && item.group.cause !== undefined && item.group.cause !== "thirst";
+}
+
+/** La pluie dit seulement de ne pas arroser : rien à cocher, le bandeau informe. */
+export function isInfoBanner(item: TodayItem) {
+  return isWeatherBanner(item) && item.group.action === "skip";
+}
+
+/**
+ * En haut d'Aujourd'hui, les alertes météo en bandeaux (gel, orage, vent, chaleur : un bouton
+ * « C'est fait » ; pluie : un simple message) ; en dessous, la liste des gestes à cocher.
+ */
+export function splitTodayList(items: TodayItem[]): { banners: TodayAlert[]; rest: TodayItem[] } {
+  return { banners: items.filter(isWeatherBanner), rest: items.filter((item) => !isWeatherBanner(item)) };
+}
+
+/**
+ * Les jours de pluie, l'arrosage évité est compté tout seul (plus besoin de cocher) : un événement par
+ * plante et par jour, à noter s'il ne l'est pas encore. Il sert à l'eau économisée de Ma semaine.
+ */
+export function rainSavingsToLog(banners: TodayAlert[], events: MaintenanceEvent[], now: Date): MaintenanceEvent[] {
+  const known = new Set(events.map((event) => event.id));
+  return banners
+    .filter((banner) => banner.group.cause === "rain" && banner.group.action === "skip")
+    .flatMap((banner) => banner.group.decisions.map((decision) => eventForReminder(decision, now)))
+    .filter((event) => !known.has(event.id));
+}
+
 /** Au-delà de ce nombre de lignes à faire, l'engrais et l'entretien se replient. */
 export const MAX_TODAY_LINES = 5;
 const NOT_URGENT: GestureKind[] = ["fertilizing", "care"];
@@ -186,8 +220,9 @@ export function doneSubtitle(item: TodayItem, events: MaintenanceEvent[]) {
 /** « Ton balcon · 2 gestes avant ce soir », « prêt pour la nuit »… et l'avancement de la journée. */
 export function balconyStatus(items: TodayItem[], events: MaintenanceEvent[], now: Date): BalconyStatus {
   const today = dayKey(now);
-  const doneToday = new Set(events.filter((event) => dayKey(new Date(event.completedAt)) === today).map((event) => event.id)).size;
-  const remaining = items.filter((item) => !item.done).length;
+  // L'arrosage évité grâce à la pluie est compté tout seul : ce n'est pas un geste de la journée.
+  const doneToday = new Set(events.filter((event) => dayKey(new Date(event.completedAt)) === today && !isAvoidedWatering(event)).map((event) => event.id)).size;
+  const remaining = items.filter((item) => !item.done && !isInfoBanner(item)).length;
   const evening = now.getHours() >= 17;
   const total = remaining + doneToday;
   const progress = total === 0 ? 0 : doneToday / total;

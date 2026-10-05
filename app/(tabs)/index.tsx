@@ -16,6 +16,7 @@ import { BottomSheet } from "@/components/today/bottom-sheet";
 import { TODAY_ROW_PICTURE, TodayRow } from "@/components/today/today-row";
 import { useCelebration } from "@/components/today/celebration";
 import { UndoToast, type ToastMessage } from "@/components/today/undo-toast";
+import { WeatherBanner } from "@/components/today/weather-banner";
 import { useDayPlan } from "@/hooks/use-day-plan";
 import { useColors } from "@/hooks/use-colors";
 import { useVacation } from "@/hooks/use-vacation";
@@ -37,7 +38,7 @@ import {
 import { potsFor, skyScene } from "@/lib/garden/sky";
 import { publishSky } from "@/lib/garden/sky-store";
 import type { PlantTone } from "@/lib/garden/day-plan";
-import { balconyStatus, buildTodayList, doneSubtitle, layoutTodayList, type TodayItem } from "@/lib/garden/today";
+import { balconyStatus, buildTodayList, doneSubtitle, isInfoBanner, layoutTodayList, rainSavingsToLog, splitTodayList, type TodayItem } from "@/lib/garden/today";
 import { notificationsUnavailableReason } from "@/lib/notifications/module";
 import { eventForActivity } from "@/lib/plants/calendar";
 import { PLANT_CATALOG, recommendPlants } from "@/lib/plants/catalog";
@@ -60,8 +61,9 @@ const haptic = () => {
 
 /**
  * Accueil « Aujourd'hui » : une seule question, que faire maintenant ?
- * L'état du balcon, puis une liste de gestes à cocher en une touche (alertes météo, gestes du jour,
- * gestes de saison), le détail dans une feuille qui monte du bas, et un message avec « Annuler ».
+ * Les alertes météo en bandeaux, l'état du balcon, puis une liste de gestes à cocher en une touche
+ * (gestes du jour, gestes de saison), le détail dans une feuille qui monte du bas, et un message avec
+ * « Annuler ».
  */
 export default function HomeScreen() {
   const colors = useColors();
@@ -118,25 +120,33 @@ export default function HomeScreen() {
     [climate, now, onboarding, resolvedPlants],
   );
 
+  // « N'arrose pas » déjà lu sur le bandeau (et compté) : inutile de le redire par une notification.
+  const unseenDecisions = useMemo(() => {
+    const known = new Set(events.map((event) => event.id));
+    return reminderDecisions.filter((decision) => decision.cause !== "rain" || !known.has(eventForReminder(decision, now).id));
+  }, [events, now, reminderDecisions]);
+
   // Une seule notification programmée : le prochain conseil utile, à l'heure préférée ou au réveil d'un « Dans 3 h ».
   useEffect(() => {
     if (!reminderSettingsLoaded || !snoozesLoaded || !reminderSettings.enabled || weather.isFallback) return;
-    const plan = planGroupedNotification(reminderDecisions, snoozes, reminderSettings, new Date());
+    const plan = planGroupedNotification(unseenDecisions, snoozes, reminderSettings, new Date());
     // Mode vacances : aucun rappel pendant l'absence (la notification « Bon retour » est à part).
     if (plan && !awayOn(vacation, dayKey(plan.date))) void scheduleLocalReminder(plan.group, reminderSettings, plan.date);
     else void cancelBalcoReminderNotifications();
-  }, [reminderDecisions, reminderSettings, reminderSettingsLoaded, snoozes, snoozesLoaded, vacation, weather.isFallback]);
+  }, [reminderSettings, reminderSettingsLoaded, snoozes, snoozesLoaded, unseenDecisions, vacation, weather.isFallback]);
 
   const trip = vacationState(vacation, now);
   const away = trip.phase === "away";
   const tripPlan = useMemo(() => (vacation ? preparationSteps(resolvedPlants, vacation, now) : []), [now, resolvedPlants, vacation]);
 
   const items = useMemo(() => buildTodayList({ groups: visibleGroups, plan }), [plan, visibleGroups]);
+  // Les alertes météo en bandeaux tout en haut, les gestes dans la liste (lib/garden/today.ts).
+  const { banners, rest } = useMemo(() => splitTodayList(items), [items]);
   const status = useMemo(() => balconyStatus(items, events, now), [events, items, now]);
   const streak = useMemo(() => streakDays(events, now), [events, now]);
   const sheetItem = items.find((item) => item.key === sheetKey) ?? null;
   // Arrosages regroupés, gestes pas urgents repliés au-delà de 5 lignes (lib/garden/today.ts).
-  const lines = useMemo(() => layoutTodayList(items), [items]);
+  const lines = useMemo(() => layoutTodayList(rest), [rest]);
   const [wateringOpen, setWateringOpen] = useState(false);
   const [moreOpen, setMoreOpen] = useState(false);
   const wateringLine = lines.find((line) => line.type === "watering") ?? null;
@@ -146,6 +156,25 @@ export default function HomeScreen() {
   // Couleur du point d'état de chaque plante : la même que sur Balcon et la fiche (plan du jour).
   const toneColor = (tone: PlantTone) => (tone === "weather" ? colors.frost : tone === "watch" ? colors.warning : tone === "good" ? colors.primary : colors.muted);
   const plantDots = useMemo(() => new Map(plan.map((day) => [day.resolved.plant.id, day.status])), [plan]);
+
+  // Jour de pluie : l'arrosage évité est compté tout seul, dès que le bandeau s'affiche.
+  useEffect(() => {
+    if (!loaded || away) return;
+    const toLog = rainSavingsToLog(banners, events, new Date());
+    if (toLog.length === 0) return;
+    void (async () => {
+      for (const event of toLog) await logEvent(event);
+    })();
+  }, [away, banners, events, loaded, logEvent]);
+
+  /** « ≈ 1,2 L d'eau économisés aujourd'hui » : ce que la pluie évite d'arroser. */
+  const rainNote = (group: ReminderGroup) => {
+    const liters = group.decisions.reduce((total, decision) => {
+      const resolved = resolvedPlants.find(({ plant }) => plant.id === decision.plantId);
+      return total + (resolved ? litersPerWatering(resolved) : 0);
+    }, 0);
+    return liters > 0 ? `≈ ${formatLiters(Math.round(liters * 10) / 10)} d’eau économisés aujourd’hui, sans rien faire.` : undefined;
+  };
 
   const showToast = (text: string, onUndo?: () => void) => {
     toastId.current += 1;
@@ -165,23 +194,16 @@ export default function HomeScreen() {
     };
   };
 
-  /** « Fait » sur une alerte : le geste est noté pour chaque plante concernée, et l'alerte se tait jusqu'à demain. */
+  /** « C'est fait » sur une alerte : le geste est noté pour chaque plante concernée, et l'alerte se tait jusqu'à demain. */
   const completeAlert = async (group: ReminderGroup) => {
     const previous = snoozes;
     const moment = new Date();
-    // « N'arrose pas » suivi : l'arrosage évité est noté, pour compter l'eau économisée dans Ma semaine.
-    const skip = group.action === "skip";
     const logged = group.decisions.map((decision) => eventForReminder(decision, moment));
     const undoEvents = await logAll(logged);
     await saveReminderSnoozes(group.decisions.reduce((current, decision) => addSnooze(current, decision, "skip", reminderSettings, moment), snoozes));
     haptic();
-    const liters = group.decisions.reduce((total, decision) => {
-      const resolved = resolvedPlants.find(({ plant }) => plant.id === decision.plantId);
-      return total + (resolved ? litersPerWatering(resolved) : 0);
-    }, 0);
-    const usual = skip ? `Arrosage évité : ≈ ${formatLiters(Math.round(liters * 10) / 10)} d’eau économisés` : `C’est noté · +${POINTS_PER_GESTURE * group.decisions.length} points`;
     cheer(logged);
-    showToast(usual, () => {
+    showToast(`C’est noté · +${POINTS_PER_GESTURE * group.decisions.length} points`, () => {
       undoEvents();
       void saveReminderSnoozes(previous);
     });
@@ -195,6 +217,8 @@ export default function HomeScreen() {
   };
 
   const toggleItem = async (item: TodayItem) => {
+    // La pluie se lit seulement : son eau économisée est déjà comptée.
+    if (isInfoBanner(item)) return;
     if (item.kind === "alert") return completeAlert(item.group);
     if (item.kind === "season") {
       if (item.done) {
@@ -225,7 +249,7 @@ export default function HomeScreen() {
     const nextSettings = { ...reminderSettings, enabled: true };
     setReminderSettings(nextSettings);
     await saveLocalReminderSettings(nextSettings);
-    const plan = planGroupedNotification(reminderDecisions, snoozes, nextSettings, new Date());
+    const plan = planGroupedNotification(unseenDecisions, snoozes, nextSettings, new Date());
     if (plan && !awayOn(vacation, dayKey(plan.date))) await scheduleLocalReminder(plan.group, nextSettings, plan.date);
     showToast(`Rappels activés : Balco te préviendra vers ${nextSettings.preferredHour} h ${String(nextSettings.preferredMinute).padStart(2, "0")}`);
   };
@@ -251,7 +275,6 @@ export default function HomeScreen() {
       title={item.title}
       subtitle={item.done ? doneSubtitle(item, events) : item.subtitle}
       done={item.done}
-      checkLabel={item.kind === "alert" && item.group.action === "skip" ? "Compris" : undefined}
       picture={seasonPicture(item)}
       onToggle={() => void toggleItem(item)}
       onOpen={() => setSheetKey(item.key)}
@@ -310,6 +333,19 @@ export default function HomeScreen() {
           </View>
         )}
 
+        {!away && banners.map((banner) => (
+          <WeatherBanner
+            key={banner.key}
+            icon={banner.icon}
+            tone={banner.tone}
+            title={banner.title}
+            subtitle={banner.subtitle}
+            note={isInfoBanner(banner) ? rainNote(banner.group) : undefined}
+            onDone={isInfoBanner(banner) ? undefined : () => void completeAlert(banner.group)}
+            onOpen={() => setSheetKey(banner.key)}
+          />
+        ))}
+
         {loaded && hasPlants && !away && (
           <Pressable accessibilityRole="button" accessibilityLabel={`Ton balcon, ${status.label}`} onPress={() => router.push("/(tabs)/balcony")} style={({ pressed }) => [styles.status, styles.glass, pressed && styles.pressed]}>
             <Text style={[styles.statusText, { color: colors.foreground }]}>Ton balcon <Text style={{ color: colors.muted, fontWeight: "500" }}>· {status.label}</Text></Text>
@@ -351,7 +387,7 @@ export default function HomeScreen() {
           </FadeIn>
         )}
 
-        {items.length > 0 && !away && (
+        {lines.length > 0 && !away && (
           <View>
             {lines.map((line) => {
               if (line.type === "item") return itemRow(line.item);
