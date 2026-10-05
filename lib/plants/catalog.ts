@@ -110,7 +110,7 @@ function wateringTask(label: string, months: Month[] = GROWING_SEASON, instructi
   return {
     id: "check-soil",
     type: "watering",
-    title: `Aujourd’hui, arrose ${label} si besoin.`,
+    title: `Arrose ${label}`,
     instruction,
     minutes: 3,
     months,
@@ -1381,6 +1381,18 @@ export function getCatalogPlant(id: string): CatalogPlant | undefined {
 }
 
 /** Tâches pertinentes pour un mois donné (1-12). */
+/** Profondeur à laquelle tâter la terre avant d'arroser : 2 cm, plus pour les plantes qui craignent l'eau. */
+export function soilCheckDepthCm(entry: CatalogPlant) {
+  const instruction = entry.tasks.find((task) => task.type === "watering")?.instruction ?? "";
+  const depth = Number(/sèche sur (\d+) cm/u.exec(instruction)?.[1]);
+  return Number.isFinite(depth) && depth > 0 ? depth : 2;
+}
+
+/** La vérification avant d'arroser, en une phrase : « Enfonce ton doigt : sèche sur 2 cm ? Arrose. » */
+export function soilCheckText(depthCm = 2) {
+  return `Enfonce ton doigt : sèche sur ${depthCm} cm ? Arrose.`;
+}
+
 export function tasksForMonth(entry: CatalogPlant, month: number): CareTask[] {
   return entry.tasks.filter((task) => !task.months || task.months.includes(month as Month));
 }

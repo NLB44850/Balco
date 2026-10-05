@@ -45,7 +45,7 @@ describe("liste « Aujourd'hui »", () => {
     const { items } = list(12);
     const titles = items.map((item) => item.title);
     expect(titles.filter((title) => title.toLowerCase().includes("arrose le basilic"))).toHaveLength(1);
-    expect(items.find((item) => item.title === "Arrose le basilic si la terre est sèche")?.kind).toBe("alert");
+    expect(items.find((item) => item.title === "Arrose le basilic")?.kind).toBe("alert");
   });
 
   it("ne propose pas d'arroser quand l'alerte pluie dit de ne pas le faire", () => {

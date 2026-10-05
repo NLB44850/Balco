@@ -38,7 +38,7 @@ Tout se passe dans son GitHub Codespace (pas de Docker sur son PC).
 
 - `pnpm -s check`, `pnpm -s lint`, puis `TEST_DATABASE_URL=mysql://balco:balco@localhost:3306/balco_cal npx vitest run`
   (MariaDB locale : `service mariadb start` si elle s'est arrêtée, `apt-get install -y mariadb-server` si elle manque,
-  puis `DATABASE_URL=… npx drizzle-kit migrate` ; 404 tests à ce jour). Dans un conteneur
+  puis `DATABASE_URL=… npx drizzle-kit migrate` ; 406 tests à ce jour). Dans un conteneur
   neuf : `apt-get install -y mariadb-server`, `service mariadb start`, créer la base `balco_cal` et l'utilisateur
   `balco`/`balco`, puis `pnpm -s build && DATABASE_URL=mysql://balco:balco@localhost:3306/balco_cal node dist/migrate.mjs`.
 - `npx expo export --platform android` pour s'assurer que le bundle Android se construit.
@@ -318,7 +318,15 @@ ce qui n'a pas pu être corrigé ou demande une décision.
   hook partagé `hooks/use-day-plan.ts` (météo, réglages, reports, décisions). `buildDailySession` et
   `nextGesture` supprimés. Arrosée aujourd'hui = ligne cochée même si le conseil météo s'est tu. Scénario
   `e2e/4-coherence.spec.ts` (Aujourd'hui, Balcon, fiche ; à compléter à l'étape 6). Pastilles d'Aujourd'hui
-  avec libellé accessible « Basilic, À surveiller ».
+  avec libellé accessible « Basilic, À surveiller ». **Validée** sur téléphone le 05/10 ; le porteur trouve
+  Aujourd'hui trop long avec beaucoup de plantes (6 récoltes) mais garde le plan prévu (étape 3 inchangée,
+  pas de rythme de récolte).
+- **Étape 2 faite (05/10)** : titres d'action sans « si besoin » (« Arrose le basilic », tâche du catalogue et
+  décision de soif) ; sous-titre concret « Enfonce ton doigt : sèche sur N cm ? Arrose. » (`soilCheckDepthCm`,
+  `soilCheckText` dans `lib/plants/catalog.ts`, profondeur lue dans la consigne du catalogue, 2 cm par défaut ;
+  `soilCheckCm` du profil de soin) ; plus de sous-titre qui répète le titre. `ready` dans `useDayPlan` : Balcon et
+  la fiche n'affichent l'état et le geste qu'une fois météo, réglages et reports chargés (plus de « En forme »
+  qui devient « À surveiller »).
 
 Points à ne pas oublier (à proposer au porteur au bon moment, noté le 30/09) :
 - Encore à valider sur son téléphone : la carte « Sa progression » de la fiche plante et les petites

@@ -2,7 +2,7 @@
  * Logique pure du jardin de l'utilisateur : session du jour, état des plantes,
  * statistiques, badges et points. Aucune dépendance React Native, pour rester testable.
  */
-import { getCatalogPlant, tasksForMonth, type CareTask, type CatalogPlant } from "../plants/catalog";
+import { getCatalogPlant, soilCheckDepthCm, tasksForMonth, type CareTask, type CatalogPlant } from "../plants/catalog";
 import type { MaintenanceEvent, MaintenanceTaskType, PlantCareProfile } from "../reminders/reminder-engine";
 
 export type GardenPlant = {
@@ -57,6 +57,7 @@ export function careProfileFor(resolved: ResolvedPlant): PlantCareProfile {
     label: plant.nickname?.trim() || entry.label,
     ...entry.care,
     allowedTaskTypes: Array.from(new Set<MaintenanceTaskType>([...entry.tasks.map((task) => task.type), "observation", "protection"])),
+    soilCheckCm: soilCheckDepthCm(entry),
   };
 }
 

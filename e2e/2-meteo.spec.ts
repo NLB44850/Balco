@@ -19,7 +19,7 @@ async function simulate(page: Page, scenario: Scenario) {
   await expect(page.getByText("Tes plantes")).toBeVisible({ timeout: 20_000 });
 }
 
-/** Les « Arrose … si besoin » encore à cocher sur Aujourd'hui. */
+/** Les « Arrose … » encore à cocher sur Aujourd’hui. */
 const wateringRows = (page: Page) => page.getByRole("checkbox", { name: /^Marquer comme fait : Arrose / });
 
 test.describe("alertes météo", () => {
@@ -98,7 +98,7 @@ test.describe("alertes météo", () => {
 
     await checkboxOf(page, "Marquer comme fait : 35 °C aujourd’hui : pense à tes plantes").click();
     await expect(page.getByText(/C’est noté/)).toBeVisible();
-    // Arrosées pour de bon : ni l'alerte ni « Arrose … si besoin » ne reviennent aujourd'hui.
+    // Arrosées pour de bon : ni l’alerte ni « Arrose … » ne reviennent aujourd'hui.
     await page.reload();
     await expect(page.getByText("Tes plantes")).toBeVisible({ timeout: 20_000 });
     await expect(page.getByText("35 °C aujourd’hui : pense à tes plantes")).toHaveCount(0);

@@ -4,6 +4,7 @@
  * Logique pure.
  */
 import type { CalendarActivity } from "../plants/calendar";
+import { soilCheckDepthCm, soilCheckText } from "../plants/catalog";
 import type { MaintenanceEvent } from "../reminders/reminder-engine";
 import type { ReminderGroup } from "../reminders/reminder-groups";
 import { GESTURE_ORDER, type GestureKind, type PlantDay } from "./day-plan";
@@ -54,7 +55,7 @@ function alertSubtitle(group: ReminderGroup) {
     case "heat":
       return value === undefined ? "Forte chaleur" : `Jusqu’à ${value} °C · ce soir ou demain tôt`;
     default:
-      return "Seulement si la terre est sèche";
+      return "";
   }
 }
 
@@ -87,7 +88,8 @@ export function buildTodayList({ groups, plan }: BuildTodayInput): TodayItem[] {
     if (source.type === "decision") {
       const group = groups.find((candidate) => candidate.decisions.some((decision) => decision.plantId === source.decision.plantId && decision.cause === source.decision.cause));
       if (!group) continue;
-      rows.push({ rank, item: { kind: "alert", key: `alert:${group.key}`, ...ALERT_LOOK.thirst, title: group.title, subtitle: alertSubtitle(group), done: false, group } });
+      // Le titre dit l'action (« Arrose le basilic ») ; le sous-titre, comment vérifier.
+      rows.push({ rank, item: { kind: "alert", key: `alert:${group.key}`, ...ALERT_LOOK.thirst, title: group.title, subtitle: soilCheckText(soilCheckDepthCm(day.resolved.entry)), done: false, group } });
     } else if (source.type === "task") {
       const item = source.task;
       rows.push({
@@ -98,7 +100,7 @@ export function buildTodayList({ groups, plan }: BuildTodayInput): TodayItem[] {
           tone: gesture.kind === "watering" ? "water" : "care",
           icon: TASK_ICONS[item.task.type] ?? "•",
           title: gesture.title,
-          subtitle: `${plantDisplayName(item.resolved)} · ${item.task.minutes} min`,
+          subtitle: gesture.kind === "watering" ? soilCheckText(soilCheckDepthCm(item.resolved.entry)) : `${plantDisplayName(item.resolved)} · ${item.task.minutes} min`,
           done: gesture.done,
           task: { ...item, done: gesture.done, eventId: gesture.doneEventId ?? item.eventId },
         },

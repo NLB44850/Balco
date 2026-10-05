@@ -42,11 +42,11 @@ export default function BalconyScreen() {
   const capture = usePlantPhotoCapture(showToast);
 
   // Le même plan du jour qu'Aujourd'hui et la fiche : même geste, même couleur.
-  const { plan } = useDayPlan();
-  const watching = plan.filter((day) => day.status.tone === "watch" || day.status.tone === "weather").length;
+  const { plan, ready } = useDayPlan();
+  const watching = !ready ? 0 : plan.filter((day) => day.status.tone === "watch" || day.status.tone === "weather").length;
   const subtitle = resolvedPlants.length === 0
     ? "Ajoute ta première plante"
-    : `${resolvedPlants.length} plante${resolvedPlants.length > 1 ? "s" : ""}${watching ? ` · ${watching} à surveiller` : " · toutes en forme"}`;
+    : `${resolvedPlants.length} plante${resolvedPlants.length > 1 ? "s" : ""}${!ready ? "" : watching ? ` · ${watching} à surveiller` : " · toutes en forme"}`;
   // Arrondie vers le bas : sur Android, une largeur au demi-pixel près peut faire passer la 2ᵉ carte à la ligne.
   const cardWidth = gridWidth > 0 ? Math.floor((gridWidth - GAP) / 2) : 0;
   // Deux cartes par ligne, rangées à la main plutôt qu'avec un retour à la ligne automatique.
@@ -59,23 +59,26 @@ export default function BalconyScreen() {
     const { plant } = resolved;
     const name = plantDisplayName(resolved);
     const day = dayOf(plan, plant.id);
-    const status = day?.status ?? { tone: "new" as const, label: "Nouvelle" };
+    // Tant que la météo n'est pas chargée, on n'affiche pas un état qui changerait aussitôt.
+    const status = ready ? day?.status ?? { tone: "new" as const, label: "Nouvelle" } : null;
     const pending = !!day?.first && !day.first.done;
     const hasPhoto = covers.has(plant.id);
-    const line = gestureLine(day);
+    const line = ready ? gestureLine(day) : " ";
     return (
       <Pressable
         key={plant.id}
         accessibilityRole="button"
-        accessibilityLabel={`${name}, ${status.label}, voir la fiche`}
+        accessibilityLabel={status ? `${name}, ${status.label}, voir la fiche` : `${name}, voir la fiche`}
         onPress={() => router.push({ pathname: "/garden/[id]", params: { id: plant.id } })}
         style={({ pressed }) => [{ width: cardWidth }, styles.card, pressed && styles.pressed]}
       >
         <PlantPicture resolved={resolved} style={[styles.picture, { height: cardWidth * 1.2 }]}>
-          <View style={styles.statusChip}>
-            <View style={[styles.dot, { backgroundColor: toneColor(status.tone) }]} />
-            <Text style={[styles.statusText, { color: colors.foreground }]}>{status.label}</Text>
-          </View>
+          {status && (
+            <View style={styles.statusChip}>
+              <View style={[styles.dot, { backgroundColor: toneColor(status.tone) }]} />
+              <Text style={[styles.statusText, { color: colors.foreground }]}>{status.label}</Text>
+            </View>
+          )}
           {!hasPhoto && (
             <Pressable accessibilityRole="button" accessibilityLabel={`Ajouter une photo de ${name}`} hitSlop={6} onPress={() => capture.ask(plant.id, name)} style={({ pressed }) => [styles.addPhoto, pressed && styles.pressed]}>
               <IconSymbol name="camera.fill" size={15} color={colors.primary} />

@@ -38,7 +38,7 @@ export default function PlantScreen() {
   const { width } = useWindowDimensions();
   const { id } = useLocalSearchParams<{ id: string }>();
   const { loaded, resolvedPlants, events, logEvent, removeEvent, removePlant, renamePlant, setPlantVariety } = useGarden();
-  const { plan, snoozes, reminderSettings } = useDayPlan();
+  const { plan, ready, snoozes, reminderSettings } = useDayPlan();
   const { photos, removePhoto } = usePlantPhotos();
   const [shownPhotoId, setShownPhotoId] = useState<string | null>(null);
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
@@ -181,9 +181,10 @@ export default function PlantScreen() {
           )}
           <Text style={[styles.text, { color: colors.muted }]}>{[plant.nickname ? entry.name : null, variety?.name, CATEGORY_LABELS[entry.category]].filter(Boolean).join(" · ")}</Text>
           <View style={styles.statusRow}>
-            <View style={[styles.dot, { backgroundColor: statusColor }]} />
-            <Text style={[styles.statusText, { color: statusColor }]}>{status.label}</Text>
-            <Text style={[styles.text, { color: colors.muted }]}>· {lastCare}</Text>
+            {/* Tant que la météo n'est pas chargée, pas d'état qui changerait aussitôt. */}
+            {ready && <View style={[styles.dot, { backgroundColor: statusColor }]} />}
+            {ready && <Text style={[styles.statusText, { color: statusColor }]}>{status.label}</Text>}
+            <Text style={[styles.text, { color: colors.muted }]}>{ready ? "· " : ""}{lastCare}</Text>
           </View>
           <Text accessibilityLabel={`Légende : ${STATUS_LEGEND.map((item) => item.text).join(", ")}`} style={[styles.legend, { color: colors.muted }]}>
             {STATUS_LEGEND.map((item, index) => (
@@ -201,7 +202,7 @@ export default function PlantScreen() {
           </View>
 
           {/* Le prochain geste, en un bouton. */}
-          <FadeIn delay={40} style={[styles.next, { borderColor: colors.border }]}>
+          {ready && <FadeIn delay={40} style={[styles.next, { borderColor: colors.border }]}>
             {gesture && !gesture.done && (
               <>
                 <Text style={[styles.kicker, { color: colors.primary }]}>Aujourd’hui · {gesture.minutes} min</Text>
@@ -228,7 +229,7 @@ export default function PlantScreen() {
                 <Text style={[styles.text, { color: colors.muted }]}>{name} se repose. Balco te dira quand revenir.</Text>
               </>
             )}
-          </FadeIn>
+          </FadeIn>}
 
           {/* Tes photos : toucher une photo l'affiche en grand. */}
           {plantPhotos.length > 0 && (

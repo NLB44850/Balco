@@ -7,7 +7,7 @@ import { describe, expect, it } from "vitest";
 import { dayOf, GESTURE_ORDER, gestureLine, planDay } from "../lib/garden/day-plan";
 import { careProfileFor, resolvePlants } from "../lib/garden/garden-logic";
 import { buildTodayList } from "../lib/garden/today";
-import { PLANT_CATALOG } from "../lib/plants/catalog";
+import { getCatalogPlant, PLANT_CATALOG, soilCheckDepthCm } from "../lib/plants/catalog";
 import { decideReminders, type MaintenanceEvent, type WeatherSnapshot } from "../lib/reminders/reminder-engine";
 import { groupReminders } from "../lib/reminders/reminder-groups";
 
@@ -110,5 +110,26 @@ describe("geste fait", () => {
     const basil = dayOf(after.plan, "basil-1")!;
     expect(basil.first).toMatchObject({ kind: "watering", done: true, doneEventId: done.id });
     expect(after.items.some((item) => item.done && item.kind === "task" && item.task.resolved.plant.id === "basil-1")).toBe(true);
+  });
+});
+
+describe("titres qui disent quoi faire", () => {
+  it("aucun titre de geste ne dit « si besoin » ou « si la terre est sèche »", () => {
+    for (const entry of PLANT_CATALOG) for (const task of entry.tasks) expect(task.title).not.toMatch(/si besoin|si la terre/u);
+    const { decisions } = scene();
+    for (const decision of decisions) expect(decision.title).not.toMatch(/si besoin|si la terre/u);
+  });
+
+  it("le sous-titre d'un arrosage dit comment vérifier, à la bonne profondeur, sans répéter le titre", () => {
+    expect(soilCheckDepthCm(getCatalogPlant("basil")!)).toBe(2);
+    expect(soilCheckDepthCm(getCatalogPlant("thyme")!)).toBe(4);
+    expect(soilCheckDepthCm(getCatalogPlant("lavender")!)).toBe(5);
+    const { items } = scene();
+    const watering = items.filter((item) => item.title.startsWith("Arrose"));
+    expect(watering.length).toBeGreaterThan(0);
+    for (const item of watering) {
+      expect(item.subtitle).toMatch(/^Enfonce ton doigt : sèche sur \d cm \? Arrose\.$/u);
+      expect(item.subtitle.toLowerCase()).not.toContain(item.title.toLowerCase());
+    }
   });
 });

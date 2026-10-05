@@ -19,7 +19,7 @@ describe("Balco MVP content", () => {
   });
 
   it("contains the requested gardening prototype content", () => {
-    expect(readProjectFile("lib/plants/catalog.ts")).toContain("arrose ${label} si besoin");
+    expect(readProjectFile("lib/plants/catalog.ts")).toContain("Arrose ${label}");
     expect(readProjectFile("app/(tabs)/assistant.tsx")).toContain("quickQuestions(resolvedPlants)");
     expect(readProjectFile("app/(tabs)/scanner.tsx")).toContain("Solution naturelle");
     expect(readProjectFile("lib/garden/garden-logic.ts")).toContain("Ami des Abeilles");

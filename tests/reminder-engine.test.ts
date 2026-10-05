@@ -138,7 +138,9 @@ describe("decideReminder", () => {
     });
 
     expect(result).toMatchObject({ action: "observe", taskType: "watering", priority: "normal" });
-    expect(result?.body).toContain("terre");
+    // Le titre dit l'action, le texte dit comment vérifier.
+    expect(result?.title).not.toMatch(/si (besoin|la terre)/u);
+    expect(result?.body).toContain("Enfonce ton doigt : sèche sur 2 cm ? Arrose.");
   });
 
   it("raises watering priority in hot weather without ordering blind watering", () => {

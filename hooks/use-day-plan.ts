@@ -71,8 +71,13 @@ export function useDayPlan() {
   const visibleGroups = useMemo(() => groupReminders(visibleDecisions), [visibleDecisions]);
   const plan = useMemo(() => planDay({ plants: resolvedPlants, events, now, decisions: visibleDecisions, allDecisions, climate }), [allDecisions, climate, events, now, resolvedPlants, visibleDecisions]);
 
+  // Prêt quand la météo (ou son repli) et les réglages sont là : avant, l'état d'une plante changerait
+  // sous les yeux (« En forme », puis « À surveiller » une fois la soif connue).
+  const ready = !local.isLoading && reminderSettingsLoaded && snoozesLoaded;
+
   return {
     ...local,
+    ready,
     now,
     setNow,
     climate,

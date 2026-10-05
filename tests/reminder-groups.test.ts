@@ -82,9 +82,9 @@ describe("regroupement des alertes météo", () => {
   it("garde un conseil par plante quand seule la soif est en cause", () => {
     const groups = groupReminders(decide(weather()));
     expect(groups.map((group) => group.title)).toEqual([
-      "Arrose le basilic si la terre est sèche",
-      "Arrose la menthe si la terre est sèche",
-      "Arrose les tomates cerises si la terre est sèche",
+      "Arrose le basilic",
+      "Arrose la menthe",
+      "Arrose les tomates cerises",
     ]);
   });
 
