@@ -133,6 +133,21 @@ Très cohérent avec la promesse écologique.
 
 **Prochaines séances (liste du 30 septembre)** : tester l'eau économisée, corriger les petites victoires, vérifier que les alertes météo agissent bien sur les gestes ; puis agrandir le catalogue des plantes et proposer des suggestions selon la saison et le mois.
 
+**Retours du test utilisateur** (plan validé le 4 octobre, une étape à la fois, testée sur téléphone) :
+
+1. ✅ Un seul plan du jour : Aujourd'hui, Balcon et la fiche plante disent la même chose (même geste, même couleur d'état). Validé le 5 octobre.
+2. ✅ Des titres qui disent quoi faire (« Arrose le basilic »), avec la façon de vérifier en dessous. Validé le 5 octobre.
+3. ✅ Arrosages regroupés (« Vérifie la terre de 5 plantes ») et gestes pas urgents repliés au-delà de 5 lignes. Validé le 5 octobre.
+4. Alertes météo en bandeau en haut d'Aujourd'hui (gel et orage avec « C'est fait », pluie sans bouton, eau économisée comptée toute seule). **Prochaine étape.**
+5. Gestes de saison dans Aujourd'hui, Saisons devient un calendrier à lire.
+6. Même chiffres dans Saisons, Ma semaine et Moi ; nouveau libellé de l'Idée du mois.
+7. Série de « jours suivis » (un jour compte si tout ce qui était demandé est fait).
+8. Fêtes en grand plus rares (nouveau badge, première récolte de chaque plante) ; plus de tuile « 0 photo ».
+9. Observer sans compte (1 analyse par téléphone).
+10. Textes de l'offre Balco+ écrits comme des bénéfices.
+
+À décider à la fin : l'après-récolte des plantes qu'on arrache (radis, carottes, salades) : « Ressemer » ou « Libérer le pot ». Proposé aussi : une version web toujours en ligne et l'APK construit automatiquement, pour tester sans Codespace.
+
 **Version suivante**
 
 1. Scanner de plantes réellement fonctionnel
@@ -142,7 +157,7 @@ Très cohérent avec la promesse écologique.
 
 ---
 
-## 2. Où en est Balco (état au 4 octobre 2026)
+## 2. Où en est Balco (état au 4 octobre 2026, suite du travail dans la partie 3)
 
 ### 1. Rappels intelligents
 
@@ -272,6 +287,21 @@ L'ordre suit la priorité fixée par le porteur du projet. Chaque étape est val
 5. ✅ Suggestions selon la saison et le mois (Saisons, catalogue, Aujourd'hui), et Saisons rangé par type de geste : validés le 4 octobre.
 
 **Prochaines séances** (4 octobre) : la mémoire de Nora sur plusieurs jours (faits datés, conversation datée), à tester sur 2 ou 3 jours. La publication sur les stores n'est pas encore à l'ordre du jour.
+
+**Retours du test utilisateur** (plan validé le 4 octobre, une étape à la fois, testée sur téléphone) :
+
+1. ✅ Un seul plan du jour : Aujourd'hui, Balcon et la fiche plante disent la même chose (même geste, même couleur d'état). Validé le 5 octobre.
+2. ✅ Des titres qui disent quoi faire (« Arrose le basilic »), avec la façon de vérifier en dessous. Validé le 5 octobre.
+3. ✅ Arrosages regroupés (« Vérifie la terre de 5 plantes ») et gestes pas urgents repliés au-delà de 5 lignes. Validé le 5 octobre.
+4. Alertes météo en bandeau en haut d'Aujourd'hui (gel et orage avec « C'est fait », pluie sans bouton, eau économisée comptée toute seule). **Prochaine étape.**
+5. Gestes de saison dans Aujourd'hui, Saisons devient un calendrier à lire.
+6. Même chiffres dans Saisons, Ma semaine et Moi ; nouveau libellé de l'Idée du mois.
+7. Série de « jours suivis » (un jour compte si tout ce qui était demandé est fait).
+8. Fêtes en grand plus rares (nouveau badge, première récolte de chaque plante) ; plus de tuile « 0 photo ».
+9. Observer sans compte (1 analyse par téléphone).
+10. Textes de l'offre Balco+ écrits comme des bénéfices.
+
+À décider à la fin : l'après-récolte des plantes qu'on arrache (radis, carottes, salades) : « Ressemer » ou « Libérer le pot ». Proposé aussi : une version web toujours en ligne et l'APK construit automatiquement, pour tester sans Codespace.
 
 **Version suivante**
 

@@ -326,7 +326,7 @@ ce qui n'a pas pu être corrigé ou demande une décision.
   `soilCheckText` dans `lib/plants/catalog.ts`, profondeur lue dans la consigne du catalogue, 2 cm par défaut ;
   `soilCheckCm` du profil de soin) ; plus de sous-titre qui répète le titre. `ready` dans `useDayPlan` : Balcon et
   la fiche n'affichent l'état et le geste qu'une fois météo, réglages et reports chargés (plus de « En forme »
-  qui devient « À surveiller »).
+  qui devient « À surveiller »). **Validée** sur téléphone le 05/10.
 - **Étape 3 faite (05/10)** : `layoutTodayList` (`lib/garden/today.ts`, lignes `TodayLine` : `item`, `watering`,
   `more`) : dès 2 arrosages, une ligne « Vérifie la terre de N plantes » (« Sèche ? Arrose · basilic, menthe… »,
   « 1 sur 3 faites ») qui ouvre une feuille du bas où l'on coche chaque plante ; au-delà de 5 lignes à faire
@@ -334,6 +334,46 @@ ce qui n'a pas pu être corrigé ou demande une décision.
   Chaque `TodayItem` porte `gesture` et `plantName`. E2e : `wateringGroup(page)` dans `e2e/helpers.ts`.
   **Noté pour la fin** (question du porteur, 05/10) : pas de cycle après récolte ; pour les plantes à récolte
   unique (radis, carottes, salades pommées…), proposer « Tout récolté ? » → « Ressemer » ou « Libérer le pot ».
+  **Validée** sur téléphone le 05/10.
+
+**Reprise dans une nouvelle conversation (05/10) : commencer par l'étape 4.** Détail des étapes restantes,
+tel que validé par le porteur (une étape = un commit testé : check, lint, vitest, e2e complet avec
+reconstruction, export Android ; puis compte rendu en français avec ce qu'il doit taper et regarder, et
+attendre sa validation avant l'étape suivante) :
+4. **Alertes météo en bandeau** en haut d'Aujourd'hui (au-dessus de la liste, plus des lignes à cocher) :
+   gel et orage = bandeau + bouton « C'est fait » (l'action demandée : rentrer / protéger), pluie = bandeau
+   simple sans bouton (« N'arrose pas aujourd'hui »), et les jours de pluie l'eau économisée est comptée
+   toute seule (plus besoin de cocher « Compris ») ; vent et canicule : à traiter comme gel/orage (bouton).
+   Garder « Dans 3 h » / « Pas aujourd'hui » dans la feuille du bas. Mettre à jour `e2e/2-meteo.spec.ts`
+   (cases « Marquer comme fait : Gel… », « 35 °C… », eau économisée) et `tests/today.test.ts`.
+5. **Gestes de saison dans Aujourd'hui, Saisons en lecture seule** : Saisons ne se coche plus, phrase
+   « Ton calendrier : ce qui t'attend dans les prochains mois » ; les gestes du mois (semis, plantation,
+   rempotage, récolte) se font depuis Aujourd'hui. Adapter les e2e Saisons (`1-parcours.spec.ts`).
+6. **Cohérence Saisons / Ma semaine / Moi** : Moi montre les chiffres de la semaine avec le même calcul que
+   Ma semaine ; libellé de l'Idée du mois « Dernier mois pour la planter · récolte de mai à septembre » ;
+   tests des points 3 et 5 ; compléter `e2e/4-coherence.spec.ts` avec Saisons, Ma semaine et Moi.
+7. **Série de « jours suivis »** : un jour compte s'il n'y avait rien à faire, ou si tous les gestes
+   demandés ont été faits (aujourd'hui `streakDays` compte les jours avec au moins un geste).
+8. **Fêtes plus rares** : plein écran seulement pour un nouveau badge et la 1ʳᵉ récolte de chaque plante,
+   au plus une par jour ; le reste (autres récoltes, séries, niveaux) = animation discrète de la ligne.
+   Masquer la tuile « 0 photo » (Ma semaine).
+9. **Observer sans compte** : 1 analyse par appareil et 3 par réseau et par jour, protégées côté serveur
+   et comptées dans le budget IA (`server/ai/budget.ts`, `rate_limits`) ; après le résultat, proposer de
+   créer un compte ; carte d'exemple de résultat au-dessus du bouton de connexion.
+10. **Textes de l'offre Balco+ en bénéfices** (Réglages → Compte, messages de quota).
+À la fin des 10 étapes : lister au porteur ce qui n'a pas pu être corrigé ou demande une décision, dont
+l'après-récolte (ci-dessus) ; puis proposer une PR vers `main`.
+
+**Autres sujets de la séance du 05/10** :
+- Il a demandé s'il pouvait travailler depuis un IDE sur mobile : réponse donnée = ouvrir son Codespace
+  dans Chrome sur le téléphone (github.com/codespaces → « Open in browser », mêmes commandes) ; les IDE
+  mobiles (Termux, Acode) ne font pas tourner Docker. Proposé pour **après l'étape 10** (ou entre deux
+  étapes s'il le demande) : une version web hébergée qui se met à jour seule à chaque envoi (adresse fixe,
+  plus de Codespace pour tester) et l'APK construit par une action GitHub (EXPO_TOKEN qu'il enregistre
+  lui-même dans les secrets du dépôt).
+- Un nouvel APK reste à construire pour voir sur Android la correction « Balcon : toujours deux cartes par
+  ligne » (commit `f797f3b`) et les étapes 1 à 3.
+- Il attend toujours de faire le test de la mémoire de Nora sur plusieurs jours (retour à recueillir).
 
 Points à ne pas oublier (à proposer au porteur au bon moment, noté le 30/09) :
 - Encore à valider sur son téléphone : la carte « Sa progression » de la fiche plante et les petites
