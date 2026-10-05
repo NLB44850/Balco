@@ -192,4 +192,9 @@ test("Aujourd'hui : une fois la plante arrosée, sa récolte du mois prend la pl
   await checkboxOf(page, /^Marquer comme fait : Arrose la menthe/).click();
   await expect(checkboxOf(page, /^Marquer comme fait : Récolte la menthe/)).toBeVisible();
   await expect(checkboxOf(page, /^Annuler ce geste : Arrose la menthe/)).toBeVisible();
+
+  // Récoltée sur Aujourd'hui : Saisons le montre (sans rien à cocher).
+  await checkboxOf(page, /^Marquer comme fait : Récolte la menthe/).click();
+  await page.getByRole("tab", { name: /Saisons/ }).click();
+  await expect(page.getByText("✓ Faite aujourd’hui").filter({ visible: true })).toBeVisible();
 });

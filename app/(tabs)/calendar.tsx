@@ -25,6 +25,8 @@ import { useGarden } from "@/lib/garden/garden-context";
 import { careProfileFor, dayKey, plantDisplayName, type ResolvedPlant } from "@/lib/garden/garden-logic";
 import {
   ACTIVITY_KIND_LABELS,
+  activityDoneLabel,
+  activityDoneSoFar,
   activityGroupSummary,
   activityGroupTitle,
   calendarActivities,
@@ -112,7 +114,9 @@ export default function CalendarScreen() {
   );
   // Le mois en cours : ses gestes se font depuis Aujourd'hui (le détail y renvoie).
   const thisMonth = !showingIdeas && view === "month" && selectedMonth === currentMonth;
-  const ordered = currentActivities;
+  // Rien ne se coche ici, mais ce qui est déjà fait (sur Aujourd'hui ou la fiche) se voit, et passe en bas.
+  const isDone = (activity: CalendarActivity) => thisMonth && activityDoneSoFar(activity, events, new Date());
+  const ordered = [...currentActivities.filter((activity) => !isDone(activity)), ...currentActivities.filter(isDone)];
   const sheetActivity = currentActivities.find((activity) => activity.key === sheetKey) ?? null;
   // Rangés par type de geste, sauf quand on regarde une seule plante (on veut alors tout son détail).
   const grouped = !showingIdeas && activeFilter === "all";
@@ -181,6 +185,7 @@ export default function CalendarScreen() {
     return resolved ? <PlantPicture resolved={resolved} style={TODAY_ROW_PICTURE} /> : undefined;
   };
   const rowSubtitle = (activity: CalendarActivity) => {
+    if (isDone(activity)) return activityDoneLabel(activity);
     const when = view === "season" && activity.months ? capitalize(describeMonths(activity.months)) : null;
     const subject = subjects.find((item) => item.id === activity.subjectId)?.displayName;
     return [activity.eventType === "fertilizing" ? "Engrais" : ACTIVITY_KIND_LABELS[activity.kind], when ?? subject].filter(Boolean).join(" · ");
@@ -189,9 +194,12 @@ export default function CalendarScreen() {
   const groupSubtitle = (group: ActivityGroup) => {
     // L'entretien réunit des gestes différents : on les nomme ; ailleurs, les plantes suffisent.
     const names = group.key === "care" ? group.activities.map((activity) => activity.title) : group.activities.map((activity) => subjects.find((item) => item.id === activity.subjectId)?.displayName ?? activity.entry.name);
-    return activityGroupSummary(names);
+    const summary = activityGroupSummary(names);
+    const done = group.activities.filter(isDone).length;
+    return done > 0 ? `${done} sur ${group.activities.length} déjà fait${done > 1 ? "s" : ""} · ${summary}` : summary;
   };
   const memberSubtitle = (activity: CalendarActivity) => {
+    if (isDone(activity)) return activityDoneLabel(activity);
     const subject = subjects.find((item) => item.id === activity.subjectId)?.displayName ?? activity.entry.name;
     return view === "season" && activity.months ? `${subject} · ${describeMonths(activity.months)}` : subject;
   };
@@ -203,7 +211,7 @@ export default function CalendarScreen() {
       tone="season"
       title={activity.title}
       subtitle={rowSubtitle(activity)}
-      done={false}
+      done={isDone(activity)}
       onOpen={() => setSheetKey(activity.key)}
     />
   );
@@ -284,7 +292,7 @@ export default function CalendarScreen() {
             {grouped
               ? groups.map((group) => {
                 if (group.activities.length === 1) return activityRow(group.activities[0]);
-                return <TodayRow key={`group-${view}-${group.key}`} icon={GROUP_ICONS[group.key]} tone="season" title={activityGroupTitle(group)} subtitle={groupSubtitle(group)} done={false} onOpen={() => setGroupKey(group.key)} />;
+                return <TodayRow key={`group-${view}-${group.key}`} icon={GROUP_ICONS[group.key]} tone="season" title={activityGroupTitle(group)} subtitle={groupSubtitle(group)} done={group.activities.every(isDone)} onOpen={() => setGroupKey(group.key)} />;
               })
               : ordered.map(activityRow)}
           </View>
@@ -309,6 +317,8 @@ export default function CalendarScreen() {
               <Text style={[styles.sheetBody, { color: colors.muted }]}>{sheetActivity.description}</Text>
               {showingIdeas ? (
                 <Pressable accessibilityRole="button" onPress={() => { setSheetKey(null); void addIdea(sheetActivity); }} style={({ pressed }) => [styles.cta, { backgroundColor: colors.primary }, pressed && styles.pressed]}><Text style={[styles.ctaText, { color: "#FFFFFF" }]}>+ Ajouter à mon balcon</Text></Pressable>
+              ) : isDone(sheetActivity) ? (
+                <Text style={[styles.small, { color: colors.primary }]}>{activityDoneLabel(sheetActivity)} : c’est noté sur Aujourd’hui.</Text>
               ) : thisMonth ? (
                 <Pressable accessibilityRole="button" onPress={() => { setSheetKey(null); openToday(); }} style={({ pressed }) => [styles.cta, { backgroundColor: colors.foreground }, pressed && styles.pressed]}><Text style={[styles.ctaText, { color: colors.background }]}>Le faire sur Aujourd’hui</Text></Pressable>
               ) : (
@@ -341,7 +351,7 @@ export default function CalendarScreen() {
                   tone="season"
                   title={activity.title}
                   subtitle={memberSubtitle(activity)}
-                  done={false}
+                  done={isDone(activity)}
                   onOpen={() => {
                     // La feuille du geste s'ouvre une fois celle du groupe repliée.
                     setGroupKey(null);

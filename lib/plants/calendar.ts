@@ -103,6 +103,31 @@ export function activityDone(activity: CalendarActivity, events: MaintenanceEven
   return events.some((event) => event.id === id);
 }
 
+/**
+ * Pour Saisons (à lire seulement) : ce geste du mois a-t-il déjà été fait, où que ce soit ? Une récolte
+ * compte pour la journée (on récolte souvent), d'où qu'elle vienne (Aujourd'hui, la fiche) ; un
+ * rempotage, pour le mois ; un semis, une plantation ou un entretien, comme sur Aujourd'hui.
+ */
+export function activityDoneSoFar(activity: CalendarActivity, events: MaintenanceEvent[], now: Date) {
+  if (activityDone(activity, events, now)) return true;
+  const today = dayKey(now);
+  const month = monthKey(now);
+  return events.some((event) => {
+    if (event.plantId !== activity.subjectId) return false;
+    const date = new Date(event.completedAt);
+    if (activity.kind === "harvest") return event.type === "harvest" && dayKey(date) === today;
+    if (activity.kind === "repot") return event.type === "repotting" && monthKey(date) === month;
+    return false;
+  });
+}
+
+/** « Faite aujourd'hui » pour une récolte, « fait ce mois-ci » pour le reste. */
+export function activityDoneLabel(activity: CalendarActivity) {
+  if (activity.kind === "harvest") return "✓ Faite aujourd’hui";
+  if (activity.kind === "care") return "✓ Fait aujourd’hui";
+  return activity.kind === "plant" || activity.kind === "repot" ? "✓ Faite ce mois-ci" : "✓ Fait ce mois-ci";
+}
+
 export function eventForActivity(activity: CalendarActivity, now: Date): MaintenanceEvent {
   return { id: activityEventId(activity, now), plantId: activity.subjectId, type: activity.eventType, completedAt: now.toISOString(), source: "manual", note: activity.title };
 }

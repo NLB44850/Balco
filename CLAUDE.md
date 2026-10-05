@@ -38,7 +38,7 @@ Tout se passe dans son GitHub Codespace (pas de Docker sur son PC).
 
 - `pnpm -s check`, `pnpm -s lint`, puis `TEST_DATABASE_URL=mysql://balco:balco@localhost:3306/balco_cal npx vitest run`
   (MariaDB locale : `service mariadb start` si elle s'est arrêtée, `apt-get install -y mariadb-server` si elle manque,
-  puis `DATABASE_URL=… npx drizzle-kit migrate` ; 418 tests à ce jour). Dans un conteneur
+  puis `DATABASE_URL=… npx drizzle-kit migrate` ; 420 tests à ce jour). Dans un conteneur
   neuf : `apt-get install -y mariadb-server`, `service mariadb start`, créer la base `balco_cal` et l'utilisateur
   `balco`/`balco`, puis `pnpm -s build && DATABASE_URL=mysql://balco:balco@localhost:3306/balco_cal node dist/migrate.mjs`.
 - `npx expo export --platform android` pour s'assurer que le bundle Android se construit.
@@ -350,7 +350,10 @@ attendre sa validation avant l'étape suivante) :
    (cases « Marquer comme fait : Gel… », « 35 °C… », eau économisée) et `tests/today.test.ts`.
 5. ✅ (livrée, à valider : `buildTodayList` montre le 1ᵉʳ geste **à faire** de chaque plante, le suivant
    prend sa place une fois fait, les gestes faits restent cochés en bas ; Saisons sans cases, détail « Le faire
-   sur Aujourd'hui » pour le mois en cours, plus de « Tout est fait » ni de « Voir ma semaine » dans Saisons)
+   sur Aujourd'hui » pour le mois en cours, plus de « Tout est fait » ni de « Voir ma semaine » dans Saisons ;
+   à sa demande, Saisons montre ce qui est déjà fait, sans case : `activityDoneSoFar` / `activityDoneLabel`
+   dans `lib/plants/calendar.ts`, récolte « ✓ Faite aujourd'hui » d'où qu'elle vienne, semis / plantation /
+   rempotage « ce mois-ci », « 1 sur 5 déjà fait · … » sur les groupes)
    **Gestes de saison dans Aujourd'hui, Saisons en lecture seule** : Saisons ne se coche plus, phrase
    « Ton calendrier : ce qui t'attend dans les prochains mois » ; les gestes du mois (semis, plantation,
    rempotage, récolte) se font depuis Aujourd'hui. Adapter les e2e Saisons (`1-parcours.spec.ts`).
