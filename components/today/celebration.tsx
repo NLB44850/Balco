@@ -3,8 +3,11 @@ import { Animated, Easing, Platform, Pressable, StyleSheet, useWindowDimensions,
 import * as Haptics from "expo-haptics";
 import { Text } from "@/components/ui/typography";
 
+import AsyncStorage from "@react-native-async-storage/async-storage";
+
 import { useColors } from "@/hooks/use-colors";
-import type { Celebration } from "@/lib/garden/progress";
+import { dayKey } from "@/lib/garden/garden-logic";
+import { celebrationStyle, type Celebration } from "@/lib/garden/progress";
 
 export type CelebrationMessage = Celebration & { id: number };
 
@@ -42,7 +45,7 @@ function pieces(seed: number): Piece[] {
 
 /**
  * La petite victoire en grand : une gerbe de confettis aux couleurs du balcon et une carte au milieu
- * de l'écran (badge, niveau, série, récolte). Se ferme toute seule, ou d'une touche.
+ * de l'écran (nouveau badge, 1ʳᵉ récolte d'une plante). Se ferme toute seule, ou d'une touche.
  */
 export function CelebrationBurst({ celebration, onDone }: CelebrationBurstProps) {
   const colors = useColors();
@@ -118,14 +121,35 @@ const styles = StyleSheet.create({
   detail: { fontSize: 15, textAlign: "center", lineHeight: 21 },
 });
 
-/** La fête à poser au-dessus de l'écran : `celebrate(celebrationFor(...))` ne fait rien quand il n'y a rien à fêter. */
+const LAST_BIG_KEY = "balco.celebration.last-big-day.v1";
+/** Partagé par tous les écrans : une seule grande fête par jour, où qu'elle ait lieu. */
+let lastBigDay: string | null = null;
+let lastBigLoaded = false;
+void AsyncStorage.getItem(LAST_BIG_KEY)
+  .then((stored) => {
+    if (!lastBigLoaded) lastBigDay = stored;
+    lastBigLoaded = true;
+  })
+  .catch(() => undefined);
+
+/**
+ * La fête à poser au-dessus de l'écran. `celebrate(celebrationFor(...))` lance le plein écran pour un
+ * nouveau badge ou une 1ʳᵉ récolte (au plus une fois par jour) et renvoie sinon le mot à mettre devant
+ * le message du bas (« 🔥 3 jours de suite »), ou rien quand il n'y a rien à fêter.
+ */
 export function useCelebration() {
   const [message, setMessage] = useState<CelebrationMessage | null>(null);
   const id = useRef(0);
-  const celebrate = useCallback((celebration: Celebration | null) => {
-    if (!celebration) return;
+  const celebrate = useCallback((celebration: Celebration | null): string | null => {
+    const now = new Date();
+    const style = celebrationStyle(celebration, lastBigDay, now);
+    if (!celebration || !style.big) return style.line;
+    lastBigDay = dayKey(now);
+    lastBigLoaded = true;
+    void AsyncStorage.setItem(LAST_BIG_KEY, lastBigDay).catch(() => undefined);
     id.current += 1;
     setMessage({ ...celebration, id: id.current });
+    return null;
   }, []);
   const hide = useCallback(() => setMessage(null), []);
   return { celebrate, overlay: <CelebrationBurst celebration={message} onDone={hide} /> };

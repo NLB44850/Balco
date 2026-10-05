@@ -38,14 +38,14 @@ Tout se passe dans son GitHub Codespace (pas de Docker sur son PC).
 
 - `pnpm -s check`, `pnpm -s lint`, puis `TEST_DATABASE_URL=mysql://balco:balco@localhost:3306/balco_cal npx vitest run`
   (MariaDB locale : `service mariadb start` si elle s'est arrêtée, `apt-get install -y mariadb-server` si elle manque,
-  puis `DATABASE_URL=… npx drizzle-kit migrate` ; 424 tests à ce jour). Dans un conteneur
+  puis `DATABASE_URL=… npx drizzle-kit migrate` ; 425 tests à ce jour). Dans un conteneur
   neuf : `apt-get install -y mariadb-server`, `service mariadb start`, créer la base `balco_cal` et l'utilisateur
   `balco`/`balco`, puis `pnpm -s build && DATABASE_URL=mysql://balco:balco@localhost:3306/balco_cal node dist/migrate.mjs`.
 - `npx expo export --platform android` pour s'assurer que le bundle Android se construit.
 - **Tests de bout en bout** (à lancer quand le porteur le demande, et avant chaque grosse évolution) :
   `bash scripts/e2e.sh` (≈ 4 min : construit l'app web avec la simulation météo, migre la base, démarre
   le vrai serveur sur le port 3100, lance Playwright). `bash scripts/e2e.sh meteo` pour un seul fichier,
-  `E2E_SKIP_BUILD=1` pour ne pas reconstruire. Scénarios dans `e2e/` (22 aujourd'hui) : parcours
+  `E2E_SKIP_BUILD=1` pour ne pas reconstruire. Scénarios dans `e2e/` (23 aujourd'hui) : parcours
   (onboarding, écrans, cocher/Annuler, fête, catalogue, fiche d'une nouvelle plante, feuille du bas qui se ferme,
   suggestions de saison, Saisons rangé par type), météo (pluie + eau économisée, gel + Saisons,
   orage, vent, canicule, « Pas aujourd'hui », retour météo réelle), compte (code de connexion lu dans
@@ -336,7 +336,7 @@ ce qui n'a pas pu être corrigé ou demande une décision.
   unique (radis, carottes, salades pommées…), proposer « Tout récolté ? » → « Ressemer » ou « Libérer le pot ».
   **Validée** sur téléphone le 05/10.
 
-**Reprise dans une nouvelle conversation (05/10) : étapes 4 et 5 livrées le 05/10 (le porteur a dit de passer à la 5 et accepté de régler les points de la pluie à l'étape 7) ; étape 5 validée ; étape 6 validée ; étape 7 livrée le 05/10, à valider, ensuite l'étape 8.** Détail des étapes restantes,
+**Reprise dans une nouvelle conversation (05/10) : étapes 4 et 5 livrées le 05/10 (le porteur a dit de passer à la 5 et accepté de régler les points de la pluie à l'étape 7) ; étape 5 validée ; étape 6 validée ; étape 7 validée ; étape 8 livrée le 05/10, à valider, ensuite l'étape 9.** Détail des étapes restantes,
 tel que validé par le porteur (une étape = un commit testé : check, lint, vitest, e2e complet avec
 reconstruction, export Android ; puis compte rendu en français avec ce qu'il doit taper et regarder, et
 attendre sa validation avant l'étape suivante) :
@@ -375,7 +375,11 @@ attendre sa validation avant l'étape suivante) :
    `waterings` de `seedBalcony`)
    **Série de « jours suivis »** : un jour compte s'il n'y avait rien à faire, ou si tous les gestes
    demandés ont été faits (aujourd'hui `streakDays` compte les jours avec au moins un geste).
-8. **Fêtes plus rares** : plein écran seulement pour un nouveau badge et la 1ʳᵉ récolte de chaque plante,
+8. ✅ (livrée, à valider : `Celebration.big` (badge, 1ʳᵉ récolte d'une plante) ; `celebrationStyle` et `withCheer` dans
+   `lib/garden/progress.ts` ; `useCelebration().celebrate` lance le plein écran au plus une fois par jour (jour gardé
+   dans `balco.celebration.last-big-day.v1`, partagé par tous les écrans) et renvoie sinon le mot à mettre devant le
+   message du bas (« 🔥 3 jours de suite · C'est noté · +4 points ») ; case « photo » de Ma semaine masquée à 0)
+   **Fêtes plus rares** : plein écran seulement pour un nouveau badge et la 1ʳᵉ récolte de chaque plante,
    au plus une par jour ; le reste (autres récoltes, séries, niveaux) = animation discrète de la ligne.
    Masquer la tuile « 0 photo » (Ma semaine).
 9. **Observer sans compte** : 1 analyse par appareil et 3 par réseau et par jour, protégées côté serveur

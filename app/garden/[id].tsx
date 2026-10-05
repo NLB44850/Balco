@@ -15,7 +15,7 @@ import { PlantPicture, stockPhoto } from "@/components/plant-picture";
 import { ScreenContainer } from "@/components/screen-container";
 import { useCelebration } from "@/components/today/celebration";
 import { UndoToast, type ToastMessage } from "@/components/today/undo-toast";
-import { careWeeksLabel, celebrationFor, milestoneDate, plantProgress, sinceLabel } from "@/lib/garden/progress";
+import { careWeeksLabel, celebrationFor, milestoneDate, plantProgress, sinceLabel, withCheer } from "@/lib/garden/progress";
 import { IconSymbol } from "@/components/ui/icon-symbol";
 import { Text, TextInput } from "@/components/ui/typography";
 import { useColors } from "@/hooks/use-colors";
@@ -110,8 +110,8 @@ export default function PlantScreen() {
     // Un conseil météo suivi se tait jusqu'à demain, ici comme sur Aujourd'hui.
     if (gesture.source.type === "decision") await saveReminderSnoozes(addSnooze(snoozes, gesture.source.decision, "skip", reminderSettings, moment));
     void Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => undefined);
-    celebrate(celebrationFor(resolvedPlants, events, [event, ...events.filter((item) => item.id !== event.id)]));
-    showToast(`${gesture.source.type === "task" ? gesture.source.task.task.doneTitle : `${gesture.title} : noté.`} +${POINTS_PER_GESTURE} points`, () => void removeEvent(event.id));
+    const cheer = celebrate(celebrationFor(resolvedPlants, events, [event, ...events.filter((item) => item.id !== event.id)]));
+    showToast(withCheer(cheer, `${gesture.source.type === "task" ? gesture.source.task.task.doneTitle : `${gesture.title} : noté.`} +${POINTS_PER_GESTURE} points`), () => void removeEvent(event.id));
   };
 
   const undoGesture = async () => {

@@ -41,7 +41,8 @@ export default function WeekScreen() {
     { value: summary.streak, label: summary.streak > 1 ? "jours de suite" : "jour de suite", hint: summary.streak >= 3 ? "Belle régularité" : "" },
     { value: summary.harvests, label: summary.harvests > 1 ? "récoltes" : "récolte", hint: "" },
     { value: summary.photos, label: summary.photos > 1 ? "photos" : "photo", hint: "" },
-  ];
+    // Pas de « 0 photo » : la case n'apparaît qu'une fois une photo prise cette semaine.
+  ].filter((tile) => tile.label !== "photo" || tile.value > 0);
 
   return (
     <LightScreen bottom>

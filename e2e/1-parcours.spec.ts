@@ -54,17 +54,32 @@ test("cocher un geste, puis « Annuler »", async ({ page }) => {
   await expect(checkboxOf(page, `Marquer comme fait : ${name}`)).toBeVisible();
 });
 
-test("une série de 3 jours se fête en grand", async ({ page }) => {
+test("une série de 3 jours se dit dans le message du bas, sans plein écran", async ({ page }) => {
   await mockWeather(page);
   // Thym arrosé il y a 2 jours (et 8), ciboulette il y a 3 jours : hier et avant-hier sont des jours
   // suivis, il y a 3 jours le thym avait soif. Aujourd'hui, seule la ciboulette est à arroser.
   await seedBalcony(page, { plants: ["thyme", "chives"], waterings: { thyme: [2, 8], chives: [3] } });
   await open(page, "/", "Tes plantes");
   await page.getByRole("checkbox", { name: /^Marquer comme fait : Arrose la ciboulette/ }).click();
-  await expect(page.getByText("3 jours de suite", { exact: true })).toBeVisible();
-  await expect(page.getByText("Ton balcon adore ta régularité.")).toBeVisible();
-  // Le message habituel reste en bas, avec « Annuler ».
+  await expect(page.getByText(/^🔥 3 jours de suite · /u)).toBeVisible();
+  await expect(page.getByRole("button", { name: /\. Fermer$/ })).toHaveCount(0);
+  // Le message garde son « Annuler ».
   await expect(page.getByRole("button", { name: "Annuler" })).toBeVisible();
+});
+
+test("une 1ʳᵉ récolte se fête en grand, une seule fois par jour", async ({ page }) => {
+  await mockWeather(page);
+  await seedBalcony(page, { plants: ["mint", "thyme"], wateredDaysAgo: 0 });
+  await open(page, "/", "Tes plantes");
+  await page.getByRole("checkbox", { name: /^Marquer comme fait : Récolte la menthe/ }).click();
+  const party = page.getByRole("button", { name: /^(Nouveau badge|Première récolte).*\. Fermer$/u });
+  await expect(party).toBeVisible();
+  await party.click();
+  await expect(party).toHaveCount(0);
+  // La 2ᵉ grande occasion du jour se dit dans le message du bas.
+  await page.getByRole("checkbox", { name: /^Marquer comme fait : Récolte le thym/ }).click();
+  await expect(page.getByText(/^(🧺|🏅) .+ · Récolte le thym : noté/u)).toBeVisible();
+  await expect(page.getByRole("button", { name: /\. Fermer$/ })).toHaveCount(0);
 });
 
 test("catalogue : ajouter une plante puis ouvrir sa fiche", async ({ page }) => {

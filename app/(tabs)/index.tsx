@@ -26,7 +26,7 @@ import { pickPlantPhoto } from "@/lib/ai/photo";
 import { useGarden } from "@/lib/garden/garden-context";
 import { trpc } from "@/lib/trpc";
 import { usePlantPhotos } from "@/lib/garden/photos-context";
-import { celebrationFor, formatLiters, litersPerWatering } from "@/lib/garden/progress";
+import { celebrationFor, formatLiters, litersPerWatering, withCheer } from "@/lib/garden/progress";
 import { awayOn, preparationSteps, vacationRange, vacationState } from "@/lib/garden/vacation";
 import {
   POINTS_PER_GESTURE,
@@ -182,7 +182,10 @@ export default function HomeScreen() {
   };
   const hideToast = useCallback(() => setToast(null), []);
 
-  /** Un badge, un niveau, une série ou une première récolte débloqués par ce geste : on le fête. */
+  /**
+   * Un badge, un niveau, une série ou une récolte débloqués par ce geste : plein écran pour un badge ou une
+   * 1ʳᵉ récolte (une fois par jour), sinon un mot devant le message du bas.
+   */
   const cheer = (logged: MaintenanceEvent[]) => celebrate(celebrationFor(resolvedPlants, events, [...logged, ...events.filter((event) => !logged.some((item) => item.id === event.id))]));
 
   const logAll = async (toLog: MaintenanceEvent[]) => {
@@ -202,8 +205,7 @@ export default function HomeScreen() {
     const undoEvents = await logAll(logged);
     await saveReminderSnoozes(group.decisions.reduce((current, decision) => addSnooze(current, decision, "skip", reminderSettings, moment), snoozes));
     haptic();
-    cheer(logged);
-    showToast(`C’est noté · +${POINTS_PER_GESTURE * group.decisions.length} points`, () => {
+    showToast(withCheer(cheer(logged), `C’est noté · +${POINTS_PER_GESTURE * group.decisions.length} points`), () => {
       undoEvents();
       void saveReminderSnoozes(previous);
     });
@@ -230,8 +232,7 @@ export default function HomeScreen() {
       const logged = [eventForActivity(item.activity, new Date())];
       const undo = await logAll(logged);
       haptic();
-      cheer(logged);
-      return showToast(`${item.title} : noté pour ce mois-ci`, undo);
+      return showToast(withCheer(cheer(logged), `${item.title} : noté pour ce mois-ci`), undo);
     }
     if (item.done) {
       const previous = events.find((event) => event.id === item.task.eventId);
@@ -244,8 +245,7 @@ export default function HomeScreen() {
     const logged = [eventForSessionTask(item.task, new Date())];
     const undo = await logAll(logged);
     haptic();
-    cheer(logged);
-    showToast(`${item.title} : noté · +${POINTS_PER_GESTURE} points`, undo);
+    showToast(withCheer(cheer(logged), `${item.title} : noté · +${POINTS_PER_GESTURE} points`), undo);
   };
 
   const activateReminders = async () => {
