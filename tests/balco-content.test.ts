@@ -102,7 +102,8 @@ describe("Balco MVP content", () => {
     expect(calendar).toContain("Ton climat, en direct");
     expect(calendar).toContain("calendarActivities");
     expect(calendar).toContain("selectedMonth");
-    expect(calendar).toContain("Noter comme fait");
+    expect(calendar).toContain("Le faire sur Aujourd’hui");
+    expect(calendar).not.toContain("Noter comme fait");
     expect(calendar).toContain("+ Ajouter à mon balcon");
     expect(readProjectFile("app/(tabs)/_layout.tsx")).toContain('name="calendar"');
     expect(readProjectFile("app/(tabs)/_layout.tsx")).toContain('title: "Saisons"');

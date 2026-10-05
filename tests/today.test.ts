@@ -79,6 +79,21 @@ describe("liste « Aujourd'hui »", () => {
     expect(items.some((item) => item.kind === "season" && item.title === "Plante la lavande")).toBe(true);
   });
 
+  it("une fois le premier geste fait, le suivant prend sa place (récolte, semis, plantation…)", () => {
+    const today = plants.map(({ plant }) => ({ id: `t-${plant.id}`, plantId: plant.id, type: "watering" as const, completedAt: new Date(2026, 8, 29, 8).toISOString(), source: "manual" as const }));
+    const events = [...watered, ...today];
+    const plan = planDay({ plants, events, now });
+    const items = buildTodayList({ groups: [], plan });
+    const pending = items.filter((item) => !item.done);
+    // Le basilic se récolte en septembre : sa récolte est proposée une fois arrosé.
+    expect(pending.find((item) => item.plantName === "Basilic")).toMatchObject({ gesture: "harvest", title: "Récolte le basilic" });
+    // Chaque plante garde au plus une ligne à faire ; ses arrosages faits restent, cochés, à la fin.
+    const names = pending.map((item) => item.plantName);
+    expect(new Set(names).size).toBe(names.length);
+    expect(items.filter((item) => item.done && item.gesture === "watering")).toHaveLength(plants.length);
+    expect(items.slice(-plants.length).every((item) => item.done)).toBe(true);
+  });
+
   it("une ligne par plante au plus, hors alertes météo", () => {
     const { items } = list(12);
     const plantIds = items.flatMap((item) => (item.kind === "task" ? [item.task.resolved.plant.id] : item.kind === "season" ? [item.activity.subjectId] : item.group.cause === "thirst" ? item.group.decisions.map((decision) => decision.plantId) : []));

@@ -83,8 +83,10 @@ type BuildTodayInput = {
 const KIND_RANK = Object.fromEntries(GESTURE_ORDER.map((kind, index) => [kind, index])) as Record<GestureKind, number>;
 
 /**
- * Les alertes météo d'abord, puis une ligne par plante au plus : son premier geste hors alerte (arrosage,
- * récolte, plantation, engrais, entretien), dans cet ordre ; ce qui est déjà fait passe à la fin.
+ * Les alertes météo d'abord, puis une ligne à faire par plante au plus : son premier geste hors alerte
+ * encore à faire (arrosage, récolte, plantation / semis / rempotage, engrais, entretien), dans cet ordre.
+ * Une fois ce geste fait, le suivant prend sa place : les gestes du mois se font tous depuis Aujourd'hui.
+ * Ce qui est déjà fait aujourd'hui passe à la fin.
  */
 export function buildTodayList({ groups, plan }: BuildTodayInput): TodayItem[] {
   const alerts: TodayItem[] = groups
@@ -95,38 +97,42 @@ export function buildTodayList({ groups, plan }: BuildTodayInput): TodayItem[] {
     });
   const rows: Array<{ item: TodayItem; rank: number }> = [];
   for (const day of plan) {
-    const gesture = day.gestures.find((candidate) => candidate.kind !== "alert");
-    if (!gesture) continue;
-    const rank = KIND_RANK[gesture.kind];
-    const source = gesture.source;
-    const common = { gesture: gesture.kind, plantName: plantDisplayName(day.resolved) };
-    if (source.type === "decision") {
-      const group = groups.find((candidate) => candidate.decisions.some((decision) => decision.plantId === source.decision.plantId && decision.cause === source.decision.cause));
-      if (!group) continue;
-      // Le titre dit l'action (« Arrose le basilic ») ; le sous-titre, comment vérifier.
-      rows.push({ rank, item: { kind: "alert", key: `alert:${group.key}`, ...common, ...ALERT_LOOK.thirst, title: group.title, subtitle: soilCheckText(soilCheckDepthCm(day.resolved.entry)), done: false, group } });
-    } else if (source.type === "task") {
-      const item = source.task;
-      rows.push({
-        rank,
-        item: {
-          kind: "task",
-          key: `task:${item.eventId}`,
-          ...common,
-          tone: gesture.kind === "watering" ? "water" : "care",
-          icon: TASK_ICONS[item.task.type] ?? "•",
-          title: gesture.title,
-          subtitle: gesture.kind === "watering" ? soilCheckText(soilCheckDepthCm(item.resolved.entry)) : `${plantDisplayName(item.resolved)} · ${item.task.minutes} min`,
-          done: gesture.done,
-          task: { ...item, done: gesture.done, eventId: gesture.doneEventId ?? item.eventId },
-        },
-      });
-    } else {
-      rows.push({ rank, item: { kind: "season", key: `season:${source.activity.key}`, ...common, tone: "season", icon: source.activity.entry.emoji, title: gesture.title, subtitle: "De saison · à faire ce mois-ci", done: gesture.done, activity: source.activity } });
+    const gestures = day.gestures.filter((candidate) => candidate.kind !== "alert");
+    const next = gestures.find((candidate) => !candidate.done);
+    for (const gesture of gestures.filter((candidate) => candidate.done || candidate === next)) {
+      const item = rowFor(day, gesture, groups);
+      if (item) rows.push({ rank: KIND_RANK[gesture.kind], item });
     }
   }
   const sorted = rows.sort((a, b) => a.rank - b.rank).map(({ item }) => item);
   return [...alerts, ...sorted.filter((item) => !item.done), ...sorted.filter((item) => item.done)];
+}
+
+/** La ligne d'un geste du plan du jour. */
+function rowFor(day: PlantDay, gesture: PlantDay["gestures"][number], groups: ReminderGroup[]): TodayItem | null {
+  const source = gesture.source;
+  const common = { gesture: gesture.kind, plantName: plantDisplayName(day.resolved) };
+  if (source.type === "decision") {
+    const group = groups.find((candidate) => candidate.decisions.some((decision) => decision.plantId === source.decision.plantId && decision.cause === source.decision.cause));
+    if (!group) return null;
+    // Le titre dit l'action (« Arrose le basilic ») ; le sous-titre, comment vérifier.
+    return { kind: "alert", key: `alert:${group.key}`, ...common, ...ALERT_LOOK.thirst, title: group.title, subtitle: soilCheckText(soilCheckDepthCm(day.resolved.entry)), done: false, group };
+  }
+  if (source.type === "task") {
+    const item = source.task;
+    return {
+      kind: "task",
+      key: `task:${item.eventId}`,
+      ...common,
+      tone: gesture.kind === "watering" ? "water" : "care",
+      icon: TASK_ICONS[item.task.type] ?? "•",
+      title: gesture.title,
+      subtitle: gesture.kind === "watering" ? soilCheckText(soilCheckDepthCm(item.resolved.entry)) : `${plantDisplayName(item.resolved)} · ${item.task.minutes} min`,
+      done: gesture.done,
+      task: { ...item, done: gesture.done, eventId: gesture.doneEventId ?? item.eventId },
+    };
+  }
+  return { kind: "season", key: `season:${source.activity.key}`, ...common, tone: "season", icon: source.activity.entry.emoji, title: gesture.title, subtitle: "De saison · à faire ce mois-ci", done: gesture.done, activity: source.activity };
 }
 
 export type TodayAlert = Extract<TodayItem, { kind: "alert" }>;
