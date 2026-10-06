@@ -59,3 +59,56 @@ describe("modèles de guide et « Ce qu'il te faut »", () => {
     expect(delayText([60, 160], "weeks")).toBe("l’an prochain, parfois plus tard");
   });
 });
+
+describe("les étapes du pas-à-pas (P7) : règles d'écriture", () => {
+  const VERBS = ["Mets", "Remplis", "Fais", "Pose", "Sème", "Recouvre", "Rebouche", "Laisse", "Arrose", "Couvre", "Pose-les", "Sors", "Ajoute", "Enfonce-les"];
+  const words = (text: string) => text.split(/\s+/u).filter(Boolean).length;
+  const models = ["sow-pot", "sow-indoor", "plant-seedling", "plant-bulb", "perennial-pot"] as const;
+
+  it("pour chaque plante et chaque mois : une action par écran, verbe en tête, moins de 12 mots, une seule erreur à éviter", async () => {
+    const { ILLUSTRATION_IDS } = await import("../lib/plants/illustration-names");
+    const { guideSteps } = await import("../lib/plants/guide");
+    for (const entry of PLANT_CATALOG) {
+      for (let month = 1; month <= 12; month += 1) {
+        const model = guideModelFor(entry, month);
+        const steps = guideSteps(entry, model);
+        expect(steps.length, `${entry.id} ${model}`).toBeGreaterThanOrEqual(4);
+        expect(steps.length, `${entry.id} ${model}`).toBeLessThanOrEqual(7);
+        expect(steps.filter((step) => step.mistake).length, `${entry.id} ${model}`).toBe(1);
+        for (const step of steps) {
+          expect(VERBS, `« ${step.text} »`).toContain(step.text.split(" ")[0].replace(/,$/, ""));
+          expect(words(step.text), `« ${step.text} »`).toBeLessThan(12);
+          expect(step.text.endsWith("."), `« ${step.text} »`).toBe(true);
+          expect(ILLUSTRATION_IDS).toContain(step.illustration);
+          expect(/\b(collet|substrat|poquet|semis direct|repiquer)\b/iu.test(step.text), `mot technique : « ${step.text} »`).toBe(false);
+        }
+      }
+    }
+    expect(models.length).toBe(5);
+  });
+
+  it("des exemples concrets", async () => {
+    const { guideSteps, guideTitle } = await import("../lib/plants/guide");
+    const lettuce = guideSteps(plant("lambs-lettuce"), "sow-pot");
+    expect(lettuce[0]).toEqual({ illustration: "clay-balls", text: "Mets une poignée de billes d’argile au fond.", why: "Les racines ne baigneront pas dans l’eau." });
+    expect(guideSteps(plant("basil"), "sow-indoor").at(-1)?.mistake).toBe("Erreur à éviter : loin de la fenêtre, les pousses filent et tombent.");
+    expect(guideSteps(plant("lavender"), "plant-seedling").map((step) => step.text)).toContain("Pose la motte au centre, au même niveau qu’avant.");
+    expect(guideSteps(plant("garlic"), "plant-bulb").map((step) => step.text)).toContain("Enfonce-les à 3 cm, pointe vers le haut.");
+    expect(guideTitle(plant("lavender"), "plant-seedling")).toBe("Planter la lavande");
+    expect(guideTitle(plant("lambs-lettuce"), "sow-pot")).toBe("Semer la mâche");
+  });
+
+  it("« J'ai déjà » : commun pour le terreau, par plante pour le reste ; le partage n'envoie que ce qui manque", async () => {
+    const { emptyHave, hasItem, shareText, toggleHave } = await import("../lib/plants/guide");
+    const lettuce = supplies(plant("lambs-lettuce"), "sow-pot");
+    const soil = lettuce.find((item) => item.id === "soil")!;
+    const seeds = lettuce.find((item) => item.id === "seeds")!;
+    let have = toggleHave(emptyHave(), "lambs-lettuce", soil);
+    have = toggleHave(have, "lambs-lettuce", seeds);
+    // Le terreau vaut pour toutes les plantes ; les graines de mâche, pour la mâche seulement.
+    expect(hasItem(have, "basil", supplies(plant("basil"), "sow-pot").find((item) => item.id === "soil")!)).toBe(true);
+    expect(hasItem(have, "basil", supplies(plant("basil"), "sow-pot").find((item) => item.id === "seeds")!)).toBe(false);
+    const missing = lettuce.filter((item) => !hasItem(have, "lambs-lettuce", item));
+    expect(shareText(plant("lambs-lettuce"), "sow-pot", missing)).toBe("Pour semer la mâche, il me faut :\n• Un pot percé d’au moins 4 L\n• Une poignée de billes d’argile\n• Un vaporisateur ou un arrosoir à pomme fine");
+  });
+});

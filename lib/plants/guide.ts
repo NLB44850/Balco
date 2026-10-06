@@ -4,7 +4,8 @@
  * « Et après ? », calculés depuis le catalogue (lib/plants/catalog.ts) et les données de plantation
  * (lib/plants/planting.ts). Logique pure.
  */
-import { type CatalogPlant } from "./catalog";
+import type { IllustrationId } from "./illustration-names";
+import { MONTH_LONG, type CatalogPlant } from "./catalog";
 import { sowsOnWindowsill } from "./indoor";
 import { PLANTING, type Planting } from "./planting";
 import { startActivity } from "./calendar";
@@ -21,7 +22,7 @@ const BULBS: Record<string, { buy: string; depthCm: number; tip: string }> = {
   potato: { buy: "Des pommes de terre germées", depthCm: 10, tip: "germes vers le haut" },
   oca: { buy: "Des tubercules d’oca", depthCm: 8, tip: "bourgeons vers le haut" },
   crosne: { buy: "Des tubercules de crosnes", depthCm: 5, tip: "couchés à plat" },
-  dahlia: { buy: "Des tubercules de dahlia", depthCm: 8, tip: "collet vers le haut" },
+  dahlia: { buy: "Des tubercules de dahlia", depthCm: 8, tip: "vieilles tiges vers le haut" },
 };
 
 export function bulbOf(entry: CatalogPlant) {
@@ -118,4 +119,123 @@ export function whatsNext(entry: CatalogPlant, model: GuideModel): string[] {
   const harvest = isSowing(model) ? planting.harvestWeeksFromSowing : planting.harvestWeeksFromPlanting;
   if (harvest) lines.push(`${flower ? "Premières fleurs" : "Première récolte"} dans ${delayText(harvest, "weeks")}.`);
   return lines;
+}
+
+// --- Les étapes -------------------------------------------------------------------------------------------
+
+/**
+ * Une étape du pas-à-pas : une seule action, verbe en tête, moins de 12 mots, au tutoiement ; une ligne grise
+ * facultative pour le « pourquoi » ; l'erreur à éviter du modèle, à l'étape qu'elle concerne.
+ */
+export type GuideStep = { illustration: IllustrationId; text: string; why?: string; mistake?: string };
+
+/** « 1 cm », « 0,5 cm » : une mesure lisible. */
+const cm = (value: number) => `${String(value).replace(".", ",")} cm`;
+
+function sowingSteps(entry: CatalogPlant, planting: Planting, indoors: boolean): GuideStep[] {
+  const depth = planting.sowDepthCm ?? 0;
+  const seeds = planting.seedsPerHole ?? 0;
+  const dense = isDenseSowing(planting);
+  const steps: GuideStep[] = [];
+  if (indoors) steps.push({ illustration: "cells", text: "Remplis des godets de terreau, sans tasser.", why: "Un godet par graine, ou par pincée de graines." });
+  else if (dense) steps.push({ illustration: "fill-soil", text: "Remplis la barquette de 3 cm de terreau." });
+  else {
+    steps.push({ illustration: "clay-balls", text: "Mets une poignée de billes d’argile au fond.", why: "Les racines ne baigneront pas dans l’eau." });
+    steps.push({ illustration: "fill-soil", text: "Remplis de terreau jusqu’à 2 cm du bord.", why: "Il reste de la place pour arroser." });
+  }
+  // Graines profondes (haricots, pois…) : le trou d'abord ; sinon on pose les graines et on recouvre.
+  // Une seule erreur à éviter par guide : au chaud, c'est la lumière (étape de la fenêtre) ; dehors, la profondeur.
+  const mistake = indoors ? undefined : depth > 0 ? "Erreur à éviter : semer plus profond. La graine s’épuise avant de sortir." : "Erreur à éviter : couvrir ces graines. Elles ne germent qu’à la lumière.";
+  if (depth >= 2) {
+    steps.push({ illustration: "finger-hole", text: `Fais des trous de ${cm(depth)} avec le doigt.`, why: planting.perPot > 1 ? `Un trou tous les ${planting.spacingCm} cm, ${planting.perPot} en tout.` : "Un seul trou, au centre du pot.", mistake });
+    steps.push({ illustration: "drop-seeds", text: `Mets ${seeds > 1 ? `${seeds} graines` : "une graine"} dans chaque trou.`, why: seeds > 1 ? "Tu garderas la plus belle pousse." : undefined });
+    steps.push({ illustration: "firm-soil", text: "Rebouche les trous et tasse doucement." });
+  } else {
+    const where = indoors ? "au centre de chaque godet" : planting.perPot > 1 ? `tous les ${planting.spacingCm} cm` : "au centre du pot";
+    if (dense) steps.push({ illustration: "scatter-seeds", text: "Sème les graines serrées sur toute la surface.", why: "Tu les couperas jeunes : pas besoin de place." });
+    else if (seeds === 0) steps.push({ illustration: "scatter-seeds", text: `Sème une graine tous les ${Math.max(1, Math.round(planting.spacingCm / 2))} cm.`, why: `Tu éclairciras ensuite à ${planting.spacingCm} cm.` });
+    else steps.push({ illustration: "drop-seeds", text: `Pose ${seeds > 1 ? `${seeds} graines` : "une graine"} ${where}.`, why: seeds > 1 ? "Tu garderas la plus belle pousse." : undefined });
+    if (depth === 0) steps.push({ illustration: "cover-seeds", text: "Laisse les graines à la surface, sans les couvrir.", why: "Appuie juste du plat de la main.", mistake });
+    else steps.push({ illustration: "cover-seeds", text: depth < 1 ? "Recouvre d’une fine pincée de terreau." : `Recouvre de ${cm(depth)} de terreau fin.`, mistake });
+  }
+  steps.push({ illustration: "fine-water", text: "Arrose en pluie fine.", why: "Un jet fort emporterait les graines." });
+  if (indoors) {
+    steps.push({ illustration: "cover-bag", text: "Couvre d’un sac transparent jusqu’à la levée.", why: "La terre reste humide sans arroser." });
+    steps.push({ illustration: "windowsill", text: "Pose-les près d’une fenêtre, au chaud.", why: "Entre 18 et 22 °C, sans soleil brûlant.", mistake: "Erreur à éviter : loin de la fenêtre, les pousses filent et tombent." });
+  }
+  return steps;
+}
+
+function plantingSteps(entry: CatalogPlant, planting: Planting, model: GuideModel): GuideStep[] {
+  const bulb = BULBS[entry.id];
+  const several = planting.perPot > 1 ? `Un tous les ${planting.spacingCm} cm, ${planting.perPot} en tout.` : undefined;
+  const steps: GuideStep[] = [
+    { illustration: "clay-balls", text: model === "perennial-pot" ? "Mets 3 cm de billes d’argile au fond." : "Mets une poignée de billes d’argile au fond.", why: "Les racines ne baigneront pas dans l’eau." },
+  ];
+  if (bulb) {
+    steps.push({ illustration: "fill-soil", text: "Remplis de terreau jusqu’à 3 cm du bord." });
+    steps.push({ illustration: "bulb", text: `Enfonce-les à ${cm(bulb.depthCm)}, ${bulb.tip}.`, why: several, mistake: "Erreur à éviter : les planter à l’envers. Ils poussent mal." });
+    steps.push({ illustration: "firm-soil", text: "Recouvre de terreau et tasse doucement." });
+    steps.push({ illustration: "water-well", text: "Arrose une fois, puis peu jusqu’aux pousses.", why: "Trop d’eau les ferait pourrir." });
+    return steps;
+  }
+  steps.push({ illustration: "fill-soil", text: model === "perennial-pot" ? "Remplis le grand pot de terreau à moitié." : "Remplis le pot de terreau aux deux tiers." });
+  steps.push({ illustration: "unpot", text: "Sors la motte du godet, sans tirer sur la tige.", why: "Retourne le godet et tapote le fond." });
+  steps.push({
+    illustration: model === "perennial-pot" ? "big-pot" : "place-plant",
+    text: "Pose la motte au centre, au même niveau qu’avant.",
+    why: several,
+    mistake: model === "plant-seedling" ? "Erreur à éviter : enterrer la tige plus bas qu’avant. Elle pourrirait." : undefined,
+  });
+  steps.push({ illustration: "firm-soil", text: "Ajoute du terreau autour, puis tasse avec les mains.", why: "La motte ne doit plus bouger." });
+  steps.push({
+    illustration: "water-well",
+    text: "Arrose bien, jusqu’à ce que l’eau coule dessous.",
+    why: "La terre se colle aux racines.",
+    mistake: model === "perennial-pot" ? "Erreur à éviter : le laisser sécher le premier été, pendant qu’il s’installe." : undefined,
+  });
+  return steps;
+}
+
+/** Les étapes du guide, selon son modèle et les données de la plante. */
+export function guideSteps(entry: CatalogPlant, model: GuideModel): GuideStep[] {
+  const planting = plantingOf(entry);
+  return isSowing(model) ? sowingSteps(entry, planting, model === "sow-indoor") : plantingSteps(entry, planting, model);
+}
+
+/** Le titre de l'écran : « Planter la lavande », « Semer la mâche ». */
+export function guideTitle(entry: CatalogPlant, model: GuideModel) {
+  return `${isSowing(model) ? "Semer" : "Planter"} ${entry.label}`;
+}
+
+/** « Et après ? », en plus de la levée et de la récolte : les gestes de suite que Balco rappellera. */
+export function nextGestures(entry: CatalogPlant, model: GuideModel): string[] {
+  const planting = plantingOf(entry);
+  const lines: string[] = [];
+  if (isSowing(model) && planting.thinning) lines.push("Une semaine après la levée, tu éclairciras : Balco te le dira.");
+  if (model === "sow-indoor" && entry.plantMonths.length > 0) lines.push(`Les plants iront sur le balcon en ${MONTH_LONG[entry.plantMonths[0] - 1]}.`);
+  if (planting.pinching) lines.push("Plus tard, tu la pinceras pour qu’elle soit plus touffue.");
+  return lines;
+}
+
+// --- « Ce qu'il te faut » : ce qu'on a déjà, ce qu'on partage -----------------------------------------------
+
+/** Ce qui est coché « J'ai déjà » : les objets communs valent pour toutes les plantes, le reste pour celle-ci. */
+export type HaveState = { shared: string[]; byPlant: Record<string, string[]> };
+
+export const emptyHave = (): HaveState => ({ shared: [], byPlant: {} });
+
+export function hasItem(have: HaveState, catalogId: string, item: Supply) {
+  return item.shared ? have.shared.includes(item.id) : (have.byPlant[catalogId] ?? []).includes(item.id);
+}
+
+export function toggleHave(have: HaveState, catalogId: string, item: Supply): HaveState {
+  const flip = (list: string[]) => (list.includes(item.id) ? list.filter((id) => id !== item.id) : [...list, item.id]);
+  if (item.shared) return { ...have, shared: flip(have.shared) };
+  return { ...have, byPlant: { ...have.byPlant, [catalogId]: flip(have.byPlant[catalogId] ?? []) } };
+}
+
+/** Le texte partagé par le téléphone : seulement ce qui manque. */
+export function shareText(entry: CatalogPlant, model: GuideModel, missing: Supply[]) {
+  return [`Pour ${isSowing(model) ? "semer" : "planter"} ${entry.label}, il me faut :`, ...missing.map((item) => `• ${item.label}`)].join("\n");
 }

@@ -31,7 +31,17 @@ Avancement :
   vert Balco, terre beige, une flèche pour le geste ; relus sur capture (7 redessinés : arbuste qui faisait un
   visage, bulbe, mains, ciseaux, doigts, sachet de graines, trou de la motte). Écran de revue `app/illustrations.tsx`
   (Réglages → Version de test → « Illustrations du pas-à-pas ») ; e2e `e2e/8-illustrations.spec.ts` (capture
-  `dist/illustrations.png`). Une étape = un commit testé (check, lint, Vitest, e2e,
+  `dist/illustrations.png`).
+- P7 (fait) : écran `app/guide/[catalogId].tsx` (`plantId` pour cocher, `mode=need` depuis le catalogue) :
+  « Ce qu'il te faut » (« J'ai déjà » sous `balco.guide.have.v1`, objets communs pour toutes les plantes,
+  « Partager ce qui manque · N » par le partage du téléphone), étapes qu'on fait glisser (ou « Suivant »), erreur à
+  éviter en orange à son étape, « Et après ? » (`whatsNext` + `nextGestures`) et « C'est planté / C'est semé »
+  (même événement `<id>:start` qu'Aujourd'hui, coche + retour, pas de fête). Étapes : `guideSteps` dans
+  `lib/plants/guide.ts` (4 à 7 écrans selon le modèle). Test automatique des règles sur 100 plantes × 12 mois :
+  verbe en tête, moins de 12 mots, point final, une seule erreur à éviter, pas de mot technique (a corrigé
+  « collet » et une 2ᵉ erreur dans « semer au chaud »). Entrées : feuille du bas d'Aujourd'hui (« Pas à pas, avec
+  ce qu'il te faut »), fiche plante (« Pas à pas… » / « Revoir le pas-à-pas »), fiche du catalogue (« 🧺 Ce qu'il
+  te faut pour la planter »). E2e `e2e/9-pas-a-pas.spec.ts`. Une étape = un commit testé (check, lint, Vitest, e2e,
 bundle Android), compte rendu, validation sur son téléphone avant la suivante (sauf s'il demande d'enchaîner).
 
 ## Ce que le porteur a décidé (6 octobre)

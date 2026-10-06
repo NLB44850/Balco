@@ -7,9 +7,9 @@
 import type { ReactNode } from "react";
 import Svg, { Circle, Ellipse, G, Line, Path, Polygon, Rect } from "react-native-svg";
 
-import { type IllustrationId } from "./illustration-names";
+import { type IllustrationId } from "@/lib/plants/illustration-names";
 
-export { ILLUSTRATION_IDS, ILLUSTRATION_LABELS, type IllustrationId } from "./illustration-names";
+export { ILLUSTRATION_IDS, ILLUSTRATION_LABELS, type IllustrationId } from "@/lib/plants/illustration-names";
 
 const GREEN = "#1F7A4D";
 const LEAF = "#E3F1E8";

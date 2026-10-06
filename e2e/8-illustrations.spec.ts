@@ -1,6 +1,6 @@
 import { expect, test } from "@playwright/test";
 
-import { ILLUSTRATION_IDS, ILLUSTRATION_LABELS } from "../components/guide/illustration-names";
+import { ILLUSTRATION_IDS, ILLUSTRATION_LABELS } from "../lib/plants/illustration-names";
 import { mockWeather, open, seedBalcony, trackErrors } from "./helpers";
 
 /** L'écran de revue des illustrations (Réglages → Version de test) : tous les dessins s'affichent. */

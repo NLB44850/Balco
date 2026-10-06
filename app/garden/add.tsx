@@ -200,6 +200,9 @@ export default function AddPlantScreen() {
                 </View>
               </View>
             )}
+            <Pressable accessibilityRole="button" onPress={() => { const id = sheetEntry.id; setSheetId(null); router.push({ pathname: "/guide/[catalogId]", params: { catalogId: id, mode: "need" } }); }} style={({ pressed }) => [styles.needLink, pressed && styles.pressed]}>
+              <Text style={[styles.factText, { color: colors.primary }]}>🧺  Ce qu’il te faut pour la planter ›</Text>
+            </Pressable>
             {countByCatalogId.get(sheetEntry.id) ? <Text style={[styles.meta, { color: colors.primary }]}>✓ Déjà sur ton balcon : tu peux en ajouter une autre.</Text> : null}
             {addChoices(sheetEntry, currentMonth).map((choice, position) => (
               <Pressable key={choice} accessibilityRole="button" onPress={() => { const id = sheetEntry.id; setSheetId(null); void add(id, choice); }} style={({ pressed }) => [styles.cta, position === 0 ? { backgroundColor: colors.primary } : { borderColor: colors.primary, borderWidth: 1 }, pressed && styles.pressed]}>
@@ -235,6 +238,7 @@ const styles = StyleSheet.create({
   meta: { fontSize: 13, marginTop: 1 },
   add: { width: 38, height: 38, borderRadius: 19, alignItems: "center", justifyContent: "center" },
   addText: { fontSize: 22, fontWeight: "700", marginTop: -2 },
+  needLink: { paddingVertical: 4 },
   choices: { flexDirection: "row", gap: 8, paddingBottom: 12, paddingLeft: 58 },
   choice: { flex: 1, borderRadius: 12, paddingVertical: 10, alignItems: "center" },
   choiceText: { fontSize: 13, fontWeight: "700" },

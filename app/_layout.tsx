@@ -87,6 +87,7 @@ export default function RootLayout() {
             <Stack.Screen name="settings" />
             <Stack.Screen name="credits" />
             <Stack.Screen name="illustrations" />
+            <Stack.Screen name="guide/[catalogId]" />
             <Stack.Screen name="vacation" />
           </Stack>
           <StatusBar style="dark" />
