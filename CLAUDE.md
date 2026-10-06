@@ -102,7 +102,7 @@ et les 10 étapes du test utilisateur du 04/10 (détail dans « Historique des l
    migration 0015, `startActivity`, événement `<id>:start`), `app/welcome.tsx` (`onboardingSteps`, `arrivalCard`,
    relance `/welcome?again=1`), `lib/ai/greeting.ts` (prénom demandé par Nora). Plus aucune demande de position
    d'office (`use-local-weather.ts`). Ne pas reposer les questions déjà tranchées.
-3. **Pas-à-pas pour planter + fin de l'accueil** : ses choix (12 points) et le plan en 9 étapes P1 à P8 sont dans
+3. **Pas-à-pas pour planter + fin de l'accueil** : ses choix (12 points) et le plan en 8 étapes P1 à P8 sont dans
    **`docs/chantier-pas-a-pas.md`** (plan proposé le 06/10, en attente de sa validation). Ancien résumé : guide
    facultatif depuis le geste « Sème… / Plante… » (feuille du bas), la fiche plante et le catalogue : « Ce qu'il te
    faut » (liste tirée du catalogue), 4-5 étapes illustrées, dernier bouton « C'est planté » = coche le geste ;

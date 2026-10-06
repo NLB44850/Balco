@@ -36,7 +36,7 @@ Exemple : « Mets une poignée de billes d'argile au fond. » / « Les racines n
   ne peut pas être reporté (à ajouter à l'étape P5). Ces reports restent sur le téléphone (non synchronisés).
 - `react-native-svg` est déjà installé : les illustrations peuvent être dessinées en code (légères, hors ligne).
 
-## Le plan proposé, 9 étapes
+## Le plan proposé, 8 étapes
 
 **Bloc 1 · Finir l'accueil (puis PR vers `main`)**
 
