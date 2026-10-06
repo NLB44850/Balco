@@ -1,6 +1,7 @@
 # Chantier : pas-à-pas pour planter, et fin de l'accueil (plan proposé le 6 octobre 2026)
 
-Statut : **plan validé le 6 octobre (« OK pour les 3, enchaîne toutes les étapes »)** : ordre accueil d'abord,
+Statut : **P1 à P8 codées le 6 octobre (enchaînées à sa demande), à tester sur son téléphone**, puis PR vers
+`main`. Plan validé le 6 octobre (« OK pour les 3, enchaîne toutes les étapes »)** : ordre accueil d'abord,
 « J'ai déjà » commun pour terreau / billes / arrosoir et par plante pour le reste, rappel du samedi à 9 h.
 
 Avancement :
@@ -125,3 +126,8 @@ Exemple : « Mets une poignée de billes d'argile au fond. » / « Les racines n
 2. « J'ai déjà » : retenu pour toutes les plantes pour les objets communs (terreau, billes, arrosoir), et par
    plante pour le reste (pot, graines, plant) ?
 3. Samedi : rappel à 9 h ?
+- P8 (fait) : 478 tests Vitest, 36 parcours de bout en bout, bundle Android ; documentation à jour.
+  Points à décider avec lui : les dessins (à relire dans Réglages → Version de test) ; la fourchette large de
+  certains délais (petits fruits, lavande) ; « Rappelle-moi samedi » reste sur le téléphone (non synchronisé,
+  comme « Dans 3 h ») ; le test « 3 analyses par réseau » (Observer sans compte) a échoué une fois sur une
+  suite complète puis réussi : à surveiller.

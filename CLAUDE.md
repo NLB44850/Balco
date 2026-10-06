@@ -81,7 +81,7 @@ visuelle, retour immédiat.
 
 ## Où on en est
 
-**Nouvelle conversation ? L'onboarding est codé (8 étapes, 06/10) et attend son test sur téléphone : recueillir ses retours (point 2 ci-dessous, `docs/chantier-onboarding.md`), puis proposer la PR vers `main`.**
+**Nouvelle conversation ? L'onboarding (`docs/chantier-onboarding.md`) et le pas-à-pas pour planter (`docs/chantier-pas-a-pas.md`) sont codés (06/10) et attendent son test sur téléphone : recueillir ses retours, corriger, puis proposer la PR vers `main`.**
 
 **Récap pour reprendre (06/10)** : ce bloc fait foi ; les paragraphes plus bas sont l'historique (certains
 décrivent un état ancien, par exemple Saisons « à cocher » ou une fête plein écran à chaque récolte).
@@ -102,12 +102,14 @@ et les 10 étapes du test utilisateur du 04/10 (détail dans « Historique des l
    migration 0015, `startActivity`, événement `<id>:start`), `app/welcome.tsx` (`onboardingSteps`, `arrivalCard`,
    relance `/welcome?again=1`), `lib/ai/greeting.ts` (prénom demandé par Nora). Plus aucune demande de position
    d'office (`use-local-weather.ts`). Ne pas reposer les questions déjà tranchées.
-3. **Pas-à-pas pour planter + fin de l'accueil** : ses choix (12 points) et le plan en 8 étapes P1 à P8 sont dans
-   **`docs/chantier-pas-a-pas.md`** (plan proposé le 06/10, en attente de sa validation). Ancien résumé : guide
-   facultatif depuis le geste « Sème… / Plante… » (feuille du bas), la fiche plante et le catalogue : « Ce qu'il te
-   faut » (liste tirée du catalogue), 4-5 étapes illustrées, dernier bouton « C'est planté » = coche le geste ;
-   entretien résumé en 3 gestes. Étapes par modèle (semis en pot, semis au chaud, plant, vivace en grand pot),
-   personnalisées par plante ; ~20 illustrations communes au style Balco. À faire après le test de l'onboarding.
+3. **Pas-à-pas pour planter + fin de l'accueil : codé le 06/10 (P1 à P8, enchaîné à sa demande), à tester.**
+   Tout est dans **`docs/chantier-pas-a-pas.md`** (ses 12 choix, avancement étape par étape). Dans le code :
+   catalogue « Déjà sur mon balcon / À planter » (`addChoices`), hiver (`lib/plants/indoor.ts`, `springWishes`,
+   `lib/garden/spring.ts`, carte « C'est le moment » en mars), « Rappelle-moi samedi » (`lib/garden/postpone.ts`),
+   données de plantation des 100 plantes (`lib/plants/planting.ts`, sources par plante), gestes de suite
+   (`lib/garden/follow-ups.ts` : éclaircir, sortir les plants, pincer), 22 illustrations
+   (`components/guide/illustrations.tsx`, revue dans Réglages → Version de test), guide `app/guide/[catalogId].tsx`
+   (logique `lib/plants/guide.ts`). Après son test : PR vers `main` (onboarding + pas-à-pas).
 4. **Après-récolte** des plantes récoltées en une fois (radis, carottes, salades pommées) : « Tout récolté ? » →
    « Ressemer » ou « Libérer le pot ». À décider avec lui.
 5. **Mémoire de Nora sur plusieurs jours** : il doit encore faire le test sur 2-3 jours (retour à recueillir).

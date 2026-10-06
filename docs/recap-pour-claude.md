@@ -1,6 +1,6 @@
 # Balco : récapitulatif à coller au début d'une conversation avec Claude
 
-*À jour au 6 octobre 2026 (nuit). Copier tout le texte sous la ligne ci-dessous dans une nouvelle conversation sur claude.ai.*
+*À jour au 6 octobre 2026 (nuit, pas-à-pas codé). Copier tout le texte sous la ligne ci-dessous dans une nouvelle conversation sur claude.ai.*
 
 ---
 
@@ -83,7 +83,7 @@ Points encore ouverts sur l'accueil : quoi proposer en hiver (en décembre-janvi
 
 1. **Finir le test de l'accueil** sur mon téléphone, corriger, puis fusionner dans la branche principale (`main`).
 2. **Revérifier sur le prochain APK** (la vraie app Android) : l'aperçu de la photo dans Observer (corrigé, pas encore revu), l'appareil photo depuis Aujourd'hui, les notifications, la position et les rappels de l'accueil.
-3. **Pas-à-pas pour planter** (l'idée ci-dessus), une fois l'accueil validé.
+3. **Pas-à-pas pour planter : codé le 6 octobre avec mes 12 choix, à tester.** Catalogue « Déjà sur mon balcon » ou « À planter » ; accueil d'hiver (rebord intérieur, envies du printemps rappelées en mars) ; « Pas encore acheté ? Rappelle-moi samedi » ; données de semis et de plantation des 100 plantes (sources vérifiées) ; gestes de suite (éclaircir, sortir les plants semés au chaud, pincer) ; 22 dessins au trait ; le guide (« Ce qu'il te faut » avec « J'ai déjà » et partage, une action par écran illustrée, l'erreur à éviter, « Et après ? », « C'est planté »).
 4. **Après la récolte** des plantes qu'on récolte en une fois (radis, carottes, salades pommées) : « Tout récolté ? » puis « Ressemer » ou « Libérer le pot ». À décider.
 5. **Mémoire de Nora sur plusieurs jours** : test à faire sur 2 ou 3 jours.
 6. **Tester sans Codespace** (idée) : une version web toujours en ligne et l'APK construit automatiquement.
