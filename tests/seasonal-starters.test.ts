@@ -47,8 +47,15 @@ describe("seasonalStarters : plantes de saison seulement", () => {
     expect(seasonalStarters({ sunlight: "partial", space: "planter", goals: ["aromatics"] }, { month: 1 }).notice).toBe("La menthe se plante en mars. En attendant, voici ce qui pousse maintenant.");
     // Aromatiques en octobre : menthe, ciboulette… se plantent maintenant.
     expect(seasonalStarters({ sunlight: "partial", space: "planter", goals: ["aromatics"] }, { month: 10 }).notice).toBeNull();
-    // La lavande ne pousse pas à l'ombre : pas de promesse pour les abeilles.
-    expect(seasonalStarters({ sunlight: "shade", space: "planter", goals: ["bees"] }, { month: 1 }).notice).toBeNull();
+    // La lavande ne pousse pas à l'ombre : pas de promesse, mais on dit pourquoi.
+    expect(seasonalStarters({ sunlight: "shade", space: "planter", goals: ["bees"] }, { month: 1 }).notice).toBe("La lavande a besoin de soleil presque toute la journée. Voici plutôt ce qui pousse bien chez toi maintenant.");
+  });
+
+  it("une envie qui ne convient pas au balcon est expliquée, jamais passée sous silence", () => {
+    expect(seasonalStarters({ sunlight: "partial", space: "balcony", goals: ["tomatoes"] }, { month: 10 }).notice).toBe("Les tomates ont besoin de soleil presque toute la journée. Voici plutôt ce qui pousse bien chez toi maintenant.");
+    expect(seasonalStarters({ sunlight: "sunny", space: "windowsill", goals: ["tomatoes"] }, { month: 10 }).notice).toBe("Les tomates demandent au moins une jardinière. Voici plutôt ce qui pousse bien chez toi maintenant.");
+    // En mai, à mi-ombre, les tomates ne sont toujours pas proposées : on le dit aussi.
+    expect(seasonalStarters({ sunlight: "partial", space: "balcony", goals: ["tomatoes"] }, { month: 5 }).notice).toContain("Les tomates ont besoin de soleil");
   });
 
   it("« Je regarderai plus tard » : les valeurs sûres de saison d'abord, jamais hors saison", () => {

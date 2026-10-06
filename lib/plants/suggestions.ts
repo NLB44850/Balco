@@ -195,26 +195,46 @@ export type SeasonalStarters = {
 /** Sujet de la phrase d'attente : l'envie telle que l'utilisateur la pense, sinon le nom de la plante phare. */
 const GOAL_SUBJECTS: Partial<Record<GoalTag, string>> = { tomatoes: "les tomates" };
 
-/** « Les tomates se plantent en mai. » : le prochain mois où la plante phare se plante (ou se sème dehors). */
-function waitingSentence(goal: GoalTag, month: number, climate: ClimateInfo | null | undefined, answers: OnboardingAnswers) {
+const SPACE_NEEDS: Record<SpaceSize, string> = { windowsill: "un rebord de fenêtre", planter: "au moins une jardinière", balcony: "au moins un petit balcon", terrace: "une terrasse" };
+
+type GoalNotice = { sentence: string; waiting: boolean };
+
+/**
+ * Pourquoi une envie n'a rien à proposer maintenant. Sa plante phare pousse chez toi : « Les tomates se plantent
+ * en mai. » (le prochain mois où elle se plante, ou se sème dehors). Elle n'y pousse pas : on le dit
+ * (« Les tomates ont besoin de soleil presque toute la journée. »), plutôt que de se taire.
+ */
+function goalNotice(goal: GoalTag, month: number, climate: ClimateInfo | null | undefined, answers: OnboardingAnswers): GoalNotice | null {
+  const sunlight = answers.sunlight as Sunlight | undefined;
+  const space = answers.space as SpaceSize | undefined;
+  const flagships = (GOAL_FLAGSHIPS[goal] ?? []).map((id) => getCatalogPlant(id)).filter((entry): entry is CatalogPlant => Boolean(entry));
+  // Le sujet : l'envie telle que l'utilisateur la pense (« les tomates »), sinon le nom de la plante.
+  const subjectOf = (entry: CatalogPlant) => (flagships.length === 1 && GOAL_SUBJECTS[goal]) || entry.label;
   let best: { offset: number; sentence: string } | null = null;
-  for (const id of GOAL_FLAGSHIPS[goal] ?? []) {
-    const flagship = getCatalogPlant(id);
-    // Une plante phare qui ne poussera pas sur ce balcon (soleil, espace) : rien à promettre.
-    if (!flagship || !fitsSunlight(flagship, answers.sunlight as Sunlight | undefined) || !fitsSpace(flagship, answers.space as SpaceSize | undefined)) continue;
+  for (const flagship of flagships) {
+    if (!fitsSunlight(flagship, sunlight) || !fitsSpace(flagship, space)) continue;
     const entry = adaptToClimate(flagship, climate);
     for (let offset = 1; offset < 12 && (!best || offset < best.offset); offset += 1) {
       const next = (((month - 1 + offset) % 12) + 1) as Month;
       // Planter un plant acheté passe avant semer au chaud : le geste le plus simple sur un balcon.
       const verb = entry.plantMonths.includes(next) ? "plante" : entry.sowMonths.includes(next) && !sowsIndoors(entry, next) ? "sème" : null;
       if (!verb) continue;
-      // Le sujet : l'envie telle que l'utilisateur la pense (« les tomates »), sinon le nom de la plante.
-      const subject = (GOAL_FLAGSHIPS[goal].length === 1 && GOAL_SUBJECTS[goal]) || entry.label;
-      const plural = subject.startsWith("les ");
-      best = { offset, sentence: `${capitalize(subject)} se ${verb}${plural ? "nt" : ""} en ${MONTH_LONG[next - 1]}.` };
+      const subject = subjectOf(entry);
+      best = { offset, sentence: `${capitalize(subject)} se ${verb}${subject.startsWith("les ") ? "nt" : ""} en ${MONTH_LONG[next - 1]}.` };
     }
   }
-  return best?.sentence ?? null;
+  if (best) return { sentence: best.sentence, waiting: true };
+  // Aucune plante phare ne pousse sur ce balcon : on dit ce qui manque.
+  const flagship = flagships[0];
+  if (!flagship) return null;
+  const subject = subjectOf(flagship);
+  const plural = subject.startsWith("les ");
+  if (!fitsSunlight(flagship, sunlight)) {
+    const need = flagship.sunlight.includes("partial") ? "d’au moins quelques heures de soleil" : "de soleil presque toute la journée";
+    return { sentence: `${capitalize(subject)} ${plural ? "ont" : "a"} besoin ${need}.`, waiting: false };
+  }
+  if (!fitsSpace(flagship, space)) return { sentence: `${capitalize(subject)} demande${plural ? "nt" : ""} ${SPACE_NEEDS[flagship.minSpace]}.`, waiting: false };
+  return null;
 }
 
 /**
@@ -238,10 +258,11 @@ export function seasonalStarters(
   }
   const inSeason = ranked.filter((entry) => !owned.has(entry.id) && suggestionFor(entry, month, climate));
   const goals = (answered?.goals ?? []).filter((goal): goal is GoalTag => goal in GOAL_FLAGSHIPS);
-  const waiting = goals
+  const notices = goals
     .filter((goal) => !inSeason.some((entry) => entry.goals.includes(goal)))
-    .map((goal) => waitingSentence(goal, month, climate, answered ?? {}))
-    .filter((sentence): sentence is string => Boolean(sentence));
-  const notice = waiting.length > 0 ? `${waiting.join(" ")} En attendant, voici ce qui pousse maintenant.` : null;
+    .map((goal) => goalNotice(goal, month, climate, answered ?? {}))
+    .filter((notice): notice is GoalNotice => Boolean(notice));
+  const ending = notices.every((notice) => notice.waiting) ? "En attendant, voici ce qui pousse maintenant." : "Voici plutôt ce qui pousse bien chez toi maintenant.";
+  const notice = notices.length > 0 ? `${notices.map((item) => item.sentence).join(" ")} ${ending}` : null;
   return { plants: inSeason.slice(0, limit), notice };
 }
