@@ -20,6 +20,7 @@ import { useGarden } from "@/lib/garden/garden-context";
 import { plantDisplayName, relativeDay } from "@/lib/garden/garden-logic";
 import { EXPERIENCE_OPTIONS, GOAL_OPTIONS, SPACE_OPTIONS, SUNLIGHT_OPTIONS, type OnboardingOption } from "@/lib/garden/onboarding";
 import { notificationsUnavailableReason } from "@/lib/notifications/module";
+import { activateReminders, NOTIFICATIONS_DENIED } from "@/lib/reminders/activate";
 import {
   clearAndDisableLocalReminders,
   defaultLocalReminderSettings,
@@ -93,13 +94,8 @@ export default function SettingsScreen() {
       setReminderSettings((current) => ({ ...current, enabled: false }));
       return;
     }
-    const granted = await requestLocalNotificationPermission();
-    if (!granted) {
-      Alert.alert("Notifications désactivées", "Autorise les notifications dans les réglages de ton téléphone pour recevoir les conseils Balco.");
-      return;
-    }
-    // Liste vide = toutes les plantes, y compris celles ajoutées plus tard.
-    await updateReminderSettings({ enabled: true, enabledPlantIds: [] });
+    const result = await activateReminders(reminderSettings, { requestPermission: requestLocalNotificationPermission, save: (next) => updateReminderSettings(next) });
+    if (result.status === "denied") Alert.alert(NOTIFICATIONS_DENIED.title, NOTIFICATIONS_DENIED.message);
   };
 
   const isPlantEnabled = (plantId: string) => reminderSettings.enabledPlantIds.length === 0 || reminderSettings.enabledPlantIds.includes(plantId);

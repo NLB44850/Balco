@@ -1,6 +1,6 @@
 import { useRouter } from "expo-router";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { Animated, Platform, Pressable, ScrollView, StyleSheet, View } from "react-native";
+import { Alert, Animated, Platform, Pressable, ScrollView, StyleSheet, View } from "react-native";
 import { Text } from "@/components/ui/typography";
 import * as Haptics from "expo-haptics";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -45,11 +45,13 @@ import { notificationsUnavailableReason } from "@/lib/notifications/module";
 import { eventForActivity } from "@/lib/plants/calendar";
 import { PLANT_CATALOG } from "@/lib/plants/catalog";
 import { seasonalStarters, seasonalSuggestions, type SeasonalSuggestion } from "@/lib/plants/suggestions";
+import { activateReminders, NOTIFICATIONS_DENIED, remindersEnabledText } from "@/lib/reminders/activate";
 import { addSnooze, eventForReminder, planGroupedNotification, wakeSnoozeFor, type ReminderSnooze } from "@/lib/reminders/reminder-actions";
 import type { MaintenanceEvent } from "@/lib/reminders/reminder-engine";
 import type { ReminderGroup } from "@/lib/reminders/reminder-groups";
 import {
   cancelBalcoReminderNotifications,
+  requestLocalNotificationPermission,
   saveLocalReminderSettings,
   saveReminderSnoozes,
   scheduleLocalReminder,
@@ -265,13 +267,21 @@ export default function HomeScreen() {
     showToast(withCheer(cheer(logged), `${item.title} : noté · +${POINTS_PER_GESTURE} points`), undo);
   };
 
-  const activateReminders = async () => {
-    const nextSettings = { ...reminderSettings, enabled: true };
-    setReminderSettings(nextSettings);
-    await saveLocalReminderSettings(nextSettings);
-    const plan = planGroupedNotification(unseenDecisions, snoozes, nextSettings, new Date());
-    if (plan && !awayOn(vacation, dayKey(plan.date))) await scheduleLocalReminder(plan.group, nextSettings, plan.date);
-    showToast(`Rappels activés : Balco te préviendra vers ${nextSettings.preferredHour} h ${String(nextSettings.preferredMinute).padStart(2, "0")}`);
+  // L'autorisation du téléphone d'abord : rien n'est enregistré tant qu'elle n'est pas donnée.
+  const turnOnReminders = async () => {
+    const result = await activateReminders(reminderSettings, {
+      requestPermission: requestLocalNotificationPermission,
+      save: async (nextSettings) => {
+        setReminderSettings(nextSettings);
+        await saveLocalReminderSettings(nextSettings);
+      },
+      scheduleNext: async (nextSettings) => {
+        const plan = planGroupedNotification(unseenDecisions, snoozes, nextSettings, new Date());
+        if (plan && !awayOn(vacation, dayKey(plan.date))) await scheduleLocalReminder(plan.group, nextSettings, plan.date);
+      },
+    });
+    if (result.status === "denied") return Alert.alert(NOTIFICATIONS_DENIED.title, NOTIFICATIONS_DENIED.message);
+    showToast(remindersEnabledText(result.settings));
   };
 
   const addRecommendation = async (catalogId: string, name: string) => {
@@ -427,7 +437,7 @@ export default function HomeScreen() {
         {loaded && hasPlants && !away && !reminderSettings.enabled && notificationsUnavailableReason === null && (
           <View style={styles.remindersRow}>
             <Text style={[styles.small, styles.flex, { color: colors.muted }]}>Sois prévenu au bon moment, sans ouvrir l’app.</Text>
-            <Pressable accessibilityRole="button" onPress={() => void activateReminders()} style={({ pressed }) => [styles.pill, { backgroundColor: colors.leaf }, pressed && styles.pressed]}>
+            <Pressable accessibilityRole="button" onPress={() => void turnOnReminders()} style={({ pressed }) => [styles.pill, { backgroundColor: colors.leaf }, pressed && styles.pressed]}>
               <Text style={[styles.pillText, { color: colors.primary }]}>Activer les rappels</Text>
             </Pressable>
           </View>

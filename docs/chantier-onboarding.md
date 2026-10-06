@@ -3,10 +3,14 @@
 Document de reprise : tout ce qui a été établi dans la conversation du 6 octobre. **Le plan est validé par
 le porteur, avec toutes les propositions de Claude (« OK pour tes propositions »).**
 
-**Avancement** : A1 codée le 6 octobre, **en attente de validation sur son téléphone**. Prochaine action après
-son accord : l'étape A2.
+**Avancement** : A1 validée le 6 octobre ; A2 codée le 6 octobre, **en attente de validation sur son
+téléphone (APK : la version web n'a pas de notifications)**. Prochaine action après son accord : l'étape A3.
 
-- A1 (fait, à valider) : `seasonalStarters` dans `lib/plants/suggestions.ts` (plantes qu'on peut semer ou planter
+- A2 (fait, à valider) : `activateReminders` dans `lib/reminders/activate.ts` (autorisation demandée d'abord,
+  `enabled` + toutes les plantes enregistrés seulement après un accord, puis programmation du prochain conseil
+  s'il y en a un ; refus = alerte `NOTIFICATIONS_DENIED`, rien d'enregistré). Utilisée par Aujourd'hui
+  (« Activer les rappels ») et Réglages. Tests : `tests/activate-reminders.test.ts`.
+- A1 (validée) : `seasonalStarters` dans `lib/plants/suggestions.ts` (plantes qu'on peut semer ou planter
   ce mois-ci dans le climat, valeurs sûres `DEFAULT_PICKS` d'abord sans réponses, phrase d'attente tirée de la
   plante phare la plus proche de chaque envie sans plante de saison). Utilisée par `welcome.tsx` (climat de
   Paris : la ville n'est pas encore demandée), l'état vide d'Aujourd'hui et les idées de Saisons (balcon vide).
