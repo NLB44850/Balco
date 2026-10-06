@@ -334,3 +334,17 @@ test("Nora demande le prénom, sans compte ni IA, et le garde pour Réglages", a
   await expect(page.getByPlaceholder("Pour que Balco te dise bonjour")).toHaveValue("Camille");
   expect(errors).toEqual([]);
 });
+
+test("« Pas encore acheté ? Rappelle-moi samedi » : le geste disparaît, « Annuler » le remet", async ({ page }) => {
+  const errors = trackErrors(page);
+  await mockWeather(page);
+  await seedBalcony(page, { plants: ["mint"], wateredDaysAgo: 0, extra: { "balco.garden.plants.v1": JSON.stringify([{ id: "lavender-e2e", catalogId: "lavender", addedAt: new Date().toISOString(), toPlant: true }]) } });
+  await open(page, "/", "Plante la lavande");
+  await page.getByRole("button", { name: "Plante la lavande, détail" }).click();
+  await page.getByRole("button", { name: "Pas encore acheté ? Rappelle-moi samedi" }).click();
+  await expect(page.getByText("Je te le rappelle samedi")).toBeVisible();
+  await expect(checkboxOf(page, "Marquer comme fait : Plante la lavande")).toHaveCount(0);
+  await page.getByRole("button", { name: "Annuler" }).click();
+  await expect(checkboxOf(page, "Marquer comme fait : Plante la lavande")).toBeVisible();
+  expect(errors).toEqual([]);
+});

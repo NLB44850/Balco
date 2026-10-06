@@ -12,7 +12,11 @@ Avancement :
   Rebord intérieur : premier geste « Sème le persil à l'intérieur » (`startActivity`). Envies gardées dans
   `springWishes` (synchronisées), notification le 1er mars à 9 h (`scheduleDatedReminder`,
   `lib/garden/spring.ts`), carte « C'est le moment 🌱 » sur Aujourd'hui en mars-avril (« Ne plus me le
-  rappeler »). E2e `e2e/7-hiver.spec.ts` (horloge du navigateur avancée : `page.clock.install` + `resume`). Une étape = un commit testé (check, lint, Vitest, e2e,
+  rappeler »). E2e `e2e/7-hiver.spec.ts` (horloge du navigateur avancée : `page.clock.install` + `resume`).
+- P5 (fait avant P3, indépendant des données) : `lib/garden/postpone.ts` (`nextSaturdayMorning`, `postponeStart`,
+  clé de mise en sommeil `start:<plantId>`) ; `planDay({ postponed })` cache le premier geste jusqu'au samedi
+  9 h ; feuille du bas d'Aujourd'hui « Pas encore acheté ? Rappelle-moi samedi » + toast « Je te le rappelle
+  samedi » avec « Annuler » ; notification « C'est samedi 🌱 · Pense au plant : … » si les rappels sont activés. Une étape = un commit testé (check, lint, Vitest, e2e,
 bundle Android), compte rendu, validation sur son téléphone avant la suivante (sauf s'il demande d'enchaîner).
 
 ## Ce que le porteur a décidé (6 octobre)

@@ -75,6 +75,8 @@ export type DayPlanInput = {
   /** Tous les conseils du moment, même mis en sommeil : une soif reportée ne revient pas en arrosage. */
   allDecisions?: ReminderDecision[];
   climate?: ClimateInfo | null;
+  /** Plantes à planter dont le premier geste attend samedi (« Rappelle-moi samedi »). */
+  postponed?: Set<string>;
 };
 
 /** L'état d'une plante choisie mais pas encore en terre (Balcon, fiche). */
@@ -135,7 +137,7 @@ function statusOf(resolved: ResolvedPlant, gestures: PlanGesture[], events: Main
   return { tone: "good", label: STATUS_LABEL.good };
 }
 
-export function planDay({ plants, events, now, decisions = [], allDecisions = decisions, climate }: DayPlanInput): PlantDay[] {
+export function planDay({ plants, events, now, decisions = [], allDecisions = decisions, climate, postponed }: DayPlanInput): PlantDay[] {
   const today = startOfDay(now);
   const todayKey = dayKey(now);
   const month = now.getMonth() + 1;
@@ -160,6 +162,8 @@ export function planDay({ plants, events, now, decisions = [], allDecisions = de
 
     // À planter : pas encore en terre, un seul geste (« Sème la mâche », « Plante la lavande »).
     if (resolved.plant.toPlant) {
+      // Reporté à samedi : rien sur Aujourd'hui d'ici là.
+      if (postponed?.has(plantId)) return { resolved, gestures: [], first: null, status: { tone: "new" as const, label: TO_PLANT_LABEL } };
       const first = startGesture(false);
       return { resolved, gestures: [first], first, status: { tone: "new" as const, label: TO_PLANT_LABEL } };
     }
