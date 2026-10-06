@@ -131,22 +131,7 @@ Très cohérent avec la promesse écologique.
 4. Historique et progression plus motivants
 5. Mode vacances
 
-**Prochaines séances (liste du 30 septembre)** : tester l'eau économisée, corriger les petites victoires, vérifier que les alertes météo agissent bien sur les gestes ; puis agrandir le catalogue des plantes et proposer des suggestions selon la saison et le mois.
-
-**Retours du test utilisateur** (plan validé le 4 octobre, une étape à la fois, testée sur téléphone) :
-
-1. ✅ Un seul plan du jour : Aujourd'hui, Balcon et la fiche plante disent la même chose (même geste, même couleur d'état). Validé le 5 octobre.
-2. ✅ Des titres qui disent quoi faire (« Arrose le basilic »), avec la façon de vérifier en dessous. Validé le 5 octobre.
-3. ✅ Arrosages regroupés (« Vérifie la terre de 5 plantes ») et gestes pas urgents repliés au-delà de 5 lignes. Validé le 5 octobre.
-4. Alertes météo en bandeau en haut d'Aujourd'hui (gel et orage avec « C'est fait », pluie sans bouton, eau économisée comptée toute seule). **Prochaine étape.**
-5. Gestes de saison dans Aujourd'hui, Saisons devient un calendrier à lire.
-6. Même chiffres dans Saisons, Ma semaine et Moi ; nouveau libellé de l'Idée du mois.
-7. Série de « jours suivis » (un jour compte si tout ce qui était demandé est fait).
-8. Fêtes en grand plus rares (nouveau badge, première récolte de chaque plante) ; plus de tuile « 0 photo ».
-9. Observer sans compte (1 analyse par téléphone).
-10. Textes de l'offre Balco+ écrits comme des bénéfices.
-
-À décider à la fin : l'après-récolte des plantes qu'on arrache (radis, carottes, salades) : « Ressemer » ou « Libérer le pot ». Proposé aussi : une version web toujours en ligne et l'APK construit automatiquement, pour tester sans Codespace.
+**Suite du travail** : voir la partie 3 (ordre de travail retenu, à jour).
 
 **Version suivante**
 
@@ -157,19 +142,19 @@ Très cohérent avec la promesse écologique.
 
 ---
 
-## 2. Où en est Balco (état au 4 octobre 2026, suite du travail dans la partie 3)
+## 2. Où en est Balco (état au 6 octobre 2026, suite du travail dans la partie 3)
 
 ### 1. Rappels intelligents
 
 | Élément | État | Ce qui existe / ce qui manque |
 |---|---|---|
-| Tâche quotidienne par plante | ✅ | Session du jour sur l'accueil, gestes tirés du catalogue selon le mois |
+| Tâche quotidienne par plante | ✅ | Un seul plan du jour pour Aujourd'hui, Balcon et la fiche : une ligne à faire par plante (« Arrose le basilic », avec la façon de vérifier), le geste suivant prend sa place une fois fait, arrosages regroupés (« Vérifie la terre de 5 plantes ») et gestes pas urgents repliés |
 | Météo : pluie, gel, chaleur, vent, orage | ✅ | Moteur de décision testé (`lib/reminders/reminder-engine.ts`), données Open-Meteo |
 | Historique du dernier entretien | ✅ | Pris en compte dans la décision, visible dans la fiche plante |
 | Message explicatif | ✅ | « N'arrose pas les tomates cerises aujourd'hui : 8 mm de pluie sont prévus dans les 12 prochaines heures », avec la raison sous le conseil |
 | Notifications par plante | 🟡 | Locales dans l'app (validées sur téléphone), choix des plantes concernées, bouton « Envoyer une notification de test ». L'envoi par le serveur (même app fermée) est réservé à Balco+ et attend la configuration Firebase, prévue à la publication |
 | Reporter / ignorer / confirmer | ✅ | « Fait ✓ », « Dans 3 h » (jamais pendant la plage calme) et « Pas aujourd'hui », sur la carte de l'accueil et dans la notification. La mise en sommeil reste sur le téléphone (pas encore transmise au serveur) |
-| Limiter les rappels | ✅ | Plafond par jour, plage calme, délai de 24 h entre deux rappels. Une même alerte météo (pluie, gel, orage, vent, chaleur) est regroupée en une seule carte et une seule notification pour toutes les plantes |
+| Limiter les rappels | ✅ | Plafond par jour, plage calme, délai de 24 h entre deux rappels. Une même alerte météo (pluie, gel, orage, vent, chaleur) est regroupée en une seule notification pour toutes les plantes, et en un bandeau en haut d'Aujourd'hui (« C'est fait » pour le gel, l'orage, le vent et la chaleur ; simple message pour la pluie, dont l'eau économisée est comptée toute seule) |
 
 ### 2. Assistant IA (Nora)
 
@@ -177,7 +162,7 @@ Très cohérent avec la promesse écologique.
 |---|---|---|
 | Réponses basées sur les plantes possédées | ✅ | Le serveur transmet les plantes, avec la variété choisie |
 | Ville, saison, exposition | ✅ | Ville, balcon, exposition et date transmis à chaque question |
-| Conseils pour débutants | ✅ | Niveau choisi à l'accueil, modifiable dans Réglages ou dans « Nora se souvient de toi » (Je débute / Je me lance / J'ai déjà un potager) : Nora adapte la longueur et le vocabulaire |
+| Conseils pour débutants | ✅ | Nora parle simplement par défaut ; niveau réglable dans Réglages ou dans « Nora se souvient de toi » (Je débute / Je me lance / J'ai déjà un potager) : Nora adapte la longueur et le vocabulaire (l'accueil ne le demande plus depuis le 6 octobre) |
 | Questions rapides | ✅ | Boutons de questions prêtes à l'emploi |
 | Analyse de l'historique | ✅ | Les 90 derniers jours résumés plante par plante (allégé le 2 octobre pour réduire le coût de chaque question) : nombre de gestes par type, date du dernier, gestes conseillés jamais notés, derniers gestes, plantes retirées dans l'année. Bouton « Fais le point sur mes plantes ». Nouveau geste « Engrais » (26 plantes gourmandes, rythme par plante) : Nora sait dire « pas d'engrais depuis 3 semaines » |
 | Mémoire des préférences et du niveau | ✅ | 9 préférences à cocher (réponses courtes, animal, enfants, peu de temps, économiser l'eau…) et faits retenus en discutant (« A un chat »), affichés sous la réponse avec « Oublier », et « Tout oublier ». Stockés sur le serveur (table `nora_memories`), effacés avec le compte. Chaque fait retenu porte sa date, et la conversation est datée jour par jour : Nora reçoit les échanges des 2 derniers jours et, pour le reste, ce qu'elle a retenu |
@@ -186,7 +171,7 @@ Très cohérent avec la promesse écologique.
 
 | Élément | État | Ce qui existe / ce qui manque |
 |---|---|---|
-| Identification par photo | ✅ | Claude, avec correspondance au catalogue. Écran « Observer » refait au style de l'app, et bouton appareil photo sur Aujourd'hui qui ouvre l'analyse directement |
+| Identification par photo | ✅ | Claude, avec correspondance au catalogue. Écran « Observer » refait au style de l'app, et bouton appareil photo sur Aujourd'hui qui ouvre l'analyse directement. Sans compte : une analyse offerte par téléphone (3 au plus par réseau et par jour), puis invitation à créer un compte. Aperçu de la photo sur Android corrigé le 6 octobre, à revérifier dans le prochain APK |
 | Problèmes fréquents | ✅ | État de santé, observations, gestes conseillés |
 | Niveau de confiance | ✅ | Élevée / moyenne / faible |
 | Solutions naturelles | ✅ | Rubrique « Solution naturelle » |
@@ -200,9 +185,9 @@ Très cohérent avec la promesse écologique.
 | Semis, plantation, récolte | ✅ | Pour les 100 plantes du catalogue, avec des variétés anciennes, originales et récentes. Dates vérifiées le 2 octobre auprès de 2 à 3 semenciers ou sites de jardinage par plante (35 mois corrigés, sources dans `docs/sources-calendrier.md`). Semis « au chaud » à l'intérieur indiqués quand il le faut (« Sème le basilic au chaud ») |
 | Rempotage | ✅ | Mois de rempotage des 24 vivaces (mars–avril par défaut, exceptions comme l'ail des ours en automne), nouveau geste « Rempotage » dans l'historique |
 | Adaptation au climat local | ✅ | Climat déduit de la ville et de l'altitude (méditerranéen, océanique, tempéré, continental, montagne) : semis et plantations des plantes frileuses un mois plus tôt dans le Midi, un mois plus tard en montagne ; date habituelle des dernières gelées |
-| Vue mensuelle / saisonnière | ✅ | « Par mois » ou « Par saison », en commençant par la saison en cours. Gestes rangés par type (« À récolter · 5 plantes ») pour une liste courte ; on coche chaque plante dans la feuille du bas (validé le 4 octobre) |
+| Vue mensuelle / saisonnière | ✅ | « Par mois » ou « Par saison », en commençant par la saison en cours. Gestes rangés par type (« À récolter · 5 plantes »). Depuis le 5 octobre, Saisons est un calendrier à lire : les gestes se font sur Aujourd'hui, et Saisons montre ce qui est déjà fait (« ✓ Faite aujourd'hui ») |
 | Alertes gel / chaleur | ✅ | Alertes météo du moment (gel, orage, vent, chaleur, pluie) en haut du calendrier, regroupées par cause |
-| Lien avec les tâches du jour | ✅ | Un entretien coché dans le calendrier l'est aussi sur l'accueil ; semis, plantations et rempotages se notent une fois par mois, et l'accueil rappelle ceux du mois pas encore faits |
+| Lien avec les tâches du jour | ✅ | Semis, plantations, rempotages et récoltes du mois se font depuis Aujourd'hui ; Saisons et Aujourd'hui lisent les mêmes gestes |
 | Suggestions adaptées au balcon | ✅ | Carte « À semer ou planter en octobre » dans Saisons (4 plantes selon le soleil, la place, les envies et le climat, sans celles déjà sur le balcon), ligne « Idée du mois » sur Aujourd'hui, pastille « À semer en octobre » dans le catalogue. Les suggestions changent chaque jour, et s'affichent aussi en vue « Par saison ». Validé le 4 octobre |
 
 ### 5. Progression et motivation
@@ -210,12 +195,12 @@ Très cohérent avec la promesse écologique.
 | Élément | État | Ce qui existe / ce qui manque |
 |---|---|---|
 | Historique des gestes | ✅ | Fiche plante, jour par jour |
-| Série de jours consécutifs | ✅ | Affichée dans le profil |
+| Série de jours consécutifs | ✅ | « Jours suivis » : un jour compte quand chaque plante qui avait soif a été arrosée (ou que la pluie l'a fait), ou s'il n'y avait rien à arroser. Mêmes chiffres dans Moi et Ma semaine |
 | Progression par plante | ✅ | Carte « Sa progression » dans la fiche : stade (s'installe, en croissance, bientôt la récolte, en récolte, au repos, fin de saison), soins des 8 dernières semaines en barres, étapes marquantes (arrivée, 1ʳᵉ récolte, 1ᵉʳ engrais, 10 gestes, 1ʳᵉ photo) |
 | Badges | ✅ | 6 badges |
 | Niveau qui évolue | ✅ | Points et niveaux (« Graine curieuse »…) |
 | Bilan hebdomadaire | ✅ | Écran « Ma semaine » : jours actifs, gestes (comparés à la semaine d'avant), récoltes, photos, conseils météo suivis, plante par plante. Eau économisée (arrosages évités grâce à la pluie × environ 20 % du volume du pot) et récoltes à venir (ce mois-ci, puis le mois prochain) |
-| Animations et retours positifs | ✅ | Chaque coche rebondit avec de petites feuilles ; fête en plein écran (confettis) quand un geste débloque un badge, un niveau, une série (3, 7, 14, 30… jours) ou une récolte. Validé sur téléphone |
+| Animations et retours positifs | ✅ | Chaque coche rebondit avec de petites feuilles. Fête en plein écran (confettis) seulement pour un nouveau badge ou la première récolte d'une plante, une fois par jour au plus ; les autres victoires (séries, niveaux, récoltes) s'annoncent dans le message du bas |
 
 ### 6. Gestion visuelle du balcon
 
@@ -260,7 +245,7 @@ Très cohérent avec la promesse écologique.
 
 | Élément | État | Ce qui existe / ce qui manque |
 |---|---|---|
-| Gratuit / premium | 🟡 | Offre définie dans un seul fichier (`lib/plans.ts`). Gratuit : catalogue, calendrier, rappels du téléphone, sauvegarde depuis un téléphone, 1 analyse photo et 5 questions à Nora par mois. Balco+ : rappels et alertes météo envoyés par le serveur, plusieurs appareils, 20 analyses et 100 questions. Prix fondateur prévu pour les 500 premiers abonnés. **Paiement (achats intégrés avec RevenueCat) à brancher à la publication** |
+| Gratuit / premium | 🟡 | Offre définie dans un seul fichier (`lib/plans.ts`). Gratuit : catalogue, calendrier, rappels du téléphone, sauvegarde depuis un téléphone, 1 analyse photo et 5 questions à Nora par mois. Balco+ : rappels et alertes météo envoyés par le serveur, plusieurs appareils, 20 analyses et 100 questions. Prix fondateur prévu pour les 500 premiers abonnés. Avantages présentés comme des bénéfices (Réglages → Compte, messages de quota). **Paiement (achats intégrés avec RevenueCat) à brancher à la publication** |
 | Maîtrise du coût de l'IA | ✅ | Modèle adapté à chaque usage, réponses plafonnées, budget mensuel avec pause automatique (d'abord les comptes gratuits), rapport des coûts réservé à l'administrateur |
 | Packs saisonniers, partenariats, recommandations de produits | ⬜ | À faire |
 
@@ -286,22 +271,30 @@ L'ordre suit la priorité fixée par le porteur du projet. Chaque étape est val
 4. ✅ Catalogue agrandi à 100 plantes, avec une photo d'exemple pour chacune : validé.
 5. ✅ Suggestions selon la saison et le mois (Saisons, catalogue, Aujourd'hui), et Saisons rangé par type de geste : validés le 4 octobre.
 
-**Prochaines séances** (4 octobre) : la mémoire de Nora sur plusieurs jours (faits datés, conversation datée), à tester sur 2 ou 3 jours. La publication sur les stores n'est pas encore à l'ordre du jour.
+**Retours du test utilisateur** (plan validé le 4 octobre, une étape à la fois, testée sur téléphone) : **les 10 étapes sont validées et intégrées à la version principale le 6 octobre.**
 
-**Retours du test utilisateur** (plan validé le 4 octobre, une étape à la fois, testée sur téléphone) :
+1. ✅ Un seul plan du jour : Aujourd'hui, Balcon et la fiche plante disent la même chose.
+2. ✅ Des titres qui disent quoi faire (« Arrose le basilic »), avec la façon de vérifier en dessous.
+3. ✅ Arrosages regroupés et gestes pas urgents repliés au-delà de 5 lignes.
+4. ✅ Alertes météo en bandeau en haut d'Aujourd'hui (« C'est fait » pour le gel, l'orage, le vent et la chaleur ; pluie sans bouton, eau économisée comptée toute seule).
+5. ✅ Gestes de saison sur Aujourd'hui ; Saisons devient un calendrier à lire, qui montre ce qui est déjà fait.
+6. ✅ Mêmes chiffres dans Saisons, Ma semaine et Moi ; Idée du mois en phrase (« Dernier mois pour la planter · récolte de mai à septembre »).
+7. ✅ Série de « jours suivis » ; l'eau économisée grâce à la pluie ne rapporte plus de points.
+8. ✅ Fêtes en grand plus rares ; plus de case « 0 photo ».
+9. ✅ Observer sans compte (une analyse offerte par téléphone).
+10. ✅ Textes de l'offre Balco+ écrits comme des bénéfices.
 
-1. ✅ Un seul plan du jour : Aujourd'hui, Balcon et la fiche plante disent la même chose (même geste, même couleur d'état). Validé le 5 octobre.
-2. ✅ Des titres qui disent quoi faire (« Arrose le basilic »), avec la façon de vérifier en dessous. Validé le 5 octobre.
-3. ✅ Arrosages regroupés (« Vérifie la terre de 5 plantes ») et gestes pas urgents repliés au-delà de 5 lignes. Validé le 5 octobre.
-4. Alertes météo en bandeau en haut d'Aujourd'hui (gel et orage avec « C'est fait », pluie sans bouton, eau économisée comptée toute seule). **Prochaine étape.**
-5. Gestes de saison dans Aujourd'hui, Saisons devient un calendrier à lire.
-6. Même chiffres dans Saisons, Ma semaine et Moi ; nouveau libellé de l'Idée du mois.
-7. Série de « jours suivis » (un jour compte si tout ce qui était demandé est fait).
-8. Fêtes en grand plus rares (nouveau badge, première récolte de chaque plante) ; plus de tuile « 0 photo ».
-9. Observer sans compte (1 analyse par téléphone).
-10. Textes de l'offre Balco+ écrits comme des bénéfices.
+**À faire ensuite, dans l'ordre** (6 octobre) :
 
-À décider à la fin : l'après-récolte des plantes qu'on arrache (radis, carottes, salades) : « Ressemer » ou « Libérer le pot ». Proposé aussi : une version web toujours en ligne et l'APK construit automatiquement, pour tester sans Codespace.
+1. Revérifier sur le prochain APK : l'aperçu de la photo dans Observer, l'appareil photo depuis Aujourd'hui, les notifications.
+2. **Refaire l'accueil de première ouverture (onboarding)** : plan validé le 6 octobre (`docs/chantier-onboarding.md`), **codé le 6 octobre (8 étapes), à tester sur téléphone** : plantes de saison seulement dans le climat de la ville, « Activer les rappels » corrigé, bandeau « Météo de Paris par défaut », plantes « à planter » ou « installées », parcours « Tu as déjà des plantes ? » (Oui / Pas encore), ville avant les plantes, rappels, carte de bienvenue, « Passer » + « Quelques questions », prénom demandé par Nora, expérience dans Réglages seulement.
+3. **Pas-à-pas pour planter** (idée du porteur, 6 octobre) : **codé le 6 octobre, à tester** (`docs/chantier-pas-a-pas.md`) : « Ce qu'il te faut », étapes illustrées, erreur à éviter, « Et après ? », gestes de suite, accueil d'hiver, « Rappelle-moi samedi ».
+4. **Rempotage selon le besoin** (validé le 6 octobre, après la PR) : jamais la première saison, rythme propre à chaque vivace (vérifié sur le web), « Change les 5 cm de terre du dessus » les autres années, signe à vérifier (« Des racines sortent par les trous ? ») avec « Pas besoin cette année », pot suivant proposé, pas-à-pas illustré.
+5. Décider de l'après-récolte des plantes qu'on arrache (radis, carottes, salades) : « Ressemer » ou « Libérer le pot ».
+6. Tester la mémoire de Nora sur plusieurs jours.
+7. Proposé : une version web toujours en ligne et l'APK construit automatiquement, pour tester sans Codespace.
+
+Choix notés : l'app ne copie pas les photos dans la galerie du téléphone (décidé le 6 octobre).
 
 **Version suivante**
 

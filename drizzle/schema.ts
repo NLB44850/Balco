@@ -130,6 +130,8 @@ export const reminderPlants = mysqlTable("reminder_plants", {
   varietyId: varchar("varietyId", { length: 64 }),
   addedAt: timestamp("addedAt"),
   removedAt: timestamp("removedAt"),
+  /** 1 : choisie mais pas encore en terre (« à planter ») ; ni rappel ni alerte météo tant qu'elle l'est. */
+  toPlant: int("toPlant").default(0).notNull(),
   /** Horodatage de la dernière modification côté appareil : la plus récente gagne. */
   clientUpdatedAt: timestamp("clientUpdatedAt", { fsp: 3 }),
   createdAt: timestamp("createdAt").defaultNow().notNull(),

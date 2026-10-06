@@ -689,3 +689,22 @@ Confiance : haute (sources concordantes), moyenne (nuances entre sources), faibl
 - Semis : mars–mai (au chaud : mars–avr.) · Plantation : mai–juin · Floraison : juin–oct.
 - Corrigé le 02/10 : rien · confiance haute
 - Sources : [gerbeaud.com](https://www.gerbeaud.com/jardin/fiches/oeillet-inde.php), [jardiner-malin.fr](https://www.jardiner-malin.fr/fiche/oeillet-inde.html), [truffaut.com](https://www.truffaut.com/cultiver-oeillet-inde-tagete.html)
+
+## Données de plantation (6 octobre 2026, pour le pas-à-pas)
+
+`lib/plants/planting.ts` : pour chacune des 100 plantes, profondeur de semis, graines par trou, plants par pot,
+écart, jours de levée, semaines avant la première récolte (ou floraison) depuis le semis et depuis la plantation,
+éclaircissage, pincement. Recherche web comme pour le calendrier (extraits de résultats, 2 sources concordantes au
+moins, souvent 3 ou 4 ; culture en pot) ; les URL sont dans le fichier, plante par plante. Quand les sources
+divergeaient, la fourchette couvre les deux. Choix à connaître :
+
+- Valeurs déduites faute de chiffre exact : délai depuis un plant acheté pour plusieurs annuelles (calculé depuis
+  le semis, moins l'âge du plant) ; écart entre plants de la citronnelle et de l'agastache ; nombre de plants par
+  pot souvent tiré de l'écart et du volume du pot ; écart des arbustes = distance entre deux pots.
+- Graines minuscules ou qui lèvent à la lumière posées en surface (`sowDepthCm` 0) : thym, shiso, alysse, muflier,
+  fraisier des bois. Semis serrés coupés jeunes (`perPot` 0) : micro-pousses, cresson alénois.
+- Fourchettes larges : petits fruits avant la 1ʳᵉ récolte (kiwaï, figuier nain, myrtillier, groseillier,
+  cassissier : de la saison suivante à 2-3 ans), lavande (6 à 40 semaines selon la saison de plantation), fraisier
+  (8 à 40), ail des ours (levée en 4 à 7 mois). Myrtillier : deux variétés pour avoir des fruits, terre de bruyère.
+- Bulbes et tubercules (ail, pommes de terre, oca, crosnes, dahlias) : profondeur de plantation dans
+  `lib/plants/guide.ts` (`BULBS`).

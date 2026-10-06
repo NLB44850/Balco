@@ -7,6 +7,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 
 import { useLocalWeather } from "@/hooks/use-local-weather";
 import { planDay } from "@/lib/garden/day-plan";
+import { postponedStarts } from "@/lib/garden/postpone";
 import { useGarden } from "@/lib/garden/garden-context";
 import { careProfileFor } from "@/lib/garden/garden-logic";
 import { climateZoneFor } from "@/lib/plants/climate";
@@ -56,7 +57,8 @@ export function useDayPlan() {
 
   const climate = useMemo(() => (weather.isFallback ? null : climateZoneFor(weather.latitude, weather.longitude, weatherSnapshot.elevationM)), [weather.isFallback, weather.latitude, weather.longitude, weatherSnapshot.elevationM]);
   const reminderPlants = useMemo(
-    () => resolvedPlants.filter(({ plant }) => reminderSettings.enabledPlantIds.length === 0 || reminderSettings.enabledPlantIds.includes(plant.id)),
+    // Une plante à planter n'est pas encore en terre : ni soif ni alerte météo.
+    () => resolvedPlants.filter(({ plant }) => !plant.toPlant && (reminderSettings.enabledPlantIds.length === 0 || reminderSettings.enabledPlantIds.includes(plant.id))),
     [reminderSettings.enabledPlantIds, resolvedPlants],
   );
   // Tous les conseils météo du moment (« rappels activés » ne décide que des notifications).
@@ -69,7 +71,8 @@ export function useDayPlan() {
   const reminderDecisions = useMemo(() => selectGroups(groupReminders(allDecisions), reminderSettings.maxNormalRemindersPerDay).flatMap((group) => group.decisions), [allDecisions, reminderSettings.maxNormalRemindersPerDay]);
   const visibleDecisions = useMemo(() => withoutSnoozed(allDecisions, snoozes, new Date()), [allDecisions, snoozes]);
   const visibleGroups = useMemo(() => groupReminders(visibleDecisions), [visibleDecisions]);
-  const plan = useMemo(() => planDay({ plants: resolvedPlants, events, now, decisions: visibleDecisions, allDecisions, climate }), [allDecisions, climate, events, now, resolvedPlants, visibleDecisions]);
+  const postponed = useMemo(() => postponedStarts(snoozes, now), [now, snoozes]);
+  const plan = useMemo(() => planDay({ plants: resolvedPlants, events, now, decisions: visibleDecisions, allDecisions, climate, postponed }), [allDecisions, climate, events, now, postponed, resolvedPlants, visibleDecisions]);
 
   // Prêt quand la météo (ou son repli) et les réglages sont là : avant, l'état d'une plante changerait
   // sous les yeux (« En forme », puis « À surveiller » une fois la soif connue).

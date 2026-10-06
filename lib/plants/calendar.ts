@@ -1,7 +1,8 @@
-import { dayKey, sessionEventId } from "../garden/garden-logic";
+import { dayKey, sessionEventId, startEventId } from "../garden/garden-logic";
 import type { MaintenanceEvent, MaintenanceTaskType } from "../reminders/reminder-engine";
 import { describeSowing, formatMonthRange, MONTH_LONG, sowsIndoors, type CatalogPlant, type Month } from "./catalog";
 import { adaptToClimate, type ClimateInfo } from "./climate";
+import { sowsOnWindowsill } from "./indoor";
 
 export type CalendarActivityKind = "sow" | "plant" | "repot" | "harvest" | "care";
 
@@ -21,13 +22,20 @@ export type CalendarActivity = {
   taskId?: string;
   /** Vue par saison : les mois de la saison où l'activité a lieu. */
   months?: Month[];
+  /** Premier geste d'une plante à planter : le cocher l'installe sur le balcon. */
+  start?: true;
+  /** Geste de suite (éclaircir, sortir les plants, pincer) : une seule fois par plante. */
+  followUp?: "thin" | "outdoors" | "pinch";
 };
 
 /** Le type de geste, écrit simplement (sans capitales), pour les écrans. */
 export const ACTIVITY_KIND_LABELS: Record<CalendarActivityKind, string> = { sow: "Semis", plant: "Plantation", repot: "Rempotage", harvest: "Récolte", care: "Entretien" };
 
-/** `addedAt` : arrivée de la plante sur le balcon (absente pour les idées d'un balcon vide). */
-export type CalendarSubject = { id: string; entry: CatalogPlant; displayName: string; addedAt?: string };
+/**
+ * `addedAt` : arrivée de la plante sur le balcon (absente pour les idées d'un balcon vide).
+ * `toPlant` : sur le balcon mais pas encore en terre ; ses semis et plantations restent proposés.
+ */
+export type CalendarSubject = { id: string; entry: CatalogPlant; displayName: string; addedAt?: string; toPlant?: boolean };
 export type CalendarOptions = { climate?: ClimateInfo | null; now?: Date };
 
 const GENERIC_TASK_IDS = new Set(["check-soil", "observe", "harvest"]);
@@ -39,20 +47,24 @@ function taskHeadline(title: string) {
   return stripped.charAt(0).toUpperCase() + stripped.slice(1);
 }
 
-function sameMonth(a: Date, b: Date) {
-  return a.getFullYear() === b.getFullYear() && a.getMonth() === b.getMonth();
-}
 
 export function calendarActivities(subjects: CalendarSubject[], month: number, options: CalendarOptions = {}): CalendarActivity[] {
   const activities: CalendarActivity[] = [];
   const m = month as Month;
-  const now = options.now ?? new Date();
-  for (const { id, entry: catalogEntry, displayName, addedAt } of subjects) {
+  for (const { id, entry: catalogEntry, displayName, addedAt, toPlant } of subjects) {
     // Les semis et plantations des plantes frileuses suivent le climat local (Midi plus tôt, montagne plus tard).
     const entry = adaptToClimate(catalogEntry, options.climate);
+    // Pas encore en terre : un seul geste, le même que sur Aujourd'hui (« Plante l'ail des ours »), au mois où il
+    // est possible ; ni rempotage, ni récolte, ni entretien avant.
+    if (toPlant) {
+      if (entry.sowMonths.includes(m) || entry.plantMonths.includes(m)) activities.push(startActivity({ id, entry: catalogEntry, displayName, addedAt, toPlant }, m, options));
+      continue;
+    }
     const tag = displayName.toUpperCase();
     const base = { subjectId: id, entry, tag };
-    if (entry.sowMonths.includes(m)) {
+    // Une vivace déjà sur le balcon ne se ressème pas (une annuelle, si : radis, salades…).
+    const installedPerennial = addedAt !== undefined && entry.perennial;
+    if (entry.sowMonths.includes(m) && !installedPerennial) {
       // Semis précoce d'une plante frileuse : au chaud dans la maison, pas encore sur le balcon.
       const indoors = sowsIndoors(entry, m);
       const description = indoors
@@ -62,9 +74,8 @@ export function calendarActivities(subjects: CalendarSubject[], month: number, o
     }
     // Une vivace déjà en pot se rempote plutôt qu'elle ne se replante : un seul geste le même mois.
     const repotsThisMonth = entry.repotMonths.includes(m);
-    // Déjà sur le balcon : elle est plantée. Seule une plante arrivée ce mois-ci (achetée, ajoutée depuis
-    // une suggestion) garde son « Plante … » du mois en cours.
-    const alreadyPlanted = addedAt !== undefined && !(m === now.getMonth() + 1 && sameMonth(new Date(addedAt), now));
+    // Installée sur le balcon : elle est plantée, plus de « Plante … ». Seule une plante « à planter » le garde.
+    const alreadyPlanted = addedAt !== undefined && !toPlant;
     if (entry.plantMonths.includes(m) && !(entry.perennial && repotsThisMonth) && !alreadyPlanted) {
       activities.push({ ...base, key: `${id}:plant`, kind: "plant", typeLabel: "PLANTATION", title: `Plante ${entry.label}`, description: `Période de plantation : ${formatMonthRange(entry.plantMonths)}. Un terreau frais et un pot percé font la moitié du travail.`, tone: "coral", eventType: "observation" });
     }
@@ -84,6 +95,51 @@ export function calendarActivities(subjects: CalendarSubject[], month: number, o
   return activities.sort((a, b) => ORDER[a.kind] - ORDER[b.kind]);
 }
 
+/**
+ * Le premier geste d'une plante à planter : « Plante la lavande » si c'est le moment de la planter, sinon
+ * « Sème la mâche » (au chaud si le semis du mois se fait à l'intérieur). Hors saison, le verbe suit ce que
+ * la plante permet (plant acheté d'abord), et la description donne la bonne période.
+ */
+export function startActivity(subject: CalendarSubject, month: number, options: CalendarOptions = {}): CalendarActivity {
+  const entry = adaptToClimate(subject.entry, options.climate);
+  const m = month as Month;
+  // L'hiver, sur le rebord intérieur (persil, cresson…) : il fait trop froid dehors.
+  if (sowsOnWindowsill(entry, m)) {
+    return {
+      key: `${subject.id}:start`, kind: "sow", subjectId: subject.id, entry, typeLabel: "SEMIS", title: `Sème ${entry.label} à l’intérieur`,
+      description: `Sur un rebord lumineux, dans la maison : un petit pot de terreau, les graines à peine recouvertes, la terre gardée humide. Il fait trop froid dehors : le pot sortira au balcon au printemps.`,
+      tag: subject.displayName.toUpperCase(), tone: "lime", eventType: "observation", start: true,
+    };
+  }
+  const plantNow = entry.plantMonths.includes(m);
+  const sowNow = entry.sowMonths.includes(m);
+  const kind: CalendarActivityKind = plantNow || (!sowNow && entry.plantMonths.length > 0) ? "plant" : "sow";
+  const indoors = kind === "sow" && sowsIndoors(entry, m);
+  const inSeason = kind === "plant" ? plantNow : sowNow;
+  const period = kind === "plant" ? formatMonthRange(entry.plantMonths) : describeSowing(entry);
+  const how =
+    kind === "plant"
+      ? `Installe-la dans un pot percé d’au moins ${entry.potLiters} L, avec un terreau frais, puis arrose bien.`
+      : indoors
+        ? `Sème en godets à l’intérieur, au chaud (18 à 22 °C), près d’une fenêtre lumineuse.${entry.plantMonths.length > 0 ? ` Installe les plants dehors en ${formatMonthRange(entry.plantMonths)}.` : ""}`
+        : `Sème dans un pot d’au moins ${entry.potLiters} L de terreau fin, recouvre à peine et arrose en pluie fine.`;
+  const description = inSeason ? how : `${how} Meilleure période : ${period}.`;
+  const title = kind === "plant" ? `Plante ${entry.label}` : indoors ? `Sème ${entry.label} au chaud` : `Sème ${entry.label}`;
+  return {
+    key: `${subject.id}:start`,
+    kind,
+    subjectId: subject.id,
+    entry,
+    typeLabel: kind === "plant" ? "PLANTATION" : "SEMIS",
+    title,
+    description,
+    tag: subject.displayName.toUpperCase(),
+    tone: kind === "plant" ? "coral" : "lime",
+    eventType: "observation",
+    start: true,
+  };
+}
+
 function monthKey(date: Date) {
   return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}`;
 }
@@ -93,6 +149,8 @@ function monthKey(date: Date) {
  * (cocher d'un côté coche l'autre) ; un semis, une plantation ou un rempotage se note une fois par mois.
  */
 export function activityEventId(activity: CalendarActivity, now: Date) {
+  if (activity.start) return startEventId(activity.subjectId);
+  if (activity.followUp) return `${activity.subjectId}:${activity.followUp}`;
   if (activity.kind === "care" && activity.taskId) return sessionEventId(activity.subjectId, activity.taskId, now);
   if (activity.kind === "harvest") return `${activity.subjectId}:calendar-harvest:${dayKey(now)}`;
   return `${activity.subjectId}:calendar-${activity.kind}:${monthKey(now)}`;

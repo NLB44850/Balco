@@ -199,7 +199,8 @@ export function useLocalWeather(options: UseLocalWeatherOptions = {}) {
     }
   }, []);
 
-  const requestDeviceLocation = useCallback(async () => {
+  /** Demande la position du téléphone (sa fenêtre n'arrive qu'à ce moment-là) ; true si elle est obtenue. */
+  const requestDeviceLocation = useCallback(async (): Promise<boolean> => {
     setIsLoading(true);
     try {
       if (Platform.OS === "web" && typeof window !== "undefined" && !window.navigator.geolocation) {
@@ -228,11 +229,13 @@ export function useLocalWeather(options: UseLocalWeatherOptions = {}) {
       await savePreference(nextPreference);
       setPreference(nextPreference);
       await loadForecast(latitude, longitude, city);
+      return true;
     } catch (locationError) {
       const message = locationError instanceof Error ? locationError.message : "Position indisponible, affichage de Paris.";
       setError(message);
       if (!preference || preference.mode === "denied") await loadForecast(PARIS_COORDINATES.latitude, PARIS_COORDINATES.longitude, PARIS_COORDINATES.city, true);
       else setIsLoading(false);
+      return false;
     }
   }, [loadForecast, preference]);
 
@@ -258,12 +261,9 @@ export function useLocalWeather(options: UseLocalWeatherOptions = {}) {
       await loadForecast(preference.latitude, preference.longitude, preference.city, false, true);
       return;
     }
-    if (preference?.mode === "denied") {
-      await loadForecast(PARIS_COORDINATES.latitude, PARIS_COORDINATES.longitude, PARIS_COORDINATES.city, true, true);
-      return;
-    }
-    await requestDeviceLocation();
-  }, [loadForecast, preference, requestDeviceLocation]);
+    // Pas de ville choisie (refusée ou « Plus tard ») : Paris par défaut, sans redemander la position.
+    await loadForecast(PARIS_COORDINATES.latitude, PARIS_COORDINATES.longitude, PARIS_COORDINATES.city, true, true);
+  }, [loadForecast, preference]);
 
   useEffect(() => {
     const listener = (next: LocationPreference) => setPreference(next);
@@ -300,14 +300,14 @@ export function useLocalWeather(options: UseLocalWeatherOptions = {}) {
 
   useEffect(() => {
     if (!isPreferenceLoaded) return;
-    if (!preference) {
-      void requestDeviceLocation();
-    } else if (preference.mode === "device" || preference.mode === "manual") {
+    // La position n'est jamais demandée d'office : seulement par « Utiliser ma position » (accueil, choix de
+    // la ville). Sans ville, Paris par défaut et le bandeau « Choisir ma ville » d'Aujourd'hui.
+    if (preference?.mode === "device" || preference?.mode === "manual") {
       void loadForecast(preference.latitude, preference.longitude, preference.city);
     } else {
       void loadForecast(PARIS_COORDINATES.latitude, PARIS_COORDINATES.longitude, PARIS_COORDINATES.city, true);
     }
-  }, [isPreferenceLoaded, loadForecast, preference, requestDeviceLocation]);
+  }, [isPreferenceLoaded, loadForecast, preference]);
 
   // Version de test : la météo réelle est remplacée par le scénario choisi dans le profil.
   const { scenario } = useWeatherSimulation();

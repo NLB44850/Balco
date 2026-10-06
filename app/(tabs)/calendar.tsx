@@ -7,9 +7,10 @@
  */
 import { useRouter } from "expo-router";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { Modal, Pressable, ScrollView, StyleSheet, View } from "react-native";
+import { Pressable, ScrollView, StyleSheet, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
+import { CityPicker } from "@/components/city-picker";
 import { LightScreen } from "@/components/light-screen";
 import { PlantPicture } from "@/components/plant-picture";
 import { ScreenHeader } from "@/components/screen-header";
@@ -18,8 +19,8 @@ import { BottomSheet } from "@/components/today/bottom-sheet";
 import { TODAY_ROW_PICTURE, TodayRow } from "@/components/today/today-row";
 import { UndoToast, type ToastMessage } from "@/components/today/undo-toast";
 import { glass } from "@/components/ui/glass";
-import { Text, TextInput } from "@/components/ui/typography";
-import { type CityResult, useLocalWeather } from "@/hooks/use-local-weather";
+import { Text } from "@/components/ui/typography";
+import { useLocalWeather } from "@/hooks/use-local-weather";
 import { useColors } from "@/hooks/use-colors";
 import { useGarden } from "@/lib/garden/garden-context";
 import { careProfileFor, dayKey, plantDisplayName, type ResolvedPlant } from "@/lib/garden/garden-logic";
@@ -40,8 +41,8 @@ import {
   type CalendarActivity,
   type CalendarSubject,
 } from "@/lib/plants/calendar";
-import { describeSowing, formatMonthRange, MONTH_LONG, MONTH_SHORT, recommendPlants } from "@/lib/plants/catalog";
-import { nextSuggestionMonth, seasonalSuggestions, seasonSuggestions, suggestionActionLabel, type SeasonalSuggestion } from "@/lib/plants/suggestions";
+import { describeSowing, formatMonthRange, MONTH_LONG, MONTH_SHORT } from "@/lib/plants/catalog";
+import { nextSuggestionMonth, seasonalStarters, seasonalSuggestions, seasonSuggestions, suggestionActionLabel, type SeasonalSuggestion } from "@/lib/plants/suggestions";
 import { climateSummary, climateZoneFor } from "@/lib/plants/climate";
 import { decideReminders } from "@/lib/reminders/reminder-engine";
 import { withoutSnoozed, type ReminderSnooze } from "@/lib/reminders/reminder-actions";
@@ -87,17 +88,15 @@ export default function CalendarScreen() {
   // Climat de la ville choisie : dates des plantes frileuses décalées (Midi plus tôt, montagne plus tard).
   const climate = useMemo(() => (weather.isFallback ? null : climateZoneFor(weather.latitude, weather.longitude, weatherSnapshot.elevationM)), [weather.isFallback, weather.latitude, weather.longitude, weatherSnapshot.elevationM]);
   const [cityModalVisible, setCityModalVisible] = useState(false);
-  const [cityQuery, setCityQuery] = useState("");
-  const [cityResults, setCityResults] = useState<CityResult[]>([]);
-  const [citySearchLoading, setCitySearchLoading] = useState(false);
-  const [citySearchError, setCitySearchError] = useState<string | null>(null);
   // Sans plante au balcon, le calendrier montre des idées adaptées plutôt qu'un écran vide.
   const showingIdeas = resolvedPlants.length === 0;
+  // Les idées : seulement ce qui se sème ou se plante ce mois-ci, dans le climat de la ville.
+  const starters = useMemo(() => (showingIdeas ? seasonalStarters(onboarding, { month: currentMonth, climate, limit: 4 }) : null), [climate, currentMonth, onboarding, showingIdeas]);
   const subjects = useMemo<CalendarSubject[]>(
-    () => showingIdeas
-      ? recommendPlants(onboarding, { month: currentMonth }).slice(0, 4).map((entry) => ({ id: entry.id, entry, displayName: entry.name }))
+    () => starters
+      ? starters.plants.map((entry) => ({ id: entry.id, entry, displayName: entry.name }))
       : resolvedPlants.map((resolved) => ({ id: resolved.plant.id, entry: resolved.entry, displayName: plantDisplayName(resolved), addedAt: resolved.plant.addedAt })),
-    [currentMonth, onboarding, resolvedPlants, showingIdeas],
+    [resolvedPlants, starters],
   );
   const resolvedById = useMemo(() => new Map<string, ResolvedPlant>(resolvedPlants.map((resolved) => [resolved.plant.id, resolved])), [resolvedPlants]);
   const activeFilter = selectedPlant === "all" || subjects.some((subject) => subject.id === selectedPlant) ? selectedPlant : "all";
@@ -152,32 +151,14 @@ export default function CalendarScreen() {
   const openToday = () => router.push("/(tabs)");
 
   const addSuggestion = async ({ entry }: SeasonalSuggestion) => {
-    const created = await addPlant(entry.id);
+    // Une idée de saison : choisie, à semer ou planter (premier geste sur Aujourd'hui).
+    const created = await addPlant(entry.id, { toPlant: true });
     showToast(`Ajouté à ton balcon : ${entry.name}`, () => void removePlant(created.id));
   };
 
   const addIdea = async (activity: CalendarActivity) => {
-    await addPlant(activity.entry.id);
+    await addPlant(activity.entry.id, { toPlant: true });
     showToast(`${activity.entry.name} ajouté à ton balcon`);
-  };
-
-  const searchManualCity = async () => {
-    setCitySearchLoading(true);
-    setCitySearchError(null);
-    try {
-      setCityResults(await searchCities(cityQuery));
-    } catch (searchError) {
-      setCitySearchError(searchError instanceof Error ? searchError.message : "Recherche indisponible.");
-    } finally {
-      setCitySearchLoading(false);
-    }
-  };
-
-  const chooseCity = async (city: CityResult) => {
-    await selectCity(city);
-    setCityModalVisible(false);
-    setCityQuery("");
-    setCityResults([]);
   };
 
   const picture = (activity: CalendarActivity) => {
@@ -284,7 +265,7 @@ export default function CalendarScreen() {
 
         <View style={styles.periodHead}>
           <Text style={[styles.periodTitle, { color: colors.foreground }]}>{capitalize(periodLabel)}</Text>
-          <Text style={[styles.text, { color: colors.muted }]}>{showingIdeas ? "Ton balcon est vide : voici ce que tu pourrais cultiver. Ajoute une plante pour un calendrier sur mesure." : `Ton calendrier : ce qui t’attend dans les prochains mois.${thisMonth ? " Les gestes de ce mois se font depuis Aujourd’hui." : ""}`}</Text>
+          <Text style={[styles.text, { color: colors.muted }]}>{showingIdeas ? `Ton balcon est vide : voici ce que tu pourrais cultiver. Ajoute une plante pour un calendrier sur mesure.${starters?.notice ? ` ${starters.notice}` : ""}` : `Ton calendrier : ce qui t’attend dans les prochains mois.${thisMonth ? " Les gestes de ce mois se font depuis Aujourd’hui." : ""}`}</Text>
         </View>
 
         {ordered.length > 0 && (
@@ -384,9 +365,7 @@ export default function CalendarScreen() {
         )}
       </BottomSheet>
 
-      <Modal visible={cityModalVisible} transparent animationType="slide" onRequestClose={() => setCityModalVisible(false)}>
-        <View style={styles.modalBackdrop}><View style={[styles.modalCard, { backgroundColor: colors.surface }]}><View style={styles.modalHeader}><View><Text style={[styles.modalOverline, { color: colors.muted }]}>Ta ville</Text><Text style={[styles.modalTitle, { color: colors.foreground }]}>Où pousse ton jardin ?</Text></View><Pressable onPress={() => setCityModalVisible(false)} style={styles.closeButton}><Text style={[styles.closeText, { color: colors.muted }]}>×</Text></Pressable></View><Text style={[styles.modalIntro, { color: colors.muted }]}>Choisis une ville pour adapter la météo et les conseils de culture.</Text><TextInput value={cityQuery} onChangeText={setCityQuery} onSubmitEditing={() => void searchManualCity()} placeholder="Rechercher une ville…" placeholderTextColor={colors.muted} returnKeyType="search" style={[styles.cityInput, { borderColor: colors.border, color: colors.foreground, backgroundColor: colors.background }]} /><Pressable onPress={() => void searchManualCity()} style={({ pressed }) => [styles.searchButton, { backgroundColor: colors.primary }, pressed && styles.pressed]}><Text style={styles.searchButtonText}>{citySearchLoading ? "Recherche…" : "Rechercher"}</Text></Pressable>{citySearchError && <Text style={[styles.searchError, { color: colors.error }]}>{citySearchError}</Text>}<View style={styles.resultList}>{cityResults.map((city) => <Pressable key={`${city.id}-${city.latitude}`} onPress={() => void chooseCity(city)} style={({ pressed }) => [styles.resultRow, { borderColor: colors.border }, pressed && styles.pressed]}><Text style={[styles.resultName, { color: colors.foreground }]}>{city.name}</Text><Text style={[styles.resultMeta, { color: colors.muted }]}>{[city.admin1, city.country].filter(Boolean).join(" · ")}</Text></Pressable>)}</View><Pressable onPress={() => { setCityModalVisible(false); void requestDeviceLocation(); }} style={({ pressed }) => [styles.deviceLink, pressed && styles.pressed]}><Text style={[styles.deviceLinkText, { color: colors.primary }]}>⌖ Utiliser ma position actuelle</Text></Pressable></View></View>
-      </Modal>
+      <CityPicker visible={cityModalVisible} onClose={() => setCityModalVisible(false)} searchCities={searchCities} selectCity={selectCity} requestDeviceLocation={requestDeviceLocation} />
       {/* Pendant que la feuille d'un groupe est ouverte, le message s'affiche par-dessus elle. */}
       {sheetGroup === null && <UndoToast message={toast} onDone={hideToast} />}
     </LightScreen>
@@ -430,22 +409,4 @@ const styles = StyleSheet.create({
   sheetLink: { alignItems: "center", paddingVertical: 4 },
   link: { fontSize: 14, fontWeight: "600" },
   pressed: { opacity: 0.78, transform: [{ scale: 0.98 }] },
-  modalBackdrop: { flex: 1, justifyContent: "flex-end", backgroundColor: "rgba(18,22,20,0.35)" },
-  modalCard: { borderTopLeftRadius: 28, borderTopRightRadius: 28, paddingHorizontal: 20, paddingTop: 22, paddingBottom: 32, minHeight: 390 },
-  modalHeader: { flexDirection: "row", justifyContent: "space-between", alignItems: "flex-start" },
-  modalOverline: { fontSize: 13, fontWeight: "600" },
-  modalTitle: { fontSize: 23, fontWeight: "800", marginTop: 4 },
-  closeButton: { padding: 2 },
-  closeText: { fontSize: 28, lineHeight: 28, fontWeight: "300" },
-  modalIntro: { fontSize: 12, lineHeight: 18, marginTop: 9, maxWidth: 310 },
-  cityInput: { borderWidth: 1, borderRadius: 14, paddingHorizontal: 14, paddingVertical: 12, fontSize: 14, marginTop: 18 },
-  searchButton: { alignSelf: "flex-start", borderRadius: 13, paddingHorizontal: 15, paddingVertical: 11, marginTop: 10 },
-  searchButtonText: { color: "#FFF", fontSize: 12, fontWeight: "800" },
-  searchError: { fontSize: 11, marginTop: 9 },
-  resultList: { marginTop: 10 },
-  resultRow: { borderBottomWidth: 1, paddingVertical: 10 },
-  resultName: { fontSize: 14, fontWeight: "800" },
-  resultMeta: { fontSize: 10, marginTop: 3 },
-  deviceLink: { alignSelf: "flex-start", marginTop: 16 },
-  deviceLinkText: { fontSize: 12, fontWeight: "800" },
 });

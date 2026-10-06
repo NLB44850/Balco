@@ -3,7 +3,8 @@
 Balco est une app de jardinage sur balcon, en français (Expo SDK 54, React Native 0.81, expo-router,
 serveur Express + tRPC + Drizzle/MySQL). Ce fichier résume où en est le projet et comment travailler
 avec son porteur. Détails : `docs/feuille-de-route.md` (demande d'origine, état, ordre de travail),
-`docs/deploiement.md` (Codespaces, APK), `docs/synchro-et-rappels.md`.
+`docs/deploiement.md` (Codespaces, APK), `docs/synchro-et-rappels.md`. Récap à coller dans le chat Claude
+(claude.ai) : `docs/recap-pour-claude.md`, à mettre à jour avec le récap ci-dessous quand l'état change.
 
 ## Travailler avec le porteur du projet
 
@@ -38,14 +39,14 @@ Tout se passe dans son GitHub Codespace (pas de Docker sur son PC).
 
 - `pnpm -s check`, `pnpm -s lint`, puis `TEST_DATABASE_URL=mysql://balco:balco@localhost:3306/balco_cal npx vitest run`
   (MariaDB locale : `service mariadb start` si elle s'est arrêtée, `apt-get install -y mariadb-server` si elle manque,
-  puis `DATABASE_URL=… npx drizzle-kit migrate` ; 433 tests à ce jour). Dans un conteneur
+  puis `DATABASE_URL=… npx drizzle-kit migrate` ; 480 tests à ce jour). Dans un conteneur
   neuf : `apt-get install -y mariadb-server`, `service mariadb start`, créer la base `balco_cal` et l'utilisateur
   `balco`/`balco`, puis `pnpm -s build && DATABASE_URL=mysql://balco:balco@localhost:3306/balco_cal node dist/migrate.mjs`.
 - `npx expo export --platform android` pour s'assurer que le bundle Android se construit.
 - **Tests de bout en bout** (à lancer quand le porteur le demande, et avant chaque grosse évolution) :
   `bash scripts/e2e.sh` (≈ 4 min : construit l'app web avec la simulation météo, migre la base, démarre
   le vrai serveur sur le port 3100, lance Playwright). `bash scripts/e2e.sh meteo` pour un seul fichier,
-  `E2E_SKIP_BUILD=1` pour ne pas reconstruire. Scénarios dans `e2e/` (25 aujourd'hui, avec un faux service d'IA pour Observer) : parcours
+  `E2E_SKIP_BUILD=1` pour ne pas reconstruire. Scénarios dans `e2e/` (36 aujourd'hui, avec un faux service d'IA pour Observer) : parcours
   (onboarding, écrans, cocher/Annuler, fête, catalogue, fiche d'une nouvelle plante, feuille du bas qui se ferme,
   suggestions de saison, Saisons rangé par type), météo (pluie + eau économisée, gel + Saisons,
   orage, vent, canicule, « Pas aujourd'hui », retour météo réelle), compte (code de connexion lu dans
@@ -79,6 +80,55 @@ visuelle, retour immédiat.
   (`profile.tsx`) s'ouvre par l'avatar, « Observer » (`scanner.tsx`) depuis Nora et Balcon.
 
 ## Où on en est
+
+**Nouvelle conversation ? L'onboarding (`docs/chantier-onboarding.md`) et le pas-à-pas pour planter (`docs/chantier-pas-a-pas.md`) sont testés par le porteur et en PR vers `main` : https://github.com/NLB44850/Balco/pull/28 (ouverte le 06/10, à fusionner par lui). Chantier suivant, validé : rempotage selon le besoin (point 4 ci-dessous).**
+
+**Récap pour reprendre (06/10)** : ce bloc fait foi ; les paragraphes plus bas sont l'historique (certains
+décrivent un état ancien, par exemple Saisons « à cocher » ou une fête plein écran à chaque récolte).
+
+Fait et fusionné dans `main` (PR #27 le 06/10) : tout le MVP décrit plus bas (rappels, calendrier, Nora qui se
+souvient, progression, vacances, catalogue de 100 plantes avec photos, refonte visuelle, audit coûts et charge)
+et les 10 étapes du test utilisateur du 04/10 (détail dans « Historique des listes de travail »).
+
+**À faire, dans l'ordre** (une étape = un commit testé, puis validation du porteur sur son téléphone) :
+1. **Revérifier sur l'APK** (construit le 06/10, à refaire avec la correction) : l'aperçu de la photo dans Observer
+   (`expo-image`), l'appareil photo depuis Aujourd'hui, les notifications, Balcon à deux cartes par ligne.
+2. **Refonte de l'onboarding : chantier en cours, plan validé le 06/10.** Tout est dans
+   **`docs/chantier-onboarding.md`** (état des lieux vérifié, plan en 8 étapes A1, A2, A3, B1 à B4, C1, C2, et les
+   8 décisions prises). **A1 validée le 06/10 ; A2 à C2 codées d'affilée le 06/10 à sa demande (« enchaîne, je testerai
+   à la fin »)** : à tester (web pour tout le parcours, APK pour les rappels et la position) ; ensuite PR vers `main`.
+   Ce qui en reste dans le code : `seasonalStarters` (plantes de saison), `lib/reminders/activate.ts`,
+   `components/city-picker.tsx` + bandeau « Météo de Paris par défaut », `GardenPlant.toPlant` (« à planter »,
+   migration 0015, `startActivity`, événement `<id>:start`), `app/welcome.tsx` (`onboardingSteps`, `arrivalCard`,
+   relance `/welcome?again=1`), `lib/ai/greeting.ts` (prénom demandé par Nora). Plus aucune demande de position
+   d'office (`use-local-weather.ts`). Ne pas reposer les questions déjà tranchées.
+3. **Pas-à-pas pour planter + fin de l'accueil : codé le 06/10 (P1 à P8, enchaîné à sa demande), à tester.**
+   Tout est dans **`docs/chantier-pas-a-pas.md`** (ses 12 choix, avancement étape par étape). Dans le code :
+   catalogue « Déjà sur mon balcon / À planter » (`addChoices`), hiver (`lib/plants/indoor.ts`, `springWishes`,
+   `lib/garden/spring.ts`, carte « C'est le moment » en mars), « Rappelle-moi samedi » (`lib/garden/postpone.ts`),
+   données de plantation des 100 plantes (`lib/plants/planting.ts`, sources par plante), gestes de suite
+   (`lib/garden/follow-ups.ts` : éclaircir, sortir les plants, pincer), 22 illustrations
+   (`components/guide/illustrations.tsx`, revue dans Réglages → Version de test), guide `app/guide/[catalogId].tsx`
+   (logique `lib/plants/guide.ts`). Après son test : PR vers `main` (onboarding + pas-à-pas).
+4. **Rempotage selon le besoin** (validé le 06/10, **à faire après la PR** onboarding + pas-à-pas), 3 étapes :
+   1) rythme par vivace vérifié sur le web (menthe chaque année, lavande tous les 2 ans, agrumes et petits fruits 2-3
+   ans…) et jamais la première saison (≈ un an dans son pot, compté depuis la plantation notée) ; les autres années,
+   geste « Change les 5 cm de terre du dessus » (surfaçage, validé) ; 2) signe à vérifier (« Des racines sortent par
+   les trous ? L'eau ressort tout de suite ? Rempote… ») + « Pas besoin cette année », volume du pot retenu et pot
+   suivant proposé (≈ +1/3) ; 3) pas-à-pas illustré du rempotage (« Ce qu'il te faut », démêler les racines…).
+   Aujourd'hui : `repotMonths` par défaut [3, 4] pour toute vivace (`plant()` dans `lib/plants/catalog.ts`), sans
+   regarder l'âge (une vivace plantée la veille peut avoir « Rempote… »).
+5. **Après-récolte** des plantes récoltées en une fois (radis, carottes, salades pommées) : « Tout récolté ? » →
+   « Ressemer » ou « Libérer le pot ». À décider avec lui.
+6. **Mémoire de Nora sur plusieurs jours** : il doit encore faire le test sur 2-3 jours (retour à recueillir).
+7. **Tester sans Codespace** (proposé, pas encore demandé) : version web hébergée qui se met à jour seule et APK
+   construit par une action GitHub (EXPO_TOKEN qu'il enregistre lui-même dans les secrets du dépôt).
+8. **À la publication** (pas encore décidée) : notifications serveur Android (FCM), reports « Dans 3 h »
+   synchronisés avec le serveur, photos des plantes sur le serveur, paiement Balco+ (RevenueCat ; les textes
+   disent « Bientôt »), Expo 54 → 57, politique de confidentialité, fiche et compte Play Store
+   (`docs/avant-publication.md`).
+9. **Version suivante** (feuille de route) : suivi photo d'une plante dans le temps, balcon visuel (plan,
+   emplacement, exposition), récoltes et recettes, défis communautaires.
 
 Fait (validé sur son téléphone) :
 - Rappels intelligents (priorité 1) : messages clairs, Fait / Dans 3 h / Pas aujourd'hui, alertes
@@ -268,159 +318,50 @@ et route réservée à `role = admin`. Balco+ sera payant (offre commerciale Ope
   https://github.com/NLB44850/Balco/pull/14 (étapes 7 à 11) fusionnée dans `main` le 04/10.
 
 
-À faire, dans l'ordre (liste du porteur, 30/09) :
-1. Eau économisée (simulation pluie → « N'arrose pas » → toast litres → Ma semaine, bloc 💧) :
-   **validé** le 02/10.
-2. Petites victoires : refaites le 01/10 (animation à chaque coche, fête plein écran, chaque récolte
-   fêtée). **Validé** (« c'est top »).
-3. Alertes météo : vérifiées le 01/10 (tests de bout en bout). Corrigé : canicule sans alerte pour une
-   plante jamais arrosée dans l'app ; « Arrose … si besoin » en double sous l'alerte chaleur, pendant un
-   orage ou une fois arrosé ; Saisons montrait encore une alerte déjà traitée. **Validé** le 01/10.
-4. Catalogue agrandi le 01/10 : **100 plantes** (27 nouvelles : agastache, livèche, plante huître, sauge
-   ananas, tomatillo, gombo, haricot kilomètre, concombre des Antilles, épinard-fraise, arroche,
-   tétragone, baselle, claytone, ficoïde glaciale, moutarde de Chine, chou-rave, poireau perpétuel, oca,
-   crosnes, œillet mignardise, dahlias nains, mufliers, fuchsia rustique, fraisier des bois, kiwaï,
-   cassissier, mûres sans épines), des variétés anciennes, originales et récentes ajoutées aux plantes
-   existantes, variétés en pastilles dans la fiche du catalogue. (Le filtre « Anciennes & originales » et
-   les mentions Ancienne / Originale / Nouveauté ont été retirés le 02/10 à sa demande : « ça n'apporte rien ».) **Photos d'exemple** : 100 sur 100 le 02/10. **Validé**, ainsi que la
-   feuille du bas corrigée le 02/10 (« × », glisser vers le bas, jamais plus haute que l'écran).
-   Pour une nouvelle plante : recherche dans `PLANTS` du script, `AWAITING_PHOTO` dans
-   `tests/stock-photos.test.ts`, puis candidates / `choix.json` / `--final`, recompression en 800 px
-   qualité 74 (`convert -resize '800x800>' -strip -quality 74`) et `node scripts/photos/generer-index.mjs`.
-5. Suggestions selon le mois : livrées le 02/10 dans Saisons, le catalogue et Aujourd'hui (« Idée du
-   mois », à sa demande), avec Saisons rangé par type de geste : **validé** le 04/10.
-6. À la publication : notifications serveur sur Android (Firebase/FCM) ; synchroniser les reports
-   (« Dans 3 h ») avec le serveur ; envoyer les photos des plantes sur le serveur (stockage d'images)
-   pour les retrouver sur un autre téléphone.
-
-**Prochaines séances (04/10)** : le porteur ne veut pas encore publier. Ordre : suggestions de saison
-(validées le 04/10), puis la carte « Sa progression » de la fiche plante (validée le 04/10), puis la mémoire
-de Nora sur plusieurs jours (en cours : test sur 2-3 jours, protocole donné le 04/10). État lisible pour lui : `docs/feuille-de-route.md`
-(parties 2 à 4, mises à jour le 04/10).
-
-**Retours du test utilisateur (04/10, plan validé, 10 étapes, une par commit)** : 1 plan du jour unique
-(Aujourd'hui, Balcon, fiche, pastilles) ; 2 titres d'action sans « si besoin » + sous-titre concret ;
-3 vérifications regroupées ; 4 alertes météo en bandeau ; 5 gestes de saison dans Aujourd'hui, Saisons en
-lecture seule ; 6 cohérence Saisons / Ma semaine / Moi + libellé Idée du mois ; 7 série de « jours suivis » ;
-8 fêtes plus rares + tuile « 0 photo » masquée ; 9 Observer sans compte ; 10 textes de l'offre en bénéfices.
-Vitest pour chaque correction, scénario Playwright de cohérence (Aujourd'hui, Balcon, Saisons, Ma semaine, Moi).
-Choix du porteur : ordre des gestes alerte > arrosage > récolte > plantation/semis/rempotage > engrais >
-entretien ; gel et orage = bandeau + bouton « C'est fait », pluie = bandeau simple ; fête plein écran
-seulement pour un nouveau badge et la 1ʳᵉ récolte de chaque plante, au plus une par jour (le reste :
-animation discrète) ; Observer sans compte = 1 analyse par appareil, 3 par réseau et par jour ; Aujourd'hui :
-une ligne par plante au plus, arrosages regroupés, alertes / arrosages / récoltes toujours visibles, engrais
-et entretien repliés sous « X autres gestes, pas urgents » dès qu'il y a plus de 5 lignes. À la fin : lister
-ce qui n'a pas pu être corrigé ou demande une décision.
-- **Étape 1 faite (04/10)** : plan du jour unique `lib/garden/day-plan.ts` (`planDay` : gestes par plante dans
-  l'ordre `GESTURE_ORDER`, état `good`/`watch`/`weather`/`new` avec une couleur par sens, `gestureLine`,
-  `eventForGesture`, `STATUS_LEGEND`) lu par Aujourd'hui (`buildTodayList({ groups, plan })` : alertes météo puis
-  une ligne par plante, plus de limite à 3), Balcon, la fiche (légende sous l'état) et les pastilles, via le
-  hook partagé `hooks/use-day-plan.ts` (météo, réglages, reports, décisions). `buildDailySession` et
-  `nextGesture` supprimés. Arrosée aujourd'hui = ligne cochée même si le conseil météo s'est tu. Scénario
-  `e2e/4-coherence.spec.ts` (Aujourd'hui, Balcon, fiche ; à compléter à l'étape 6). Pastilles d'Aujourd'hui
-  avec libellé accessible « Basilic, À surveiller ». **Validée** sur téléphone le 05/10 ; le porteur trouve
-  Aujourd'hui trop long avec beaucoup de plantes (6 récoltes) mais garde le plan prévu (étape 3 inchangée,
-  pas de rythme de récolte).
-- **Étape 2 faite (05/10)** : titres d'action sans « si besoin » (« Arrose le basilic », tâche du catalogue et
-  décision de soif) ; sous-titre concret « Enfonce ton doigt : sèche sur N cm ? Arrose. » (`soilCheckDepthCm`,
-  `soilCheckText` dans `lib/plants/catalog.ts`, profondeur lue dans la consigne du catalogue, 2 cm par défaut ;
-  `soilCheckCm` du profil de soin) ; plus de sous-titre qui répète le titre. `ready` dans `useDayPlan` : Balcon et
-  la fiche n'affichent l'état et le geste qu'une fois météo, réglages et reports chargés (plus de « En forme »
-  qui devient « À surveiller »). **Validée** sur téléphone le 05/10.
-- **Étape 3 faite (05/10)** : `layoutTodayList` (`lib/garden/today.ts`, lignes `TodayLine` : `item`, `watering`,
-  `more`) : dès 2 arrosages, une ligne « Vérifie la terre de N plantes » (« Sèche ? Arrose · basilic, menthe… »,
-  « 1 sur 3 faites ») qui ouvre une feuille du bas où l'on coche chaque plante ; au-delà de 5 lignes à faire
-  (`MAX_TODAY_LINES`), engrais et entretien repliés sous « X autres gestes, pas urgents » (se déplie sur place).
-  Chaque `TodayItem` porte `gesture` et `plantName`. E2e : `wateringGroup(page)` dans `e2e/helpers.ts`.
-  **Noté pour la fin** (question du porteur, 05/10) : pas de cycle après récolte ; pour les plantes à récolte
-  unique (radis, carottes, salades pommées…), proposer « Tout récolté ? » → « Ressemer » ou « Libérer le pot ».
-  **Validée** sur téléphone le 05/10.
-
-**Reprise dans une nouvelle conversation (05/10) : étapes 4 et 5 livrées le 05/10 (le porteur a dit de passer à la 5 et accepté de régler les points de la pluie à l'étape 7) ; étape 5 validée ; étape 6 validée ; étape 7 validée ; étape 8 validée ; étape 9 validée (photo dans Chrome : parade du rechargement, pas de copie dans la galerie, choix du porteur « on laisse comme ça ») ; étape 10 validée le 06/10 ; bilan donné au porteur (après-récolte à décider, paiement Balco+ non branché, nouvel APK à construire) ; PR vers `main` ouverte le 06/10.** Détail des étapes restantes,
-tel que validé par le porteur (une étape = un commit testé : check, lint, vitest, e2e complet avec
-reconstruction, export Android ; puis compte rendu en français avec ce qu'il doit taper et regarder, et
-attendre sa validation avant l'étape suivante) :
-4. ✅ (livrée, à valider : `components/today/weather-banner.tsx`, `splitTodayList` / `rainSavingsToLog` dans
-   `lib/garden/today.ts` ; l'arrosage évité compte encore comme geste suivi dans les points et la série,
-   à revoir avec l'étape 7) **Alertes météo en bandeau** en haut d'Aujourd'hui (au-dessus de la liste, plus des lignes à cocher) :
-   gel et orage = bandeau + bouton « C'est fait » (l'action demandée : rentrer / protéger), pluie = bandeau
-   simple sans bouton (« N'arrose pas aujourd'hui »), et les jours de pluie l'eau économisée est comptée
-   toute seule (plus besoin de cocher « Compris ») ; vent et canicule : à traiter comme gel/orage (bouton).
-   Garder « Dans 3 h » / « Pas aujourd'hui » dans la feuille du bas. Mettre à jour `e2e/2-meteo.spec.ts`
-   (cases « Marquer comme fait : Gel… », « 35 °C… », eau économisée) et `tests/today.test.ts`.
-5. ✅ (livrée, à valider : `buildTodayList` montre le 1ᵉʳ geste **à faire** de chaque plante, le suivant
-   prend sa place une fois fait, les gestes faits restent cochés en bas ; Saisons sans cases, détail « Le faire
-   sur Aujourd'hui » pour le mois en cours, plus de « Tout est fait » ni de « Voir ma semaine » dans Saisons ;
-   à sa demande, Saisons montre ce qui est déjà fait, sans case : `activityDoneSoFar` / `activityDoneLabel`
-   dans `lib/plants/calendar.ts`, récolte « ✓ Faite aujourd'hui » d'où qu'elle vienne, semis / plantation /
-   rempotage « ce mois-ci », « 1 sur 5 déjà fait · … » sur les groupes ; décocher un geste noté depuis un
-   conseil météo réveille le conseil, `wakeSnoozeFor` dans `lib/reminders/reminder-actions.ts`, sinon
-   « Arrose la menthe » ne revenait plus de la journée)
-   **Gestes de saison dans Aujourd'hui, Saisons en lecture seule** : Saisons ne se coche plus, phrase
-   « Ton calendrier : ce qui t'attend dans les prochains mois » ; les gestes du mois (semis, plantation,
-   rempotage, récolte) se font depuis Aujourd'hui. Adapter les e2e Saisons (`1-parcours.spec.ts`).
-6. ✅ (livrée, à valider : Moi affiche « gestes cette semaine » et « jours de suite » tirés de `weekSummary`,
-   comme Ma semaine ; Idée du mois et suggestions : `lastChanceText` / `monthSpan` dans `lib/plants/suggestions.ts`,
-   « Dernier mois pour la planter · récolte de mai à septembre », « Récolte d'août à octobre · facile » ; 2ᵉ scénario
-   de `e2e/4-coherence.spec.ts` : une récolte sur Aujourd'hui se voit dans Saisons, Ma semaine et Moi)
-   **Cohérence Saisons / Ma semaine / Moi** : Moi montre les chiffres de la semaine avec le même calcul que
-   Ma semaine ; libellé de l'Idée du mois « Dernier mois pour la planter · récolte de mai à septembre » ;
-   tests des points 3 et 5 ; compléter `e2e/4-coherence.spec.ts` avec Saisons, Ma semaine et Moi.
-7. ✅ (livrée, à valider : `followedDays` dans `lib/garden/garden-logic.ts` remplace `streakDays` partout (Aujourd'hui,
-   Ma semaine, Moi, badge Main Verte, fête de série) : un jour compte si chaque plante dont l'arrosage était dû
-   (même règle que `planDay`) a été arrosée ou couverte par un arrosage évité (pluie), ou s'il n'y avait rien à
-   arroser ; récolte, entretien, engrais, semis = bonus ; alertes passées non gardées donc non comptées ; jours
-   d'avant la 1ʳᵉ plante = fin de série. L'arrosage évité ne compte plus comme geste ni points (`computeStats`,
-   `weekSummary`). `isAvoidedWatering` déplacé dans garden-logic. Phrase d'explication dans Ma semaine. E2e : option
-   `waterings` de `seedBalcony`)
-   **Série de « jours suivis »** : un jour compte s'il n'y avait rien à faire, ou si tous les gestes
-   demandés ont été faits (aujourd'hui `streakDays` compte les jours avec au moins un geste).
-8. ✅ (livrée, à valider : `Celebration.big` (badge, 1ʳᵉ récolte d'une plante) ; `celebrationStyle` et `withCheer` dans
-   `lib/garden/progress.ts` ; `useCelebration().celebrate` lance le plein écran au plus une fois par jour (jour gardé
-   dans `balco.celebration.last-big-day.v1`, partagé par tous les écrans) et renvoie sinon le mot à mettre devant le
-   message du bas (« 🔥 3 jours de suite · C'est noté · +4 points ») ; case « photo » de Ma semaine masquée à 0)
-   **Fêtes plus rares** : plein écran seulement pour un nouveau badge et la 1ʳᵉ récolte de chaque plante,
-   au plus une par jour ; le reste (autres récoltes, séries, niveaux) = animation discrète de la ligne.
-   Masquer la tuile « 0 photo » (Ma semaine).
-9. ✅ (livrée, à valider : `server/ai/guest.ts` (`takeGuestScan`, `guestScanLeft`, compteurs `guest-device:` sur un an,
-   gardés par la purge, et `guest-ip:` sur 24 h, `AI_GUEST_SCANS_PER_NETWORK_PER_DAY`), `peekRateLimit` /
-   `refundRateLimit` dans `server/rate-limit.ts`, routes publiques `ai.guestStatus` et `ai.diagnoseGuest` (budget du
-   mois via `reserveGuest`, ligne `ai_requests` avec `userId = 0`, pause dès 80 % ; analyse rendue si refus ou panne) ;
-   Observer : « 1 analyse offerte, sans compte », carte « Garde ce diagnostic » + « Créer mon compte gratuit » après le
-   résultat, carte « Exemple de résultat » au-dessus de « Créer mon compte » une fois utilisée ; bouton photo
-   d'Aujourd'hui aussi pour les visiteurs. E2e : faux service d'IA `e2e/fake-anthropic.mjs` (2ᵉ `webServer`),
-   `e2e/5-observer.spec.ts`). Retour du porteur (06/10) : dans Chrome sur Android, la page se rechargeait pendant la
-   photo (onglet déchargé par le navigateur, surtout en navigation privée) et revenait sur Aujourd'hui sans rien dire ;
-   le code de l'app est bon (vérifié en e2e). Parade : `lib/ai/camera-interrupt.ts` note l'ouverture de l'appareil photo
-   (`localStorage`, web seulement) ; si la page revient rechargée, Aujourd'hui ouvre Observer qui explique de prendre
-   la photo avec l'appareil du téléphone puis « Choisir dans ma galerie ». Pas de souci attendu dans l'APK.
-   **Observer sans compte** : 1 analyse par appareil et 3 par réseau et par jour, protégées côté serveur
-   et comptées dans le budget IA (`server/ai/budget.ts`, `rate_limits`) ; après le résultat, proposer de
-   créer un compte ; carte d'exemple de résultat au-dessus du bouton de connexion.
-10. ✅ (livrée, à valider : `plusBenefits`, `freeBenefits`, `plusQuotaHint` dans `lib/plans.ts` (une seule source) ;
-   Réglages → Compte : « Crée ton compte gratuit en une minute » + avantages cochés, « Bientôt, avec Balco+ : » pour un
-   compte gratuit, « Avec Balco+, tu profites de : » pour Balco+, bouton « Créer mon compte ou me connecter » ;
-   quota épuisé (serveur, Observer, Nora) : « Avec Balco+, 20 photos analysées / 100 questions à Nora chaque mois. »)
-   **Textes de l'offre Balco+ en bénéfices** (Réglages → Compte, messages de quota).
-À la fin des 10 étapes : lister au porteur ce qui n'a pas pu être corrigé ou demande une décision, dont
-l'après-récolte (ci-dessus) ; puis proposer une PR vers `main`.
-
-**Autres sujets de la séance du 05/10** :
-- Il a demandé s'il pouvait travailler depuis un IDE sur mobile : réponse donnée = ouvrir son Codespace
-  dans Chrome sur le téléphone (github.com/codespaces → « Open in browser », mêmes commandes) ; les IDE
-  mobiles (Termux, Acode) ne font pas tourner Docker. Proposé pour **après l'étape 10** (ou entre deux
-  étapes s'il le demande) : une version web hébergée qui se met à jour seule à chaque envoi (adresse fixe,
-  plus de Codespace pour tester) et l'APK construit par une action GitHub (EXPO_TOKEN qu'il enregistre
-  lui-même dans les secrets du dépôt).
-- Un nouvel APK reste à construire pour voir sur Android la correction « Balcon : toujours deux cartes par
-  ligne » (commit `f797f3b`) et les étapes 1 à 3.
-- Il attend toujours de faire le test de la mémoire de Nora sur plusieurs jours (retour à recueillir).
+**Historique des listes de travail** (toutes terminées et fusionnées dans `main`) :
+- Liste du 30/09 : eau économisée, petites victoires, alertes météo, catalogue à 100 plantes avec photos
+  d'exemple, suggestions selon le mois. Pour ajouter une plante : recherche dans `PLANTS` du script,
+  `AWAITING_PHOTO` dans `tests/stock-photos.test.ts`, candidates / `choix.json` / `--final`, recompression
+  800 px qualité 74 (`convert -resize '800x800>' -strip -quality 74`), `node scripts/photos/generer-index.mjs`.
+- **Retours du test utilisateur du 04/10, 10 étapes, toutes validées le 06/10**, PR
+  https://github.com/NLB44850/Balco/pull/27 fusionnée le 06/10. Ce qui en reste dans le code :
+  1. Plan du jour unique `lib/garden/day-plan.ts` (`planDay`, `GESTURE_ORDER`, état `good`/`watch`/`weather`/`new`),
+     lu par Aujourd'hui, Balcon, la fiche et les pastilles via `hooks/use-day-plan.ts` (`ready` avant d'afficher).
+  2. Titres d'action (« Arrose le basilic ») + « Enfonce ton doigt : sèche sur N cm ? Arrose. » (`soilCheckText`).
+  3. `layoutTodayList` (`lib/garden/today.ts`) : arrosages regroupés dès 2 (« Vérifie la terre de N plantes »,
+     feuille du bas), engrais / entretien repliés au-delà de 5 lignes (`MAX_TODAY_LINES`).
+  4. Alertes météo en bandeau (`components/today/weather-banner.tsx`, `splitTodayList`) : gel, orage, vent,
+     chaleur = « C'est fait » ; pluie = bandeau sans bouton, arrosage évité compté tout seul (`rainSavingsToLog`),
+     notification « N'arrose pas » plus envoyée une fois lue. « Dans 3 h » / « Pas aujourd'hui » dans la feuille.
+  5. Aujourd'hui : 1ᵉʳ geste **à faire** par plante, le suivant prend sa place, gestes faits cochés en bas.
+     Saisons en lecture seule (« Ton calendrier : ce qui t'attend… », « Le faire sur Aujourd'hui ») mais montre ce
+     qui est fait (`activityDoneSoFar`, « ✓ Faite aujourd'hui »). Décocher un geste issu d'un conseil météo réveille
+     le conseil (`wakeSnoozeFor`).
+  6. Moi = chiffres de `weekSummary` (comme Ma semaine) ; Idée du mois « Dernier mois pour la planter · récolte de
+     mai à septembre » (`lastChanceText`, `monthSpan`) ; e2e de cohérence `e2e/4-coherence.spec.ts`.
+  7. Série de jours suivis `followedDays` (garden-logic) : un jour compte si chaque plante dont l'arrosage était dû
+     a été arrosée ou couverte par la pluie, ou s'il n'y avait rien à arroser ; le reste = bonus. Arrosage évité :
+     ni geste ni points. Phrase d'explication dans Ma semaine.
+  8. Fêtes : plein écran seulement pour un nouveau badge ou la 1ʳᵉ récolte d'une plante, une fois par jour
+     (`Celebration.big`, `celebrationStyle`, jour gardé dans `balco.celebration.last-big-day.v1`) ; sinon un mot
+     devant le message du bas (`withCheer`). Case « photo » masquée à 0 dans Ma semaine.
+  9. Observer sans compte : `server/ai/guest.ts` (1 analyse par appareil sur un an, 3 par réseau et par jour,
+     `AI_GUEST_SCANS_PER_NETWORK_PER_DAY`), routes publiques `ai.guestStatus` / `ai.diagnoseGuest` (budget IA,
+     `userId = 0`, rendue si échec) ; « Garde ce diagnostic » + « Créer mon compte gratuit », carte « Exemple de
+     résultat ». Web : `lib/ai/camera-interrupt.ts` explique quand Chrome recharge la page pendant la photo. E2e :
+     faux service d'IA `e2e/fake-anthropic.mjs`, `e2e/5-observer.spec.ts`.
+  10. Offre en bénéfices : `plusBenefits`, `freeBenefits`, `plusQuotaHint` (`lib/plans.ts`) dans Réglages → Compte
+      et les messages de quota ; bouton « Créer mon compte ou me connecter ».
+  Après la fusion : Observer affiche la photo avec `expo-image` (zone vide sur Android avec l'Image de React
+  Native, vu dans l'APK du 06/10) ; **à revérifier dans le prochain APK**.
+- Réponses données au porteur, à ne pas reproposer : l'app ne copie pas les photos dans la galerie du téléphone
+  (« on laisse comme ça », 06/10) ; IDE sur mobile = ouvrir le Codespace dans Chrome (« Open in browser »).
 
 Points à ne pas oublier (à proposer au porteur au bon moment, noté le 30/09) :
-- Encore à valider sur son téléphone : la carte « Sa progression » de la fiche plante et les petites
-  victoires (priorité 4), la mémoire de Nora sur plusieurs jours.
+- Encore à valider sur son téléphone : la mémoire de Nora sur plusieurs jours (« Sa progression » et les
+  petites victoires sont validées).
 - **Branche fusionnée dans `main`** : PR #1 (02/10, jusqu'à l'étape 6 de l'audit), #14 (04/10, étapes 7
-  à 11), #15 (04/10, mises à jour Dependabot) et #22 (04/10, Saisons rangé par type, progression, Nora datée) ; la branche est au niveau de `main`. Le travail continue
+  à 11), #15 (04/10, mises à jour Dependabot), #22 (04/10, Saisons rangé par type, progression, Nora datée) et #27 (06/10, les 10 étapes du test utilisateur). Le travail continue
   sur `claude/eloquent-gates-g7xc6x` ; proposer une nouvelle PR vers `main` à la fin de chaque bloc validé. (La session clone le dépôt en partiel : `git fetch --unshallow` avant
   toute comparaison d'historique avec `main`.)
 - **Maintenance** (02/10, fusionné dans `main` par https://github.com/NLB44850/Balco/pull/2 et copié sur

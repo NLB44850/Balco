@@ -226,6 +226,10 @@ export default function PlantScreen() {
                 <Pressable accessibilityRole="button" onPress={() => void undoGesture()} hitSlop={8}><Text style={[styles.link, { color: colors.muted }]}>Annuler</Text></Pressable>
               </View>
             )}
+            {/* Le pas-à-pas : pour la planter, ou pour revoir comment elle l'a été. */}
+            <Pressable accessibilityRole="button" onPress={() => router.push({ pathname: "/guide/[catalogId]", params: { catalogId: entry.id, plantId: plant.id } })} style={({ pressed }) => [styles.guideLink, pressed && styles.pressed]}>
+              <Text style={[styles.link, { color: colors.primary }]}>{plant.toPlant ? "Pas à pas, avec ce qu’il te faut ›" : "Revoir le pas-à-pas ›"}</Text>
+            </Pressable>
             {!gesture && (
               <>
                 <Text style={[styles.nextTitle, { color: colors.foreground }]}>Rien à faire aujourd’hui</Text>
@@ -411,6 +415,7 @@ const styles = StyleSheet.create({
   checkMark: { color: "#FFFFFF", fontSize: 15, fontWeight: "800" },
   flex: { flex: 1 },
   link: { fontSize: 14, fontWeight: "700" },
+  guideLink: { paddingVertical: 6 },
   smallLink: { fontSize: 12, fontWeight: "700" },
   section: { marginTop: 18, gap: 10 },
   progress: { borderWidth: 1, borderRadius: 20, padding: 16, gap: 6 },

@@ -191,6 +191,7 @@ function toSyncPlant(row: typeof reminderPlants.$inferSelect): SyncPlant | null 
     catalogId: row.catalogId,
     nickname: row.nickname ?? undefined,
     varietyId: row.varietyId ?? undefined,
+    ...(row.toPlant ? { toPlant: true } : {}),
     addedAt: (row.addedAt ?? row.createdAt).toISOString(),
     updatedAt: (row.clientUpdatedAt ?? row.updatedAt).toISOString(),
     removedAt: row.removedAt?.toISOString(),
@@ -251,6 +252,7 @@ async function applyPush(db: Db, userId: number, push: SyncPush) {
       varietyId: plant.varietyId && resolved.entry.varieties.some((variety) => variety.id === plant.varietyId) ? plant.varietyId : null,
       addedAt: new Date(plant.addedAt),
       removedAt: plant.removedAt ? new Date(plant.removedAt) : null,
+      toPlant: plant.toPlant ? 1 : 0,
       active: plant.removedAt ? 0 : 1,
       clientUpdatedAt: incomingUpdatedAt,
     };
@@ -355,7 +357,8 @@ export async function recalculateUserReminders(userId: number, now = new Date(),
   const history = events.map((event) => ({ id: event.eventId, plantId: event.plantId, type: event.type as MaintenanceEvent["type"], completedAt: event.completedAt.toISOString(), source: event.source as MaintenanceEvent["source"], note: event.note ?? undefined }));
   const enabled = settings.enabledPlantIds.length > 0 ? new Set(settings.enabledPlantIds) : null;
   const profiles = plants
-    .filter((plant) => !enabled || enabled.has(plant.plantId))
+    // Une plante à planter n'est pas encore en terre : ni soif ni alerte météo.
+    .filter((plant) => plant.toPlant !== 1 && (!enabled || enabled.has(plant.plantId)))
     .map((plant) => {
       // Le catalogue fait foi pour les seuils ; le JSON stocké ne sert qu'aux anciennes lignes.
       const resolved = plant.catalogId ? resolvePlants([{ id: plant.plantId, catalogId: plant.catalogId, nickname: plant.nickname ?? undefined, addedAt: (plant.addedAt ?? plant.createdAt).toISOString() }])[0] : undefined;

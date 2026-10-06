@@ -6,7 +6,8 @@
  * (ou semis, rempotage), engrais, entretien. Le classement ignore les gestes notés aujourd'hui : cocher un
  * geste le marque « fait » sans faire changer la liste sous le doigt. Logique pure.
  */
-import { activityDone, calendarActivities, eventForActivity, type CalendarActivity, type CalendarSubject } from "../plants/calendar";
+import { followUpsFor } from "./follow-ups";
+import { activityDone, calendarActivities, eventForActivity, startActivity, type CalendarActivity, type CalendarSubject } from "../plants/calendar";
 import { tasksForMonth, type CareTask } from "../plants/catalog";
 import type { ClimateInfo } from "../plants/climate";
 import { eventForReminder } from "../reminders/reminder-actions";
@@ -18,6 +19,7 @@ import {
   lastEventDate,
   plantDisplayName,
   sessionEventId,
+  startEventId,
   spacedTaskDue,
   startOfDay,
   type ResolvedPlant,
@@ -74,7 +76,12 @@ export type DayPlanInput = {
   /** Tous les conseils du moment, même mis en sommeil : une soif reportée ne revient pas en arrosage. */
   allDecisions?: ReminderDecision[];
   climate?: ClimateInfo | null;
+  /** Plantes à planter dont le premier geste attend samedi (« Rappelle-moi samedi »). */
+  postponed?: Set<string>;
 };
+
+/** L'état d'une plante choisie mais pas encore en terre (Balcon, fiche). */
+export const TO_PLANT_LABEL = "À planter";
 
 const STATUS_LABEL: Record<PlantTone, string> = { good: "En forme", watch: "À surveiller", weather: "Météo", new: "Nouvelle" };
 
@@ -131,14 +138,15 @@ function statusOf(resolved: ResolvedPlant, gestures: PlanGesture[], events: Main
   return { tone: "good", label: STATUS_LABEL.good };
 }
 
-export function planDay({ plants, events, now, decisions = [], allDecisions = decisions, climate }: DayPlanInput): PlantDay[] {
+export function planDay({ plants, events, now, decisions = [], allDecisions = decisions, climate, postponed }: DayPlanInput): PlantDay[] {
   const today = startOfDay(now);
   const todayKey = dayKey(now);
   const month = now.getMonth() + 1;
   const eventIds = new Set(events.map((event) => event.id));
   // Pluie ou orage annoncés : on ne dit d'arroser aucune plante, même une fois l'alerte cochée.
   const rainComing = allDecisions.some((decision) => decision.cause === "rain" || decision.cause === "storm");
-  const subjects: CalendarSubject[] = plants.map((resolved) => ({ id: resolved.plant.id, entry: resolved.entry, displayName: plantDisplayName(resolved), addedAt: resolved.plant.addedAt }));
+  const subjectOf = (resolved: ResolvedPlant): CalendarSubject => ({ id: resolved.plant.id, entry: resolved.entry, displayName: plantDisplayName(resolved), addedAt: resolved.plant.addedAt, toPlant: resolved.plant.toPlant });
+  const subjects = plants.filter((resolved) => !resolved.plant.toPlant).map(subjectOf);
   const seasonByPlant = new Map<string, CalendarActivity[]>();
   for (const activity of calendarActivities(subjects, month, { climate, now })) {
     if (!["sow", "plant", "repot"].includes(activity.kind)) continue;
@@ -148,6 +156,18 @@ export function planDay({ plants, events, now, decisions = [], allDecisions = de
   return plants.map((resolved, index) => {
     const plantId = resolved.plant.id;
     const gestures: PlanGesture[] = [];
+    const startGesture = (done: boolean, eventId?: string): PlanGesture => {
+      const activity = startActivity(subjectOf(resolved), month, { climate });
+      return { key: `season:${activity.key}`, kind: "season", plantId, title: activity.title, instruction: activity.description, minutes: 10, done, doneEventId: eventId, source: { type: "season", activity } };
+    };
+
+    // À planter : pas encore en terre, un seul geste (« Sème la mâche », « Plante la lavande »).
+    if (resolved.plant.toPlant) {
+      // Reporté à samedi : rien sur Aujourd'hui d'ici là.
+      if (postponed?.has(plantId)) return { resolved, gestures: [], first: null, status: { tone: "new" as const, label: TO_PLANT_LABEL } };
+      const first = startGesture(false);
+      return { resolved, gestures: [first], first, status: { tone: "new" as const, label: TO_PLANT_LABEL } };
+    }
     const own = decisions.filter((decision) => decision.plantId === plantId);
     const ownAll = allDecisions.filter((decision) => decision.plantId === plantId);
 
@@ -174,8 +194,21 @@ export function planDay({ plants, events, now, decisions = [], allDecisions = de
     // 3. Récolte.
     for (const task of tasks.filter((candidate) => candidate.type === "harvest")) gestures.push(taskGesture("harvest", resolved, task, now, eventIds));
 
-    // 4. Plantation, semis, rempotage du mois (déjà notés avant aujourd'hui : ils ne reviennent pas).
-    for (const activity of seasonByPlant.get(plantId) ?? []) {
+    // 4. Semée ou plantée aujourd'hui : son premier geste reste, coché.
+    const started = events.find((event) => event.id === startEventId(plantId));
+    if (started && dayKey(new Date(started.completedAt)) === todayKey) gestures.push(startGesture(true, started.id));
+
+    // Plantation, semis, rempotage du mois, puis les gestes de suite d'un semis ou d'une plantation
+    // (éclaircir, sortir les plants, pincer). Déjà notés avant aujourd'hui : ils ne reviennent pas.
+    const followUps = followUpsFor(resolved, events, now, climate);
+    const doneFollowUps = (["thin", "outdoors", "pinch"] as const)
+      .map((kind) => events.find((event) => event.id === `${plantId}:${kind}` && dayKey(new Date(event.completedAt)) === todayKey))
+      .filter((event): event is MaintenanceEvent => Boolean(event))
+      .map((event) => ({ key: `${plantId}:${event.id.split(":").at(-1)}`, kind: "care" as const, subjectId: plantId, entry: resolved.entry, typeLabel: "", title: event.note ?? "Geste fait", description: "", tag: "", tone: "lime" as const, eventType: event.type, followUp: event.id.split(":").at(-1) as "thin" }));
+    // Semée ou plantée ce mois-ci par son premier geste : pas de « Sème… » ou « Plante… » en plus ce mois-là.
+    const startedThisMonth = started !== undefined && new Date(started.completedAt).getMonth() === now.getMonth() && new Date(started.completedAt).getFullYear() === now.getFullYear();
+    const season = (seasonByPlant.get(plantId) ?? []).filter((activity) => !(startedThisMonth && (activity.kind === "sow" || activity.kind === "plant")));
+    for (const activity of [...season, ...followUps, ...doneFollowUps]) {
       if (activityDone(activity, events, now)) {
         const event = eventForActivity(activity, now);
         const logged = events.find((candidate) => candidate.id === event.id);

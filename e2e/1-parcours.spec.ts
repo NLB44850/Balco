@@ -1,25 +1,98 @@
 import { expect, test } from "@playwright/test";
 
-import { checkboxOf, mockWeather, open, seedBalcony, trackErrors, wateringGroup } from "./helpers";
+import { checkboxOf, denyGeolocation, mockWeather, open, seedBalcony, trackErrors, wateringGroup } from "./helpers";
 
 /** Le parcours de tous les jours : arriver, créer son balcon, cocher, annuler, ajouter une plante. */
 
-test("onboarding : de l'accueil à « Aujourd'hui » avec les premières plantes", async ({ page }) => {
+test("onboarding « Pas encore » : soleil, espace, envies, puis des plantes de saison à planter", async ({ page }) => {
   const errors = trackErrors(page);
   await mockWeather(page);
-  await open(page, "/", "On commence par faire connaissance.");
-  await page.getByRole("textbox").fill("Camille");
+  await open(page, "/", "Ton balcon, au bon moment.");
   await page.getByText("C’est parti").click();
-  await page.getByText("Je débute").click();
-  await page.getByText("Très ensoleillé").click();
+  await expect(page.getByLabel("Étape 1 sur 6")).toBeVisible();
+  await page.getByText("Pas encore").click();
+  await page.getByText("Le soleil tape presque toute la journée").click();
   await page.getByText("Un petit balcon").click();
   await page.getByText("Tomates cerises").click();
   await page.getByText("Continuer", { exact: true }).click();
+  // La ville juste avant les plantes : leur saison suit son climat.
+  await expect(page.getByText("Où est ton balcon ?")).toBeVisible();
+  await page.getByPlaceholder("Rechercher une ville…").fill("Lyon");
+  await page.getByRole("button", { name: "Rechercher" }).click();
+  await page.getByText("Lyon", { exact: true }).click();
   await expect(page.getByText("Tes premières plantes")).toBeVisible();
+  // Plantes de saison seulement : hors de mars à juin, pas de tomates, mais une phrase pour patienter.
+  if (![3, 4, 5, 6].includes(new Date().getMonth() + 1)) {
+    await expect(page.getByText("Les tomates se plantent en mai. En attendant, voici ce qui pousse maintenant.")).toBeVisible();
+    await expect(page.getByRole("checkbox", { name: /Tomates cerises/ })).toHaveCount(0);
+  }
   await page.getByText(/^Créer mon balcon/).click();
   await expect(page.getByText("Aujourd’hui").first()).toBeVisible();
-  await expect(page.getByText(/Ton balcon/)).toBeVisible();
+  await expect(page.getByText("Météo de Paris par défaut")).toHaveCount(0);
+  // Choisies, pas encore en terre : leur premier geste est de les semer ou planter.
+  await expect(page.getByRole("checkbox", { name: /^Marquer comme fait : (Sème|Plante) / }).first()).toBeVisible();
+  await expect(page.getByText(/Vérifie la terre/)).toHaveCount(0);
+  // Carte d'arrivée, jusqu'au premier geste coché.
+  await expect(page.getByText("Bienvenue, voici ton balcon 🌱")).toBeVisible();
+  await page.getByRole("checkbox", { name: /^Marquer comme fait : (Sème|Plante) / }).first().click();
+  await expect(page.getByText("Bienvenue, voici ton balcon 🌱")).toHaveCount(0);
+  expect(errors).toEqual([]);
+});
+
+test("onboarding « Oui » : lesquelles (raccourci + recherche), soleil, espace, ville refusée ; plantes installées", async ({ page }) => {
+  const errors = trackErrors(page);
+  await mockWeather(page);
+  await denyGeolocation(page);
+  await open(page, "/", "Ton balcon, au bon moment.");
+  await page.getByText("C’est parti").click();
+  await page.getByText("Oui", { exact: true }).click();
+  await expect(page.getByText("Lesquelles ?")).toBeVisible();
+  await expect(page.getByLabel("Étape 2 sur 5")).toBeVisible();
+  await page.getByRole("checkbox", { name: "Basilic" }).click();
+  await page.getByLabel("Rechercher une plante").fill("romarin");
+  await page.getByRole("checkbox", { name: "Romarin" }).first().click();
+  await page.getByText("Continuer · 2 plantes").click();
+  await page.getByText("Je ne sais pas").click();
+  await page.getByText("Un petit balcon").click();
+  // Position refusée : Balco le dit, on passe, et Aujourd'hui propose de choisir la ville.
+  await page.getByRole("button", { name: "⌖ Utiliser ma position" }).click();
+  await expect(page.getByText("Position indisponible : cherche ta ville, ou passe pour l’instant.")).toBeVisible();
+  await page.getByRole("button", { name: "Plus tard" }).click();
+  await expect(page.getByText("Aujourd’hui").first()).toBeVisible();
   await expect(page.getByText("Tes plantes")).toBeVisible();
+  await expect(page.getByText("Météo de Paris par défaut")).toBeVisible();
+  // Déjà en terre : pas de « Plante le basilic », l'arrosage est proposé.
+  await expect(page.getByRole("checkbox", { name: /Plante le basilic|Plante le romarin/ })).toHaveCount(0);
+  await expect(page.getByText(/Vérifie la terre de 2 plantes|Arrose/).first()).toBeVisible();
+  expect(errors).toEqual([]);
+});
+
+test("« Passer » : Aujourd'hui avec des plantes de saison et « Quelques questions », qui relance l'accueil", async ({ page }) => {
+  const errors = trackErrors(page);
+  await mockWeather(page);
+  await open(page, "/", "Ton balcon, au bon moment.");
+  await page.getByRole("button", { name: "Passer" }).click();
+  await expect(page.getByText("Ajoute ta première plante")).toBeVisible();
+  await page.getByText("Quelques questions").click();
+  await expect(page.getByText("Tu as déjà des plantes sur ton balcon ?")).toBeVisible();
+  await page.getByText("Oui", { exact: true }).click();
+  await page.getByRole("checkbox", { name: "Menthe" }).click();
+  await page.getByText("Continuer · 1 plante").click();
+  await page.getByText("Presque jamais").click();
+  await page.getByText("Un rebord de fenêtre", { exact: true }).click();
+  await page.getByRole("button", { name: "Plus tard" }).click();
+  await expect(page.getByText("Tes plantes")).toBeVisible();
+  await expect(page.getByText("Quelques questions")).toHaveCount(0);
+  // « Refaire l'accueil » (Réglages → Version de test) ne retire aucune plante.
+  await page.goto("/settings");
+  await page.getByRole("button", { name: "Refaire l’accueil" }).click();
+  await expect(page.getByText("Tu as déjà des plantes sur ton balcon ?")).toBeVisible();
+  await page.getByRole("button", { name: "Revenir à l'étape précédente" }).click();
+  await page.getByRole("button", { name: "Passer" }).click();
+  // Retour sur Réglages, et la menthe est toujours sur le balcon.
+  await expect(page.getByRole("button", { name: "Refaire l’accueil" })).toBeVisible();
+  await open(page, "/", "Tes plantes");
+  await expect(page.getByRole("button", { name: /^Menthe/ }).first()).toBeVisible();
   expect(errors).toEqual([]);
 });
 
@@ -86,12 +159,19 @@ test("catalogue : ajouter une plante puis ouvrir sa fiche", async ({ page }) => 
   const errors = trackErrors(page);
   await mockWeather(page);
   await seedBalcony(page, { plants: ["basil"], wateredDaysAgo: 1 });
-  await open(page, "/garden/add", "Basilic");
+  await open(page, "/garden/add", "Ajouter une plante");
   await page.getByPlaceholder("Basilic, fraisier, lavande…").fill("menthe");
+  // « + » : déjà sur le balcon, ou à planter ?
   await page.getByRole("button", { name: /^Ajouter Menthe/ }).first().click();
+  await page.getByRole("button", { name: "Menthe : Déjà sur mon balcon" }).click();
   await expect(page.getByText("Ajouté à ton balcon : Menthe")).toBeVisible();
   await expect(page.getByText("✓ Sur ton balcon")).toBeVisible();
-  await page.getByRole("button", { name: "Voir mon balcon · 2 plantes" }).click();
+  // La même, à planter : son premier geste sera de la planter.
+  await page.getByPlaceholder("Basilic, fraisier, lavande…").fill("lavande");
+  await page.getByRole("button", { name: /^Ajouter Lavande/ }).first().click();
+  await page.getByRole("button", { name: "Lavande : À planter" }).click();
+  await expect(page.getByText("À planter sur ton balcon : Lavande")).toBeVisible();
+  await page.getByRole("button", { name: "Voir mon balcon · 3 plantes" }).click();
   await page.getByRole("button", { name: /^Menthe, .*voir la fiche/ }).click();
   await expect(page.getByText(/Photo d’exemple|Ajoute ta photo/).first()).toBeVisible();
   expect(errors).toEqual([]);
@@ -124,8 +204,8 @@ test("fiche du bas : jamais plus haute que l'écran, se ferme par « × » ou en
   await expect(close).toBeVisible();
   const box = await close.boundingBox();
   expect(box!.y).toBeGreaterThanOrEqual(0);
-  await page.getByRole("button", { name: "Ajouter à mon balcon" }).scrollIntoViewIfNeeded();
-  await expect(page.getByRole("button", { name: "Ajouter à mon balcon" })).toBeInViewport();
+  await page.getByRole("button", { name: "Déjà sur mon balcon" }).scrollIntoViewIfNeeded();
+  await expect(page.getByRole("button", { name: "Déjà sur mon balcon" })).toBeInViewport();
 
   // « × » ferme la fiche.
   await close.click();
@@ -220,4 +300,51 @@ test("Aujourd'hui : une fois la plante arrosée, sa récolte du mois prend la pl
   await page.getByRole("tab", { name: /Aujourd’hui/ }).click();
   await checkboxOf(page, /^Annuler ce geste : Arrose la menthe/).click();
   await expect(checkboxOf(page, /^Marquer comme fait : Arrose la menthe/)).toBeVisible();
+});
+
+test("une plante « à planter » : un seul geste, « Plante la lavande », puis l'arrosage prend sa place", async ({ page }) => {
+  const errors = trackErrors(page);
+  await mockWeather(page);
+  const addedAt = new Date().toISOString();
+  await seedBalcony(page, { plants: ["mint"], wateredDaysAgo: 0, extra: { "balco.garden.plants.v1": JSON.stringify([{ id: "lavender-e2e", catalogId: "lavender", addedAt, toPlant: true }]) } });
+  await open(page, "/", "Plante la lavande");
+  await page.goto("/balcony");
+  await expect(page.getByRole("button", { name: /^Lavande, À planter/ })).toBeVisible();
+  await page.goto("/");
+  await checkboxOf(page, "Marquer comme fait : Plante la lavande").click();
+  await expect(checkboxOf(page, /Arrose la lavande|Vérifie la terre/)).toBeVisible();
+  await page.goto("/balcony");
+  await expect(page.getByRole("button", { name: /^Lavande, À planter/ })).toHaveCount(0);
+  expect(errors).toEqual([]);
+});
+
+test("Nora demande le prénom, sans compte ni IA, et le garde pour Réglages", async ({ page }) => {
+  const errors = trackErrors(page);
+  await mockWeather(page);
+  await open(page, "/", "Ton balcon, au bon moment.");
+  await page.getByRole("button", { name: "Passer" }).click();
+  await page.getByRole("tab", { name: /Nora/ }).click();
+  await expect(page.getByText("Comment je t’appelle ?")).toBeVisible();
+  await page.getByLabel("Ton prénom").fill("Camille");
+  await page.getByRole("button", { name: "Enregistrer mon prénom" }).click();
+  await expect(page.getByText("Bonjour Camille ! Je suis Nora, ta coach pour un balcon vivant et facile à entretenir.")).toBeVisible();
+  await expect(page.getByText("Enchantée, Camille ! Tu pourras changer ton prénom dans Réglages.")).toBeVisible();
+  await expect(page.getByText("Comment je t’appelle ?")).toHaveCount(0);
+  await page.goto("/settings");
+  await expect(page.getByPlaceholder("Pour que Balco te dise bonjour")).toHaveValue("Camille");
+  expect(errors).toEqual([]);
+});
+
+test("« Pas encore acheté ? Rappelle-moi samedi » : le geste disparaît, « Annuler » le remet", async ({ page }) => {
+  const errors = trackErrors(page);
+  await mockWeather(page);
+  await seedBalcony(page, { plants: ["mint"], wateredDaysAgo: 0, extra: { "balco.garden.plants.v1": JSON.stringify([{ id: "lavender-e2e", catalogId: "lavender", addedAt: new Date().toISOString(), toPlant: true }]) } });
+  await open(page, "/", "Plante la lavande");
+  await page.getByRole("button", { name: "Plante la lavande, détail" }).click();
+  await page.getByRole("button", { name: "Pas encore acheté ? Rappelle-moi samedi" }).click();
+  await expect(page.getByText("Je te le rappelle samedi")).toBeVisible();
+  await expect(checkboxOf(page, "Marquer comme fait : Plante la lavande")).toHaveCount(0);
+  await page.getByRole("button", { name: "Annuler" }).click();
+  await expect(checkboxOf(page, "Marquer comme fait : Plante la lavande")).toBeVisible();
+  expect(errors).toEqual([]);
 });

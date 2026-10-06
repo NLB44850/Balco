@@ -26,20 +26,22 @@ describe("Balco MVP content", () => {
   });
 
   it("includes the warmer modern layer requested for the second iteration", () => {
-    expect(readProjectFile("app/welcome.tsx")).toContain("On commence par");
+    expect(readProjectFile("app/welcome.tsx")).toContain("Ton balcon, au bon moment.");
     expect(readProjectFile("app/welcome.tsx")).toContain("LightScreen");
     expect(readProjectFile("components/motion.tsx")).toContain("FadeIn");
     expect(readProjectFile("package.json")).toContain("expo-linear-gradient");
   });
 
-  it("defines the personalized four-step onboarding", () => {
+  it("defines the personalized onboarding", () => {
     // Les réponses possibles sont partagées avec Réglages (lib/garden/onboarding.ts).
     const onboarding = readProjectFile("app/welcome.tsx") + readProjectFile("lib/garden/onboarding.ts") + readProjectFile("lib/garden/garden-context.tsx");
 
-    expect(onboarding).toContain("Je débute");
+    expect(onboarding).toContain("Tu as déjà des plantes sur ton balcon ?");
+    expect(onboarding).toContain("Lesquelles ?");
     expect(onboarding).toContain("Combien de soleil");
-    expect(onboarding).toContain("Très ensoleillé");
-    expect(onboarding).toContain("Quel espace veux-tu");
+    expect(onboarding).toContain("Le soleil tape presque toute la journée");
+    expect(onboarding).toContain("Je ne sais pas");
+    expect(onboarding).toContain("Quelle place as-tu ?");
     expect(onboarding).toContain("Qu'aimerais-tu");
     expect(onboarding).toContain("Tomates cerises");
     expect(onboarding).toContain("balco.onboarding.preferences.v1");
@@ -50,7 +52,7 @@ describe("Balco MVP content", () => {
     const home = readProjectFile("app/(tabs)/index.tsx");
 
     expect(home).toContain("useGarden");
-    expect(home).toContain("recommendPlants");
+    expect(home).toContain("seasonalStarters");
     expect(home).toContain("Voir les {PLANT_CATALOG.length} plantes");
     expect(home).toContain("useDayPlan");
     expect(home).toContain("buildTodayList");
@@ -127,7 +129,9 @@ describe("Balco MVP content", () => {
     expect(weather).toContain("balco.location.preference.v1");
     expect(weather).toContain("geocoding-api.open-meteo.com/v1/search");
     expect(weather).toContain("selectCity");
-    expect(readProjectFile("app/(tabs)/calendar.tsx")).toContain("Où pousse ton jardin ?");
+    expect(readProjectFile("components/city-picker.tsx")).toContain("Où pousse ton jardin ?");
+    expect(readProjectFile("app/(tabs)/calendar.tsx")).toContain("<CityPicker");
+    expect(readProjectFile("app/(tabs)/index.tsx")).toContain("Météo de Paris par défaut");
     expect(readProjectFile("app.config.ts")).toContain("expo-location");
   });
 

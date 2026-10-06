@@ -18,6 +18,9 @@ const syncInput = z.object({
       space: z.string().max(32).optional(),
       goals: z.array(z.string().max(32)).max(10).optional(),
       skipped: z.boolean().optional(),
+      hasPlants: z.boolean().optional(),
+      springWishes: z.array(z.string().max(64)).max(30).optional(),
+      completedAt: z.iso.datetime().optional(),
     }).nullable().optional(),
   }).optional(),
   settings: z.object({
@@ -47,6 +50,7 @@ const syncInput = z.object({
     catalogId: z.string().min(1).max(64),
     nickname: z.string().max(128).optional(),
     varietyId: z.string().max(64).optional(),
+    toPlant: z.boolean().optional(),
     addedAt: z.iso.datetime(),
     updatedAt: z.iso.datetime(),
     removedAt: z.iso.datetime().optional(),

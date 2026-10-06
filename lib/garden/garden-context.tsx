@@ -6,6 +6,7 @@ import { router } from "expo-router";
 
 import { useAuth, type SignInResult } from "@/hooks/use-auth";
 import type { OnboardingAnswers } from "@/lib/plants/catalog";
+import { normalizeOnboarding } from "@/lib/garden/onboarding";
 import type { MaintenanceEvent } from "@/lib/reminders/reminder-engine";
 import {
   SERVER_PUSH_STORAGE_KEY,
@@ -37,7 +38,7 @@ import {
 } from "@/lib/sync/sync-logic";
 import { trpc } from "@/lib/trpc";
 import { TRPCClientError } from "@trpc/client";
-import { activePlants, appendEvent, createGardenPlant, resolvePlants, type GardenPlant, type ResolvedPlant } from "./garden-logic";
+import { activePlants, appendEvent, createGardenPlant, resolvePlants, startedPlantId, type GardenPlant, type ResolvedPlant } from "./garden-logic";
 
 export const GARDEN_PLANTS_STORAGE_KEY = "balco.garden.plants.v1";
 export const GARDEN_EVENTS_STORAGE_KEY = "balco.garden.events.v1";
@@ -78,7 +79,8 @@ type GardenContextValue = {
   profile: UserProfile;
   onboarding: OnboardingAnswers | null;
   account: AccountState;
-  addPlant: (catalogId: string) => Promise<GardenPlant>;
+  /** `toPlant` : choisie mais pas encore en terre (son premier geste sera « Sème… » ou « Plante… »). */
+  addPlant: (catalogId: string, options?: { toPlant?: boolean }) => Promise<GardenPlant>;
   removePlant: (plantId: string) => Promise<void>;
   renamePlant: (plantId: string, nickname: string) => Promise<void>;
   setPlantVariety: (plantId: string, varietyId: string | undefined) => Promise<void>;
@@ -160,7 +162,7 @@ export function GardenProvider({ children }: { children: ReactNode }) {
       readJson<GardenPlant[]>(GARDEN_PLANTS_STORAGE_KEY, []),
       readJson<MaintenanceEvent[]>(GARDEN_EVENTS_STORAGE_KEY, []),
       readJson<UserProfile>(USER_PROFILE_STORAGE_KEY, {}),
-      readJson<OnboardingAnswers | null>(ONBOARDING_STORAGE_KEY, null),
+      readJson<OnboardingAnswers | null>(ONBOARDING_STORAGE_KEY, null).then(normalizeOnboarding),
       readJson<Outbox>(SYNC_OUTBOX_STORAGE_KEY, emptyOutbox()),
       readJson<SyncMeta>(SYNC_META_STORAGE_KEY, {}),
       readJson<PushRegistration | null>(SERVER_PUSH_STORAGE_KEY, null),
@@ -206,7 +208,8 @@ export function GardenProvider({ children }: { children: ReactNode }) {
     await writeJson(USER_PROFILE_STORAGE_KEY, next);
   }, []);
 
-  const saveOnboarding = useCallback(async (next: OnboardingAnswers | null) => {
+  const saveOnboarding = useCallback(async (incoming: OnboardingAnswers | null) => {
+    const next = normalizeOnboarding(incoming);
     onboardingRef.current = next;
     setOnboarding(next);
     if (next) await writeJson(ONBOARDING_STORAGE_KEY, next);
@@ -347,8 +350,8 @@ export function GardenProvider({ children }: { children: ReactNode }) {
 
   // --- Actions -----------------------------------------------------------------------
 
-  const addPlant = useCallback(async (catalogId: string) => {
-    const created = createGardenPlant(catalogId);
+  const addPlant = useCallback(async (catalogId: string, options: { toPlant?: boolean } = {}) => {
+    const created = createGardenPlant(catalogId, new Date(), options);
     await savePlants([...plantsRef.current, created]);
     queue((outbox) => recordPlant(outbox, created));
     return created;
@@ -370,12 +373,18 @@ export function GardenProvider({ children }: { children: ReactNode }) {
   const logEvent = useCallback(async (event: MaintenanceEvent) => {
     await saveEvents(appendEvent(eventsRef.current, event));
     queue((outbox) => recordEvent(outbox, event));
-  }, [queue, saveEvents]);
+    // « Sème la mâche » coché : la plante est en terre.
+    const started = startedPlantId(event.id);
+    if (started && plantsRef.current.some((plant) => plant.id === started && plant.toPlant)) await updatePlant(started, (plant) => ({ ...plant, toPlant: false }));
+  }, [queue, saveEvents, updatePlant]);
 
   const removeEvent = useCallback(async (eventId: string) => {
     await saveEvents(eventsRef.current.filter((event) => event.id !== eventId));
     queue((outbox) => recordEventDeletion(outbox, eventId));
-  }, [queue, saveEvents]);
+    // Décoché (« Annuler ») : elle redevient à planter.
+    const started = startedPlantId(eventId);
+    if (started && plantsRef.current.some((plant) => plant.id === started && plant.toPlant === false)) await updatePlant(started, (plant) => ({ ...plant, toPlant: true }));
+  }, [queue, saveEvents, updatePlant]);
 
   const updateProfile = useCallback(async (patch: Partial<UserProfile>) => {
     await saveProfile({ ...profileRef.current, ...patch });
@@ -383,7 +392,7 @@ export function GardenProvider({ children }: { children: ReactNode }) {
   }, [queue, saveProfile]);
 
   const reloadOnboarding = useCallback(async () => {
-    const stored = await readJson<OnboardingAnswers | null>(ONBOARDING_STORAGE_KEY, null);
+    const stored = normalizeOnboarding(await readJson<OnboardingAnswers | null>(ONBOARDING_STORAGE_KEY, null));
     onboardingRef.current = stored;
     setOnboarding(stored);
     queue(markProfileDirty);

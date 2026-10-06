@@ -1,12 +1,13 @@
 import { useRouter } from "expo-router";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { Animated, Platform, Pressable, ScrollView, StyleSheet, View } from "react-native";
+import { Alert, Animated, Platform, Pressable, ScrollView, StyleSheet, View } from "react-native";
 import { Text } from "@/components/ui/typography";
 import * as Haptics from "expo-haptics";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { FadeIn } from "@/components/motion";
 import { ScreenContainer } from "@/components/screen-container";
+import { CityPicker } from "@/components/city-picker";
 import { ScreenHeader } from "@/components/screen-header";
 import { glass } from "@/components/ui/glass";
 import { IconSymbol } from "@/components/ui/icon-symbol";
@@ -42,16 +43,22 @@ import { publishSky } from "@/lib/garden/sky-store";
 import type { PlantTone } from "@/lib/garden/day-plan";
 import { balconyStatus, buildTodayList, doneSubtitle, isInfoBanner, layoutTodayList, rainSavingsToLog, splitTodayList, type TodayItem } from "@/lib/garden/today";
 import { notificationsUnavailableReason } from "@/lib/notifications/module";
-import { eventForActivity } from "@/lib/plants/calendar";
-import { PLANT_CATALOG, recommendPlants } from "@/lib/plants/catalog";
-import { seasonalSuggestions, type SeasonalSuggestion } from "@/lib/plants/suggestions";
+import { eventForActivity, type CalendarActivity } from "@/lib/plants/calendar";
+import { PLANT_CATALOG } from "@/lib/plants/catalog";
+import { seasonalStarters, seasonalSuggestions, type SeasonalSuggestion } from "@/lib/plants/suggestions";
+import { activateReminders, NOTIFICATIONS_DENIED, remindersEnabledText } from "@/lib/reminders/activate";
+import { arrivalCard } from "@/lib/garden/onboarding";
+import { springCard } from "@/lib/garden/spring";
+import { nextSaturdayMorning, postponeStart, saturdayReminder, saturdaySource } from "@/lib/garden/postpone";
 import { addSnooze, eventForReminder, planGroupedNotification, wakeSnoozeFor, type ReminderSnooze } from "@/lib/reminders/reminder-actions";
 import type { MaintenanceEvent } from "@/lib/reminders/reminder-engine";
 import type { ReminderGroup } from "@/lib/reminders/reminder-groups";
 import {
   cancelBalcoReminderNotifications,
+  requestLocalNotificationPermission,
   saveLocalReminderSettings,
   saveReminderSnoozes,
+  scheduleDatedReminder,
   scheduleLocalReminder,
   sendReminderPreview,
 } from "@/lib/reminders/local-notifications";
@@ -70,7 +77,7 @@ const haptic = () => {
 export default function HomeScreen() {
   const colors = useColors();
   const router = useRouter();
-  const { loaded, resolvedPlants, events, onboarding, account, addPlant, removePlant, logEvent, removeEvent, reportLocation } = useGarden();
+  const { loaded, resolvedPlants, events, onboarding, account, addPlant, removePlant, logEvent, removeEvent, reportLocation, updateOnboarding } = useGarden();
   const aiStatus = trpc.ai.status.useQuery(undefined, { enabled: account.signedIn, retry: false });
   // Sans compte : l'analyse offerte de cet appareil (Observer sans compte).
   const [device, setDevice] = useState<string | null>(null);
@@ -108,7 +115,7 @@ export default function HomeScreen() {
   }, [router]);
   const { covers } = usePlantPhotos();
   // Plan du jour, météo, réglages et reports : les mêmes que Balcon et la fiche plante.
-  const { weather, weatherSnapshot, now, climate, snoozes, snoozesLoaded, reminderSettings, setReminderSettings, reminderSettingsLoaded, reminderDecisions, visibleGroups, plan } = useDayPlan();
+  const { weather, weatherSnapshot, isLoading: weatherLoading, searchCities, selectCity, requestDeviceLocation, now, climate, snoozes, snoozesLoaded, reminderSettings, setReminderSettings, reminderSettingsLoaded, reminderDecisions, visibleGroups, plan } = useDayPlan();
   const [sheetKey, setSheetKey] = useState<string | null>(null);
   const [toast, setToast] = useState<ToastMessage | null>(null);
   const toastId = useRef(0);
@@ -166,7 +173,9 @@ export default function HomeScreen() {
   const [moreOpen, setMoreOpen] = useState(false);
   const wateringLine = lines.find((line) => line.type === "watering") ?? null;
   const wateringSheet = wateringOpen && wateringLine ? wateringLine : null;
-  const recommendations = useMemo(() => (resolvedPlants.length === 0 ? recommendPlants(onboarding, { month: now.getMonth() + 1 }).slice(0, 3) : []), [now, onboarding, resolvedPlants.length]);
+  // Balcon vide : seulement des plantes à semer ou planter ce mois-ci, dans le climat de la ville.
+  const starters = useMemo(() => (resolvedPlants.length === 0 ? seasonalStarters(onboarding, { month: now.getMonth() + 1, climate, limit: 3 }) : null), [climate, now, onboarding, resolvedPlants.length]);
+  const recommendations = starters?.plants ?? [];
 
   // Couleur du point d'état de chaque plante : la même que sur Balcon et la fiche (plan du jour).
   const toneColor = (tone: PlantTone) => (tone === "weather" ? colors.frost : tone === "watch" ? colors.warning : tone === "good" ? colors.primary : colors.muted);
@@ -263,23 +272,44 @@ export default function HomeScreen() {
     showToast(withCheer(cheer(logged), `${item.title} : noté · +${POINTS_PER_GESTURE} points`), undo);
   };
 
-  const activateReminders = async () => {
-    const nextSettings = { ...reminderSettings, enabled: true };
-    setReminderSettings(nextSettings);
-    await saveLocalReminderSettings(nextSettings);
-    const plan = planGroupedNotification(unseenDecisions, snoozes, nextSettings, new Date());
-    if (plan && !awayOn(vacation, dayKey(plan.date))) await scheduleLocalReminder(plan.group, nextSettings, plan.date);
-    showToast(`Rappels activés : Balco te préviendra vers ${nextSettings.preferredHour} h ${String(nextSettings.preferredMinute).padStart(2, "0")}`);
+  // L'autorisation du téléphone d'abord : rien n'est enregistré tant qu'elle n'est pas donnée.
+  const [cityPickerOpen, setCityPickerOpen] = useState(false);
+
+  // « Pas encore acheté ? » : le geste revient samedi à 9 h (notification si les rappels sont activés).
+  const postponeToSaturday = async (activity: CalendarActivity) => {
+    const previous = snoozes;
+    const moment = new Date();
+    await saveReminderSnoozes(postponeStart(snoozes, activity.subjectId, moment));
+    void scheduleDatedReminder(saturdaySource(activity.subjectId), saturdayReminder(activity), nextSaturdayMorning(moment)).catch(() => undefined);
+    showToast("Je te le rappelle samedi", () => {
+      void saveReminderSnoozes(previous);
+      void scheduleDatedReminder(saturdaySource(activity.subjectId), saturdayReminder(activity), null).catch(() => undefined);
+    });
+  };
+  const turnOnReminders = async () => {
+    const result = await activateReminders(reminderSettings, {
+      requestPermission: requestLocalNotificationPermission,
+      save: async (nextSettings) => {
+        setReminderSettings(nextSettings);
+        await saveLocalReminderSettings(nextSettings);
+      },
+      scheduleNext: async (nextSettings) => {
+        const plan = planGroupedNotification(unseenDecisions, snoozes, nextSettings, new Date());
+        if (plan && !awayOn(vacation, dayKey(plan.date))) await scheduleLocalReminder(plan.group, nextSettings, plan.date);
+      },
+    });
+    if (result.status === "denied") return Alert.alert(NOTIFICATIONS_DENIED.title, NOTIFICATIONS_DENIED.message);
+    showToast(remindersEnabledText(result.settings));
   };
 
   const addRecommendation = async (catalogId: string, name: string) => {
-    await addPlant(catalogId);
+    await addPlant(catalogId, { toPlant: true });
     haptic();
     showToast(`${name} ajouté à ton balcon`);
   };
 
   const addMonthIdea = async ({ entry }: SeasonalSuggestion) => {
-    const created = await addPlant(entry.id);
+    const created = await addPlant(entry.id, { toPlant: true });
     haptic();
     showToast(`Ajouté à ton balcon : ${entry.name}`, () => void removePlant(created.id));
   };
@@ -303,6 +333,9 @@ export default function HomeScreen() {
     ? weather.city
     : `${weather.city} · ${Math.round(weatherSnapshot.current.temperatureC)}° maintenant · ${Math.round(weatherSnapshot.today.temperatureMinC)}° au plus bas`;
   const hasPlants = resolvedPlants.length > 0;
+  const arrival = loaded ? arrivalCard(onboarding, events, now) : null;
+  // Mars et avril : les envies du printemps choisies l'hiver, pas encore sur le balcon.
+  const springWishes = loaded ? springCard(onboarding?.springWishes, resolvedPlants.map((resolved) => resolved.entry.id), now) : [];
   // Un geste de saison pour une plante du balcon : sa photo plutôt que son emoji, quand il y en a une.
   const seasonPicture = (item: TodayItem) => {
     if (item.kind !== "season" || !covers.has(item.activity.subjectId)) return undefined;
@@ -348,6 +381,32 @@ export default function HomeScreen() {
             </View>
             {previewStatus === "sent" && <Text style={[styles.small, { color: colors.muted }]}>Envoyée : verrouille ton téléphone pour la voir arriver.</Text>}
             {previewStatus === "denied" && <Text style={[styles.small, { color: colors.error }]}>Les notifications sont bloquées : autorise-les pour Balco dans les réglages du téléphone.</Text>}
+          </View>
+        )}
+
+        {arrival === "welcome" && (
+          <FadeIn style={[glass.card, styles.arrival]}>
+            <Text style={[styles.cityBannerTitle, { color: colors.foreground }]}>Bienvenue, voici ton balcon 🌱</Text>
+            <Text style={[styles.small, { color: colors.muted }]}>{hasPlants ? "Chaque jour, ta liste du jour : touche le rond quand un geste est fait, Balco s’occupe du reste." : "Ajoute une plante pour recevoir chaque jour le geste utile."}</Text>
+          </FadeIn>
+        )}
+        {arrival === "questions" && (
+          <Pressable accessibilityRole="button" onPress={() => router.push({ pathname: "/welcome", params: { again: "1" } })} style={({ pressed }) => [glass.card, styles.arrival, pressed && styles.pressed]}>
+            <Text style={[styles.cityBannerTitle, { color: colors.foreground }]}>Quelques questions</Text>
+            <Text style={[styles.small, { color: colors.muted }]}>pour des conseils adaptés à ton balcon · 1 minute ›</Text>
+          </Pressable>
+        )}
+
+        {/* Ville inconnue (position refusée ou pas encore choisie) : pas d'alerte météo tant qu'elle manque. */}
+        {!weatherLoading && weather.isFallback && (
+          <View style={[glass.card, styles.cityBanner]}>
+            <View style={styles.flex}>
+              <Text style={[styles.cityBannerTitle, { color: colors.foreground }]}>Météo de Paris par défaut</Text>
+              <Text style={[styles.small, { color: colors.muted }]}>Choisis ta ville pour être prévenu du gel, de la pluie et de la chaleur chez toi.</Text>
+            </View>
+            <Pressable accessibilityRole="button" onPress={() => setCityPickerOpen(true)} style={({ pressed }) => [styles.pill, { backgroundColor: colors.primary }, pressed && styles.pressed]}>
+              <Text style={[styles.pillText, { color: "#FFFFFF" }]}>Choisir ma ville</Text>
+            </Pressable>
           </View>
         )}
 
@@ -425,8 +484,27 @@ export default function HomeScreen() {
         {loaded && hasPlants && !away && !reminderSettings.enabled && notificationsUnavailableReason === null && (
           <View style={styles.remindersRow}>
             <Text style={[styles.small, styles.flex, { color: colors.muted }]}>Sois prévenu au bon moment, sans ouvrir l’app.</Text>
-            <Pressable accessibilityRole="button" onPress={() => void activateReminders()} style={({ pressed }) => [styles.pill, { backgroundColor: colors.leaf }, pressed && styles.pressed]}>
+            <Pressable accessibilityRole="button" onPress={() => void turnOnReminders()} style={({ pressed }) => [styles.pill, { backgroundColor: colors.leaf }, pressed && styles.pressed]}>
               <Text style={[styles.pillText, { color: colors.primary }]}>Activer les rappels</Text>
+            </Pressable>
+          </View>
+        )}
+
+        {!away && springWishes.length > 0 && (
+          <View style={[glass.card, styles.arrival]}>
+            <Text style={[styles.cityBannerTitle, { color: colors.foreground }]}>C’est le moment 🌱</Text>
+            <Text style={[styles.small, { color: colors.muted }]}>Tes envies pour le printemps se sèment ou se plantent maintenant.</Text>
+            {springWishes.map((entry) => (
+              <View key={entry.id} style={[styles.reco, { borderBottomColor: colors.border }]}>
+                <CatalogPicture entry={entry} style={[styles.plantBubble, styles.recoBubble]} />
+                <Text style={[styles.recoName, styles.flex, { color: colors.foreground }]}>{entry.name}</Text>
+                <Pressable accessibilityRole="button" accessibilityLabel={`Ajouter ${entry.name}`} onPress={() => void addRecommendation(entry.id, entry.name)} style={({ pressed }) => [styles.pill, { backgroundColor: colors.primary }, pressed && styles.pressed]}>
+                  <Text style={[styles.pillText, { color: "#FFFFFF" }]}>Ajouter</Text>
+                </Pressable>
+              </View>
+            ))}
+            <Pressable accessibilityRole="button" onPress={() => void updateOnboarding({ springWishes: [] })} hitSlop={6}>
+              <Text style={[styles.small, { color: colors.muted }]}>Ne plus me le rappeler</Text>
             </Pressable>
           </View>
         )}
@@ -481,6 +559,7 @@ export default function HomeScreen() {
           <FadeIn style={styles.empty}>
             <Text style={[styles.emptyTitle, { color: colors.foreground }]}>Ajoute ta première plante</Text>
             <Text style={[styles.allDoneText, { color: colors.muted, textAlign: "left" }]}>Balco te dira chaque jour le geste utile pour chacune, selon la météo de ta ville.</Text>
+            {starters?.notice && <Text style={[styles.allDoneText, { color: colors.foreground, textAlign: "left" }]}>{starters.notice}</Text>}
             {recommendations.map((entry) => (
               <View key={entry.id} style={[styles.reco, { borderBottomColor: colors.border }]}>
                 <CatalogPicture entry={entry} style={[styles.plantBubble, styles.recoBubble]} />
@@ -502,7 +581,7 @@ export default function HomeScreen() {
       </Animated.ScrollView>
 
       <BottomSheet visible={sheetItem !== null} onClose={closeSheet}>
-        {sheetItem && <SheetContent item={sheetItem} events={events} onClose={closeSheet} onToggle={() => { closeSheet(); void toggleItem(sheetItem); }} onSnooze={(kind) => { closeSheet(); if (sheetItem.kind === "alert") void snoozeAlert(sheetItem.group, kind); }} onOpenPlant={(id) => { closeSheet(); router.push({ pathname: "/garden/[id]", params: { id } }); }} onOpenCalendar={() => { closeSheet(); router.push("/(tabs)/calendar"); }} />}
+        {sheetItem && <SheetContent item={sheetItem} events={events} onClose={closeSheet} onToggle={() => { closeSheet(); void toggleItem(sheetItem); }} onSnooze={(kind) => { closeSheet(); if (sheetItem.kind === "alert") void snoozeAlert(sheetItem.group, kind); }} onOpenPlant={(id) => { closeSheet(); router.push({ pathname: "/garden/[id]", params: { id } }); }} onOpenCalendar={() => { closeSheet(); router.push("/(tabs)/calendar"); }} onPostpone={() => { closeSheet(); if (sheetItem.kind === "season") void postponeToSaturday(sheetItem.activity); }} onGuide={() => { closeSheet(); if (sheetItem.kind === "season") router.push({ pathname: "/guide/[catalogId]", params: { catalogId: sheetItem.activity.entry.id, plantId: sheetItem.activity.subjectId } }); }} />}
       </BottomSheet>
 
       <BottomSheet
@@ -540,6 +619,7 @@ export default function HomeScreen() {
       {/* Pendant que la feuille des arrosages est ouverte, ils s'affichent par-dessus elle. */}
       {wateringSheet === null && <UndoToast message={toast} onDone={hideToast} />}
       {wateringSheet === null && celebration}
+      <CityPicker visible={cityPickerOpen} onClose={() => setCityPickerOpen(false)} searchCities={searchCities} selectCity={selectCity} requestDeviceLocation={requestDeviceLocation} />
     </ScreenContainer>
   );
 }
@@ -552,10 +632,14 @@ type SheetContentProps = {
   onSnooze: (kind: ReminderSnooze["kind"]) => void;
   onOpenPlant: (plantId: string) => void;
   onOpenCalendar: () => void;
+  /** Geste « à planter » : « Pas encore acheté ? Rappelle-moi samedi ». */
+  onPostpone: () => void;
+  /** Geste « à planter » : le pas-à-pas illustré, facultatif. */
+  onGuide: () => void;
 };
 
 /** Le détail d'un geste : pourquoi, comment, et les choix possibles. */
-function SheetContent({ item, events, onToggle, onSnooze, onOpenPlant, onOpenCalendar }: SheetContentProps) {
+function SheetContent({ item, events, onToggle, onSnooze, onOpenPlant, onOpenCalendar, onPostpone, onGuide }: SheetContentProps) {
   const colors = useColors();
   const alertTone = item.tone === "frost" || item.tone === "rain" || item.tone === "storm" || item.tone === "wind" ? colors.frost : item.tone === "heat" ? colors.terracotta : colors.primary;
   const info = item.kind === "alert" && item.group.action === "skip";
@@ -585,6 +669,16 @@ function SheetContent({ item, events, onToggle, onSnooze, onOpenPlant, onOpenCal
       )}
       {item.kind === "task" && (
         <Pressable accessibilityRole="button" onPress={() => onOpenPlant(item.task.resolved.plant.id)} style={styles.sheetLink}><Text style={[styles.link, { color: colors.primary }]}>Voir la fiche de {plantDisplayName(item.task.resolved)}</Text></Pressable>
+      )}
+      {item.kind === "season" && item.activity.start && !item.done && (
+        <Pressable accessibilityRole="button" onPress={onGuide} style={({ pressed }) => [styles.secondaryButton, { borderColor: colors.primary }, pressed && styles.pressed]}>
+          <Text style={[styles.secondaryText, { color: colors.primary }]}>Pas à pas, avec ce qu’il te faut</Text>
+        </Pressable>
+      )}
+      {item.kind === "season" && item.activity.start && !item.done && (
+        <Pressable accessibilityRole="button" onPress={onPostpone} style={({ pressed }) => [styles.secondaryButton, { borderColor: colors.border }, pressed && styles.pressed]}>
+          <Text style={[styles.secondaryText, { color: colors.foreground }]}>Pas encore acheté ? Rappelle-moi samedi</Text>
+        </Pressable>
       )}
       {item.kind === "season" && (
         <Pressable accessibilityRole="button" onPress={onOpenCalendar} style={styles.sheetLink}><Text style={[styles.link, { color: colors.primary }]}>Voir le calendrier</Text></Pressable>
@@ -616,6 +710,9 @@ const styles = StyleSheet.create({
   allDoneTitle: { fontSize: 20, fontWeight: "800", textAlign: "center", letterSpacing: -0.3 },
   weekButton: { marginTop: 8, paddingHorizontal: 18, paddingVertical: 11 },
   allDoneText: { fontSize: 14, lineHeight: 20, textAlign: "center" },
+  arrival: { padding: 14, gap: 4 },
+  cityBanner: { flexDirection: "row", alignItems: "center", gap: 12, padding: 14 },
+  cityBannerTitle: { fontSize: 15, fontWeight: "700" },
   remindersRow: { flexDirection: "row", alignItems: "center", gap: 12 },
   flex: { flex: 1 },
   shelf: { gap: 12 },

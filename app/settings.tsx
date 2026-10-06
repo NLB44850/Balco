@@ -8,6 +8,7 @@ import { useEffect, useState } from "react";
 import { Alert, Pressable, ScrollView, StyleSheet, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
+import { CityPicker } from "@/components/city-picker";
 import { LightScreen } from "@/components/light-screen";
 import { PlantPicture } from "@/components/plant-picture";
 import { ScreenHeader } from "@/components/screen-header";
@@ -15,11 +16,13 @@ import { glass } from "@/components/ui/glass";
 import { Text, TextInput } from "@/components/ui/typography";
 import { freeBenefits, plusBenefits } from "@/lib/plans";
 import { useColors } from "@/hooks/use-colors";
+import { useLocalWeather } from "@/hooks/use-local-weather";
 import { useWeatherSimulation } from "@/hooks/use-weather-simulation";
 import { useGarden } from "@/lib/garden/garden-context";
 import { plantDisplayName, relativeDay } from "@/lib/garden/garden-logic";
 import { EXPERIENCE_OPTIONS, GOAL_OPTIONS, SPACE_OPTIONS, SUNLIGHT_OPTIONS, type OnboardingOption } from "@/lib/garden/onboarding";
 import { notificationsUnavailableReason } from "@/lib/notifications/module";
+import { activateReminders, NOTIFICATIONS_DENIED } from "@/lib/reminders/activate";
 import {
   clearAndDisableLocalReminders,
   defaultLocalReminderSettings,
@@ -87,19 +90,17 @@ export default function SettingsScreen() {
     await saveLocalReminderSettings(next);
   };
 
+  const location = useLocalWeather();
+  const [cityPickerOpen, setCityPickerOpen] = useState(false);
+
   const toggleReminders = async () => {
     if (reminderSettings.enabled) {
       await clearAndDisableLocalReminders();
       setReminderSettings((current) => ({ ...current, enabled: false }));
       return;
     }
-    const granted = await requestLocalNotificationPermission();
-    if (!granted) {
-      Alert.alert("Notifications désactivées", "Autorise les notifications dans les réglages de ton téléphone pour recevoir les conseils Balco.");
-      return;
-    }
-    // Liste vide = toutes les plantes, y compris celles ajoutées plus tard.
-    await updateReminderSettings({ enabled: true, enabledPlantIds: [] });
+    const result = await activateReminders(reminderSettings, { requestPermission: requestLocalNotificationPermission, save: (next) => updateReminderSettings(next) });
+    if (result.status === "denied") Alert.alert(NOTIFICATIONS_DENIED.title, NOTIFICATIONS_DENIED.message);
   };
 
   const isPlantEnabled = (plantId: string) => reminderSettings.enabledPlantIds.length === 0 || reminderSettings.enabledPlantIds.includes(plantId);
@@ -146,9 +147,11 @@ export default function SettingsScreen() {
     </View>
   );
   const goals = answers.goals ?? [];
+  const cityLabel = location.weather.isFallback ? "Paris par défaut" : location.weather.city;
 
   return (
     <LightScreen bottom>
+      <CityPicker visible={cityPickerOpen} onClose={() => setCityPickerOpen(false)} searchCities={location.searchCities} selectCity={location.selectCity} requestDeviceLocation={location.requestDeviceLocation} />
       <ScrollView keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false} contentContainerStyle={[styles.content, { paddingTop: insets.top + 14 }]}>
         <ScreenHeader back title="Réglages" subtitle="Tout s’enregistre tout de suite" style={styles.header} />
 
@@ -165,6 +168,10 @@ export default function SettingsScreen() {
         <Text style={[styles.section, { color: colors.foreground }]}>Mon balcon</Text>
         <View style={[glass.card, styles.card]}>
           <Text style={[styles.reminderCardText, { color: colors.muted, marginTop: 0 }]}>Balco s’en sert pour te proposer des plantes et des dates qui marchent chez toi.</Text>
+          <Pressable accessibilityRole="button" accessibilityLabel={`Ta ville : ${cityLabel}, changer`} onPress={() => setCityPickerOpen(true)} style={({ pressed }) => [styles.linkRow, pressed && styles.pressed]}>
+            <Text style={[styles.linkText, { color: colors.primary }]}>📍  Ta ville · {cityLabel}</Text>
+            <Text style={[styles.linkArrow, { color: colors.muted }]}>›</Text>
+          </Pressable>
           {choices("Soleil", SUNLIGHT_OPTIONS, (id) => answers.sunlight === id, (id) => void updateOnboarding({ sunlight: id }))}
           {choices("Espace", SPACE_OPTIONS, (id) => answers.space === id, (id) => void updateOnboarding({ space: id }))}
           {choices("Tes envies (plusieurs choix)", GOAL_OPTIONS, (id) => goals.includes(id), (id) => void updateOnboarding({ goals: goals.includes(id) ? goals.filter((goal) => goal !== id) : [...goals, id] }))}
@@ -278,6 +285,13 @@ export default function SettingsScreen() {
               })}
             </View>
             <Text style={[styles.testHint, { color: colors.muted }]}>{WEATHER_SCENARIOS.find((item) => item.id === simulation.scenario)?.hint}</Text>
+            <Pressable accessibilityRole="button" onPress={() => router.push({ pathname: "/welcome", params: { again: "1" } })} style={({ pressed }) => [styles.testButton, { borderColor: colors.primary, marginTop: 12 }, pressed && styles.pressed]}>
+              <Text style={[styles.testButtonText, { color: colors.primary }]}>Refaire l’accueil</Text>
+            </Pressable>
+            <Text style={[styles.testHint, { color: colors.muted }]}>Repasse les questions du début, sans toucher à tes plantes.</Text>
+            <Pressable accessibilityRole="button" onPress={() => router.push("/illustrations")} style={({ pressed }) => [styles.testButton, { borderColor: colors.primary, marginTop: 12 }, pressed && styles.pressed]}>
+              <Text style={[styles.testButtonText, { color: colors.primary }]}>Illustrations du pas-à-pas</Text>
+            </Pressable>
           </View>
         )}
       </ScrollView>

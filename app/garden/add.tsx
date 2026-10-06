@@ -35,7 +35,7 @@ import {
   type SpaceSize,
   type Sunlight,
 } from "@/lib/plants/catalog";
-import { suggestionActionLabel, suggestionFor } from "@/lib/plants/suggestions";
+import { ADD_CHOICE_LABELS, addChoices, suggestionActionLabel, suggestionFor, type AddChoice } from "@/lib/plants/suggestions";
 
 const categories = Object.keys(CATEGORY_LABELS) as PlantCategory[];
 
@@ -54,6 +54,8 @@ export default function AddPlantScreen() {
   const hasBalconyInfo = Boolean(onboarding && !onboarding.skipped && (onboarding.sunlight || onboarding.space));
   const [onlyFitting, setOnlyFitting] = useState(hasBalconyInfo);
   const [sheetId, setSheetId] = useState<string | null>(null);
+  // « + » touché : la ligne propose « Déjà sur mon balcon » ou « À planter ».
+  const [choosingId, setChoosingId] = useState<string | null>(null);
   const [toast, setToast] = useState<ToastMessage | null>(null);
   const toastId = useRef(0);
   const hideToast = useCallback(() => setToast(null), []);
@@ -75,12 +77,14 @@ export default function AddPlantScreen() {
     : null;
   const sheetEntry = sheetId ? getCatalogPlant(sheetId) : undefined;
 
-  const add = async (catalogId: string) => {
+  const add = async (catalogId: string, choice: AddChoice) => {
     const entry = getCatalogPlant(catalogId);
-    const created = await addPlant(catalogId);
+    setChoosingId(null);
+    // À planter : son premier geste sera « Sème… » ou « Plante… » ; déjà là : on l'arrose et on l'entretient.
+    const created = await addPlant(catalogId, { toPlant: choice === "toPlant" });
     if (Platform.OS !== "web") void Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => undefined);
     toastId.current += 1;
-    setToast({ id: toastId.current, text: `Ajouté à ton balcon : ${entry?.name ?? "ta plante"}`, onUndo: () => void removePlant(created.id) });
+    setToast({ id: toastId.current, text: `${choice === "toPlant" ? "À planter sur ton balcon" : "Ajouté à ton balcon"} : ${entry?.name ?? "ta plante"}`, onUndo: () => void removePlant(created.id) });
   };
 
   return (
@@ -122,8 +126,10 @@ export default function AddPlantScreen() {
               const owned = countByCatalogId.get(entry.id) ?? 0;
               const seasonal = inSeason ? suggestionFor(entry, seasonMonth) : null;
               const meta = owned ? `✓ Sur ton balcon${owned > 1 ? ` (${owned})` : ""}` : seasonal ? `${suggestionActionLabel(seasonal)} · ${seasonal.reason}` : effortLabel(entry);
+              const choosing = choosingId === entry.id;
               return (
-                <View key={entry.id} style={[styles.row, index < results.length - 1 && glass.line]}>
+                <View key={entry.id} style={index < results.length - 1 && glass.line}>
+                <View style={styles.row}>
                   <Pressable accessibilityRole="button" accessibilityLabel={`${entry.name}, voir le détail`} onPress={() => setSheetId(entry.id)} style={({ pressed }) => [styles.rowMain, pressed && styles.pressed]}>
                     <CatalogPicture entry={entry} style={styles.bubble} />
                     <View style={styles.flex}>
@@ -131,9 +137,19 @@ export default function AddPlantScreen() {
                       <Text style={[styles.meta, { color: owned ? colors.primary : colors.muted }]} numberOfLines={seasonal && !owned ? 2 : 1}>{meta}</Text>
                     </View>
                   </Pressable>
-                  <Pressable accessibilityRole="button" accessibilityLabel={`Ajouter ${entry.name}`} hitSlop={8} onPress={() => void add(entry.id)} style={({ pressed }) => [styles.add, { backgroundColor: owned ? colors.leaf : colors.primary }, pressed && styles.pressed]}>
-                    <Text style={[styles.addText, { color: owned ? colors.primary : "#FFFFFF" }]}>+</Text>
+                  <Pressable accessibilityRole="button" accessibilityLabel={`Ajouter ${entry.name}`} hitSlop={8} onPress={() => setChoosingId(choosing ? null : entry.id)} style={({ pressed }) => [styles.add, { backgroundColor: owned || choosing ? colors.leaf : colors.primary }, pressed && styles.pressed]}>
+                    <Text style={[styles.addText, { color: owned || choosing ? colors.primary : "#FFFFFF" }]}>{choosing ? "×" : "+"}</Text>
                   </Pressable>
+                </View>
+                {choosing && (
+                  <View style={styles.choices}>
+                    {addChoices(entry, currentMonth).map((choice, position) => (
+                      <Pressable key={choice} accessibilityRole="button" accessibilityLabel={`${entry.name} : ${ADD_CHOICE_LABELS[choice]}`} onPress={() => void add(entry.id, choice)} style={({ pressed }) => [styles.choice, position === 0 ? { backgroundColor: colors.primary } : { borderColor: colors.primary, borderWidth: 1 }, pressed && styles.pressed]}>
+                        <Text style={[styles.choiceText, { color: position === 0 ? "#FFFFFF" : colors.primary }]}>{ADD_CHOICE_LABELS[choice]}</Text>
+                      </Pressable>
+                    ))}
+                  </View>
+                )}
                 </View>
               );
             })}
@@ -184,9 +200,15 @@ export default function AddPlantScreen() {
                 </View>
               </View>
             )}
-            <Pressable accessibilityRole="button" onPress={() => { const id = sheetEntry.id; setSheetId(null); void add(id); }} style={({ pressed }) => [styles.cta, { backgroundColor: colors.primary }, pressed && styles.pressed]}>
-              <Text style={styles.ctaText}>{countByCatalogId.get(sheetEntry.id) ? "En ajouter une autre" : "Ajouter à mon balcon"}</Text>
+            <Pressable accessibilityRole="button" onPress={() => { const id = sheetEntry.id; setSheetId(null); router.push({ pathname: "/guide/[catalogId]", params: { catalogId: id, mode: "need" } }); }} style={({ pressed }) => [styles.needLink, pressed && styles.pressed]}>
+              <Text style={[styles.factText, { color: colors.primary }]}>🧺  Ce qu’il te faut pour la planter ›</Text>
             </Pressable>
+            {countByCatalogId.get(sheetEntry.id) ? <Text style={[styles.meta, { color: colors.primary }]}>✓ Déjà sur ton balcon : tu peux en ajouter une autre.</Text> : null}
+            {addChoices(sheetEntry, currentMonth).map((choice, position) => (
+              <Pressable key={choice} accessibilityRole="button" onPress={() => { const id = sheetEntry.id; setSheetId(null); void add(id, choice); }} style={({ pressed }) => [styles.cta, position === 0 ? { backgroundColor: colors.primary } : { borderColor: colors.primary, borderWidth: 1 }, pressed && styles.pressed]}>
+                <Text style={[styles.ctaText, position > 0 && { color: colors.primary }]}>{ADD_CHOICE_LABELS[choice]}</Text>
+              </Pressable>
+            ))}
           </View>
         )}
       </BottomSheet>
@@ -216,6 +238,10 @@ const styles = StyleSheet.create({
   meta: { fontSize: 13, marginTop: 1 },
   add: { width: 38, height: 38, borderRadius: 19, alignItems: "center", justifyContent: "center" },
   addText: { fontSize: 22, fontWeight: "700", marginTop: -2 },
+  needLink: { paddingVertical: 4 },
+  choices: { flexDirection: "row", gap: 8, paddingBottom: 12, paddingLeft: 58 },
+  choice: { flex: 1, borderRadius: 12, paddingVertical: 10, alignItems: "center" },
+  choiceText: { fontSize: 13, fontWeight: "700" },
   footer: { paddingHorizontal: 20, paddingTop: 12, backgroundColor: "rgba(255,255,255,0.92)", borderTopWidth: StyleSheet.hairlineWidth },
   doneButton: { borderRadius: 16, paddingVertical: 15, alignItems: "center" },
   doneText: { fontSize: 15, fontWeight: "700" },

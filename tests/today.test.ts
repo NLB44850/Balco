@@ -72,11 +72,11 @@ describe("liste « Aujourd'hui »", () => {
     expect(wateringRows(buildTodayList({ groups: [], plan: planDay({ plants, events: [...watered, ...today], now }) }))).toHaveLength(0);
   });
 
-  it("propose un geste de saison quand la plante n'a rien de plus pressant", () => {
-    // La lavande, arrivée ce mois-ci et arrosée hier : son geste du jour est de la planter.
-    const events = [...watered.filter((event) => event.plantId !== "lavender-1"), { id: "w-lav", plantId: "lavender-1", type: "watering" as const, completedAt: new Date(2026, 8, 28, 9).toISOString(), source: "manual" as const }];
-    const { items } = list(12, events);
-    expect(items.some((item) => item.kind === "season" && item.title === "Plante la lavande")).toBe(true);
+  it("propose de planter une plante « à planter », et rien d'autre pour elle", () => {
+    const toPlant = resolvePlants([{ id: "lavender-2", catalogId: "lavender", addedAt: new Date(2026, 8, 28).toISOString(), toPlant: true }]);
+    const plan = planDay({ plants: toPlant, events: [], now });
+    const items = buildTodayList({ groups: [], plan });
+    expect(items.map((item) => item.title)).toEqual(["Plante la lavande"]);
   });
 
   it("une fois le premier geste fait, le suivant prend sa place (récolte, semis, plantation…)", () => {

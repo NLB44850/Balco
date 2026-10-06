@@ -241,6 +241,24 @@ export async function scheduleVacationReturn(vacation: Vacation | null, settings
   });
 }
 
+/**
+ * Un rappel daté qui ne dépend pas de la météo (envies du printemps le 1er mars, plante pas encore achetée le
+ * samedi) : il remplace le précédent de la même source, et ne part que si les rappels sont activés.
+ */
+export async function scheduleDatedReminder(source: string, content: { title: string; body: string; url?: string }, date: Date | null) {
+  const notifications = Notifications;
+  if (!notifications) return;
+  const scheduled = await notifications.getAllScheduledNotificationsAsync();
+  await Promise.all(scheduled.filter((item) => (item.content.data as { source?: string } | undefined)?.source === source).map((item) => notifications.cancelScheduledNotificationAsync(item.identifier)));
+  const settings = await loadLocalReminderSettings();
+  if (!date || !settings.enabled || date.getTime() <= Date.now() || !(await requestLocalNotificationPermission())) return;
+  await configureLocalNotifications();
+  await notifications.scheduleNotificationAsync({
+    content: { title: content.title, body: content.body, data: { source, url: content.url ?? "/" } },
+    trigger: { type: notifications.SchedulableTriggerInputTypes.DATE, date, channelId: BALCO_NOTIFICATION_CHANNEL_ID },
+  });
+}
+
 export async function clearAndDisableLocalReminders() {
   await cancelBalcoReminderNotifications();
   const settings = await loadLocalReminderSettings();
