@@ -47,6 +47,7 @@ import { eventForActivity } from "@/lib/plants/calendar";
 import { PLANT_CATALOG } from "@/lib/plants/catalog";
 import { seasonalStarters, seasonalSuggestions, type SeasonalSuggestion } from "@/lib/plants/suggestions";
 import { activateReminders, NOTIFICATIONS_DENIED, remindersEnabledText } from "@/lib/reminders/activate";
+import { arrivalCard } from "@/lib/garden/onboarding";
 import { addSnooze, eventForReminder, planGroupedNotification, wakeSnoozeFor, type ReminderSnooze } from "@/lib/reminders/reminder-actions";
 import type { MaintenanceEvent } from "@/lib/reminders/reminder-engine";
 import type { ReminderGroup } from "@/lib/reminders/reminder-groups";
@@ -317,6 +318,7 @@ export default function HomeScreen() {
     ? weather.city
     : `${weather.city} · ${Math.round(weatherSnapshot.current.temperatureC)}° maintenant · ${Math.round(weatherSnapshot.today.temperatureMinC)}° au plus bas`;
   const hasPlants = resolvedPlants.length > 0;
+  const arrival = loaded ? arrivalCard(onboarding, events, now) : null;
   // Un geste de saison pour une plante du balcon : sa photo plutôt que son emoji, quand il y en a une.
   const seasonPicture = (item: TodayItem) => {
     if (item.kind !== "season" || !covers.has(item.activity.subjectId)) return undefined;
@@ -363,6 +365,19 @@ export default function HomeScreen() {
             {previewStatus === "sent" && <Text style={[styles.small, { color: colors.muted }]}>Envoyée : verrouille ton téléphone pour la voir arriver.</Text>}
             {previewStatus === "denied" && <Text style={[styles.small, { color: colors.error }]}>Les notifications sont bloquées : autorise-les pour Balco dans les réglages du téléphone.</Text>}
           </View>
+        )}
+
+        {arrival === "welcome" && (
+          <FadeIn style={[glass.card, styles.arrival]}>
+            <Text style={[styles.cityBannerTitle, { color: colors.foreground }]}>Bienvenue, voici ton balcon 🌱</Text>
+            <Text style={[styles.small, { color: colors.muted }]}>{hasPlants ? "Chaque jour, ta liste du jour : touche le rond quand un geste est fait, Balco s’occupe du reste." : "Ajoute une plante pour recevoir chaque jour le geste utile."}</Text>
+          </FadeIn>
+        )}
+        {arrival === "questions" && (
+          <Pressable accessibilityRole="button" onPress={() => router.push({ pathname: "/welcome", params: { again: "1" } })} style={({ pressed }) => [glass.card, styles.arrival, pressed && styles.pressed]}>
+            <Text style={[styles.cityBannerTitle, { color: colors.foreground }]}>Quelques questions</Text>
+            <Text style={[styles.small, { color: colors.muted }]}>pour des conseils adaptés à ton balcon · 1 minute ›</Text>
+          </Pressable>
         )}
 
         {/* Ville inconnue (position refusée ou pas encore choisie) : pas d'alerte météo tant qu'elle manque. */}
@@ -645,6 +660,7 @@ const styles = StyleSheet.create({
   allDoneTitle: { fontSize: 20, fontWeight: "800", textAlign: "center", letterSpacing: -0.3 },
   weekButton: { marginTop: 8, paddingHorizontal: 18, paddingVertical: 11 },
   allDoneText: { fontSize: 14, lineHeight: 20, textAlign: "center" },
+  arrival: { padding: 14, gap: 4 },
   cityBanner: { flexDirection: "row", alignItems: "center", gap: 12, padding: 14 },
   cityBannerTitle: { fontSize: 15, fontWeight: "700" },
   remindersRow: { flexDirection: "row", alignItems: "center", gap: 12 },

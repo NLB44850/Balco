@@ -6,6 +6,11 @@ le porteur, avec toutes les propositions de Claude (« OK pour tes propositions 
 **Avancement** : A1 validée le 6 octobre ; A2 codée le 6 octobre, **en attente de validation sur son
 téléphone (APK : la version web n'a pas de notifications)**. Prochaine action après son accord : l'étape A3.
 
+- B4 (fait, à valider) : `arrivalCard` (`lib/garden/onboarding.ts`) : carte « Bienvenue, voici ton balcon 🌱 » en
+  haut d'Aujourd'hui le jour de l'accueil jusqu'au premier geste coché (`completedAt` gardé et synchronisé) ;
+  après « Passer », carte « Quelques questions · pour des conseils adaptés à ton balcon » qui ouvre
+  `/welcome?again=1` (droit aux questions ; « Passer » ou la fin reviennent en arrière sans empiler d'onglets ;
+  une plante déjà là n'est pas ajoutée deux fois). Réglages → Version de test : « Refaire l'accueil ».
 - B3 (fait, à valider) : étape « Où est ton balcon ? » (juste avant les plantes ; après l'espace sur le chemin
   Oui) : « ⌖ Utiliser ma position » (seule demande de position de l'app, 20 s au plus), recherche de ville,
   « Plus tard » ; les plantes de saison suivent alors le climat de la ville. Sur téléphone, dernière étape

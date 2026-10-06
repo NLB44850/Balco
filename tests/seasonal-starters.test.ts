@@ -97,3 +97,19 @@ describe("accueil : chemins, soleil et anciennes envies", () => {
     expect(seasonalStarters({ sunlight: "partial", space: "planter", goals: ["salads"] }, { month: 5 }).plants[0].id).toBe("cut-lettuce");
   });
 });
+
+describe("carte d'arrivée sur Aujourd'hui", () => {
+  const done = new Date(2026, 9, 6, 10).toISOString();
+  const later = new Date(2026, 9, 6, 18);
+  it("« Bienvenue » le jour même jusqu'au premier geste, « Quelques questions » après « Passer »", async () => {
+    const { arrivalCard } = await import("../lib/garden/onboarding");
+    expect(arrivalCard({ completedAt: done }, [], later)).toBe("welcome");
+    expect(arrivalCard({ completedAt: done }, [{ id: "w", plantId: "p", type: "watering", completedAt: new Date(2026, 9, 6, 11).toISOString(), source: "manual" }], later)).toBeNull();
+    // Le lendemain, elle n'est plus là.
+    expect(arrivalCard({ completedAt: done }, [], new Date(2026, 9, 7, 9))).toBeNull();
+    expect(arrivalCard({ skipped: true, completedAt: done }, [], later)).toBe("questions");
+    expect(arrivalCard(null, [], later)).toBeNull();
+    // Un ancien accueil sans date : rien.
+    expect(arrivalCard({ sunlight: "sunny" } as never, [], later)).toBeNull();
+  });
+});

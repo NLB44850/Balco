@@ -1419,6 +1419,8 @@ export type OnboardingAnswers = {
   space?: string;
   goals?: string[];
   skipped?: boolean;
+  /** Fin de l'accueil (ou « Passer ») : la carte « Bienvenue » d'Aujourd'hui en dépend. */
+  completedAt?: string;
 };
 
 /** La plante que l'utilisateur a en tête quand il coche un objectif. */

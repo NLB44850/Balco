@@ -285,6 +285,10 @@ export default function SettingsScreen() {
               })}
             </View>
             <Text style={[styles.testHint, { color: colors.muted }]}>{WEATHER_SCENARIOS.find((item) => item.id === simulation.scenario)?.hint}</Text>
+            <Pressable accessibilityRole="button" onPress={() => router.push({ pathname: "/welcome", params: { again: "1" } })} style={({ pressed }) => [styles.testButton, { borderColor: colors.primary, marginTop: 12 }, pressed && styles.pressed]}>
+              <Text style={[styles.testButtonText, { color: colors.primary }]}>Refaire l’accueil</Text>
+            </Pressable>
+            <Text style={[styles.testHint, { color: colors.muted }]}>Repasse les questions du début, sans toucher à tes plantes.</Text>
           </View>
         )}
       </ScrollView>

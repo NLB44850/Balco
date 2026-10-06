@@ -8,7 +8,7 @@
  * qu'à ce moment-là), puis, sur un téléphone, les rappels. « Plus tard » laisse Paris par défaut.
  */
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { Redirect, useRouter } from "expo-router";
+import { Redirect, useLocalSearchParams, useRouter } from "expo-router";
 import { useMemo, useRef, useState } from "react";
 import { Pressable, ScrollView, StyleSheet, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -66,8 +66,11 @@ export default function OnboardingScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const garden = useGarden();
+  // Relancé depuis Aujourd'hui (« Quelques questions ») ou Réglages (« Refaire l'accueil ») : les plantes restent.
+  const again = useLocalSearchParams<{ again?: string }>().again === "1";
   // 0 : la bienvenue ; ensuite, l'écran `steps[index - 1]`.
-  const [index, setIndex] = useState(0);
+  // Accueil refait : on va droit aux questions.
+  const [index, setIndex] = useState(again ? 1 : 0);
   const [answers, setAnswers] = useState<Answers>({ goals: [] });
   const [owned, setOwned] = useState<string[]>([]);
   const [query, setQuery] = useState("");
@@ -174,22 +177,35 @@ export default function OnboardingScreen() {
   const finish = async () => {
     setSaving(true);
     // Déjà là : installées. Choisies ici : à planter (premier geste « Sème… » ou « Plante… »).
-    if (hasPlants) for (const id of owned) await garden.addPlant(id);
-    else for (const id of chosen) await garden.addPlant(id, { toPlant: true });
+    // Accueil refait : une plante déjà sur le balcon n'est pas ajoutée une 2ᵉ fois.
+    const already = new Set(again ? garden.plants.filter((plant) => !plant.removedAt).map((plant) => plant.catalogId) : []);
+    if (hasPlants) for (const id of owned.filter((catalogId) => !already.has(catalogId))) await garden.addPlant(id);
+    else for (const id of chosen.filter((catalogId) => !already.has(catalogId))) await garden.addPlant(id, { toPlant: true });
     await AsyncStorage.setItem(ONBOARDING_STORAGE_KEY, JSON.stringify({ ...onboardingAnswers, completedAt: new Date().toISOString() }));
     await garden.reloadOnboarding();
-    router.replace("/(tabs)");
+    leave();
+  };
+
+  // Accueil refait : il s'était ouvert par-dessus les onglets, on revient dessus (sans en empiler d'autres).
+  const leave = () => {
+    if (again && router.canGoBack()) router.back();
+    else router.replace("/(tabs)");
   };
 
   const skip = async () => {
+    // Accueil refait : « Passer » ramène simplement où l'on était, sans rien changer.
+    if (again && garden.onboarding) {
+      leave();
+      return;
+    }
     await AsyncStorage.setItem(ONBOARDING_STORAGE_KEY, JSON.stringify({ skipped: true, completedAt: new Date().toISOString() }));
     await garden.reloadOnboarding();
-    router.replace("/(tabs)");
+    leave();
   };
 
   // Onboarding déjà fait : on ne repose pas les questions à chaque lancement.
   if (!garden.loaded) return null;
-  if (garden.onboarding) return <Redirect href="/(tabs)" />;
+  if (garden.onboarding && !again) return <Redirect href="/(tabs)" />;
 
   const plantRow = (entry: CatalogPlant, active: boolean, onPress: () => void, last: boolean, text = entry.pitch) => (
     <Pressable key={entry.id} accessibilityRole="checkbox" accessibilityState={{ checked: active }} accessibilityLabel={entry.name} onPress={onPress} style={({ pressed }) => [styles.plant, !last && glass.line, pressed && styles.pressed]}>

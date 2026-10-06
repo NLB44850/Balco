@@ -32,6 +32,10 @@ test("onboarding « Pas encore » : soleil, espace, envies, puis des plantes de 
   // Choisies, pas encore en terre : leur premier geste est de les semer ou planter.
   await expect(page.getByRole("checkbox", { name: /^Marquer comme fait : (Sème|Plante) / }).first()).toBeVisible();
   await expect(page.getByText(/Vérifie la terre/)).toHaveCount(0);
+  // Carte d'arrivée, jusqu'au premier geste coché.
+  await expect(page.getByText("Bienvenue, voici ton balcon 🌱")).toBeVisible();
+  await page.getByRole("checkbox", { name: /^Marquer comme fait : (Sème|Plante) / }).first().click();
+  await expect(page.getByText("Bienvenue, voici ton balcon 🌱")).toHaveCount(0);
   expect(errors).toEqual([]);
 });
 
@@ -60,6 +64,35 @@ test("onboarding « Oui » : lesquelles (raccourci + recherche), soleil, espace,
   // Déjà en terre : pas de « Plante le basilic », l'arrosage est proposé.
   await expect(page.getByRole("checkbox", { name: /Plante le basilic|Plante le romarin/ })).toHaveCount(0);
   await expect(page.getByText(/Vérifie la terre de 2 plantes|Arrose/).first()).toBeVisible();
+  expect(errors).toEqual([]);
+});
+
+test("« Passer » : Aujourd'hui avec des plantes de saison et « Quelques questions », qui relance l'accueil", async ({ page }) => {
+  const errors = trackErrors(page);
+  await mockWeather(page);
+  await open(page, "/", "Ton balcon, au bon moment.");
+  await page.getByRole("button", { name: "Passer" }).click();
+  await expect(page.getByText("Ajoute ta première plante")).toBeVisible();
+  await page.getByText("Quelques questions").click();
+  await expect(page.getByText("Tu as déjà des plantes sur ton balcon ?")).toBeVisible();
+  await page.getByText("Oui", { exact: true }).click();
+  await page.getByRole("checkbox", { name: "Menthe" }).click();
+  await page.getByText("Continuer · 1 plante").click();
+  await page.getByText("Presque jamais").click();
+  await page.getByText("Un rebord de fenêtre", { exact: true }).click();
+  await page.getByRole("button", { name: "Plus tard" }).click();
+  await expect(page.getByText("Tes plantes")).toBeVisible();
+  await expect(page.getByText("Quelques questions")).toHaveCount(0);
+  // « Refaire l'accueil » (Réglages → Version de test) ne retire aucune plante.
+  await page.goto("/settings");
+  await page.getByRole("button", { name: "Refaire l’accueil" }).click();
+  await expect(page.getByText("Tu as déjà des plantes sur ton balcon ?")).toBeVisible();
+  await page.getByRole("button", { name: "Revenir à l'étape précédente" }).click();
+  await page.getByRole("button", { name: "Passer" }).click();
+  // Retour sur Réglages, et la menthe est toujours sur le balcon.
+  await expect(page.getByRole("button", { name: "Refaire l’accueil" })).toBeVisible();
+  await open(page, "/", "Tes plantes");
+  await expect(page.getByRole("button", { name: /^Menthe/ }).first()).toBeVisible();
   expect(errors).toEqual([]);
 });
 

@@ -18,6 +18,8 @@ const syncInput = z.object({
       space: z.string().max(32).optional(),
       goals: z.array(z.string().max(32)).max(10).optional(),
       skipped: z.boolean().optional(),
+      hasPlants: z.boolean().optional(),
+      completedAt: z.iso.datetime().optional(),
     }).nullable().optional(),
   }).optional(),
   settings: z.object({

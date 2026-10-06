@@ -1,3 +1,6 @@
+import type { MaintenanceEvent } from "../reminders/reminder-engine";
+import { dayKey, isAvoidedWatering } from "./garden-logic";
+
 /**
  * Les questions de l'accueil (première ouverture) et leurs réponses possibles. Les mêmes choix
  * servent dans Réglages, pour changer l'exposition ou l'espace sans tout recommencer.
@@ -47,6 +50,21 @@ export function normalizeOnboarding<T extends { goals?: string[] } | null>(answe
 
 export function optionTitle(options: OnboardingOption[], id: string | undefined) {
   return options.find((option) => option.id === id)?.title;
+}
+
+/**
+ * La carte en haut d'Aujourd'hui juste après l'accueil : « Bienvenue, voici ton balcon » le jour même, jusqu'au
+ * premier geste coché ; après « Passer », « Quelques questions » pour relancer l'accueil. Sinon, rien.
+ */
+export function arrivalCard(answers: { skipped?: boolean; completedAt?: string } | null, events: MaintenanceEvent[], now: Date): "welcome" | "questions" | null {
+  if (!answers) return null;
+  if (answers.skipped) return "questions";
+  if (!answers.completedAt) return null;
+  const done = new Date(answers.completedAt);
+  if (dayKey(done) !== dayKey(now)) return null;
+  // Un arrosage évité compté tout seul (pluie) n'est pas un geste coché.
+  const checked = events.some((event) => new Date(event.completedAt).getTime() >= done.getTime() && !isAvoidedWatering(event));
+  return checked ? null : "welcome";
 }
 
 /** Les écrans de l'accueil après la bienvenue, selon le chemin suivi. */
