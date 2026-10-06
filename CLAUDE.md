@@ -102,16 +102,21 @@ et les 10 étapes du test utilisateur du 04/10 (détail dans « Historique des l
    migration 0015, `startActivity`, événement `<id>:start`), `app/welcome.tsx` (`onboardingSteps`, `arrivalCard`,
    relance `/welcome?again=1`), `lib/ai/greeting.ts` (prénom demandé par Nora). Plus aucune demande de position
    d'office (`use-local-weather.ts`). Ne pas reposer les questions déjà tranchées.
-3. **Après-récolte** des plantes récoltées en une fois (radis, carottes, salades pommées) : « Tout récolté ? » →
+3. **Pas-à-pas pour planter** (idée du porteur, 06/10, proposition faite, en attente de ses réponses) : guide
+   facultatif depuis le geste « Sème… / Plante… » (feuille du bas), la fiche plante et le catalogue : « Ce qu'il te
+   faut » (liste tirée du catalogue), 4-5 étapes illustrées, dernier bouton « C'est planté » = coche le geste ;
+   entretien résumé en 3 gestes. Étapes par modèle (semis en pot, semis au chaud, plant, vivace en grand pot),
+   personnalisées par plante ; ~20 illustrations communes au style Balco. À faire après le test de l'onboarding.
+4. **Après-récolte** des plantes récoltées en une fois (radis, carottes, salades pommées) : « Tout récolté ? » →
    « Ressemer » ou « Libérer le pot ». À décider avec lui.
-4. **Mémoire de Nora sur plusieurs jours** : il doit encore faire le test sur 2-3 jours (retour à recueillir).
-5. **Tester sans Codespace** (proposé, pas encore demandé) : version web hébergée qui se met à jour seule et APK
+5. **Mémoire de Nora sur plusieurs jours** : il doit encore faire le test sur 2-3 jours (retour à recueillir).
+6. **Tester sans Codespace** (proposé, pas encore demandé) : version web hébergée qui se met à jour seule et APK
    construit par une action GitHub (EXPO_TOKEN qu'il enregistre lui-même dans les secrets du dépôt).
-6. **À la publication** (pas encore décidée) : notifications serveur Android (FCM), reports « Dans 3 h »
+7. **À la publication** (pas encore décidée) : notifications serveur Android (FCM), reports « Dans 3 h »
    synchronisés avec le serveur, photos des plantes sur le serveur, paiement Balco+ (RevenueCat ; les textes
    disent « Bientôt »), Expo 54 → 57, politique de confidentialité, fiche et compte Play Store
    (`docs/avant-publication.md`).
-7. **Version suivante** (feuille de route) : suivi photo d'une plante dans le temps, balcon visuel (plan,
+8. **Version suivante** (feuille de route) : suivi photo d'une plante dans le temps, balcon visuel (plan,
    emplacement, exposition), récoltes et recettes, défis communautaires.
 
 Fait (validé sur son téléphone) :

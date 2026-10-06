@@ -47,7 +47,8 @@ Balco dit chaque jour quoi faire pour chaque plante du balcon, selon la saison e
 
 1. **Revérifier sur le prochain APK** (version Android installée) : l'aperçu de la photo dans Observer (corrigé, pas encore revu), l'appareil photo depuis Aujourd'hui, les notifications.
 2. **Tester le nouvel accueil** (codé le 6 octobre, détail dans `docs/chantier-onboarding.md`), puis fusionner dans `main`. Questions ouvertes : quoi proposer en hiver (décembre-janvier : 1 ou 2 plantes de saison seulement) ; une plante ajoutée depuis le catalogue arrive « installée » (faut-il demander « déjà en terre ? ») .
-3. **Après la récolte** des plantes qu'on récolte en une fois (radis, carottes, salades pommées) : proposer « Tout récolté ? » puis « Ressemer » ou « Libérer le pot ». À décider.
+3. **Pas-à-pas pour planter** (mon idée du 6 octobre) : un guide facultatif avec petites illustrations (ce qu'il me faut, les étapes, l'entretien), ouvert depuis « Sème… / Plante… », sans alourdir le geste de cocher.
+4. **Après la récolte** des plantes qu'on récolte en une fois (radis, carottes, salades pommées) : proposer « Tout récolté ? » puis « Ressemer » ou « Libérer le pot ». À décider.
 4. **Mémoire de Nora sur plusieurs jours** : test à faire sur 2 ou 3 jours.
 5. **Tester sans Codespace** (idée) : une version web toujours en ligne et l'APK construit automatiquement.
 6. **Avant la publication** (pas encore décidée) : notifications envoyées par le serveur (Firebase), paiement Balco+ (RevenueCat), mise à jour d'Expo, politique de confidentialité, fiche et compte Google Play.
