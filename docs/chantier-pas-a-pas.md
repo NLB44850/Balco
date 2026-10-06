@@ -5,7 +5,14 @@ Statut : **plan validé le 6 octobre (« OK pour les 3, enchaîne toutes les ét
 
 Avancement :
 - P1 (fait) : `addChoices` / `ADD_CHOICE_LABELS` (`lib/plants/suggestions.ts`) ; le « + » du catalogue ouvre deux
-  boutons sous la ligne, la fiche du catalogue aussi ; toast « À planter sur ton balcon : Lavande ». Une étape = un commit testé (check, lint, Vitest, e2e,
+  boutons sous la ligne, la fiche du catalogue aussi ; toast « À planter sur ton balcon : Lavande ».
+- P2 (fait) : hiver = novembre à février (ou moins de 3 plantes de saison) : `seasonalStarters` renvoie aussi
+  `indoor` (`lib/plants/indoor.ts` : micro-pousses, cresson, ciboulette, persil, sources citées) et `spring`
+  (à semer ou planter de mars à mai). Accueil : 3 blocs, rien de coché d'office dans les deux derniers.
+  Rebord intérieur : premier geste « Sème le persil à l'intérieur » (`startActivity`). Envies gardées dans
+  `springWishes` (synchronisées), notification le 1er mars à 9 h (`scheduleDatedReminder`,
+  `lib/garden/spring.ts`), carte « C'est le moment 🌱 » sur Aujourd'hui en mars-avril (« Ne plus me le
+  rappeler »). E2e `e2e/7-hiver.spec.ts` (horloge du navigateur avancée : `page.clock.install` + `resume`). Une étape = un commit testé (check, lint, Vitest, e2e,
 bundle Android), compte rendu, validation sur son téléphone avant la suivante (sauf s'il demande d'enchaîner).
 
 ## Ce que le porteur a décidé (6 octobre)

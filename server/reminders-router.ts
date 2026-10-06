@@ -19,6 +19,7 @@ const syncInput = z.object({
       goals: z.array(z.string().max(32)).max(10).optional(),
       skipped: z.boolean().optional(),
       hasPlants: z.boolean().optional(),
+      springWishes: z.array(z.string().max(64)).max(30).optional(),
       completedAt: z.iso.datetime().optional(),
     }).nullable().optional(),
   }).optional(),

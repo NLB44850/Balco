@@ -1419,6 +1419,8 @@ export type OnboardingAnswers = {
   space?: string;
   goals?: string[];
   skipped?: boolean;
+  /** L'hiver, dans l'accueil : les plantes à semer ou planter au printemps (rappel en mars). */
+  springWishes?: string[];
   /** Fin de l'accueil (ou « Passer ») : la carte « Bienvenue » d'Aujourd'hui en dépend. */
   completedAt?: string;
 };

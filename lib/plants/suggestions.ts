@@ -23,6 +23,7 @@ import {
   type Sunlight,
 } from "./catalog";
 import { adaptToClimate, type ClimateInfo } from "./climate";
+import { INDOOR_WINTER_IDS, INDOOR_WINTER_MONTHS, sowsOnWindowsill } from "./indoor";
 
 export type SuggestionAction = "sow" | "plant" | "both";
 
@@ -190,7 +191,15 @@ export type SeasonalStarters = {
   plants: CatalogPlant[];
   /** « Les tomates se plantent en mai. En attendant, voici ce qui pousse maintenant. », ou null. */
   notice: string | null;
+  /** Hiver (novembre à février, ou moins de 3 plantes de saison) : à semer sur le rebord intérieur. */
+  indoor: CatalogPlant[];
+  /** Hiver : les envies pour le printemps (à semer ou planter de mars à mai), à garder pour un rappel en mars. */
+  spring: CatalogPlant[];
 };
+
+/** En dessous, la saison est trop calme : on propose aussi le rebord intérieur et le printemps. */
+export const WINTER_MIN_PLANTS = 3;
+const SPRING_MONTHS: Month[] = [3, 4, 5];
 
 /** Sujet de la phrase d'attente : l'envie telle que l'utilisateur la pense, sinon le nom de la plante phare. */
 const GOAL_SUBJECTS: Partial<Record<GoalTag, string>> = { tomatoes: "les tomates" };
@@ -264,7 +273,21 @@ export function seasonalStarters(
     .filter((notice): notice is GoalNotice => Boolean(notice));
   const ending = notices.every((notice) => notice.waiting) ? "En attendant, voici ce qui pousse maintenant." : "Voici plutôt ce qui pousse bien chez toi maintenant.";
   const notice = notices.length > 0 ? `${notices.map((item) => item.sentence).join(" ")} ${ending}` : null;
-  return { plants: inSeason.slice(0, limit), notice };
+  const plants = inSeason.slice(0, limit);
+  // L'hiver (novembre à février), ou un mois trop calme : on propose aussi le rebord intérieur et le printemps.
+  if (plants.length >= WINTER_MIN_PLANTS && !INDOOR_WINTER_MONTHS.includes(month)) return { plants, notice, indoor: [], spring: [] };
+  // Saison calme (l'hiver) : le rebord intérieur, et ce qui t'attend au printemps.
+  const shown = new Set([...plants.map((entry) => entry.id), ...owned]);
+  const indoor = INDOOR_WINTER_IDS.map((id) => getCatalogPlant(id)).filter((entry): entry is CatalogPlant => Boolean(entry) && !shown.has(entry!.id) && sowsOnWindowsill(entry!, month));
+  indoor.forEach((entry) => shown.add(entry.id));
+  const spring = ranked
+    .filter((entry) => {
+      if (shown.has(entry.id)) return false;
+      const adapted = adaptToClimate(entry, climate);
+      return SPRING_MONTHS.some((m) => adapted.plantMonths.includes(m) || (adapted.sowMonths.includes(m) && !sowsIndoors(adapted, m)));
+    })
+    .slice(0, limit);
+  return { plants, notice, indoor: indoor.slice(0, 3), spring };
 }
 
 /** Ajouter depuis le catalogue : la plante est-elle déjà sur le balcon, ou à semer / planter ? */

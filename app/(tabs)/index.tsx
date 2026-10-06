@@ -48,6 +48,7 @@ import { PLANT_CATALOG } from "@/lib/plants/catalog";
 import { seasonalStarters, seasonalSuggestions, type SeasonalSuggestion } from "@/lib/plants/suggestions";
 import { activateReminders, NOTIFICATIONS_DENIED, remindersEnabledText } from "@/lib/reminders/activate";
 import { arrivalCard } from "@/lib/garden/onboarding";
+import { springCard } from "@/lib/garden/spring";
 import { addSnooze, eventForReminder, planGroupedNotification, wakeSnoozeFor, type ReminderSnooze } from "@/lib/reminders/reminder-actions";
 import type { MaintenanceEvent } from "@/lib/reminders/reminder-engine";
 import type { ReminderGroup } from "@/lib/reminders/reminder-groups";
@@ -74,7 +75,7 @@ const haptic = () => {
 export default function HomeScreen() {
   const colors = useColors();
   const router = useRouter();
-  const { loaded, resolvedPlants, events, onboarding, account, addPlant, removePlant, logEvent, removeEvent, reportLocation } = useGarden();
+  const { loaded, resolvedPlants, events, onboarding, account, addPlant, removePlant, logEvent, removeEvent, reportLocation, updateOnboarding } = useGarden();
   const aiStatus = trpc.ai.status.useQuery(undefined, { enabled: account.signedIn, retry: false });
   // Sans compte : l'analyse offerte de cet appareil (Observer sans compte).
   const [device, setDevice] = useState<string | null>(null);
@@ -319,6 +320,8 @@ export default function HomeScreen() {
     : `${weather.city} · ${Math.round(weatherSnapshot.current.temperatureC)}° maintenant · ${Math.round(weatherSnapshot.today.temperatureMinC)}° au plus bas`;
   const hasPlants = resolvedPlants.length > 0;
   const arrival = loaded ? arrivalCard(onboarding, events, now) : null;
+  // Mars et avril : les envies du printemps choisies l'hiver, pas encore sur le balcon.
+  const springWishes = loaded ? springCard(onboarding?.springWishes, resolvedPlants.map((resolved) => resolved.entry.id), now) : [];
   // Un geste de saison pour une plante du balcon : sa photo plutôt que son emoji, quand il y en a une.
   const seasonPicture = (item: TodayItem) => {
     if (item.kind !== "season" || !covers.has(item.activity.subjectId)) return undefined;
@@ -469,6 +472,25 @@ export default function HomeScreen() {
             <Text style={[styles.small, styles.flex, { color: colors.muted }]}>Sois prévenu au bon moment, sans ouvrir l’app.</Text>
             <Pressable accessibilityRole="button" onPress={() => void turnOnReminders()} style={({ pressed }) => [styles.pill, { backgroundColor: colors.leaf }, pressed && styles.pressed]}>
               <Text style={[styles.pillText, { color: colors.primary }]}>Activer les rappels</Text>
+            </Pressable>
+          </View>
+        )}
+
+        {!away && springWishes.length > 0 && (
+          <View style={[glass.card, styles.arrival]}>
+            <Text style={[styles.cityBannerTitle, { color: colors.foreground }]}>C’est le moment 🌱</Text>
+            <Text style={[styles.small, { color: colors.muted }]}>Tes envies pour le printemps se sèment ou se plantent maintenant.</Text>
+            {springWishes.map((entry) => (
+              <View key={entry.id} style={[styles.reco, { borderBottomColor: colors.border }]}>
+                <CatalogPicture entry={entry} style={[styles.plantBubble, styles.recoBubble]} />
+                <Text style={[styles.recoName, styles.flex, { color: colors.foreground }]}>{entry.name}</Text>
+                <Pressable accessibilityRole="button" accessibilityLabel={`Ajouter ${entry.name}`} onPress={() => void addRecommendation(entry.id, entry.name)} style={({ pressed }) => [styles.pill, { backgroundColor: colors.primary }, pressed && styles.pressed]}>
+                  <Text style={[styles.pillText, { color: "#FFFFFF" }]}>Ajouter</Text>
+                </Pressable>
+              </View>
+            ))}
+            <Pressable accessibilityRole="button" onPress={() => void updateOnboarding({ springWishes: [] })} hitSlop={6}>
+              <Text style={[styles.small, { color: colors.muted }]}>Ne plus me le rappeler</Text>
             </Pressable>
           </View>
         )}

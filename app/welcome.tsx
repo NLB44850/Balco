@@ -35,10 +35,11 @@ import {
 } from "@/lib/garden/onboarding";
 import { getCatalogPlant, searchCatalog, type CatalogPlant, type OnboardingAnswers } from "@/lib/plants/catalog";
 import { seasonalStarters } from "@/lib/plants/suggestions";
+import { nextSpringReminder, SPRING_REMINDER_SOURCE, wishNames } from "@/lib/garden/spring";
 import { climateZoneFor } from "@/lib/plants/climate";
 import { notificationsUnavailableReason } from "@/lib/notifications/module";
 import { activateReminders, NOTIFICATIONS_DENIED } from "@/lib/reminders/activate";
-import { loadLocalReminderSettings, requestLocalNotificationPermission, saveLocalReminderSettings } from "@/lib/reminders/local-notifications";
+import { loadLocalReminderSettings, requestLocalNotificationPermission, saveLocalReminderSettings, scheduleDatedReminder } from "@/lib/reminders/local-notifications";
 
 const HAS_OPTIONS: OnboardingOption[] = [
   { id: "yes", icon: "🪴", title: "Oui", text: "Balco te dit quoi faire pour celles que tu as." },
@@ -100,6 +101,13 @@ export default function OnboardingScreen() {
   const suggestions = starters.plants;
   // Les trois premières idées sont cochées d'office : moins de touchers pour démarrer.
   const chosen = (picked ?? suggestions.slice(0, 3).map((entry) => entry.id)).filter((id) => suggestions.some((entry) => entry.id === id));
+  // L'hiver : à semer sur le rebord intérieur, et les envies du printemps (rien de coché d'office).
+  const [indoorPicked, setIndoorPicked] = useState<string[]>([]);
+  const [wishes, setWishes] = useState<string[]>([]);
+  const indoorChosen = indoorPicked.filter((id) => starters.indoor.some((entry) => entry.id === id));
+  const wishesChosen = wishes.filter((id) => starters.spring.some((entry) => entry.id === id));
+  const plantCount = chosen.length + indoorChosen.length;
+  const toggleIn = (list: string[], id: string) => (list.includes(id) ? list.filter((value) => value !== id) : [...list, id]);
 
   const found = useMemo(() => (query.trim().length >= 2 ? searchCatalog(query).slice(0, SEARCH_RESULTS) : []), [query]);
   const shortcuts = useMemo(() => COMMON_PLANT_IDS.map((id) => getCatalogPlant(id)).filter((entry): entry is CatalogPlant => Boolean(entry)), []);
@@ -180,8 +188,14 @@ export default function OnboardingScreen() {
     // Accueil refait : une plante déjà sur le balcon n'est pas ajoutée une 2ᵉ fois.
     const already = new Set(again ? garden.plants.filter((plant) => !plant.removedAt).map((plant) => plant.catalogId) : []);
     if (hasPlants) for (const id of owned.filter((catalogId) => !already.has(catalogId))) await garden.addPlant(id);
-    else for (const id of chosen.filter((catalogId) => !already.has(catalogId))) await garden.addPlant(id, { toPlant: true });
-    await AsyncStorage.setItem(ONBOARDING_STORAGE_KEY, JSON.stringify({ ...onboardingAnswers, completedAt: new Date().toISOString() }));
+    else for (const id of [...chosen, ...indoorChosen].filter((catalogId) => !already.has(catalogId))) await garden.addPlant(id, { toPlant: true });
+    const springWishes = hasPlants ? [] : wishesChosen;
+    await AsyncStorage.setItem(ONBOARDING_STORAGE_KEY, JSON.stringify({ ...onboardingAnswers, ...(springWishes.length > 0 ? { springWishes } : {}), completedAt: new Date().toISOString() }));
+    // Les envies du printemps : une notification le 1er mars à 9 h, si les rappels sont activés.
+    if (springWishes.length > 0) {
+      const entries = springWishes.map((id) => getCatalogPlant(id)).filter((entry): entry is CatalogPlant => Boolean(entry));
+      void scheduleDatedReminder(SPRING_REMINDER_SOURCE, { title: "C’est le printemps sur ton balcon 🌱", body: `C’est le moment : ${wishNames(entries)}.` }, nextSpringReminder(new Date())).catch(() => undefined);
+    }
     await garden.reloadOnboarding();
     leave();
   };
@@ -352,14 +366,40 @@ export default function OnboardingScreen() {
             <Text style={[styles.title, { color: colors.foreground }]}>Tes premières plantes</Text>
             <Text style={[styles.subtitle, { color: colors.muted }]}>À semer ou planter maintenant, pour ton balcon. Garde celles qui te plaisent : tu pourras en ajouter d’autres à tout moment.</Text>
             {starters.notice && <Text style={[styles.subtitle, { color: colors.foreground }]}>{starters.notice}</Text>}
+            {starters.indoor.length > 0 && <Text style={[styles.section, { color: colors.foreground }]}>Ce qui pousse maintenant</Text>}
             <View style={[glass.card, styles.plants]}>
               {suggestions.map((entry, position) => {
                 const active = chosen.includes(entry.id);
                 return plantRow(entry, active, () => setPicked(active ? chosen.filter((id) => id !== entry.id) : [...chosen, entry.id]), position === suggestions.length - 1);
               })}
             </View>
+            {starters.indoor.length > 0 && (
+              <>
+                <Text style={[styles.section, { color: colors.foreground }]}>À semer sur le rebord intérieur</Text>
+                <Text style={[styles.optionText, { color: colors.muted }]}>Il fait trop froid dehors : ces pousses lèvent au chaud, près d’une fenêtre.</Text>
+                <View style={[glass.card, styles.plants]}>
+                  {starters.indoor.map((entry, position) => plantRow(entry, indoorChosen.includes(entry.id), () => setIndoorPicked((current) => toggleIn(current, entry.id)), position === starters.indoor.length - 1))}
+                </View>
+              </>
+            )}
+            {starters.spring.length > 0 && (
+              <>
+                <Text style={[styles.section, { color: colors.foreground }]}>Tes envies pour le printemps</Text>
+                <Text style={[styles.optionText, { color: colors.muted }]}>Coche-les : Balco te les rappelle en mars, au bon moment.</Text>
+                <View style={styles.chips}>
+                  {starters.spring.map((entry) => {
+                    const active = wishesChosen.includes(entry.id);
+                    return (
+                      <Pressable key={entry.id} accessibilityRole="checkbox" accessibilityState={{ checked: active }} accessibilityLabel={`Envie pour le printemps : ${entry.name}`} onPress={() => setWishes((current) => toggleIn(current, entry.id))} style={({ pressed }) => [styles.chip, { backgroundColor: active ? colors.primary : "rgba(255,255,255,0.78)", borderColor: active ? colors.primary : colors.border }, pressed && styles.pressed]}>
+                        <Text style={[styles.chipText, { color: active ? "#FFFFFF" : colors.foreground }]}>{entry.emoji} {entry.name}</Text>
+                      </Pressable>
+                    );
+                  })}
+                </View>
+              </>
+            )}
             <Pressable accessibilityRole="button" disabled={saving} onPress={next} style={({ pressed }) => [styles.cta, { backgroundColor: colors.primary }, pressed && styles.pressed]}>
-              <Text style={styles.ctaText}>{saving ? "Un instant…" : `${index < steps.length ? "Continuer" : "Créer mon balcon"}${chosen.length > 0 ? ` · ${chosen.length} plante${chosen.length > 1 ? "s" : ""}` : ""}`}</Text>
+              <Text style={styles.ctaText}>{saving ? "Un instant…" : `${index < steps.length ? "Continuer" : "Créer mon balcon"}${plantCount > 0 ? ` · ${plantCount} plante${plantCount > 1 ? "s" : ""}` : ""}`}</Text>
             </Pressable>
           </FadeIn>
         )}
@@ -396,6 +436,7 @@ const styles = StyleSheet.create({
   plantIcon: { width: 46, height: 46, borderRadius: 23, alignItems: "center", justifyContent: "center" },
   searchRow: { flexDirection: "row", alignItems: "center", gap: 8 },
   searchButton: { borderRadius: 12, paddingHorizontal: 14, paddingVertical: 13 },
+  section: { fontSize: 17, fontWeight: "700", marginTop: 4 },
   chips: { flexDirection: "row", flexWrap: "wrap", gap: 8 },
   chip: { borderRadius: 999, borderWidth: 1, paddingHorizontal: 12, paddingVertical: 8 },
   chipText: { fontSize: 14, fontWeight: "600" },

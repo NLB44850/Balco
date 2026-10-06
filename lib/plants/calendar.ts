@@ -2,6 +2,7 @@ import { dayKey, sessionEventId, startEventId } from "../garden/garden-logic";
 import type { MaintenanceEvent, MaintenanceTaskType } from "../reminders/reminder-engine";
 import { describeSowing, formatMonthRange, MONTH_LONG, sowsIndoors, type CatalogPlant, type Month } from "./catalog";
 import { adaptToClimate, type ClimateInfo } from "./climate";
+import { sowsOnWindowsill } from "./indoor";
 
 export type CalendarActivityKind = "sow" | "plant" | "repot" | "harvest" | "care";
 
@@ -92,6 +93,14 @@ export function calendarActivities(subjects: CalendarSubject[], month: number, o
 export function startActivity(subject: CalendarSubject, month: number, options: CalendarOptions = {}): CalendarActivity {
   const entry = adaptToClimate(subject.entry, options.climate);
   const m = month as Month;
+  // L'hiver, sur le rebord intérieur (persil, cresson…) : il fait trop froid dehors.
+  if (sowsOnWindowsill(entry, m)) {
+    return {
+      key: `${subject.id}:start`, kind: "sow", subjectId: subject.id, entry, typeLabel: "SEMIS", title: `Sème ${entry.label} à l’intérieur`,
+      description: `Sur un rebord lumineux, dans la maison : un petit pot de terreau, les graines à peine recouvertes, la terre gardée humide. Il fait trop froid dehors : le pot sortira au balcon au printemps.`,
+      tag: subject.displayName.toUpperCase(), tone: "lime", eventType: "observation", start: true,
+    };
+  }
   const plantNow = entry.plantMonths.includes(m);
   const sowNow = entry.sowMonths.includes(m);
   const kind: CalendarActivityKind = plantNow || (!sowNow && entry.plantMonths.length > 0) ? "plant" : "sow";
