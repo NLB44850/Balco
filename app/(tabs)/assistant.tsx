@@ -12,6 +12,7 @@ import { glass } from "@/components/ui/glass";
 import { useColors } from "@/hooks/use-colors";
 import { conversationForNora, withDaySeparators, type ConversationItem } from "@/lib/ai/conversation";
 import { isNoraLevel, type NoraMemoryView } from "@/lib/ai/memory";
+import { NAME_ASKED_STORAGE_KEY, noraGreeting } from "@/lib/ai/greeting";
 import { quickQuestions } from "@/lib/ai/quick-questions";
 import { quotaLabel } from "@/lib/ai/quota-text";
 import { plusQuotaHint } from "@/lib/plans";
@@ -36,7 +37,7 @@ export default function AssistantScreen() {
   const colors = useColors();
   const router = useRouter();
   const insets = useSafeAreaInsets();
-  const { account, profile, resolvedPlants, onboarding, updateOnboarding, syncNow } = useGarden();
+  const { account, profile, resolvedPlants, onboarding, updateOnboarding, updateProfile, syncNow } = useGarden();
   // Des questions prêtes, tirées de tes plantes et de la saison : rien à écrire.
   const questions = useMemo(() => quickQuestions(resolvedPlants), [resolvedPlants]);
   const utils = trpc.useUtils();
@@ -54,6 +55,13 @@ export default function AssistantScreen() {
   const [messages, setMessages] = useState<Message[]>([]);
   const [loaded, setLoaded] = useState(false);
   const [draft, setDraft] = useState("");
+  const [nameDraft, setNameDraft] = useState("");
+  const [justNamed, setJustNamed] = useState(false);
+  // null tant que la réponse n'est pas lue : on ne montre pas la question pour la retirer aussitôt.
+  const [nameAsked, setNameAsked] = useState<boolean | null>(null);
+  useEffect(() => {
+    AsyncStorage.getItem(NAME_ASKED_STORAGE_KEY).then((value) => setNameAsked(value === "1")).catch(() => setNameAsked(false));
+  }, []);
   const listRef = useRef<FlatList<ConversationItem<Message>>>(null);
 
   useEffect(() => {
@@ -77,10 +85,21 @@ export default function AssistantScreen() {
   const canAsk = account.signedIn && !unavailable && !paused && !noQuestionsLeft && !ask.isPending && !syncing;
   const firstName = profile.firstName?.trim();
 
-  const welcome: Message[] = [
-    { id: "welcome", from: "bot", text: `Bonjour${firstName ? ` ${firstName}` : ""} ! Je suis Nora, ta coach pour un balcon vivant et facile à entretenir.`, time: "" },
-    { id: "prompt", from: "bot", text: account.signedIn ? "Pose-moi une question sur tes plantes, ton exposition ou la saison : je connais ton balcon 🌿" : "Connecte-toi pour me poser tes questions : je réponds en tenant compte de tes plantes et de ta ville 🌿", time: "" },
-  ];
+  // Sans prénom, Nora le demande une fois (sans IA) ; « Plus tard » ne le redemande pas.
+  const greeting = noraGreeting({ firstName, nameAsked: nameAsked !== false, signedIn: account.signedIn, justNamed });
+  const welcome: Message[] = greeting.lines.map((line) => ({ ...line, from: "bot", time: "" }));
+
+  const saveName = async () => {
+    const name = nameDraft.trim();
+    if (!name) return;
+    await updateProfile({ firstName: name });
+    setJustNamed(true);
+  };
+
+  const declineName = () => {
+    setNameAsked(true);
+    void AsyncStorage.setItem(NAME_ASKED_STORAGE_KEY, "1").catch(() => undefined);
+  };
 
   const send = (text: string) => {
     const clean = text.trim();
@@ -212,6 +231,19 @@ export default function AssistantScreen() {
               <View style={[item.from === "bot" ? glass.card : { backgroundColor: colors.primary, borderRadius: 18 }, styles.bubble, item.from === "user" && styles.userBubble]}>
                 <Text selectable style={[styles.messageText, { color: item.from === "bot" ? colors.foreground : "#FFFFFF" }]}>{item.text}</Text>
                 {!!item.time && <Text style={[styles.messageTime, { color: item.from === "bot" ? colors.muted : "rgba(255,255,255,0.7)" }]}>{item.time}</Text>}
+                {item.id === "ask-name" && nameAsked === false && (
+                  <View style={styles.nameBox}>
+                    <View style={styles.nameRow}>
+                      <TextInput value={nameDraft} onChangeText={setNameDraft} onSubmitEditing={() => void saveName()} placeholder="Ton prénom" placeholderTextColor={colors.muted} maxLength={30} returnKeyType="done" accessibilityLabel="Ton prénom" style={[styles.nameInput, { color: colors.foreground, borderColor: colors.border }]} />
+                      <Pressable accessibilityRole="button" accessibilityLabel="Enregistrer mon prénom" onPress={() => void saveName()} style={({ pressed }) => [styles.nameButton, { backgroundColor: colors.primary }, pressed && styles.pressed]}>
+                        <Text style={styles.nameButtonText}>OK</Text>
+                      </Pressable>
+                    </View>
+                    <Pressable accessibilityRole="button" onPress={declineName} hitSlop={6}>
+                      <Text style={[styles.nameLater, { color: colors.muted }]}>Plus tard</Text>
+                    </Pressable>
+                  </View>
+                )}
               </View>
             </View>
           )}
@@ -275,6 +307,12 @@ const styles = StyleSheet.create({
   messageRowUser: { justifyContent: "flex-end" },
   smallAvatar: { width: 24, height: 24, borderRadius: 9, alignItems: "center", justifyContent: "center" },
   smallAvatarText: { color: "#FFFFFF", fontSize: 11, fontWeight: "800" },
+  nameBox: { gap: 8, marginTop: 10 },
+  nameRow: { flexDirection: "row", alignItems: "center", gap: 8 },
+  nameInput: { flex: 1, borderWidth: 1, borderRadius: 12, paddingHorizontal: 12, paddingVertical: 9, fontSize: 15, backgroundColor: "#FFFFFF" },
+  nameButton: { borderRadius: 12, paddingHorizontal: 14, paddingVertical: 10 },
+  nameButtonText: { color: "#FFFFFF", fontSize: 14, fontWeight: "700" },
+  nameLater: { fontSize: 13, fontWeight: "600" },
   bubble: { padding: 13, maxWidth: "82%", borderBottomLeftRadius: 5 },
   userBubble: { borderBottomLeftRadius: 18, borderBottomRightRadius: 5 },
   messageText: { fontSize: 15, lineHeight: 21 },

@@ -6,6 +6,11 @@ le porteur, avec toutes les propositions de Claude (« OK pour tes propositions 
 **Avancement** : A1 validée le 6 octobre ; A2 codée le 6 octobre, **en attente de validation sur son
 téléphone (APK : la version web n'a pas de notifications)**. Prochaine action après son accord : l'étape A3.
 
+- C1 (fait, à valider) : `lib/ai/greeting.ts` (`noraGreeting`) : sans prénom, Nora demande « Comment je
+  t'appelle ? » dans sa conversation (champ + OK + « Plus tard », gardé sous `balco.nora.name-asked.v1`), sans
+  IA ni compte ; « Enchantée, Camille ! Tu pourras changer ton prénom dans Réglages. ». Prénom et expérience
+  restent réglables dans Réglages ; sans niveau, Nora parle simplement (« considère qu'elle débute »).
+  `recommendPlants` : +3 aux plantes faciles pour tout le monde, l'expérience n'y change plus rien.
 - B4 (fait, à valider) : `arrivalCard` (`lib/garden/onboarding.ts`) : carte « Bienvenue, voici ton balcon 🌱 » en
   haut d'Aujourd'hui le jour de l'accueil jusqu'au premier geste coché (`completedAt` gardé et synchronisé) ;
   après « Passer », carte « Quelques questions · pour des conseils adaptés à ton balcon » qui ouvre

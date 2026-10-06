@@ -1445,7 +1445,6 @@ export function recommendPlants(answers: OnboardingAnswers | null, options: { ex
   const sunlight = answers.sunlight as Sunlight | undefined;
   const space = answers.space as SpaceSize | undefined;
   const goals = new Set(answers.goals ?? []);
-  const beginner = answers.experience === "beginner";
   const month = options.month;
 
   return PLANT_CATALOG
@@ -1455,7 +1454,8 @@ export function recommendPlants(answers: OnboardingAnswers | null, options: { ex
       const matches = entry.goals.filter((goal) => goals.has(goal)).length;
       let score = matches > 0 ? 10 + (matches - 1) * 3 : 0;
       if ([...goals].some((goal) => GOAL_FLAGSHIPS[goal as GoalTag]?.includes(entry.id))) score += 8;
-      if (entry.difficulty === "easy") score += beginner ? 6 : 2;
+      // Un léger avantage aux plantes faciles, pour tout le monde (l'accueil ne demande plus l'expérience).
+      if (entry.difficulty === "easy") score += 3;
       if (month && (entry.sowMonths.includes(month as Month) || entry.plantMonths.includes(month as Month))) score += 4;
       if (DEFAULT_PICKS.includes(entry.id)) score += 1;
       return { entry, score };

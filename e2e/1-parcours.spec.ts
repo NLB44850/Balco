@@ -310,3 +310,20 @@ test("une plante « à planter » : un seul geste, « Plante la lavande », puis
   await expect(page.getByRole("button", { name: /^Lavande, À planter/ })).toHaveCount(0);
   expect(errors).toEqual([]);
 });
+
+test("Nora demande le prénom, sans compte ni IA, et le garde pour Réglages", async ({ page }) => {
+  const errors = trackErrors(page);
+  await mockWeather(page);
+  await open(page, "/", "Ton balcon, au bon moment.");
+  await page.getByRole("button", { name: "Passer" }).click();
+  await page.getByRole("tab", { name: /Nora/ }).click();
+  await expect(page.getByText("Comment je t’appelle ?")).toBeVisible();
+  await page.getByLabel("Ton prénom").fill("Camille");
+  await page.getByRole("button", { name: "Enregistrer mon prénom" }).click();
+  await expect(page.getByText("Bonjour Camille ! Je suis Nora, ta coach pour un balcon vivant et facile à entretenir.")).toBeVisible();
+  await expect(page.getByText("Enchantée, Camille ! Tu pourras changer ton prénom dans Réglages.")).toBeVisible();
+  await expect(page.getByText("Comment je t’appelle ?")).toHaveCount(0);
+  await page.goto("/settings");
+  await expect(page.getByPlaceholder("Pour que Balco te dise bonjour")).toHaveValue("Camille");
+  expect(errors).toEqual([]);
+});
