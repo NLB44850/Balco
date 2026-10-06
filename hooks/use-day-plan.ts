@@ -8,6 +8,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { useLocalWeather } from "@/hooks/use-local-weather";
 import { planDay } from "@/lib/garden/day-plan";
 import { postponedStarts } from "@/lib/garden/postpone";
+import { skippedRepots } from "@/lib/garden/repot-skip";
 import { useGarden } from "@/lib/garden/garden-context";
 import { careProfileFor } from "@/lib/garden/garden-logic";
 import { climateZoneFor } from "@/lib/plants/climate";
@@ -72,7 +73,8 @@ export function useDayPlan() {
   const visibleDecisions = useMemo(() => withoutSnoozed(allDecisions, snoozes, new Date()), [allDecisions, snoozes]);
   const visibleGroups = useMemo(() => groupReminders(visibleDecisions), [visibleDecisions]);
   const postponed = useMemo(() => postponedStarts(snoozes, now), [now, snoozes]);
-  const plan = useMemo(() => planDay({ plants: resolvedPlants, events, now, decisions: visibleDecisions, allDecisions, climate, postponed }), [allDecisions, climate, events, now, postponed, resolvedPlants, visibleDecisions]);
+  const repotSkips = useMemo(() => skippedRepots(snoozes, now), [now, snoozes]);
+  const plan = useMemo(() => planDay({ plants: resolvedPlants, events, now, decisions: visibleDecisions, allDecisions, climate, postponed, repotSkips }), [allDecisions, climate, events, now, postponed, repotSkips, resolvedPlants, visibleDecisions]);
 
   // Prêt quand la météo (ou son repli) et les réglages sont là : avant, l'état d'une plante changerait
   // sous les yeux (« En forme », puis « À surveiller » une fois la soif connue).

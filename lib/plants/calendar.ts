@@ -48,6 +48,10 @@ export type CalendarSubject = {
   inPotSince?: string;
   /** Dernière fois qu'on a changé la terre du dessus. */
   lastTopdress?: string;
+  /** Rempotages déjà notés : le pot a grandi d'un tiers à chacun. */
+  repots?: number;
+  /** « Pas besoin cette année » : pas de rempotage avant cette date (la terre du dessus à la place). */
+  repotSkippedUntil?: string;
 };
 export type CalendarOptions = { climate?: ClimateInfo | null; now?: Date };
 
@@ -94,7 +98,7 @@ export function calendarActivities(subjects: CalendarSubject[], month: number, o
     // Rempotage selon le besoin : jamais la première saison, puis à son rythme ; les autres années, la terre du dessus.
     const potCare = potCareFor(subject, entry, m, options.now ?? new Date());
     if (potCare === "repot") {
-      activities.push({ ...base, key: `${id}:repot`, kind: "repot", typeLabel: "REMPOTAGE", title: `Rempote ${entry.label}`, description: `Passe-la dans un pot un peu plus grand (environ un tiers de plus), avec du terreau neuf. À faire en ${formatMonthRange(entry.repotMonths)}.`, tone: "coral", eventType: "repotting" });
+      activities.push({ ...base, key: `${id}:repot`, kind: "repot", typeLabel: "REMPOTAGE", title: `Rempote ${entry.label}`, description: repotDescription(entry, subject.repots ?? 0), tone: "coral", eventType: "repotting" });
     } else if (potCare === "topdress") {
       activities.push({ ...base, key: `${id}:topdress`, kind: "repot", typeLabel: "TERRE NEUVE", title: `Change la terre du dessus ${ofLabel(entry.label)}`, description: "Gratte les 5 cm de terre du dessus sans abîmer les racines, puis remets du terreau neuf. Pas besoin de changer de pot cette année.", tone: "coral", eventType: "repotting", topdress: true });
     }
@@ -171,7 +175,7 @@ const MONTH_MS = 30.44 * 86_400_000;
  * Le soin du pot d'une vivace installée, ce mois-là : « repot » quand son rythme est atteint (tous les N ans),
  * « topdress » (changer la terre du dessus) les autres années, rien la première saison ni hors de ses mois.
  */
-export function potCareFor(subject: Pick<CalendarSubject, "id" | "addedAt" | "toPlant" | "inPotSince" | "lastTopdress">, entry: CatalogPlant, month: number, now: Date): "repot" | "topdress" | null {
+export function potCareFor(subject: Pick<CalendarSubject, "id" | "addedAt" | "toPlant" | "inPotSince" | "lastTopdress" | "repotSkippedUntil">, entry: CatalogPlant, month: number, now: Date): "repot" | "topdress" | null {
   const data = REPOTTING[entry.id];
   if (!entry.perennial || !data || subject.addedAt === undefined || subject.toPlant || !entry.repotMonths.includes(month as Month)) return null;
   // Le mois regardé : ce mois-ci, sinon sa prochaine occurrence (Saisons montre les mois à venir).
@@ -179,10 +183,33 @@ export function potCareFor(subject: Pick<CalendarSubject, "id" | "addedAt" | "to
   const when = month === current ? now : new Date(now.getFullYear() + (month < current ? 1 : 0), month - 1, 15);
   const age = (when.getTime() - new Date(subject.inPotSince ?? subject.addedAt).getTime()) / MONTH_MS;
   if (age < FIRST_SEASON_MONTHS) return null;
-  if (age >= data.everyYears[0] * 12 - 2) return "repot";
+  const skipped = subject.repotSkippedUntil !== undefined && when.getTime() < new Date(subject.repotSkippedUntil).getTime();
+  if (age >= data.everyYears[0] * 12 - 2 && !skipped) return "repot";
   if (!data.topdress) return null;
   const sinceTopdress = subject.lastTopdress ? (when.getTime() - new Date(subject.lastTopdress).getTime()) / MONTH_MS : Infinity;
   return sinceTopdress >= FIRST_SEASON_MONTHS ? "topdress" : null;
+}
+
+/** Le signe qu'une plante manque de place, quand ses sources n'en donnent pas un à elle. */
+export const GENERIC_REPOT_SIGN = "Des racines sortent par les trous du pot ? L’eau ressort tout de suite ? Elle manque de place.";
+
+/** Le pot qu'elle a (celui conseillé, un tiers de plus à chaque rempotage) et celui à prendre. */
+export function potSizes(entry: Pick<CatalogPlant, "potLiters">, repots: number) {
+  const now = Math.round(entry.potLiters * (4 / 3) ** repots);
+  const next = Math.max(now + 1, Math.round(now * (4 / 3)));
+  return { now, next, nextWidthCm: potWidthCm(next) };
+}
+
+/** Largeur d'un pot à peu près aussi haut que large, en cm : c'est ce qu'on lit en magasin. */
+export function potWidthCm(liters: number) {
+  return Math.round(Math.cbrt((liters * 1000) / 0.707));
+}
+
+/** « Le signe… Si son pot fait environ 10 L, prends-en un d'environ 13 L (27 cm de large)… » */
+export function repotDescription(entry: CatalogPlant, repots: number) {
+  const sign = REPOTTING[entry.id]?.sign?.replace(/'/gu, "’") ?? GENERIC_REPOT_SIGN;
+  const pot = potSizes(entry, repots);
+  return `${sign} Si son pot fait environ ${pot.now} L, prends-en un d’environ ${pot.next} L (${pot.nextWidthCm} cm de large), avec du terreau neuf. À faire en ${formatMonthRange(entry.repotMonths)}.`;
 }
 
 function monthKey(date: Date) {

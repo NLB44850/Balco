@@ -23,6 +23,7 @@ import { Text } from "@/components/ui/typography";
 import { useLocalWeather } from "@/hooks/use-local-weather";
 import { useColors } from "@/hooks/use-colors";
 import { useGarden } from "@/lib/garden/garden-context";
+import { skippedRepots } from "@/lib/garden/repot-skip";
 import { careProfileFor, dayKey, plantDisplayName, potHistory, type ResolvedPlant } from "@/lib/garden/garden-logic";
 import {
   ACTIVITY_KIND_LABELS,
@@ -92,11 +93,20 @@ export default function CalendarScreen() {
   const showingIdeas = resolvedPlants.length === 0;
   // Les idées : seulement ce qui se sème ou se plante ce mois-ci, dans le climat de la ville.
   const starters = useMemo(() => (showingIdeas ? seasonalStarters(onboarding, { month: currentMonth, climate, limit: 4 }) : null), [climate, currentMonth, onboarding, showingIdeas]);
+  // Les alertes déjà traitées sur Aujourd'hui (« Fait », « Pas aujourd'hui », « Dans 3 h ») ne s'affichent plus ici.
+  const [snoozes, setSnoozes] = useState<ReminderSnooze[]>([]);
+  useEffect(() => {
+    void loadReminderSnoozes().then(setSnoozes);
+    return subscribeReminderSnoozes(setSnoozes);
+  }, []);
+
+  // « Pas besoin cette année » (Aujourd'hui) : le rempotage laisse la place à la terre du dessus.
+  const repotSkips = useMemo(() => skippedRepots(snoozes, now), [now, snoozes]);
   const subjects = useMemo<CalendarSubject[]>(
     () => starters
       ? starters.plants.map((entry) => ({ id: entry.id, entry, displayName: entry.name }))
-      : resolvedPlants.map((resolved) => ({ id: resolved.plant.id, entry: resolved.entry, displayName: plantDisplayName(resolved), addedAt: resolved.plant.addedAt, toPlant: resolved.plant.toPlant, ...potHistory(resolved.plant, events) })),
-    [events, resolvedPlants, starters],
+      : resolvedPlants.map((resolved) => ({ id: resolved.plant.id, entry: resolved.entry, displayName: plantDisplayName(resolved), addedAt: resolved.plant.addedAt, toPlant: resolved.plant.toPlant, ...potHistory(resolved.plant, events), repotSkippedUntil: repotSkips.get(resolved.plant.id) })),
+    [events, repotSkips, resolvedPlants, starters],
   );
   const resolvedById = useMemo(() => new Map<string, ResolvedPlant>(resolvedPlants.map((resolved) => [resolved.plant.id, resolved])), [resolvedPlants]);
   const activeFilter = selectedPlant === "all" || subjects.some((subject) => subject.id === selectedPlant) ? selectedPlant : "all";
@@ -121,13 +131,6 @@ export default function CalendarScreen() {
   const grouped = !showingIdeas && activeFilter === "all";
   const groups = grouped ? groupActivities(ordered) : [];
   const sheetGroup = useMemo(() => (groupKey ? groupActivities(currentActivities).find((group) => group.key === groupKey) ?? null : null), [currentActivities, groupKey]);
-
-  // Les alertes déjà traitées sur Aujourd'hui (« Fait », « Pas aujourd'hui », « Dans 3 h ») ne s'affichent plus ici.
-  const [snoozes, setSnoozes] = useState<ReminderSnooze[]>([]);
-  useEffect(() => {
-    void loadReminderSnoozes().then(setSnoozes);
-    return subscribeReminderSnoozes(setSnoozes);
-  }, []);
 
   // Quoi semer ou planter le mois choisi, parmi ce qui convient au balcon et qu'on n'a pas encore.
   // Elles changent chaque jour (même tirage que l'« Idée du mois » d'Aujourd'hui).

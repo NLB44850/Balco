@@ -34,9 +34,11 @@ describe("calendar activities", () => {
 import { activityDone, activityEventId, describeMonths, eventForActivity, seasonActivities, seasonalToDo, SEASONS, upcomingSeasons } from "../lib/plants/calendar";
 import { adaptToClimate, climateSummary, climateZoneFor } from "../lib/plants/climate";
 import { potHistory, sessionEventId } from "../lib/garden/garden-logic";
+import { skippedRepots, skipRepotThisYear, unskipRepot } from "../lib/garden/repot-skip";
+import { GENERIC_REPOT_SIGN, potSizes } from "../lib/plants/calendar";
 
 /** Une plante sur le balcon, dans son pot depuis cette date. */
-const potted = (catalogId: string, since: Date, id = catalogId, extra: { lastTopdress?: string } = {}) => ({ ...subject(catalogId, id), addedAt: since.toISOString(), inPotSince: since.toISOString(), ...extra });
+const potted = (catalogId: string, since: Date, id = catalogId, extra: { lastTopdress?: string; repots?: number; repotSkippedUntil?: string } = {}) => ({ ...subject(catalogId, id), addedAt: since.toISOString(), inPotSince: since.toISOString(), ...extra });
 const MARCH_2027 = new Date(2027, 2, 10);
 const repots = (activities: ReturnType<typeof calendarActivities>) => activities.filter((activity) => activity.kind === "repot").map((activity) => activity.title);
 
@@ -66,7 +68,36 @@ describe("rempotage selon le besoin", () => {
     const thyme = { id: "t", catalogId: "thyme", addedAt: new Date(2024, 2, 1).toISOString() };
     const repot = { id: "t:calendar-repot:2026-03", plantId: "t", type: "repotting" as const, completedAt: new Date(2026, 2, 10).toISOString(), source: "manual" as const };
     const topdress = { id: "t:calendar-topdress:2026-09", plantId: "t", type: "repotting" as const, completedAt: new Date(2026, 8, 10).toISOString(), source: "manual" as const };
-    expect(potHistory(thyme, [repot, topdress])).toEqual({ inPotSince: repot.completedAt, lastTopdress: topdress.completedAt });
+    expect(potHistory(thyme, [repot, topdress])).toEqual({ inPotSince: repot.completedAt, lastTopdress: topdress.completedAt, repots: 1 });
+  });
+
+  it("donne le signe à vérifier et le pot suivant, un tiers plus grand à chaque rempotage", () => {
+    const old = new Date(2025, 2, 15);
+    const [sage] = calendarActivities([potted("sage", old)], 3, { now: MARCH_2027 }).filter((activity) => activity.kind === "repot");
+    const liters = getCatalogPlant("sage")!.potLiters;
+    expect(sage.description).toContain("racines sortent par les trous du pot, ta sauge");
+    expect(sage.description).toContain(`Si son pot fait environ ${liters} L, prends-en un d’environ ${potSizes({ potLiters: liters }, 0).next} L`);
+    // Sans signe propre à la plante : le signe commun.
+    const [oregano] = calendarActivities([potted("oregano", old)], 3, { now: MARCH_2027 }).filter((activity) => activity.kind === "repot");
+    expect(oregano.description).toContain(GENERIC_REPOT_SIGN);
+    // Déjà rempotée deux fois : le pot a grandi.
+    expect(potSizes({ potLiters: 10 }, 0)).toEqual({ now: 10, next: 13, nextWidthCm: 26 });
+    expect(potSizes({ potLiters: 10 }, 2)).toEqual({ now: 18, next: 24, nextWidthCm: 32 });
+    expect(potSizes({ potLiters: 1 }, 0).next).toBe(2);
+  });
+
+  it("« Pas besoin cette année » : la terre du dessus à la place, le rempotage revient l'an prochain", () => {
+    const old = new Date(2025, 2, 15);
+    const snoozes = skipRepotThisYear([], "thyme", MARCH_2027);
+    const until = skippedRepots(snoozes, MARCH_2027).get("thyme");
+    expect(until).toBe(new Date(2028, 0, 1).toISOString());
+    expect(repots(calendarActivities([potted("thyme", old, "thyme", { repotSkippedUntil: until })], 3, { now: MARCH_2027 }))).toEqual(["Change la terre du dessus du thym"]);
+    // La menthe ne change pas que la terre du dessus : rien cette année.
+    expect(repots(calendarActivities([potted("mint", old, "mint", { repotSkippedUntil: until })], 3, { now: MARCH_2027 }))).toEqual([]);
+    // L'an prochain (Saisons regarde mars 2028) : le rempotage revient.
+    expect(repots(calendarActivities([potted("thyme", old, "thyme", { repotSkippedUntil: until })], 3, { now: new Date(2027, 11, 10) }))).toEqual(["Rempote le thym"]);
+    expect(skippedRepots(unskipRepot(snoozes, "thyme"), MARCH_2027).size).toBe(0);
+    expect(skippedRepots(snoozes, new Date(2028, 0, 2)).size).toBe(0);
   });
 });
 

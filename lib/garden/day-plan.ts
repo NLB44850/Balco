@@ -79,6 +79,8 @@ export type DayPlanInput = {
   climate?: ClimateInfo | null;
   /** Plantes à planter dont le premier geste attend samedi (« Rappelle-moi samedi »). */
   postponed?: Set<string>;
+  /** « Pas besoin cette année » : plante → date jusqu'à laquelle son rempotage est écarté. */
+  repotSkips?: Map<string, string>;
 };
 
 /** L'état d'une plante choisie mais pas encore en terre (Balcon, fiche). */
@@ -139,14 +141,14 @@ function statusOf(resolved: ResolvedPlant, gestures: PlanGesture[], events: Main
   return { tone: "good", label: STATUS_LABEL.good };
 }
 
-export function planDay({ plants, events, now, decisions = [], allDecisions = decisions, climate, postponed }: DayPlanInput): PlantDay[] {
+export function planDay({ plants, events, now, decisions = [], allDecisions = decisions, climate, postponed, repotSkips }: DayPlanInput): PlantDay[] {
   const today = startOfDay(now);
   const todayKey = dayKey(now);
   const month = now.getMonth() + 1;
   const eventIds = new Set(events.map((event) => event.id));
   // Pluie ou orage annoncés : on ne dit d'arroser aucune plante, même une fois l'alerte cochée.
   const rainComing = allDecisions.some((decision) => decision.cause === "rain" || decision.cause === "storm");
-  const subjectOf = (resolved: ResolvedPlant): CalendarSubject => ({ id: resolved.plant.id, entry: resolved.entry, displayName: plantDisplayName(resolved), addedAt: resolved.plant.addedAt, toPlant: resolved.plant.toPlant, ...potHistory(resolved.plant, events) });
+  const subjectOf = (resolved: ResolvedPlant): CalendarSubject => ({ id: resolved.plant.id, entry: resolved.entry, displayName: plantDisplayName(resolved), addedAt: resolved.plant.addedAt, toPlant: resolved.plant.toPlant, ...potHistory(resolved.plant, events), repotSkippedUntil: repotSkips?.get(resolved.plant.id) });
   const subjects = plants.filter((resolved) => !resolved.plant.toPlant).map(subjectOf);
   const seasonByPlant = new Map<string, CalendarActivity[]>();
   for (const activity of calendarActivities(subjects, month, { climate, now })) {

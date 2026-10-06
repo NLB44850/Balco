@@ -49,6 +49,8 @@ import { seasonalStarters, seasonalSuggestions, type SeasonalSuggestion } from "
 import { activateReminders, NOTIFICATIONS_DENIED, remindersEnabledText } from "@/lib/reminders/activate";
 import { arrivalCard } from "@/lib/garden/onboarding";
 import { springCard } from "@/lib/garden/spring";
+import { skipRepotThisYear } from "@/lib/garden/repot-skip";
+import { REPOTTING } from "@/lib/plants/repotting";
 import { nextSaturdayMorning, postponeStart, saturdayReminder, saturdaySource } from "@/lib/garden/postpone";
 import { addSnooze, eventForReminder, planGroupedNotification, wakeSnoozeFor, type ReminderSnooze } from "@/lib/reminders/reminder-actions";
 import type { MaintenanceEvent } from "@/lib/reminders/reminder-engine";
@@ -285,6 +287,13 @@ export default function HomeScreen() {
       void saveReminderSnoozes(previous);
       void scheduleDatedReminder(saturdaySource(activity.subjectId), saturdayReminder(activity), null).catch(() => undefined);
     });
+  };
+  // « Pas besoin cette année » : on a vérifié, elle ne manque pas de place. La terre du dessus prend le relais.
+  const skipRepot = async (activity: CalendarActivity) => {
+    const previous = snoozes;
+    await saveReminderSnoozes(skipRepotThisYear(snoozes, activity.subjectId, new Date()));
+    haptic();
+    showToast(REPOTTING[activity.entry.id]?.topdress ? "Pas de rempotage cette année : change plutôt la terre du dessus" : "Pas de rempotage cette année", () => void saveReminderSnoozes(previous));
   };
   const turnOnReminders = async () => {
     const result = await activateReminders(reminderSettings, {
@@ -581,7 +590,7 @@ export default function HomeScreen() {
       </Animated.ScrollView>
 
       <BottomSheet visible={sheetItem !== null} onClose={closeSheet}>
-        {sheetItem && <SheetContent item={sheetItem} events={events} onClose={closeSheet} onToggle={() => { closeSheet(); void toggleItem(sheetItem); }} onSnooze={(kind) => { closeSheet(); if (sheetItem.kind === "alert") void snoozeAlert(sheetItem.group, kind); }} onOpenPlant={(id) => { closeSheet(); router.push({ pathname: "/garden/[id]", params: { id } }); }} onOpenCalendar={() => { closeSheet(); router.push("/(tabs)/calendar"); }} onPostpone={() => { closeSheet(); if (sheetItem.kind === "season") void postponeToSaturday(sheetItem.activity); }} onGuide={() => { closeSheet(); if (sheetItem.kind === "season") router.push({ pathname: "/guide/[catalogId]", params: { catalogId: sheetItem.activity.entry.id, plantId: sheetItem.activity.subjectId } }); }} />}
+        {sheetItem && <SheetContent item={sheetItem} events={events} onClose={closeSheet} onToggle={() => { closeSheet(); void toggleItem(sheetItem); }} onSnooze={(kind) => { closeSheet(); if (sheetItem.kind === "alert") void snoozeAlert(sheetItem.group, kind); }} onOpenPlant={(id) => { closeSheet(); router.push({ pathname: "/garden/[id]", params: { id } }); }} onOpenCalendar={() => { closeSheet(); router.push("/(tabs)/calendar"); }} onPostpone={() => { closeSheet(); if (sheetItem.kind === "season") void postponeToSaturday(sheetItem.activity); }} onSkipRepot={() => { closeSheet(); if (sheetItem.kind === "season") void skipRepot(sheetItem.activity); }} onGuide={() => { closeSheet(); if (sheetItem.kind === "season") router.push({ pathname: "/guide/[catalogId]", params: { catalogId: sheetItem.activity.entry.id, plantId: sheetItem.activity.subjectId } }); }} />}
       </BottomSheet>
 
       <BottomSheet
@@ -636,10 +645,12 @@ type SheetContentProps = {
   onPostpone: () => void;
   /** Geste « à planter » : le pas-à-pas illustré, facultatif. */
   onGuide: () => void;
+  /** Rempotage : « Pas besoin cette année ». */
+  onSkipRepot: () => void;
 };
 
 /** Le détail d'un geste : pourquoi, comment, et les choix possibles. */
-function SheetContent({ item, events, onToggle, onSnooze, onOpenPlant, onOpenCalendar, onPostpone, onGuide }: SheetContentProps) {
+function SheetContent({ item, events, onToggle, onSnooze, onOpenPlant, onOpenCalendar, onPostpone, onGuide, onSkipRepot }: SheetContentProps) {
   const colors = useColors();
   const alertTone = item.tone === "frost" || item.tone === "rain" || item.tone === "storm" || item.tone === "wind" ? colors.frost : item.tone === "heat" ? colors.terracotta : colors.primary;
   const info = item.kind === "alert" && item.group.action === "skip";
@@ -678,6 +689,11 @@ function SheetContent({ item, events, onToggle, onSnooze, onOpenPlant, onOpenCal
       {item.kind === "season" && item.activity.start && !item.done && (
         <Pressable accessibilityRole="button" onPress={onPostpone} style={({ pressed }) => [styles.secondaryButton, { borderColor: colors.border }, pressed && styles.pressed]}>
           <Text style={[styles.secondaryText, { color: colors.foreground }]}>Pas encore acheté ? Rappelle-moi samedi</Text>
+        </Pressable>
+      )}
+      {item.kind === "season" && item.activity.kind === "repot" && !item.activity.topdress && !item.done && (
+        <Pressable accessibilityRole="button" onPress={onSkipRepot} style={({ pressed }) => [styles.secondaryButton, { borderColor: colors.border }, pressed && styles.pressed]}>
+          <Text style={[styles.secondaryText, { color: colors.foreground }]}>Pas besoin cette année</Text>
         </Pressable>
       )}
       {item.kind === "season" && (
