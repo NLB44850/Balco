@@ -16,6 +16,11 @@ test("onboarding : de l'accueil à « Aujourd'hui » avec les premières plantes
   await page.getByText("Tomates cerises").click();
   await page.getByText("Continuer", { exact: true }).click();
   await expect(page.getByText("Tes premières plantes")).toBeVisible();
+  // Plantes de saison seulement : hors de mars à juin, pas de tomates, mais une phrase pour patienter.
+  if (![3, 4, 5, 6].includes(new Date().getMonth() + 1)) {
+    await expect(page.getByText("Les tomates se plantent en mai. En attendant, voici ce qui pousse maintenant.")).toBeVisible();
+    await expect(page.getByRole("checkbox", { name: /Tomates cerises/ })).toHaveCount(0);
+  }
   await page.getByText(/^Créer mon balcon/).click();
   await expect(page.getByText("Aujourd’hui").first()).toBeVisible();
   await expect(page.getByText(/Ton balcon/)).toBeVisible();

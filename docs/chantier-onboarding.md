@@ -1,8 +1,18 @@
 # Chantier : refonte de l'onboarding (plan validé le 6 octobre 2026)
 
 Document de reprise : tout ce qui a été établi dans la conversation du 6 octobre. **Le plan est validé par
-le porteur, avec toutes les propositions de Claude (« OK pour tes propositions »).** Prochaine action :
-**coder l'étape A1**, puis compte rendu et attente de validation avant A2, et ainsi de suite.
+le porteur, avec toutes les propositions de Claude (« OK pour tes propositions »).**
+
+**Avancement** : A1 codée le 6 octobre, **en attente de validation sur son téléphone**. Prochaine action après
+son accord : l'étape A2.
+
+- A1 (fait, à valider) : `seasonalStarters` dans `lib/plants/suggestions.ts` (plantes qu'on peut semer ou planter
+  ce mois-ci dans le climat, valeurs sûres `DEFAULT_PICKS` d'abord sans réponses, phrase d'attente tirée de la
+  plante phare la plus proche de chaque envie sans plante de saison). Utilisée par `welcome.tsx` (climat de
+  Paris : la ville n'est pas encore demandée), l'état vide d'Aujourd'hui et les idées de Saisons (balcon vide).
+  Le catalogue « adaptées » n'est pas filtré (hors du plan). Tests : `tests/seasonal-starters.test.ts`, e2e
+  d'onboarding. **À signaler** : en décembre-janvier, très peu de plantes de saison (1 à 2 : micro-pousses,
+  groseillier), c'est la règle appliquée telle quelle.
 
 Règles de travail (rappel de CLAUDE.md) : une étape = un commit testé (`pnpm -s check`, `pnpm -s lint`,
 Vitest avec MariaDB, `bash scripts/e2e.sh` complet avec reconstruction, `npx expo export --platform android`),

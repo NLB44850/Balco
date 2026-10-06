@@ -19,7 +19,8 @@ import { Text, TextInput } from "@/components/ui/typography";
 import { useColors } from "@/hooks/use-colors";
 import { ONBOARDING_STORAGE_KEY, useGarden } from "@/lib/garden/garden-context";
 import { EXPERIENCE_OPTIONS, GOAL_OPTIONS, SPACE_OPTIONS, SUNLIGHT_OPTIONS, type OnboardingOption } from "@/lib/garden/onboarding";
-import { recommendPlants, type OnboardingAnswers } from "@/lib/plants/catalog";
+import { type OnboardingAnswers } from "@/lib/plants/catalog";
+import { seasonalStarters } from "@/lib/plants/suggestions";
 
 type Question = { title: string; subtitle: string; options: OnboardingOption[]; multiple?: boolean };
 
@@ -47,7 +48,9 @@ export default function OnboardingScreen() {
   const advanceTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const onboardingAnswers: OnboardingAnswers = useMemo(() => ({ experience: answers.experience, sunlight: answers.sunlight, space: answers.space, goals: answers.goals }), [answers]);
-  const suggestions = useMemo(() => recommendPlants(onboardingAnswers, { month: new Date().getMonth() + 1 }).slice(0, 6), [onboardingAnswers]);
+  // Seulement ce qui se sème ou se plante ce mois-ci ; la ville n'est pas encore connue : climat de Paris.
+  const starters = useMemo(() => seasonalStarters(onboardingAnswers, { month: new Date().getMonth() + 1, climate: null }), [onboardingAnswers]);
+  const suggestions = starters.plants;
   // Les trois premières idées sont cochées d'office : moins de touchers pour démarrer.
   const chosen = (picked ?? suggestions.slice(0, 3).map((entry) => entry.id)).filter((id) => suggestions.some((entry) => entry.id === id));
 
@@ -160,6 +163,7 @@ export default function OnboardingScreen() {
           <FadeIn style={styles.step}>
             <Text style={[styles.title, { color: colors.foreground }]}>Tes premières plantes</Text>
             <Text style={[styles.subtitle, { color: colors.muted }]}>Choisies pour ton balcon et la saison. Garde celles qui te plaisent : tu pourras en ajouter d’autres à tout moment.</Text>
+            {starters.notice && <Text style={[styles.subtitle, { color: colors.foreground }]}>{starters.notice}</Text>}
             <View style={[glass.card, styles.plants]}>
               {suggestions.map((entry, index) => {
                 const active = chosen.includes(entry.id);

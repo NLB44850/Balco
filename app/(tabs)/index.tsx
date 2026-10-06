@@ -43,8 +43,8 @@ import type { PlantTone } from "@/lib/garden/day-plan";
 import { balconyStatus, buildTodayList, doneSubtitle, isInfoBanner, layoutTodayList, rainSavingsToLog, splitTodayList, type TodayItem } from "@/lib/garden/today";
 import { notificationsUnavailableReason } from "@/lib/notifications/module";
 import { eventForActivity } from "@/lib/plants/calendar";
-import { PLANT_CATALOG, recommendPlants } from "@/lib/plants/catalog";
-import { seasonalSuggestions, type SeasonalSuggestion } from "@/lib/plants/suggestions";
+import { PLANT_CATALOG } from "@/lib/plants/catalog";
+import { seasonalStarters, seasonalSuggestions, type SeasonalSuggestion } from "@/lib/plants/suggestions";
 import { addSnooze, eventForReminder, planGroupedNotification, wakeSnoozeFor, type ReminderSnooze } from "@/lib/reminders/reminder-actions";
 import type { MaintenanceEvent } from "@/lib/reminders/reminder-engine";
 import type { ReminderGroup } from "@/lib/reminders/reminder-groups";
@@ -166,7 +166,9 @@ export default function HomeScreen() {
   const [moreOpen, setMoreOpen] = useState(false);
   const wateringLine = lines.find((line) => line.type === "watering") ?? null;
   const wateringSheet = wateringOpen && wateringLine ? wateringLine : null;
-  const recommendations = useMemo(() => (resolvedPlants.length === 0 ? recommendPlants(onboarding, { month: now.getMonth() + 1 }).slice(0, 3) : []), [now, onboarding, resolvedPlants.length]);
+  // Balcon vide : seulement des plantes à semer ou planter ce mois-ci, dans le climat de la ville.
+  const starters = useMemo(() => (resolvedPlants.length === 0 ? seasonalStarters(onboarding, { month: now.getMonth() + 1, climate, limit: 3 }) : null), [climate, now, onboarding, resolvedPlants.length]);
+  const recommendations = starters?.plants ?? [];
 
   // Couleur du point d'état de chaque plante : la même que sur Balcon et la fiche (plan du jour).
   const toneColor = (tone: PlantTone) => (tone === "weather" ? colors.frost : tone === "watch" ? colors.warning : tone === "good" ? colors.primary : colors.muted);
@@ -481,6 +483,7 @@ export default function HomeScreen() {
           <FadeIn style={styles.empty}>
             <Text style={[styles.emptyTitle, { color: colors.foreground }]}>Ajoute ta première plante</Text>
             <Text style={[styles.allDoneText, { color: colors.muted, textAlign: "left" }]}>Balco te dira chaque jour le geste utile pour chacune, selon la météo de ta ville.</Text>
+            {starters?.notice && <Text style={[styles.allDoneText, { color: colors.foreground, textAlign: "left" }]}>{starters.notice}</Text>}
             {recommendations.map((entry) => (
               <View key={entry.id} style={[styles.reco, { borderBottomColor: colors.border }]}>
                 <CatalogPicture entry={entry} style={[styles.plantBubble, styles.recoBubble]} />

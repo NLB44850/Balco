@@ -40,8 +40,8 @@ import {
   type CalendarActivity,
   type CalendarSubject,
 } from "@/lib/plants/calendar";
-import { describeSowing, formatMonthRange, MONTH_LONG, MONTH_SHORT, recommendPlants } from "@/lib/plants/catalog";
-import { nextSuggestionMonth, seasonalSuggestions, seasonSuggestions, suggestionActionLabel, type SeasonalSuggestion } from "@/lib/plants/suggestions";
+import { describeSowing, formatMonthRange, MONTH_LONG, MONTH_SHORT } from "@/lib/plants/catalog";
+import { nextSuggestionMonth, seasonalStarters, seasonalSuggestions, seasonSuggestions, suggestionActionLabel, type SeasonalSuggestion } from "@/lib/plants/suggestions";
 import { climateSummary, climateZoneFor } from "@/lib/plants/climate";
 import { decideReminders } from "@/lib/reminders/reminder-engine";
 import { withoutSnoozed, type ReminderSnooze } from "@/lib/reminders/reminder-actions";
@@ -93,11 +93,13 @@ export default function CalendarScreen() {
   const [citySearchError, setCitySearchError] = useState<string | null>(null);
   // Sans plante au balcon, le calendrier montre des idées adaptées plutôt qu'un écran vide.
   const showingIdeas = resolvedPlants.length === 0;
+  // Les idées : seulement ce qui se sème ou se plante ce mois-ci, dans le climat de la ville.
+  const starters = useMemo(() => (showingIdeas ? seasonalStarters(onboarding, { month: currentMonth, climate, limit: 4 }) : null), [climate, currentMonth, onboarding, showingIdeas]);
   const subjects = useMemo<CalendarSubject[]>(
-    () => showingIdeas
-      ? recommendPlants(onboarding, { month: currentMonth }).slice(0, 4).map((entry) => ({ id: entry.id, entry, displayName: entry.name }))
+    () => starters
+      ? starters.plants.map((entry) => ({ id: entry.id, entry, displayName: entry.name }))
       : resolvedPlants.map((resolved) => ({ id: resolved.plant.id, entry: resolved.entry, displayName: plantDisplayName(resolved), addedAt: resolved.plant.addedAt })),
-    [currentMonth, onboarding, resolvedPlants, showingIdeas],
+    [resolvedPlants, starters],
   );
   const resolvedById = useMemo(() => new Map<string, ResolvedPlant>(resolvedPlants.map((resolved) => [resolved.plant.id, resolved])), [resolvedPlants]);
   const activeFilter = selectedPlant === "all" || subjects.some((subject) => subject.id === selectedPlant) ? selectedPlant : "all";
@@ -284,7 +286,7 @@ export default function CalendarScreen() {
 
         <View style={styles.periodHead}>
           <Text style={[styles.periodTitle, { color: colors.foreground }]}>{capitalize(periodLabel)}</Text>
-          <Text style={[styles.text, { color: colors.muted }]}>{showingIdeas ? "Ton balcon est vide : voici ce que tu pourrais cultiver. Ajoute une plante pour un calendrier sur mesure." : `Ton calendrier : ce qui t’attend dans les prochains mois.${thisMonth ? " Les gestes de ce mois se font depuis Aujourd’hui." : ""}`}</Text>
+          <Text style={[styles.text, { color: colors.muted }]}>{showingIdeas ? `Ton balcon est vide : voici ce que tu pourrais cultiver. Ajoute une plante pour un calendrier sur mesure.${starters?.notice ? ` ${starters.notice}` : ""}` : `Ton calendrier : ce qui t’attend dans les prochains mois.${thisMonth ? " Les gestes de ce mois se font depuis Aujourd’hui." : ""}`}</Text>
         </View>
 
         {ordered.length > 0 && (

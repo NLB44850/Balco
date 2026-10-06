@@ -50,7 +50,7 @@ describe("Balco MVP content", () => {
     const home = readProjectFile("app/(tabs)/index.tsx");
 
     expect(home).toContain("useGarden");
-    expect(home).toContain("recommendPlants");
+    expect(home).toContain("seasonalStarters");
     expect(home).toContain("Voir les {PLANT_CATALOG.length} plantes");
     expect(home).toContain("useDayPlan");
     expect(home).toContain("buildTodayList");

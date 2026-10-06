@@ -1420,14 +1420,14 @@ export type OnboardingAnswers = {
 };
 
 /** La plante que l'utilisateur a en tête quand il coche un objectif. */
-const GOAL_FLAGSHIPS: Record<GoalTag, string[]> = {
+export const GOAL_FLAGSHIPS: Record<GoalTag, string[]> = {
   tomatoes: ["cherry-tomato"],
   aromatics: ["basil", "mint"],
   bees: ["lavender"],
   "zero-waste": ["cut-lettuce"],
 };
 
-const DEFAULT_PICKS = ["basil", "mint", "radish", "nasturtium", "cut-lettuce", "chives"];
+export const DEFAULT_PICKS = ["basil", "mint", "radish", "nasturtium", "cut-lettuce", "chives"];
 
 /**
  * Classe le catalogue selon les réponses d'onboarding : l'exposition et l'espace
