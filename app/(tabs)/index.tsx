@@ -287,13 +287,13 @@ export default function HomeScreen() {
   };
 
   const addRecommendation = async (catalogId: string, name: string) => {
-    await addPlant(catalogId);
+    await addPlant(catalogId, { toPlant: true });
     haptic();
     showToast(`${name} ajouté à ton balcon`);
   };
 
   const addMonthIdea = async ({ entry }: SeasonalSuggestion) => {
-    const created = await addPlant(entry.id);
+    const created = await addPlant(entry.id, { toPlant: true });
     haptic();
     showToast(`Ajouté à ton balcon : ${entry.name}`, () => void removePlant(created.id));
   };

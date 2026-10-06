@@ -47,7 +47,7 @@ export type GardenFacts = {
   vacation?: Vacation | null;
 };
 
-type PlantRow = { plantId: string; catalogId: string | null; nickname: string | null; displayName: string; varietyId: string | null; active: number; addedAt: Date | null; removedAt: Date | null };
+type PlantRow = { plantId: string; catalogId: string | null; nickname: string | null; displayName: string; varietyId: string | null; active: number; addedAt: Date | null; removedAt: Date | null; toPlant?: number };
 type EventRow = { plantId: string; type: string; completedAt: Date; note: string | null };
 
 const GOAL_LABELS: Record<string, string> = { tomatoes: "des tomates cerises", aromatics: "des aromatiques pour la cuisine", bees: "des fleurs pour les abeilles", "zero-waste": "moins de gaspillage" };
@@ -58,7 +58,8 @@ function plantName(row: PlantRow) {
   const entry = getCatalogPlant(row.catalogId ?? "");
   const variety = entry?.varieties.find((item) => item.id === row.varietyId);
   const name = row.nickname?.trim() || entry?.name || row.displayName;
-  return variety ? `${name} (variété ${variety.name})` : name;
+  const named = variety ? `${name} (variété ${variety.name})` : name;
+  return row.toPlant === 1 ? `${named} (choisie, pas encore semée ni plantée)` : named;
 }
 
 /** Gestes que le catalogue prévoit pour une plante : ceux jamais faits sont signalés à Nora. */

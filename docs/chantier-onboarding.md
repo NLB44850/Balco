@@ -6,6 +6,14 @@ le porteur, avec toutes les propositions de Claude (« OK pour tes propositions 
 **Avancement** : A1 validée le 6 octobre ; A2 codée le 6 octobre, **en attente de validation sur son
 téléphone (APK : la version web n'a pas de notifications)**. Prochaine action après son accord : l'étape A3.
 
+- B1 (fait, à valider) : `GardenPlant.toPlant` (colonne `reminder_plants.toPlant`, migration 0015, synchro).
+  À planter : un seul geste `startActivity` (`lib/plants/calendar.ts` : « Plante » si c'est le mois de
+  plantation ou si la plante se plante, sinon « Sème », au chaud si besoin ; hors saison « Meilleure période… »),
+  événement `<id>:start` ; état « À planter » (`TO_PLANT_LABEL`) ; ni soif ni alerte (téléphone et serveur),
+  pas comptée dans la série (`inGroundSince`). Cocher le geste l'installe (`logEvent` de `garden-context`),
+  « Annuler » la remet à planter. Installée : plus jamais « Plante … » (l'exception « arrivée ce mois-ci » est
+  retirée). Les « + » des idées de saison (Idée du mois, Saisons, état vide d'Aujourd'hui) ajoutent « à
+  planter » ; le catalogue ajoute « installée ». Nora voit « (choisie, pas encore semée ni plantée) ».
 - A3 (fait, à valider) : recherche de ville sortie en composant `components/city-picker.tsx` (Saisons,
   Aujourd'hui, Réglages) ; bandeau « Météo de Paris par défaut · Choisir ma ville » sur Aujourd'hui dès que la
   météo est celle de repli ; ligne « 📍 Ta ville · Lyon » dans Réglages → Mon balcon. E2e `e2e/6-ville.spec.ts`.

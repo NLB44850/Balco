@@ -226,3 +226,19 @@ test("Aujourd'hui : une fois la plante arrosée, sa récolte du mois prend la pl
   await checkboxOf(page, /^Annuler ce geste : Arrose la menthe/).click();
   await expect(checkboxOf(page, /^Marquer comme fait : Arrose la menthe/)).toBeVisible();
 });
+
+test("une plante « à planter » : un seul geste, « Plante la lavande », puis l'arrosage prend sa place", async ({ page }) => {
+  const errors = trackErrors(page);
+  await mockWeather(page);
+  const addedAt = new Date().toISOString();
+  await seedBalcony(page, { plants: ["mint"], wateredDaysAgo: 0, extra: { "balco.garden.plants.v1": JSON.stringify([{ id: "lavender-e2e", catalogId: "lavender", addedAt, toPlant: true }]) } });
+  await open(page, "/", "Plante la lavande");
+  await page.goto("/balcony");
+  await expect(page.getByRole("button", { name: /^Lavande, À planter/ })).toBeVisible();
+  await page.goto("/");
+  await checkboxOf(page, "Marquer comme fait : Plante la lavande").click();
+  await expect(checkboxOf(page, /Arrose la lavande|Vérifie la terre/)).toBeVisible();
+  await page.goto("/balcony");
+  await expect(page.getByRole("button", { name: /^Lavande, À planter/ })).toHaveCount(0);
+  expect(errors).toEqual([]);
+});

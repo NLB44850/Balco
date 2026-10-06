@@ -56,7 +56,8 @@ export function useDayPlan() {
 
   const climate = useMemo(() => (weather.isFallback ? null : climateZoneFor(weather.latitude, weather.longitude, weatherSnapshot.elevationM)), [weather.isFallback, weather.latitude, weather.longitude, weatherSnapshot.elevationM]);
   const reminderPlants = useMemo(
-    () => resolvedPlants.filter(({ plant }) => reminderSettings.enabledPlantIds.length === 0 || reminderSettings.enabledPlantIds.includes(plant.id)),
+    // Une plante à planter n'est pas encore en terre : ni soif ni alerte météo.
+    () => resolvedPlants.filter(({ plant }) => !plant.toPlant && (reminderSettings.enabledPlantIds.length === 0 || reminderSettings.enabledPlantIds.includes(plant.id))),
     [reminderSettings.enabledPlantIds, resolvedPlants],
   );
   // Tous les conseils météo du moment (« rappels activés » ne décide que des notifications).

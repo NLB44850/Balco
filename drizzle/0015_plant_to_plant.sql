@@ -1,0 +1,1 @@
+ALTER TABLE `reminder_plants` ADD `toPlant` int DEFAULT 0 NOT NULL;

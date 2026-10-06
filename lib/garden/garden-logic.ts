@@ -17,6 +17,11 @@ export type GardenPlant = {
   updatedAt?: string;
   /** Plante retirée : conservée comme « pierre tombale » pour que le retrait se propage aux autres appareils. */
   removedAt?: string;
+  /**
+   * À planter : choisie mais pas encore en terre (ni arrosage ni entretien, son premier geste est « Sème… »
+   * ou « Plante… »). Absent ou false : installée sur le balcon. Cocher le premier geste l'installe.
+   */
+  toPlant?: boolean;
 };
 
 export type ResolvedPlant = { plant: GardenPlant; entry: CatalogPlant };
@@ -25,8 +30,26 @@ const HOUR_MS = 60 * 60 * 1000;
 const DAY_MS = 24 * HOUR_MS;
 export const MAX_STORED_EVENTS = 1000;
 
-export function createGardenPlant(catalogId: string, now = new Date()): GardenPlant {
-  return { id: `${catalogId}-${now.getTime().toString(36)}${Math.random().toString(36).slice(2, 6)}`, catalogId, addedAt: now.toISOString(), updatedAt: now.toISOString() };
+export function createGardenPlant(catalogId: string, now = new Date(), options: { toPlant?: boolean } = {}): GardenPlant {
+  const plant: GardenPlant = { id: `${catalogId}-${now.getTime().toString(36)}${Math.random().toString(36).slice(2, 6)}`, catalogId, addedAt: now.toISOString(), updatedAt: now.toISOString() };
+  return options.toPlant ? { ...plant, toPlant: true } : plant;
+}
+
+/** Identifiant du premier geste d'une plante à planter (« Sème la mâche ») : une seule fois par plante. */
+export function startEventId(plantId: string) {
+  return `${plantId}:start`;
+}
+
+/** La plante dont ce geste est le premier (« Sème… », « Plante… »), sinon null. */
+export function startedPlantId(eventId: string) {
+  return eventId.endsWith(":start") ? eventId.slice(0, -":start".length) : null;
+}
+
+/** En terre depuis : jamais pour une plante à planter, sinon son premier geste ou son arrivée. */
+export function inGroundSince(plant: GardenPlant, events: MaintenanceEvent[]): number | null {
+  if (plant.toPlant) return null;
+  const start = events.find((event) => event.id === startEventId(plant.id));
+  return new Date(start?.completedAt ?? plant.addedAt).getTime();
 }
 
 export function activePlants(plants: GardenPlant[]) {
@@ -235,7 +258,8 @@ export function followedDays(plants: ResolvedPlant[], events: MaintenanceEvent[]
     const own = events.filter((event) => event.plantId === resolved.plant.id);
     const waterings = own.filter((event) => event.type === "watering").map((event) => new Date(event.completedAt).getTime()).filter(Number.isFinite).sort((a, b) => a - b);
     const coveredDays = new Set(own.filter((event) => event.type === "watering" || isAvoidedWatering(event)).map((event) => dayKey(new Date(event.completedAt))));
-    return { resolved, addedAt: new Date(resolved.plant.addedAt).getTime(), waterings, coveredDays };
+    // Une plante à planter n'a pas soif ; une plante semée ou plantée compte à partir de ce jour-là.
+    return { resolved, addedAt: inGroundSince(resolved.plant, events) ?? Number.POSITIVE_INFINITY, waterings, coveredDays };
   });
 
   /** true : suivi ; false : un arrosage manquait ; null : pas encore de plante ce jour-là. */

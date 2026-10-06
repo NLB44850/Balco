@@ -166,8 +166,10 @@ describe("plantation des plantes déjà sur le balcon", () => {
     expect(kinds(new Date(2026, 9, 3).toISOString(), 11)).not.toContain("plant");
   });
 
-  it("garde « Plante … » ce mois-ci pour une plante tout juste ajoutée, et pour les idées d'un balcon vide", () => {
-    expect(kinds(new Date(2026, 9, 3).toISOString(), 10)).toContain("plant");
+  it("garde « Plante … » seulement pour une plante à planter et les idées d'un balcon vide", () => {
+    // Installée ce mois-ci : elle est en terre, plus de « Plante … ».
+    expect(kinds(new Date(2026, 9, 3).toISOString(), 10)).not.toContain("plant");
+    expect(calendarActivities([{ ...mint(new Date(2026, 9, 3).toISOString()), toPlant: true }], 10, { now: OCTOBER }).map((activity) => activity.kind)).toContain("plant");
     expect(kinds(undefined, 10)).toContain("plant");
   });
 

@@ -311,4 +311,21 @@ describe.skipIf(!TEST_DATABASE_URL)("garden sync and server reminders (MySQL)", 
       await expect(reminders.checkSyncDevice(userId, "plus", "telephone-b-0002", false)).resolves.toBeUndefined();
     });
   });
+
+  it("garde l'état « à planter » d'une plante et ne lui envoie aucun rappel tant qu'elle n'est pas en terre", async () => {
+    const plants = [
+      { id: "lavender-p", catalogId: "lavender", toPlant: true, addedAt: hoursAgo(240), updatedAt: hoursAgo(240) },
+      { id: "mint-p", catalogId: "mint", addedAt: hoursAgo(240), updatedAt: hoursAgo(240) },
+    ];
+    await reminders.syncGarden(otherUserId, { ...emptyPush(), location: PARIS, settings: SETTINGS, plants });
+    const back = await reminders.syncGarden(otherUserId, emptyPush());
+    expect(back.plants.find((plant) => plant.id === "lavender-p")?.toPlant).toBe(true);
+    expect(back.plants.find((plant) => plant.id === "mint-p")?.toPlant).toBeUndefined();
+    await reminders.recalculateUserReminders(otherUserId, NOW);
+    const pending = (await decisions(otherUserId)).filter((row) => row.status === "pending");
+    expect(pending.some((row) => row.plantId === "lavender-p")).toBe(false);
+    // Plantée sur le téléphone : elle repart installée.
+    await reminders.syncGarden(otherUserId, { ...emptyPush(), plants: [{ ...plants[0], toPlant: false, updatedAt: hoursAgo(1) }] });
+    expect((await reminders.syncGarden(otherUserId, emptyPush())).plants.find((plant) => plant.id === "lavender-p")?.toPlant).toBeUndefined();
+  });
 });

@@ -151,12 +151,13 @@ export default function CalendarScreen() {
   const openToday = () => router.push("/(tabs)");
 
   const addSuggestion = async ({ entry }: SeasonalSuggestion) => {
-    const created = await addPlant(entry.id);
+    // Une idée de saison : choisie, à semer ou planter (premier geste sur Aujourd'hui).
+    const created = await addPlant(entry.id, { toPlant: true });
     showToast(`Ajouté à ton balcon : ${entry.name}`, () => void removePlant(created.id));
   };
 
   const addIdea = async (activity: CalendarActivity) => {
-    await addPlant(activity.entry.id);
+    await addPlant(activity.entry.id, { toPlant: true });
     showToast(`${activity.entry.name} ajouté à ton balcon`);
   };
 
