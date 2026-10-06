@@ -1,6 +1,7 @@
 import { useFocusEffect, useRouter } from "expo-router";
 import { useCallback, useEffect, useRef, useState } from "react";
-import { ActivityIndicator, Image, Pressable, ScrollView, StyleSheet, View } from "react-native";
+import { Image } from "expo-image";
+import { ActivityIndicator, Pressable, ScrollView, StyleSheet, View } from "react-native";
 import { Text } from "@/components/ui/typography";
 
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -190,7 +191,8 @@ export default function ScannerScreen() {
               <Pressable accessibilityRole="button" accessibilityLabel={photo ? "Photo à analyser" : "Prendre une photo"} disabled={!!photo || busy} onPress={() => void choose("camera")} style={[styles.shot, !photo && { backgroundColor: colors.leaf, borderColor: "rgba(31,122,77,0.35)", borderStyle: "dashed", borderWidth: 1.5 }]}>
                 {photo ? (
                   <>
-                    <Image source={{ uri: photo.uri }} style={StyleSheet.absoluteFill} resizeMode="cover" accessibilityIgnoresInvertColors />
+                    {/* expo-image, comme les photos des plantes : l'Image de React Native restait vide sur Android pour la photo prise depuis l'accueil. */}
+                    <Image key={photo.uri} source={{ uri: photo.uri }} style={StyleSheet.absoluteFill} contentFit="cover" accessibilityIgnoresInvertColors />
                     {busy && (
                       <View style={[StyleSheet.absoluteFill, styles.busy]}>
                         <ActivityIndicator size="large" color="#FFFFFF" />
@@ -245,7 +247,7 @@ export default function ScannerScreen() {
             ) : (
               <>
                 <View style={styles.resultHeader}>
-                  {photo && <Image source={{ uri: photo.uri }} style={styles.resultPhoto} accessibilityIgnoresInvertColors />}
+                  {photo && <Image source={{ uri: photo.uri }} style={styles.resultPhoto} contentFit="cover" accessibilityIgnoresInvertColors />}
                   <View style={styles.flex}>
                     <Text style={[styles.resultName, { color: colors.foreground }]}>{diagnosis.commonName || "Plante non identifiée"}</Text>
                     {!!diagnosis.scientificName && <Text style={[styles.scientific, { color: colors.muted }]}>{diagnosis.scientificName}</Text>}
