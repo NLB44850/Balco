@@ -16,7 +16,11 @@ Avancement :
 - P5 (fait avant P3, indépendant des données) : `lib/garden/postpone.ts` (`nextSaturdayMorning`, `postponeStart`,
   clé de mise en sommeil `start:<plantId>`) ; `planDay({ postponed })` cache le premier geste jusqu'au samedi
   9 h ; feuille du bas d'Aujourd'hui « Pas encore acheté ? Rappelle-moi samedi » + toast « Je te le rappelle
-  samedi » avec « Annuler » ; notification « C'est samedi 🌱 · Pense au plant : … » si les rappels sont activés. Une étape = un commit testé (check, lint, Vitest, e2e,
+  samedi » avec « Annuler » ; notification « C'est samedi 🌱 · Pense au plant : … » si les rappels sont activés.
+- P3 (fait) : `lib/plants/planting.ts` (100 plantes, sources par plante, recherche faite par 4 sous-agents en
+  parallèle, choix notés dans `docs/sources-calendrier.md`) ; `lib/plants/guide.ts` : 5 modèles (le 5ᵉ,
+  `plant-bulb`, pour ail, pommes de terre, oca, crosnes, dahlias), `supplies` (« Ce qu'il te faut », objets
+  communs `shared`), `whatsNext` (« Les pousses sortent dans… », « Première récolte dans… »), `delayText`. Une étape = un commit testé (check, lint, Vitest, e2e,
 bundle Android), compte rendu, validation sur son téléphone avant la suivante (sauf s'il demande d'enchaîner).
 
 ## Ce que le porteur a décidé (6 octobre)
