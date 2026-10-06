@@ -38,6 +38,35 @@ export const PLANS: Record<Plan, PlanDefinition> = {
   },
 };
 
+/**
+ * Ce que Balco+ apporte, dit comme un bénéfice pour la personne (et non comme une liste de fonctions).
+ * Une seule source pour Réglages → Compte et les messages de quota.
+ */
+export function plusBenefits(): string[] {
+  const { scan, chat } = PLANS.plus.aiQuota;
+  return [
+    "Prévenu du gel et de l’orage, même application fermée",
+    "Ton balcon sur ton téléphone et ta tablette, toujours à jour",
+    `${scan} photos analysées et ${chat} questions à Nora chaque mois`,
+  ];
+}
+
+/** Ce que le compte gratuit garde, sans contrepartie : rassurant avant de parler de Balco+. */
+export function freeBenefits(): string[] {
+  const { scan, chat } = PLANS.free.aiQuota;
+  return [
+    "Ton balcon sauvegardé, retrouvé si tu changes de téléphone",
+    "Les rappels du jour et le calendrier de tes plantes",
+    `${scan > 1 ? `${scan} photos analysées` : "1 photo analysée"} et ${chat} questions à Nora chaque mois`,
+  ];
+}
+
+/** « Avec Balco+, 20 photos analysées chaque mois » : la phrase à ajouter quand le quota gratuit est épuisé. */
+export function plusQuotaHint(kind: AiKind) {
+  const limit = PLANS.plus.aiQuota[kind];
+  return kind === "scan" ? `Avec Balco+, ${limit} photos analysées chaque mois.` : `Avec Balco+, ${limit} questions à Nora chaque mois.`;
+}
+
 /** Toute valeur inconnue (ancien compte, faute de frappe) est traitée comme le forfait gratuit. */
 export function planOf(value: string | null | undefined): Plan {
   return value === "plus" ? "plus" : "free";

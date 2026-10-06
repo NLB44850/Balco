@@ -38,7 +38,7 @@ Tout se passe dans son GitHub Codespace (pas de Docker sur son PC).
 
 - `pnpm -s check`, `pnpm -s lint`, puis `TEST_DATABASE_URL=mysql://balco:balco@localhost:3306/balco_cal npx vitest run`
   (MariaDB locale : `service mariadb start` si elle s'est arrêtée, `apt-get install -y mariadb-server` si elle manque,
-  puis `DATABASE_URL=… npx drizzle-kit migrate` ; 432 tests à ce jour). Dans un conteneur
+  puis `DATABASE_URL=… npx drizzle-kit migrate` ; 433 tests à ce jour). Dans un conteneur
   neuf : `apt-get install -y mariadb-server`, `service mariadb start`, créer la base `balco_cal` et l'utilisateur
   `balco`/`balco`, puis `pnpm -s build && DATABASE_URL=mysql://balco:balco@localhost:3306/balco_cal node dist/migrate.mjs`.
 - `npx expo export --platform android` pour s'assurer que le bundle Android se construit.
@@ -336,7 +336,7 @@ ce qui n'a pas pu être corrigé ou demande une décision.
   unique (radis, carottes, salades pommées…), proposer « Tout récolté ? » → « Ressemer » ou « Libérer le pot ».
   **Validée** sur téléphone le 05/10.
 
-**Reprise dans une nouvelle conversation (05/10) : étapes 4 et 5 livrées le 05/10 (le porteur a dit de passer à la 5 et accepté de régler les points de la pluie à l'étape 7) ; étape 5 validée ; étape 6 validée ; étape 7 validée ; étape 8 validée ; étape 9 livrée le 06/10, à valider, ensuite l'étape 10.** Détail des étapes restantes,
+**Reprise dans une nouvelle conversation (05/10) : étapes 4 et 5 livrées le 05/10 (le porteur a dit de passer à la 5 et accepté de régler les points de la pluie à l'étape 7) ; étape 5 validée ; étape 6 validée ; étape 7 validée ; étape 8 validée ; étape 9 validée (photo dans Chrome : parade du rechargement, pas de copie dans la galerie, choix du porteur « on laisse comme ça ») ; étape 10 livrée le 06/10, à valider ; ensuite bilan et PR vers `main`.** Détail des étapes restantes,
 tel que validé par le porteur (une étape = un commit testé : check, lint, vitest, e2e complet avec
 reconstruction, export Android ; puis compte rendu en français avec ce qu'il doit taper et regarder, et
 attendre sa validation avant l'étape suivante) :
@@ -397,7 +397,11 @@ attendre sa validation avant l'étape suivante) :
    **Observer sans compte** : 1 analyse par appareil et 3 par réseau et par jour, protégées côté serveur
    et comptées dans le budget IA (`server/ai/budget.ts`, `rate_limits`) ; après le résultat, proposer de
    créer un compte ; carte d'exemple de résultat au-dessus du bouton de connexion.
-10. **Textes de l'offre Balco+ en bénéfices** (Réglages → Compte, messages de quota).
+10. ✅ (livrée, à valider : `plusBenefits`, `freeBenefits`, `plusQuotaHint` dans `lib/plans.ts` (une seule source) ;
+   Réglages → Compte : « Crée ton compte gratuit en une minute » + avantages cochés, « Bientôt, avec Balco+ : » pour un
+   compte gratuit, « Avec Balco+, tu profites de : » pour Balco+, bouton « Créer mon compte ou me connecter » ;
+   quota épuisé (serveur, Observer, Nora) : « Avec Balco+, 20 photos analysées / 100 questions à Nora chaque mois. »)
+   **Textes de l'offre Balco+ en bénéfices** (Réglages → Compte, messages de quota).
 À la fin des 10 étapes : lister au porteur ce qui n'a pas pu être corrigé ou demande une décision, dont
 l'après-récolte (ci-dessus) ; puis proposer une PR vers `main`.
 

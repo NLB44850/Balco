@@ -17,7 +17,7 @@ import { quotaLabel } from "@/lib/ai/quota-text";
 import { useGarden } from "@/lib/garden/garden-context";
 import { usePlantPhotos } from "@/lib/garden/photos-context";
 import { getCatalogPlant } from "@/lib/plants/catalog";
-import { PLANS } from "@/lib/plans";
+import { PLANS, plusQuotaHint } from "@/lib/plans";
 import { deviceId as loadDeviceId } from "@/lib/sync/device-id";
 import { trpc } from "@/lib/trpc";
 import type { AppRouter } from "@/server/routers";
@@ -157,7 +157,7 @@ export default function ScannerScreen() {
       : status.data?.paused && !diagnosis
         ? { title: "L’analyse fait une pause", text: status.data.paused }
       : noScansLeft && !diagnosis
-        ? { title: "Tes analyses du mois sont utilisées", text: "En attendant, pose ta question à Nora ou regarde tes feuilles de près : le dessous, les tiges et la terre.", action: { label: "Demander à Nora", onPress: () => router.push("/(tabs)/assistant") } }
+        ? { title: "Tes analyses du mois sont utilisées", text: `En attendant, pose ta question à Nora ou regarde tes feuilles de près : le dessous, les tiges et la terre.${status.data?.plan === "free" ? ` ${plusQuotaHint("scan")}` : ""}`, action: { label: "Demander à Nora", onPress: () => router.push("/(tabs)/assistant") } }
         : null;
 
   return (

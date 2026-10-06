@@ -13,6 +13,7 @@ import { PlantPicture } from "@/components/plant-picture";
 import { ScreenHeader } from "@/components/screen-header";
 import { glass } from "@/components/ui/glass";
 import { Text, TextInput } from "@/components/ui/typography";
+import { freeBenefits, plusBenefits } from "@/lib/plans";
 import { useColors } from "@/hooks/use-colors";
 import { useWeatherSimulation } from "@/hooks/use-weather-simulation";
 import { useGarden } from "@/lib/garden/garden-context";
@@ -211,10 +212,27 @@ export default function SettingsScreen() {
           <Text style={[styles.sectionEyebrow, { color: colors.muted }]}>Sauvegarde</Text>
           <Text style={[styles.reminderCardTitle, { color: colors.foreground }]}>{!account.signedIn ? "Ne perds jamais ton balcon" : account.status === "other-device" ? "Sauvegardé depuis un autre téléphone" : "Ton balcon est sauvegardé"}</Text>
           <Text style={[styles.reminderCardText, { color: colors.muted }]}>
-            {account.signedIn
-              ? `${account.email ? `Connecté avec ${account.email}. ` : ""}${syncLabel}${account.plan === "plus" ? `${account.serverPush ? " · Rappels envoyés même application fermée." : ""} Balco+ : ton jardin sur tous tes appareils.${account.founder ? " Tu as le prix fondateur : merci d’être là depuis le début." : ""}` : ` Compte gratuit : sauvegarde depuis un seul téléphone, rappels programmés par ce téléphone. Balco+ ajoute les alertes gel et orage même application fermée, et plusieurs appareils.${account.founder ? " Ton prix fondateur reste à toi si tu reprends Balco+." : ""}`}`
-              : "Connecte-toi pour sauvegarder tes plantes et ton historique, et les retrouver si tu changes de téléphone."}
+            {account.signedIn ? `${account.email ? `Connecté avec ${account.email}. ` : ""}${syncLabel}` : "Crée ton compte gratuit en une minute :"}
           </Text>
+          {/* L'offre dite en bénéfices (lib/plans.ts) : ce que tu as, puis ce que Balco+ ajoute. */}
+          {account.signedIn && account.plan === "plus" ? (
+            <View style={styles.benefits}>
+              <Text style={[styles.benefitsTitle, { color: colors.foreground }]}>Avec Balco+, tu profites de :</Text>
+              {plusBenefits().map((benefit) => <Text key={benefit} style={[styles.reminderCardText, { color: colors.foreground }]}>✓  {benefit}</Text>)}
+              {account.founder && <Text style={[styles.reminderCardText, { color: colors.primary }]}>Tu as le prix fondateur : merci d’être là depuis le début.</Text>}
+            </View>
+          ) : (
+            <View style={styles.benefits}>
+              {freeBenefits().map((benefit) => <Text key={benefit} style={[styles.reminderCardText, { color: colors.foreground }]}>✓  {benefit}</Text>)}
+              {account.signedIn && (
+                <>
+                  <Text style={[styles.benefitsTitle, { color: colors.foreground }]}>Bientôt, avec Balco+ :</Text>
+                  {plusBenefits().map((benefit) => <Text key={benefit} style={[styles.reminderCardText, { color: colors.muted }]}>＋  {benefit}</Text>)}
+                  {account.founder && <Text style={[styles.reminderCardText, { color: colors.primary }]}>Ton prix fondateur reste à toi si tu reprends Balco+.</Text>}
+                </>
+              )}
+            </View>
+          )}
           <View style={styles.accountActions}>
             {account.signedIn ? (
               <>
@@ -222,7 +240,7 @@ export default function SettingsScreen() {
                 <Pressable accessibilityRole="button" onPress={() => void signOut()} style={({ pressed }) => [styles.accountButtonGhost, pressed && styles.pressed]}><Text style={[styles.accountGhostText, { color: colors.primary }]}>Se déconnecter</Text></Pressable>
               </>
             ) : account.loginAvailable ? (
-              <Pressable disabled={account.checking} onPress={() => void signIn()} style={({ pressed }) => [styles.accountButton, { backgroundColor: colors.foreground }, pressed && styles.pressed]}><Text style={styles.accountButtonText}>{account.checking ? "Vérification…" : "Se connecter"}</Text></Pressable>
+              <Pressable disabled={account.checking} onPress={() => void signIn()} style={({ pressed }) => [styles.accountButton, { backgroundColor: colors.foreground }, pressed && styles.pressed]}><Text style={styles.accountButtonText}>{account.checking ? "Vérification…" : "Créer mon compte ou me connecter"}</Text></Pressable>
             ) : (
               <Text style={[styles.reminderOptionHint, { color: colors.muted }]}>Connexion non configurée sur cette version de l’app.</Text>
             )}
@@ -285,6 +303,8 @@ const styles = StyleSheet.create({
   editButton: { borderRadius: 12, paddingHorizontal: 15, justifyContent: "center" },
   editButtonText: { color: "#FFFFFF", fontSize: 12, fontWeight: "800" },
   accountCard: { padding: 15, marginBottom: 16, gap: 2 },
+  benefits: { gap: 2, marginTop: 6 },
+  benefitsTitle: { fontSize: 14, fontWeight: "700", marginTop: 8 },
   accountActions: { flexDirection: "row", alignItems: "center", gap: 10, marginTop: 10 },
   accountButton: { borderRadius: 12, paddingHorizontal: 14, paddingVertical: 9 },
   accountButtonText: { color: "#FFFFFF", fontSize: 14, fontWeight: "700" },

@@ -10,7 +10,7 @@ import { describeGarden, loadGardenFacts, loadMemory } from "./context";
 import { forgetNotes, learnFromAnswer, updatePreferences } from "./memory-store";
 import { DEVICE_ID_PATTERN, GuestLimitError, guestScanLeft, takeGuestScan } from "./guest";
 import { planOf, QuotaExceededError, quotaStatus, reserve, reserveGuest, settle, type AiKind, type Plan } from "./quotas";
-import { PLANS } from "../../lib/plans";
+import { PLANS, plusQuotaHint } from "../../lib/plans";
 
 /** Limite de l'API pour une image ; l'app envoie des photos réduites bien plus légères. */
 const MAX_IMAGE_BYTES = 5 * 1024 * 1024;
@@ -33,7 +33,8 @@ export function quotaMessage(kind: AiKind, limit: number, resetsAt: string, plan
   const offered = plan === "free" ? (limit > 1 ? " offertes" : " offerte") : "";
   // « ton analyse offerte » pour une seule, « tes 5 questions offertes » au-delà.
   const used = limit > 1 ? `tes ${limit} ${many}${offered}` : `ton ${one}${offered}`;
-  return `Tu as utilisé ${used} ce mois-ci. Le compteur repart le ${date}.`;
+  // Compte gratuit : on dit aussi ce que Balco+ apporterait, sans insister.
+  return `Tu as utilisé ${used} ce mois-ci. Le compteur repart le ${date}.${plan === "free" ? ` ${plusQuotaHint(kind)}` : ""}`;
 }
 
 /** Réserve une place, appelle le modèle, puis solde la réservation selon l'issue. Refus et pannes ne sont pas décomptés. */

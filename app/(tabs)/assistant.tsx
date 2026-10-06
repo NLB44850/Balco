@@ -14,6 +14,7 @@ import { conversationForNora, withDaySeparators, type ConversationItem } from "@
 import { isNoraLevel, type NoraMemoryView } from "@/lib/ai/memory";
 import { quickQuestions } from "@/lib/ai/quick-questions";
 import { quotaLabel } from "@/lib/ai/quota-text";
+import { plusQuotaHint } from "@/lib/plans";
 import { useGarden } from "@/lib/garden/garden-context";
 import { trpc } from "@/lib/trpc";
 
@@ -217,7 +218,7 @@ export default function AssistantScreen() {
         />
         {account.signedIn ? (
           <>
-            {chat && <Text style={[styles.quota, { color: noQuestionsLeft || paused ? colors.warning : colors.muted }]}>{unavailable ? "Nora arrive bientôt dans une mise à jour." : paused ?? quotaLabel(chat)}</Text>}
+            {chat && <Text style={[styles.quota, { color: noQuestionsLeft || paused ? colors.warning : colors.muted }]}>{unavailable ? "Nora arrive bientôt dans une mise à jour." : paused ?? `${quotaLabel(chat)}${noQuestionsLeft && status.data?.plan === "free" ? `. ${plusQuotaHint("chat")}` : ""}`}</Text>}
             <View style={[glass.card, styles.composer]}>
               <TextInput
                 value={draft}
