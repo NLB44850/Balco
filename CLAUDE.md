@@ -3,7 +3,8 @@
 Balco est une app de jardinage sur balcon, en français (Expo SDK 54, React Native 0.81, expo-router,
 serveur Express + tRPC + Drizzle/MySQL). Ce fichier résume où en est le projet et comment travailler
 avec son porteur. Détails : `docs/feuille-de-route.md` (demande d'origine, état, ordre de travail),
-`docs/deploiement.md` (Codespaces, APK), `docs/synchro-et-rappels.md`.
+`docs/deploiement.md` (Codespaces, APK), `docs/synchro-et-rappels.md`. Récap à coller dans le chat Claude
+(claude.ai) : `docs/recap-pour-claude.md`, à mettre à jour avec le récap ci-dessous quand l'état change.
 
 ## Travailler avec le porteur du projet
 
