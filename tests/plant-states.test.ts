@@ -79,3 +79,25 @@ describe("catalogue : déjà sur le balcon, ou à planter ?", () => {
     expect(ADD_CHOICE_LABELS).toEqual({ installed: "Déjà sur mon balcon", toPlant: "À planter" });
   });
 });
+
+describe("Saisons et Aujourd'hui disent la même chose d'une plante à planter", () => {
+  it("l'ail des ours à planter en octobre : un seul geste, « Plante l'ail des ours », ni semis ni rempotage", async () => {
+    const { calendarActivities } = await import("../lib/plants/calendar");
+    const entry = getCatalogPlant("wild-garlic")!;
+    const toPlant = calendarActivities([{ id: "ail", entry, displayName: "Ail des ours", addedAt: OCTOBER.toISOString(), toPlant: true }], 10, { now: OCTOBER });
+    expect(toPlant.map((activity) => activity.title)).toEqual(["Plante l’ail des ours"]);
+    const plants = resolvePlants([{ id: "ail", catalogId: "wild-garlic", addedAt: OCTOBER.toISOString(), toPlant: true }]);
+    expect(planDay({ plants, events: [], now: OCTOBER })[0].first?.title).toBe(toPlant[0].title);
+    // Pas encore en terre : rien les mois suivants (ni récolte au printemps tant qu'elle n'est pas plantée).
+    expect(calendarActivities([{ id: "ail", entry, displayName: "Ail des ours", addedAt: OCTOBER.toISOString(), toPlant: true }], 4, { now: OCTOBER })).toEqual([]);
+  });
+
+  it("installé, il se rempote en octobre mais ne se ressème pas", async () => {
+    const { calendarActivities } = await import("../lib/plants/calendar");
+    const entry = getCatalogPlant("wild-garlic")!;
+    const kinds = calendarActivities([{ id: "ail", entry, displayName: "Ail des ours", addedAt: new Date(2026, 3, 1).toISOString() }], 10, { now: OCTOBER }).map((activity) => activity.kind);
+    expect(kinds).toContain("repot");
+    expect(kinds).not.toContain("sow");
+    expect(kinds).not.toContain("plant");
+  });
+});

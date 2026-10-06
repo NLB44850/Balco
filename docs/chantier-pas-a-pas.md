@@ -134,3 +134,6 @@ Exemple : « Mets une poignée de billes d'argile au fond. » / « Les racines n
 - Retour de test (6 octobre) : glisser le doigt dans le guide ne changeait ni l'étape ni les points (l'événement de
   fin de défilement n'existe pas dans la version web). Remplacé par une étape à la fois + `PanResponder` (glissement
   surtout horizontal de 50 points), qui marche sur le web et le téléphone ; e2e de glissement à la souris.
+- Retour de test (6 octobre, ail des ours) : Aujourd'hui disait « Plante l'ail des ours » et Saisons « Sème » + « Rempote ».
+  `calendarActivities` : une plante `toPlant` n'a plus qu'un geste, `startActivity` (le même qu'Aujourd'hui), au mois où il
+  est possible (ni rempotage, ni récolte, ni entretien avant d'être en terre) ; une vivace installée ne se ressème plus.

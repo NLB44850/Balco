@@ -54,9 +54,17 @@ export function calendarActivities(subjects: CalendarSubject[], month: number, o
   for (const { id, entry: catalogEntry, displayName, addedAt, toPlant } of subjects) {
     // Les semis et plantations des plantes frileuses suivent le climat local (Midi plus tôt, montagne plus tard).
     const entry = adaptToClimate(catalogEntry, options.climate);
+    // Pas encore en terre : un seul geste, le même que sur Aujourd'hui (« Plante l'ail des ours »), au mois où il
+    // est possible ; ni rempotage, ni récolte, ni entretien avant.
+    if (toPlant) {
+      if (entry.sowMonths.includes(m) || entry.plantMonths.includes(m)) activities.push(startActivity({ id, entry: catalogEntry, displayName, addedAt, toPlant }, m, options));
+      continue;
+    }
     const tag = displayName.toUpperCase();
     const base = { subjectId: id, entry, tag };
-    if (entry.sowMonths.includes(m)) {
+    // Une vivace déjà sur le balcon ne se ressème pas (une annuelle, si : radis, salades…).
+    const installedPerennial = addedAt !== undefined && entry.perennial;
+    if (entry.sowMonths.includes(m) && !installedPerennial) {
       // Semis précoce d'une plante frileuse : au chaud dans la maison, pas encore sur le balcon.
       const indoors = sowsIndoors(entry, m);
       const description = indoors
