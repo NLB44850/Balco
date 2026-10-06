@@ -1,6 +1,6 @@
 # Balco : récapitulatif à coller au début d'une conversation avec Claude
 
-*À jour au 6 octobre 2026. Copier tout le texte ci-dessous dans une nouvelle conversation.*
+*À jour au 6 octobre 2026 (soir). Copier tout le texte ci-dessous dans une nouvelle conversation.*
 
 ---
 
@@ -37,7 +37,7 @@ Balco dit chaque jour quoi faire pour chaque plante du balcon, selon la saison e
 ## Ce qui reste à faire, dans l'ordre
 
 1. **Revérifier sur le prochain APK** (version Android installée) : l'aperçu de la photo dans Observer (corrigé, pas encore revu), l'appareil photo depuis Aujourd'hui, les notifications.
-2. **Améliorer l'onboarding** (l'accueil de première ouverture : prénom facultatif, une question par écran sur l'expérience, le soleil, la place et les envies, puis « Tes premières plantes » et « Créer mon balcon ») pour une meilleure expérience. **À cadrer d'abord** : ce qui gêne, ce qu'on veut obtenir.
+2. **Refaire l'onboarding** (plan validé le 6 octobre, détail dans `docs/chantier-onboarding.md` du dépôt) : d'abord les vrais défauts (plantes de saison seulement, « Activer les rappels » qui dit « activés » même en cas de refus, Paris par défaut sans le dire), puis un nouveau parcours : « Tu as déjà des plantes sur ton balcon ? » (Oui : recherche de tes plantes ; Pas encore : envies puis plantes de saison « à planter »), soleil, espace, ville avant les plantes, rappels, carte « Bienvenue, voici ton balcon ». Le prénom (demandé par Nora) et l'expérience sortent de l'accueil.
 3. **Après la récolte** des plantes qu'on récolte en une fois (radis, carottes, salades pommées) : proposer « Tout récolté ? » puis « Ressemer » ou « Libérer le pot ». À décider.
 4. **Mémoire de Nora sur plusieurs jours** : test à faire sur 2 ou 3 jours.
 5. **Tester sans Codespace** (idée) : une version web toujours en ligne et l'APK construit automatiquement.

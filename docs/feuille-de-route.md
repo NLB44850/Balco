@@ -287,7 +287,7 @@ L'ordre suit la priorité fixée par le porteur du projet. Chaque étape est val
 **À faire ensuite, dans l'ordre** (6 octobre) :
 
 1. Revérifier sur le prochain APK : l'aperçu de la photo dans Observer, l'appareil photo depuis Aujourd'hui, les notifications.
-2. **Améliorer l'accueil de première ouverture (onboarding)** pour une meilleure expérience : d'abord recueillir ce qui gêne, puis un plan court.
+2. **Refaire l'accueil de première ouverture (onboarding)** : plan validé le 6 octobre (`docs/chantier-onboarding.md`). D'abord corriger les vrais défauts (plantes de saison seulement, bouton « Activer les rappels », ville par défaut), puis un nouveau parcours : « Tu as déjà des plantes ? », recherche de tes plantes, soleil, espace, ville, rappels, carte de bienvenue ; le prénom et l'expérience sortent de l'accueil.
 3. Décider de l'après-récolte des plantes qu'on arrache (radis, carottes, salades) : « Ressemer » ou « Libérer le pot ».
 4. Tester la mémoire de Nora sur plusieurs jours.
 5. Proposé : une version web toujours en ligne et l'APK construit automatiquement, pour tester sans Codespace.

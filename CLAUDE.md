@@ -81,6 +81,8 @@ visuelle, retour immédiat.
 
 ## Où on en est
 
+**Nouvelle conversation ? Commencer par le chantier onboarding (point 2 ci-dessous, `docs/chantier-onboarding.md`).**
+
 **Récap pour reprendre (06/10)** : ce bloc fait foi ; les paragraphes plus bas sont l'historique (certains
 décrivent un état ancien, par exemple Saisons « à cocher » ou une fête plein écran à chaque récolte).
 
@@ -91,9 +93,10 @@ et les 10 étapes du test utilisateur du 04/10 (détail dans « Historique des l
 **À faire, dans l'ordre** (une étape = un commit testé, puis validation du porteur sur son téléphone) :
 1. **Revérifier sur l'APK** (construit le 06/10, à refaire avec la correction) : l'aperçu de la photo dans Observer
    (`expo-image`), l'appareil photo depuis Aujourd'hui, les notifications, Balcon à deux cartes par ligne.
-2. **Améliorer l'onboarding** (`app/welcome.tsx`, `lib/garden/onboarding.ts`) pour une meilleure expérience :
-   nouveau, demandé le 06/10. **Commencer par lui demander ce qui le gêne** (longueur, questions, premières
-   plantes, moment où créer un compte…) et proposer un plan court avant de toucher au code.
+2. **Refonte de l'onboarding : chantier en cours, plan validé le 06/10.** Tout est dans
+   **`docs/chantier-onboarding.md`** (état des lieux vérifié, plan en 8 étapes A1, A2, A3, B1 à B4, C1, C2, et les
+   8 décisions prises). **Reprise : lire ce document, puis coder l'étape A1** (plantes de saison seulement),
+   compte rendu, attendre sa validation avant A2. Ne pas reposer les questions déjà tranchées.
 3. **Après-récolte** des plantes récoltées en une fois (radis, carottes, salades pommées) : « Tout récolté ? » →
    « Ressemer » ou « Libérer le pot ». À décider avec lui.
 4. **Mémoire de Nora sur plusieurs jours** : il doit encore faire le test sur 2-3 jours (retour à recueillir).
