@@ -336,7 +336,7 @@ ce qui n'a pas pu être corrigé ou demande une décision.
   unique (radis, carottes, salades pommées…), proposer « Tout récolté ? » → « Ressemer » ou « Libérer le pot ».
   **Validée** sur téléphone le 05/10.
 
-**Reprise dans une nouvelle conversation (05/10) : étapes 4 et 5 livrées le 05/10 (le porteur a dit de passer à la 5 et accepté de régler les points de la pluie à l'étape 7) ; étape 5 validée ; étape 6 validée ; étape 7 validée ; étape 8 validée ; étape 9 validée (photo dans Chrome : parade du rechargement, pas de copie dans la galerie, choix du porteur « on laisse comme ça ») ; étape 10 livrée le 06/10, à valider ; ensuite bilan et PR vers `main`.** Détail des étapes restantes,
+**Reprise dans une nouvelle conversation (05/10) : étapes 4 et 5 livrées le 05/10 (le porteur a dit de passer à la 5 et accepté de régler les points de la pluie à l'étape 7) ; étape 5 validée ; étape 6 validée ; étape 7 validée ; étape 8 validée ; étape 9 validée (photo dans Chrome : parade du rechargement, pas de copie dans la galerie, choix du porteur « on laisse comme ça ») ; étape 10 validée le 06/10 ; bilan donné au porteur (après-récolte à décider, paiement Balco+ non branché, nouvel APK à construire) ; PR vers `main` ouverte le 06/10.** Détail des étapes restantes,
 tel que validé par le porteur (une étape = un commit testé : check, lint, vitest, e2e complet avec
 reconstruction, export Android ; puis compte rendu en français avec ce qu'il doit taper et regarder, et
 attendre sa validation avant l'étape suivante) :
