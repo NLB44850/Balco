@@ -34,3 +34,12 @@ test("Observer sans compte : une analyse offerte, puis l'invitation à créer un
   await expect(page).toHaveURL(/\/login/);
   expect(errors).toEqual([]);
 });
+
+test("page rechargée pendant la photo : Observer s'ouvre et explique quoi faire", async ({ page }) => {
+  await mockWeather(page);
+  // Le navigateur a rechargé la page alors que l'appareil photo venait d'être ouvert.
+  await seedBalcony(page, { plants: ["mint"], extra: { "balco.camera.opening.v1": String(Date.now()) } });
+  await page.goto("/");
+  await expect(page.getByText(/Ton téléphone a rechargé la page pendant la photo/u)).toBeVisible({ timeout: 20_000 });
+  await expect(page.getByRole("button", { name: "Choisir dans ma galerie" })).toBeVisible();
+});

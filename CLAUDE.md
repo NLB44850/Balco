@@ -38,14 +38,14 @@ Tout se passe dans son GitHub Codespace (pas de Docker sur son PC).
 
 - `pnpm -s check`, `pnpm -s lint`, puis `TEST_DATABASE_URL=mysql://balco:balco@localhost:3306/balco_cal npx vitest run`
   (MariaDB locale : `service mariadb start` si elle s'est arrêtée, `apt-get install -y mariadb-server` si elle manque,
-  puis `DATABASE_URL=… npx drizzle-kit migrate` ; 430 tests à ce jour). Dans un conteneur
+  puis `DATABASE_URL=… npx drizzle-kit migrate` ; 432 tests à ce jour). Dans un conteneur
   neuf : `apt-get install -y mariadb-server`, `service mariadb start`, créer la base `balco_cal` et l'utilisateur
   `balco`/`balco`, puis `pnpm -s build && DATABASE_URL=mysql://balco:balco@localhost:3306/balco_cal node dist/migrate.mjs`.
 - `npx expo export --platform android` pour s'assurer que le bundle Android se construit.
 - **Tests de bout en bout** (à lancer quand le porteur le demande, et avant chaque grosse évolution) :
   `bash scripts/e2e.sh` (≈ 4 min : construit l'app web avec la simulation météo, migre la base, démarre
   le vrai serveur sur le port 3100, lance Playwright). `bash scripts/e2e.sh meteo` pour un seul fichier,
-  `E2E_SKIP_BUILD=1` pour ne pas reconstruire. Scénarios dans `e2e/` (24 aujourd'hui, avec un faux service d'IA pour Observer) : parcours
+  `E2E_SKIP_BUILD=1` pour ne pas reconstruire. Scénarios dans `e2e/` (25 aujourd'hui, avec un faux service d'IA pour Observer) : parcours
   (onboarding, écrans, cocher/Annuler, fête, catalogue, fiche d'une nouvelle plante, feuille du bas qui se ferme,
   suggestions de saison, Saisons rangé par type), météo (pluie + eau économisée, gel + Saisons,
   orage, vent, canicule, « Pas aujourd'hui », retour météo réelle), compte (code de connexion lu dans
@@ -389,7 +389,11 @@ attendre sa validation avant l'étape suivante) :
    Observer : « 1 analyse offerte, sans compte », carte « Garde ce diagnostic » + « Créer mon compte gratuit » après le
    résultat, carte « Exemple de résultat » au-dessus de « Créer mon compte » une fois utilisée ; bouton photo
    d'Aujourd'hui aussi pour les visiteurs. E2e : faux service d'IA `e2e/fake-anthropic.mjs` (2ᵉ `webServer`),
-   `e2e/5-observer.spec.ts`)
+   `e2e/5-observer.spec.ts`). Retour du porteur (06/10) : dans Chrome sur Android, la page se rechargeait pendant la
+   photo (onglet déchargé par le navigateur, surtout en navigation privée) et revenait sur Aujourd'hui sans rien dire ;
+   le code de l'app est bon (vérifié en e2e). Parade : `lib/ai/camera-interrupt.ts` note l'ouverture de l'appareil photo
+   (`localStorage`, web seulement) ; si la page revient rechargée, Aujourd'hui ouvre Observer qui explique de prendre
+   la photo avec l'appareil du téléphone puis « Choisir dans ma galerie ». Pas de souci attendu dans l'APK.
    **Observer sans compte** : 1 analyse par appareil et 3 par réseau et par jour, protégées côté serveur
    et comptées dans le budget IA (`server/ai/budget.ts`, `rate_limits`) ; après le résultat, proposer de
    créer un compte ; carte d'exemple de résultat au-dessus du bouton de connexion.

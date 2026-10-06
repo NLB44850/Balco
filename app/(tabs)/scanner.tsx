@@ -10,6 +10,7 @@ import { ScreenHeader } from "@/components/screen-header";
 import { glass } from "@/components/ui/glass";
 import { IconSymbol } from "@/components/ui/icon-symbol";
 import { useColors } from "@/hooks/use-colors";
+import { CAMERA_INTERRUPTED_MESSAGE, takeCameraInterrupted } from "@/lib/ai/camera-interrupt";
 import { takePendingPhoto } from "@/lib/ai/pending-photo";
 import { pickPlantPhoto, type PreparedPhoto } from "@/lib/ai/photo";
 import { quotaLabel } from "@/lib/ai/quota-text";
@@ -113,6 +114,8 @@ export default function ScannerScreen() {
   restartRef.current = restart;
   useFocusEffect(
     useCallback(() => {
+      // Page rechargée par le navigateur pendant la prise de vue : on explique quoi faire.
+      if (takeCameraInterrupted()) setNotice(CAMERA_INTERRUPTED_MESSAGE);
       // Photo prise depuis le bouton appareil photo de l'accueil : prête à analyser.
       const fromHome = takePendingPhoto();
       if (fromHome) {

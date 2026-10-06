@@ -21,6 +21,7 @@ import { useDayPlan } from "@/hooks/use-day-plan";
 import { useColors } from "@/hooks/use-colors";
 import { useVacation } from "@/hooks/use-vacation";
 import { useWeatherSimulation } from "@/hooks/use-weather-simulation";
+import { cameraWasInterrupted } from "@/lib/ai/camera-interrupt";
 import { setPendingPhoto } from "@/lib/ai/pending-photo";
 import { pickPlantPhoto } from "@/lib/ai/photo";
 import { useGarden } from "@/lib/garden/garden-context";
@@ -101,6 +102,10 @@ export default function HomeScreen() {
     }
     router.push("/(tabs)/scanner");
   };
+  // Revenue rechargée pendant la photo (navigateur) : Observer s'ouvre et explique quoi faire.
+  useEffect(() => {
+    if (cameraWasInterrupted()) router.push("/(tabs)/scanner");
+  }, [router]);
   const { covers } = usePlantPhotos();
   // Plan du jour, météo, réglages et reports : les mêmes que Balcon et la fiche plante.
   const { weather, weatherSnapshot, now, climate, snoozes, snoozesLoaded, reminderSettings, setReminderSettings, reminderSettingsLoaded, reminderDecisions, visibleGroups, plan } = useDayPlan();
