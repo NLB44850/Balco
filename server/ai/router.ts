@@ -2,13 +2,15 @@ import Anthropic from "@anthropic-ai/sdk";
 import { TRPCError } from "@trpc/server";
 import { z } from "zod";
 
-import { adminProcedure, protectedProcedure, router } from "../_core/trpc";
+import { adminProcedure, protectedProcedure, publicProcedure, router } from "../_core/trpc";
 import { budgetState, costReport, formatCostReport, pauseMessage } from "./budget";
 import { AiBadResponseError, AiRefusedError, AiUnavailableError, aiAvailable, askNora, diagnosePlant, type ChatTurn, type ImageMediaType } from "./claude";
 import { NORA_PREFERENCES } from "../../lib/ai/memory";
 import { describeGarden, loadGardenFacts, loadMemory } from "./context";
 import { forgetNotes, learnFromAnswer, updatePreferences } from "./memory-store";
-import { planOf, QuotaExceededError, quotaStatus, reserve, settle, type AiKind, type Plan } from "./quotas";
+import { DEVICE_ID_PATTERN, GuestLimitError, guestScanLeft, takeGuestScan } from "./guest";
+import { planOf, QuotaExceededError, quotaStatus, reserve, reserveGuest, settle, type AiKind, type Plan } from "./quotas";
+import { PLANS } from "../../lib/plans";
 
 /** Limite de l'API pour une image ; l'app envoie des photos réduites bien plus légères. */
 const MAX_IMAGE_BYTES = 5 * 1024 * 1024;
@@ -67,6 +69,27 @@ async function withQuota<T>(user: { id: number; plan: string }, kind: AiKind, ca
   }
 }
 
+/** Ce qu'une analyse sans compte sait du balcon : rien, la personne n'a pas de compte. */
+const GUEST_GARDEN = "Personne sans compte Balco : aucun balcon enregistré. Réponds pour un balcon en ville, en France.";
+
+export function guestLimitMessage(reason: "device" | "network") {
+  const monthly = PLANS.free.aiQuota.scan > 1 ? `${PLANS.free.aiQuota.scan} analyses offertes chaque mois` : "une analyse offerte chaque mois";
+  return reason === "device"
+    ? `Ton analyse sans compte est déjà utilisée sur ce téléphone. Crée ton compte gratuit : ${monthly}, et le suivi de tes plantes.`
+    : "Trop d’analyses sans compte depuis ce réseau aujourd’hui. Crée ton compte gratuit, ou réessaie demain.";
+}
+
+const imageInput = z.string().min(100).max(Math.ceil((MAX_IMAGE_BYTES * 4) / 3) + 16);
+
+/** La photo envoyée, vérifiée (vraie image, pas trop lourde). */
+function readImage(imageBase64: string) {
+  const bytes = Buffer.from(imageBase64, "base64");
+  const mediaType = detectImageType(bytes);
+  if (!mediaType) throw new TRPCError({ code: "BAD_REQUEST", message: "Ce fichier n’est pas une photo lisible (JPEG, PNG ou WebP)." });
+  if (bytes.length > MAX_IMAGE_BYTES) throw new TRPCError({ code: "BAD_REQUEST", message: "Cette photo est trop lourde." });
+  return { data: bytes.toString("base64"), mediaType };
+}
+
 const chatInput = z.object({
   messages: z.array(z.object({ role: z.enum(["user", "assistant"]), content: z.string().trim().min(1).max(2000) })).min(1).max(40),
 });
@@ -94,14 +117,51 @@ export const aiRouter = router({
     }),
 
   diagnose: protectedProcedure
-    .input(z.object({ imageBase64: z.string().min(100).max(Math.ceil((MAX_IMAGE_BYTES * 4) / 3) + 16) }))
+    .input(z.object({ imageBase64: imageInput }))
     .mutation(async ({ ctx, input }) => {
-      const bytes = Buffer.from(input.imageBase64, "base64");
-      const mediaType = detectImageType(bytes);
-      if (!mediaType) throw new TRPCError({ code: "BAD_REQUEST", message: "Ce fichier n’est pas une photo lisible (JPEG, PNG ou WebP)." });
-      if (bytes.length > MAX_IMAGE_BYTES) throw new TRPCError({ code: "BAD_REQUEST", message: "Cette photo est trop lourde." });
+      const image = readImage(input.imageBase64);
       const garden = describeGarden(await loadGardenFacts(ctx.user.id));
-      return withQuota(ctx.user, "scan", () => diagnosePlant({ data: bytes.toString("base64"), mediaType }, garden));
+      return withQuota(ctx.user, "scan", () => diagnosePlant(image, garden));
+    }),
+
+  /** Observer sans compte : l'analyse offerte reste-t-elle à cet appareil ? */
+  guestStatus: publicProcedure
+    .input(z.object({ deviceId: z.string().regex(DEVICE_ID_PATTERN) }))
+    .query(async ({ input }) => ({ available: aiAvailable(), paused: pauseMessage((await budgetState()).level, "free"), scanLeft: await guestScanLeft(input.deviceId) })),
+
+  /**
+   * Une analyse sans compte : 1 par appareil, 3 par réseau et par jour, comptées côté serveur et dans le
+   * budget du mois (pause dès 80 %, comme les comptes gratuits). Une analyse refusée ou en panne est rendue.
+   */
+  diagnoseGuest: publicProcedure
+    .input(z.object({ imageBase64: imageInput, deviceId: z.string().regex(DEVICE_ID_PATTERN) }))
+    .mutation(async ({ ctx, input }) => {
+      if (!aiAvailable()) throw new TRPCError({ code: "PRECONDITION_FAILED", message: "Le scanner n’est pas encore disponible." });
+      const paused = pauseMessage((await budgetState()).level, "free");
+      if (paused) throw new TRPCError({ code: "PRECONDITION_FAILED", message: paused });
+      const image = readImage(input.imageBase64);
+      let release: () => Promise<void>;
+      try {
+        release = await takeGuestScan(input.deviceId, ctx.req.ip ?? "unknown");
+      } catch (error) {
+        if (error instanceof GuestLimitError) throw new TRPCError({ code: "TOO_MANY_REQUESTS", message: guestLimitMessage(error.reason) });
+        throw error;
+      }
+      const requestId = await reserveGuest("scan");
+      try {
+        const { diagnosis, usage } = await diagnosePlant(image, GUEST_GARDEN);
+        await settle(requestId, "ok", usage);
+        return { diagnosis };
+      } catch (error) {
+        await release();
+        if (error instanceof AiRefusedError) {
+          await settle(requestId, "refused");
+          throw new TRPCError({ code: "BAD_REQUEST", message: "Je ne peux pas analyser cette photo. Essaie avec une photo de la plante seule." });
+        }
+        await settle(requestId, "error", error instanceof AiBadResponseError ? error.usage : undefined);
+        console.warn("[ai] guest scan failed", error instanceof Error ? error.message : error);
+        throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Le service est momentanément indisponible. Réessaie dans un instant : cette tentative n’est pas décomptée." });
+      }
     }),
 
   ask: protectedProcedure.input(chatInput).mutation(async ({ ctx, input }) => {

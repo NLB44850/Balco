@@ -25,6 +25,7 @@ import { setPendingPhoto } from "@/lib/ai/pending-photo";
 import { pickPlantPhoto } from "@/lib/ai/photo";
 import { useGarden } from "@/lib/garden/garden-context";
 import { trpc } from "@/lib/trpc";
+import { deviceId as loadDeviceId } from "@/lib/sync/device-id";
 import { usePlantPhotos } from "@/lib/garden/photos-context";
 import { celebrationFor, formatLiters, litersPerWatering, withCheer } from "@/lib/garden/progress";
 import { awayOn, preparationSteps, vacationRange, vacationState } from "@/lib/garden/vacation";
@@ -70,16 +71,25 @@ export default function HomeScreen() {
   const router = useRouter();
   const { loaded, resolvedPlants, events, onboarding, account, addPlant, removePlant, logEvent, removeEvent, reportLocation } = useGarden();
   const aiStatus = trpc.ai.status.useQuery(undefined, { enabled: account.signedIn, retry: false });
+  // Sans compte : l'analyse offerte de cet appareil (Observer sans compte).
+  const [device, setDevice] = useState<string | null>(null);
+  useEffect(() => {
+    if (!account.signedIn) void loadDeviceId().then(setDevice);
+  }, [account.signedIn]);
+  const guestStatus = trpc.ai.guestStatus.useQuery({ deviceId: device ?? "" }, { enabled: !account.signedIn && !!device, retry: false });
   const { vacation } = useVacation();
 
   /**
    * Le bouton appareil photo : la photo se prend tout de suite, puis Observer l'affiche prête à
-   * analyser. Sans compte, sans analyse restante ou si le service manque, on ouvre simplement
+   * analyser (avec ou sans compte). Sans analyse restante ou si le service manque, on ouvre simplement
    * Observer, qui explique pourquoi.
    */
   const observe = async () => {
     const status = aiStatus.data;
-    const canScan = account.signedIn && status?.available !== false && !status?.paused && (status?.scan.remaining ?? 1) > 0;
+    const guest = guestStatus.data;
+    const canScan = account.signedIn
+      ? status?.available !== false && !status?.paused && (status?.scan.remaining ?? 1) > 0
+      : guest?.available === true && !guest.paused && guest.scanLeft;
     if (canScan) {
       try {
         const result = await pickPlantPhoto("camera");

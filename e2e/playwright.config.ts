@@ -8,6 +8,7 @@ import { defineConfig, devices } from "@playwright/test";
  * Lancement : `bash scripts/e2e.sh` (construit l'app, prépare la base, démarre le serveur).
  */
 const PORT = Number(process.env.E2E_PORT ?? 3100);
+const FAKE_ANTHROPIC_PORT = PORT + 99;
 const ROOT = path.resolve(__dirname, "..");
 // Le Chromium déjà installé dans la session Claude ; ailleurs, celui de Playwright.
 const chromium = process.env.E2E_CHROMIUM ?? (existsSync("/opt/pw-browsers/chromium") ? "/opt/pw-browsers/chromium" : undefined);
@@ -30,7 +31,14 @@ export default defineConfig({
     trace: "retain-on-failure",
     launchOptions: chromium ? { executablePath: chromium } : {},
   },
-  webServer: {
+  webServer: [{
+    // Faux service d'IA (analyse de photo toujours identique), pour Observer sans compte.
+    command: `node e2e/fake-anthropic.mjs`,
+    cwd: ROOT,
+    url: `http://localhost:${FAKE_ANTHROPIC_PORT}/`,
+    reuseExistingServer: false,
+    env: { FAKE_ANTHROPIC_PORT: String(FAKE_ANTHROPIC_PORT) },
+  }, {
     command: `node dist/index.mjs > dist/e2e-server.log 2>&1`,
     cwd: ROOT,
     url: `http://localhost:${PORT}/`,
@@ -42,6 +50,9 @@ export default defineConfig({
       DATABASE_URL: process.env.E2E_DATABASE_URL ?? "mysql://balco:balco@localhost:3306/balco_cal",
       JWT_SECRET: "e2e-secret-e2e-secret-e2e-secret-0001",
       NODE_ENV: "development",
+      ANTHROPIC_API_KEY: "e2e-fake-key",
+      AI_GUEST_SCANS_PER_NETWORK_PER_DAY: "100000",
+      ANTHROPIC_BASE_URL: `http://localhost:${FAKE_ANTHROPIC_PORT}`,
     },
-  },
+  }],
 });

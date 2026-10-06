@@ -203,7 +203,7 @@ export function formatCostReport(report: CostReport) {
     ...report.byModel.map((row) => `- ${row.model} : ${row.calls} appels, ${usd(row.totalUsd)}`),
     "",
     `Comptes : ${report.accounts.count}, ${usd(report.accounts.averageUsd)} en moyenne par compte`,
-    ...report.topAccounts.map((row) => `- n° ${row.userId} ${row.email ?? ""} (${row.plan}) : ${row.calls} appels, ${usd(row.totalUsd)}`),
+    ...report.topAccounts.map((row) => `- ${row.userId === 0 ? "visiteurs sans compte" : `n° ${row.userId} ${row.email ?? ""} (${row.plan})`} : ${row.calls} appels, ${usd(row.totalUsd)}`),
   ];
   return lines.join("\n");
 }

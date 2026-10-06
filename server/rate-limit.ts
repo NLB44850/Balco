@@ -4,7 +4,7 @@
  * de temps (l'heure en cours), incrémenté d'un coup. Sans base (outils locaux), repli en mémoire.
  */
 import { createHash } from "node:crypto";
-import { and, eq, like, lt, sql } from "drizzle-orm";
+import { and, eq, like, lt, notLike, sql } from "drizzle-orm";
 
 import { rateLimits } from "../drizzle/schema";
 import { getDb } from "./db";
@@ -37,11 +37,37 @@ export async function hitRateLimit(bucket: string, limit: number, windowMs: numb
   return (row?.hits ?? 1) <= limit;
 }
 
+/** Combien de passages déjà comptés dans la fenêtre en cours (sans en ajouter). */
+export async function peekRateLimit(bucket: string, windowMs: number, now = Date.now()) {
+  const windowStart = windowStartOf(now, windowMs);
+  const db = await getDb();
+  if (!db) return memory.get(`${bucket}@${windowStart.getTime()}`) ?? 0;
+  const [row] = await db.select({ hits: rateLimits.hits }).from(rateLimits).where(and(eq(rateLimits.bucket, bucket), eq(rateLimits.windowStart, windowStart))).limit(1);
+  return row?.hits ?? 0;
+}
+
+/** Rend un passage (une analyse qui a échoué ne doit pas compter). */
+export async function refundRateLimit(bucket: string, windowMs: number, now = Date.now()) {
+  const windowStart = windowStartOf(now, windowMs);
+  const db = await getDb();
+  if (!db) {
+    const key = `${bucket}@${windowStart.getTime()}`;
+    memory.set(key, Math.max(0, (memory.get(key) ?? 0) - 1));
+    return;
+  }
+  await db.update(rateLimits).set({ hits: sql`GREATEST(${rateLimits.hits} - 1, 0)` }).where(and(eq(rateLimits.bucket, bucket), eq(rateLimits.windowStart, windowStart)));
+}
+
+/** Les compteurs longs (une analyse sans compte par appareil, sur un an) sont gardés plus longtemps. */
+export const LONG_BUCKET_PREFIX = "guest-device:";
+const LONG_KEEP_MS = 400 * 24 * 60 * 60 * 1000;
+
 /** Efface les fenêtres terminées avant `before` (appelé par la purge quotidienne). */
 export async function purgeRateLimits(before: Date) {
   const db = await getDb();
   if (!db) return;
-  await db.delete(rateLimits).where(lt(rateLimits.windowStart, before));
+  await db.delete(rateLimits).where(and(lt(rateLimits.windowStart, before), notLike(rateLimits.bucket, `${LONG_BUCKET_PREFIX}%`)));
+  await db.delete(rateLimits).where(and(lt(rateLimits.windowStart, new Date(before.getTime() - LONG_KEEP_MS)), like(rateLimits.bucket, `${LONG_BUCKET_PREFIX}%`)));
 }
 
 /** Pour les tests : remet à zéro les compteurs dont la clé commence par `prefix`. */

@@ -1,5 +1,5 @@
 import { useFocusEffect, useRouter } from "expo-router";
-import { useCallback, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { ActivityIndicator, Image, Pressable, ScrollView, StyleSheet, View } from "react-native";
 import { Text } from "@/components/ui/typography";
 
@@ -17,6 +17,7 @@ import { useGarden } from "@/lib/garden/garden-context";
 import { usePlantPhotos } from "@/lib/garden/photos-context";
 import { getCatalogPlant } from "@/lib/plants/catalog";
 import { PLANS } from "@/lib/plans";
+import { deviceId as loadDeviceId } from "@/lib/sync/device-id";
 import { trpc } from "@/lib/trpc";
 import type { AppRouter } from "@/server/routers";
 import type { inferRouterOutputs } from "@trpc/server";
@@ -29,6 +30,14 @@ const HEALTH = {
   sick: { label: "Besoin de soins", tone: "watch" },
   unknown: { label: "Diagnostic incertain", tone: "muted" },
 } as const;
+
+/** Ce que donne une analyse, montré à qui n'a plus d'analyse sans compte : on voit ce qu'on gagne. */
+const EXAMPLE = {
+  name: "Basilic",
+  health: "À surveiller",
+  summary: "Les feuilles du bas jaunissent : la terre reste trop humide.",
+  actions: ["Laisse sécher la terre sur 2 cm avant d’arroser", "Vide la soucoupe après chaque arrosage"],
+};
 
 const TIPS = ["Une photo nette, sans bouger", "À la lumière du jour, sans flash", "La feuille abîmée bien visible, dessus et dessous"];
 const CONFIDENCE = { high: "Confiance élevée", medium: "Confiance moyenne", low: "Confiance faible" } as const;
@@ -47,7 +56,15 @@ export default function ScannerScreen() {
   const { addPhoto } = usePlantPhotos();
   const status = trpc.ai.status.useQuery(undefined, { enabled: account.signedIn, retry: false });
   const utils = trpc.useUtils();
-  const diagnose = trpc.ai.diagnose.useMutation({ onSuccess: () => void utils.ai.status.invalidate() });
+  // Sans compte : une analyse offerte par appareil, comptée par le serveur.
+  const [device, setDevice] = useState<string | null>(null);
+  useEffect(() => {
+    void loadDeviceId().then(setDevice);
+  }, []);
+  const guestStatus = trpc.ai.guestStatus.useQuery({ deviceId: device ?? "" }, { enabled: !account.signedIn && !!device, retry: false });
+  const signedDiagnose = trpc.ai.diagnose.useMutation({ onSuccess: () => void utils.ai.status.invalidate() });
+  const guestDiagnose = trpc.ai.diagnoseGuest.useMutation({ onSuccess: () => void utils.ai.guestStatus.invalidate() });
+  const diagnose = account.signedIn ? signedDiagnose : guestDiagnose;
   const [photo, setPhoto] = useState<PreparedPhoto | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
   const [savedNote, setSavedNote] = useState(false);
@@ -76,7 +93,8 @@ export default function ScannerScreen() {
   const analyze = () => {
     if (!photo) return;
     setSavedNote(false);
-    diagnose.mutate({ imageBase64: photo.base64 });
+    if (account.signedIn) signedDiagnose.mutate({ imageBase64: photo.base64 });
+    else if (device) guestDiagnose.mutate({ imageBase64: photo.base64, deviceId: device });
   };
 
   const restart = () => {
@@ -119,9 +137,18 @@ export default function ScannerScreen() {
   const toneColor = (tone: "good" | "watch" | "muted") => (tone === "good" ? colors.primary : tone === "watch" ? colors.warning : colors.muted);
   const ownedName = owned ? owned.plant.nickname || owned.entry.name : "";
 
-  /** Un message à la place de la prise de vue : pas connecté, pas encore disponible, plus d'analyse ce mois-ci. */
+  const monthly = PLANS.free.aiQuota.scan > 1 ? `${PLANS.free.aiQuota.scan} analyses offertes chaque mois` : "une analyse offerte chaque mois";
+  const guest = guestStatus.data;
+  const guestUsed = !account.signedIn && guest?.available !== false && !guest?.paused && guest?.scanLeft === false;
+  /** Un message à la place de la prise de vue : analyse sans compte utilisée, pas encore disponible, en pause, plus d'analyse ce mois-ci. */
   const blocker = !account.signedIn
-    ? { title: PLANS.free.aiQuota.scan > 1 ? `${PLANS.free.aiQuota.scan} analyses offertes chaque mois` : "Une analyse offerte chaque mois", text: "Crée ton compte gratuit pour reconnaître tes plantes et savoir quoi faire quand une feuille jaunit.", action: { label: "Se connecter", onPress: () => router.push("/login") } }
+    ? guest?.available === false
+      ? { title: "Bientôt disponible", text: "L’analyse des photos arrive dans une prochaine mise à jour." }
+      : guest?.paused && !diagnosis
+        ? { title: "L’analyse fait une pause", text: guest.paused }
+        : guestUsed && !diagnosis
+          ? { title: "Ton analyse offerte est utilisée", text: `Crée ton compte gratuit : ${monthly}, et Balco garde chaque diagnostic dans la fiche de ta plante.`, example: true, action: { label: "Créer mon compte", onPress: () => router.push("/login") } }
+          : null
     : status.data?.available === false
       ? { title: "Bientôt disponible", text: "L’analyse des photos arrive dans une prochaine mise à jour." }
       : status.data?.paused && !diagnosis
@@ -133,12 +160,20 @@ export default function ScannerScreen() {
   return (
     <LightScreen>
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={[styles.content, { paddingTop: insets.top + 14 }]}>
-        <ScreenHeader back title="Observer" subtitle={account.signedIn && scan ? quotaLabel(scan) : "Une photo, et Nora te dit quoi faire"} />
+        <ScreenHeader back title="Observer" subtitle={account.signedIn && scan ? quotaLabel(scan) : !account.signedIn && guest?.scanLeft ? "1 analyse offerte, sans compte" : "Une photo, et Nora te dit quoi faire"} />
 
         {blocker ? (
           <View style={[glass.card, styles.card]}>
             <Text style={[styles.cardTitle, { color: colors.foreground }]}>{blocker.title}</Text>
             <Text style={[styles.text, { color: colors.muted }]}>{blocker.text}</Text>
+            {"example" in blocker && blocker.example && (
+              <View accessibilityLabel="Exemple de résultat" style={[styles.example, { borderColor: colors.border }]}>
+                <Text style={[styles.small, { color: colors.muted }]}>Exemple de résultat</Text>
+                <Text style={[styles.actionTitle, { color: colors.foreground }]}>{EXAMPLE.name} · <Text style={{ color: colors.warning }}>{EXAMPLE.health}</Text></Text>
+                <Text style={[styles.small, { color: colors.foreground }]}>{EXAMPLE.summary}</Text>
+                {EXAMPLE.actions.map((action, index) => <Text key={action} style={[styles.small, { color: colors.muted }]}>{index + 1}. {action}</Text>)}
+              </View>
+            )}
             {blocker.action && (
               <Pressable accessibilityRole="button" onPress={blocker.action.onPress} style={({ pressed }) => [styles.primary, { backgroundColor: colors.primary }, pressed && styles.pressed]}>
                 <Text style={styles.primaryText}>{blocker.action.label}</Text>
@@ -260,9 +295,19 @@ export default function ScannerScreen() {
                 )}
               </>
             )}
-            <Pressable accessibilityRole="button" onPress={restart} style={({ pressed }) => [styles.outline, { borderColor: colors.border }, pressed && styles.pressed]}>
-              <Text style={[styles.secondaryText, { color: colors.foreground }]}>Observer une autre plante</Text>
-            </Pressable>
+            {!account.signedIn ? (
+              <View style={[styles.remedy, { backgroundColor: colors.leaf }]}>
+                <Text style={[styles.actionTitle, { color: colors.primary }]}>Garde ce diagnostic</Text>
+                <Text style={[styles.small, { color: colors.foreground }]}>Avec un compte gratuit : {monthly}, le suivi de tes plantes et Nora qui répond à tes questions.</Text>
+                <Pressable accessibilityRole="button" onPress={() => router.push("/login")} style={({ pressed }) => [styles.primary, { backgroundColor: colors.primary }, pressed && styles.pressed]}>
+                  <Text style={styles.primaryText}>Créer mon compte gratuit</Text>
+                </Pressable>
+              </View>
+            ) : (
+              <Pressable accessibilityRole="button" onPress={restart} style={({ pressed }) => [styles.outline, { borderColor: colors.border }, pressed && styles.pressed]}>
+                <Text style={[styles.secondaryText, { color: colors.foreground }]}>Observer une autre plante</Text>
+              </Pressable>
+            )}
             <Text style={[styles.small, { color: colors.muted, textAlign: "center" }]}>Diagnostic indicatif fait par une IA : en cas de doute, demande conseil en jardinerie.</Text>
           </View>
         ) : (
@@ -326,5 +371,6 @@ const styles = StyleSheet.create({
   actionNumberText: { fontSize: 14, fontWeight: "800" },
   actionTitle: { fontSize: 15, fontWeight: "700" },
   remedy: { borderRadius: 14, padding: 14, gap: 4 },
+  example: { borderWidth: 1, borderRadius: 14, padding: 12, gap: 4, backgroundColor: "rgba(255,255,255,0.6)" },
   pressed: { opacity: 0.78, transform: [{ scale: 0.98 }] },
 });
