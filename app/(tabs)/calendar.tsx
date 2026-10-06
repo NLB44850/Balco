@@ -23,7 +23,7 @@ import { Text } from "@/components/ui/typography";
 import { useLocalWeather } from "@/hooks/use-local-weather";
 import { useColors } from "@/hooks/use-colors";
 import { useGarden } from "@/lib/garden/garden-context";
-import { careProfileFor, dayKey, plantDisplayName, type ResolvedPlant } from "@/lib/garden/garden-logic";
+import { careProfileFor, dayKey, plantDisplayName, potHistory, type ResolvedPlant } from "@/lib/garden/garden-logic";
 import {
   ACTIVITY_KIND_LABELS,
   activityDoneLabel,
@@ -95,8 +95,8 @@ export default function CalendarScreen() {
   const subjects = useMemo<CalendarSubject[]>(
     () => starters
       ? starters.plants.map((entry) => ({ id: entry.id, entry, displayName: entry.name }))
-      : resolvedPlants.map((resolved) => ({ id: resolved.plant.id, entry: resolved.entry, displayName: plantDisplayName(resolved), addedAt: resolved.plant.addedAt, toPlant: resolved.plant.toPlant })),
-    [resolvedPlants, starters],
+      : resolvedPlants.map((resolved) => ({ id: resolved.plant.id, entry: resolved.entry, displayName: plantDisplayName(resolved), addedAt: resolved.plant.addedAt, toPlant: resolved.plant.toPlant, ...potHistory(resolved.plant, events) })),
+    [events, resolvedPlants, starters],
   );
   const resolvedById = useMemo(() => new Map<string, ResolvedPlant>(resolvedPlants.map((resolved) => [resolved.plant.id, resolved])), [resolvedPlants]);
   const activeFilter = selectedPlant === "all" || subjects.some((subject) => subject.id === selectedPlant) ? selectedPlant : "all";

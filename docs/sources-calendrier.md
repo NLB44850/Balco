@@ -708,3 +708,20 @@ divergeaient, la fourchette couvre les deux. Choix à connaître :
   (8 à 40), ail des ours (levée en 4 à 7 mois). Myrtillier : deux variétés pour avoir des fruits, terre de bruyère.
 - Bulbes et tubercules (ail, pommes de terre, oca, crosnes, dahlias) : profondeur de plantation dans
   `lib/plants/guide.ts` (`BULBS`).
+
+## Rempotage des vivaces (6 octobre 2026)
+
+`lib/plants/repotting.ts` : pour les 37 vivaces, tous les combien d'années les passer dans un pot plus grand, les
+mois conseillés, si l'on change les 5 cm de terre du dessus les autres années, et le signe qu'elles manquent de
+place. Recherche web (2 ou 3 sources par plante, extraits de résultats). Choix à connaître :
+
+- Chaque année : menthe (toute la terre change, pas de terre du dessus), ciboulette, stévia, crosnes et dahlias
+  (tubercules replantés dans du terreau neuf).
+- Tous les 2 à 3 ans, terre du dessus entre-temps : la plupart des aromatiques ligneuses, lavande, citronnier,
+  petits fruits. Fourchettes larges : thym (2 à 4 ans), sauge ananas et oseille (1 à 3), groseillier et mûres
+  (2 à 4), kiwaï (2 à 5).
+- Fraisiers : on renouvelle la terre du dessus chaque printemps et on remplace les pieds tous les 3 à 4 ans.
+- Ail des ours, géranium vivace, œillet mignardise, poireau perpétuel : le rythme vient surtout de la division
+  de la touffe. Plante huître : aucune source ne donne de fréquence, estimation à confirmer.
+- Les signes généraux (« racines qui sortent par les trous, terre qui sèche en un jour ») viennent parfois d'un
+  guide de rempotage général plutôt que d'une page sur la plante.

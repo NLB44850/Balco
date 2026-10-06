@@ -18,6 +18,7 @@ import {
   eventForSessionTask,
   lastEventDate,
   plantDisplayName,
+  potHistory,
   sessionEventId,
   startEventId,
   spacedTaskDue,
@@ -145,7 +146,7 @@ export function planDay({ plants, events, now, decisions = [], allDecisions = de
   const eventIds = new Set(events.map((event) => event.id));
   // Pluie ou orage annoncés : on ne dit d'arroser aucune plante, même une fois l'alerte cochée.
   const rainComing = allDecisions.some((decision) => decision.cause === "rain" || decision.cause === "storm");
-  const subjectOf = (resolved: ResolvedPlant): CalendarSubject => ({ id: resolved.plant.id, entry: resolved.entry, displayName: plantDisplayName(resolved), addedAt: resolved.plant.addedAt, toPlant: resolved.plant.toPlant });
+  const subjectOf = (resolved: ResolvedPlant): CalendarSubject => ({ id: resolved.plant.id, entry: resolved.entry, displayName: plantDisplayName(resolved), addedAt: resolved.plant.addedAt, toPlant: resolved.plant.toPlant, ...potHistory(resolved.plant, events) });
   const subjects = plants.filter((resolved) => !resolved.plant.toPlant).map(subjectOf);
   const seasonByPlant = new Map<string, CalendarActivity[]>();
   for (const activity of calendarActivities(subjects, month, { climate, now })) {

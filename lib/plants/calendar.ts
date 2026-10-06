@@ -3,6 +3,7 @@ import type { MaintenanceEvent, MaintenanceTaskType } from "../reminders/reminde
 import { describeSowing, formatMonthRange, MONTH_LONG, sowsIndoors, type CatalogPlant, type Month } from "./catalog";
 import { adaptToClimate, type ClimateInfo } from "./climate";
 import { sowsOnWindowsill } from "./indoor";
+import { REPOTTING } from "./repotting";
 
 export type CalendarActivityKind = "sow" | "plant" | "repot" | "harvest" | "care";
 
@@ -24,6 +25,8 @@ export type CalendarActivity = {
   months?: Month[];
   /** Premier geste d'une plante à planter : le cocher l'installe sur le balcon. */
   start?: true;
+  /** Rempotage léger : changer les 5 cm de terre du dessus, sans changer de pot. */
+  topdress?: true;
   /** Geste de suite (éclaircir, sortir les plants, pincer) : une seule fois par plante. */
   followUp?: "thin" | "outdoors" | "pinch";
 };
@@ -35,7 +38,17 @@ export const ACTIVITY_KIND_LABELS: Record<CalendarActivityKind, string> = { sow:
  * `addedAt` : arrivée de la plante sur le balcon (absente pour les idées d'un balcon vide).
  * `toPlant` : sur le balcon mais pas encore en terre ; ses semis et plantations restent proposés.
  */
-export type CalendarSubject = { id: string; entry: CatalogPlant; displayName: string; addedAt?: string; toPlant?: boolean };
+export type CalendarSubject = {
+  id: string;
+  entry: CatalogPlant;
+  displayName: string;
+  addedAt?: string;
+  toPlant?: boolean;
+  /** Dans son pot depuis (dernier rempotage, sinon plantation, sinon arrivée) ; `potHistory` de garden-logic. */
+  inPotSince?: string;
+  /** Dernière fois qu'on a changé la terre du dessus. */
+  lastTopdress?: string;
+};
 export type CalendarOptions = { climate?: ClimateInfo | null; now?: Date };
 
 const GENERIC_TASK_IDS = new Set(["check-soil", "observe", "harvest"]);
@@ -51,7 +64,8 @@ function taskHeadline(title: string) {
 export function calendarActivities(subjects: CalendarSubject[], month: number, options: CalendarOptions = {}): CalendarActivity[] {
   const activities: CalendarActivity[] = [];
   const m = month as Month;
-  for (const { id, entry: catalogEntry, displayName, addedAt, toPlant } of subjects) {
+  for (const subject of subjects) {
+    const { id, entry: catalogEntry, displayName, addedAt, toPlant } = subject;
     // Les semis et plantations des plantes frileuses suivent le climat local (Midi plus tôt, montagne plus tard).
     const entry = adaptToClimate(catalogEntry, options.climate);
     // Pas encore en terre : un seul geste, le même que sur Aujourd'hui (« Plante l'ail des ours »), au mois où il
@@ -72,15 +86,17 @@ export function calendarActivities(subjects: CalendarSubject[], month: number, o
         : `Période de semis : ${describeSowing(entry)}. Prévois un pot d’au moins ${entry.potLiters} L.`;
       activities.push({ ...base, key: `${id}:sow`, kind: "sow", typeLabel: "SEMIS", title: indoors ? `Sème ${entry.label} au chaud` : `Sème ${entry.label}`, description, tone: "lime", eventType: "observation" });
     }
-    // Une vivace déjà en pot se rempote plutôt qu'elle ne se replante : un seul geste le même mois.
-    const repotsThisMonth = entry.repotMonths.includes(m);
-    // Installée sur le balcon : elle est plantée, plus de « Plante … ». Seule une plante « à planter » le garde.
+    // Installée sur le balcon : elle est plantée, plus de « Plante … ».
     const alreadyPlanted = addedAt !== undefined && !toPlant;
-    if (entry.plantMonths.includes(m) && !(entry.perennial && repotsThisMonth) && !alreadyPlanted) {
+    if (entry.plantMonths.includes(m) && !alreadyPlanted) {
       activities.push({ ...base, key: `${id}:plant`, kind: "plant", typeLabel: "PLANTATION", title: `Plante ${entry.label}`, description: `Période de plantation : ${formatMonthRange(entry.plantMonths)}. Un terreau frais et un pot percé font la moitié du travail.`, tone: "coral", eventType: "observation" });
     }
-    if (repotsThisMonth) {
-      activities.push({ ...base, key: `${id}:repot`, kind: "repot", typeLabel: "REMPOTAGE", title: `Rempote ${entry.label}`, description: `Terreau neuf et pot un peu plus grand (au moins ${entry.potLiters} L), à faire en ${formatMonthRange(entry.repotMonths)}. Si le pot est déjà grand, remplace juste les 5 cm de terre du dessus.`, tone: "coral", eventType: "repotting" });
+    // Rempotage selon le besoin : jamais la première saison, puis à son rythme ; les autres années, la terre du dessus.
+    const potCare = potCareFor(subject, entry, m, options.now ?? new Date());
+    if (potCare === "repot") {
+      activities.push({ ...base, key: `${id}:repot`, kind: "repot", typeLabel: "REMPOTAGE", title: `Rempote ${entry.label}`, description: `Passe-la dans un pot un peu plus grand (environ un tiers de plus), avec du terreau neuf. À faire en ${formatMonthRange(entry.repotMonths)}.`, tone: "coral", eventType: "repotting" });
+    } else if (potCare === "topdress") {
+      activities.push({ ...base, key: `${id}:topdress`, kind: "repot", typeLabel: "TERRE NEUVE", title: `Change la terre du dessus ${ofLabel(entry.label)}`, description: "Gratte les 5 cm de terre du dessus sans abîmer les racines, puis remets du terreau neuf. Pas besoin de changer de pot cette année.", tone: "coral", eventType: "repotting", topdress: true });
     }
     if (entry.harvestMonths.includes(m)) {
       activities.push({ ...base, key: `${id}:harvest`, kind: "harvest", typeLabel: "RÉCOLTE", title: `Récolte ${entry.label}`, description: entry.harvestTip, tone: "green", eventType: "harvest" });
@@ -140,6 +156,35 @@ export function startActivity(subject: CalendarSubject, month: number, options: 
   };
 }
 
+/** « du romarin », « de la menthe », « des fraisiers », « de l’ail des ours ». */
+function ofLabel(label: string) {
+  if (label.startsWith("le ")) return `du ${label.slice(3)}`;
+  if (label.startsWith("les ")) return `des ${label.slice(4)}`;
+  return `de ${label}`;
+}
+
+/** Il faut ce temps dans son pot avant le premier rempotage ou la première terre neuve. */
+const FIRST_SEASON_MONTHS = 10;
+const MONTH_MS = 30.44 * 86_400_000;
+
+/**
+ * Le soin du pot d'une vivace installée, ce mois-là : « repot » quand son rythme est atteint (tous les N ans),
+ * « topdress » (changer la terre du dessus) les autres années, rien la première saison ni hors de ses mois.
+ */
+export function potCareFor(subject: Pick<CalendarSubject, "id" | "addedAt" | "toPlant" | "inPotSince" | "lastTopdress">, entry: CatalogPlant, month: number, now: Date): "repot" | "topdress" | null {
+  const data = REPOTTING[entry.id];
+  if (!entry.perennial || !data || subject.addedAt === undefined || subject.toPlant || !entry.repotMonths.includes(month as Month)) return null;
+  // Le mois regardé : ce mois-ci, sinon sa prochaine occurrence (Saisons montre les mois à venir).
+  const current = now.getMonth() + 1;
+  const when = month === current ? now : new Date(now.getFullYear() + (month < current ? 1 : 0), month - 1, 15);
+  const age = (when.getTime() - new Date(subject.inPotSince ?? subject.addedAt).getTime()) / MONTH_MS;
+  if (age < FIRST_SEASON_MONTHS) return null;
+  if (age >= data.everyYears[0] * 12 - 2) return "repot";
+  if (!data.topdress) return null;
+  const sinceTopdress = subject.lastTopdress ? (when.getTime() - new Date(subject.lastTopdress).getTime()) / MONTH_MS : Infinity;
+  return sinceTopdress >= FIRST_SEASON_MONTHS ? "topdress" : null;
+}
+
 function monthKey(date: Date) {
   return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}`;
 }
@@ -149,6 +194,7 @@ function monthKey(date: Date) {
  * (cocher d'un côté coche l'autre) ; un semis, une plantation ou un rempotage se note une fois par mois.
  */
 export function activityEventId(activity: CalendarActivity, now: Date) {
+  if (activity.topdress) return `${activity.subjectId}:calendar-topdress:${monthKey(now)}`;
   if (activity.start) return startEventId(activity.subjectId);
   if (activity.followUp) return `${activity.subjectId}:${activity.followUp}`;
   if (activity.kind === "care" && activity.taskId) return sessionEventId(activity.subjectId, activity.taskId, now);

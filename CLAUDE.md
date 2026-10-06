@@ -39,14 +39,14 @@ Tout se passe dans son GitHub Codespace (pas de Docker sur son PC).
 
 - `pnpm -s check`, `pnpm -s lint`, puis `TEST_DATABASE_URL=mysql://balco:balco@localhost:3306/balco_cal npx vitest run`
   (MariaDB locale : `service mariadb start` si elle s'est arrêtée, `apt-get install -y mariadb-server` si elle manque,
-  puis `DATABASE_URL=… npx drizzle-kit migrate` ; 480 tests à ce jour). Dans un conteneur
+  puis `DATABASE_URL=… npx drizzle-kit migrate` ; 482 tests à ce jour). Dans un conteneur
   neuf : `apt-get install -y mariadb-server`, `service mariadb start`, créer la base `balco_cal` et l'utilisateur
   `balco`/`balco`, puis `pnpm -s build && DATABASE_URL=mysql://balco:balco@localhost:3306/balco_cal node dist/migrate.mjs`.
 - `npx expo export --platform android` pour s'assurer que le bundle Android se construit.
 - **Tests de bout en bout** (à lancer quand le porteur le demande, et avant chaque grosse évolution) :
   `bash scripts/e2e.sh` (≈ 4 min : construit l'app web avec la simulation météo, migre la base, démarre
   le vrai serveur sur le port 3100, lance Playwright). `bash scripts/e2e.sh meteo` pour un seul fichier,
-  `E2E_SKIP_BUILD=1` pour ne pas reconstruire. Scénarios dans `e2e/` (36 aujourd'hui, avec un faux service d'IA pour Observer) : parcours
+  `E2E_SKIP_BUILD=1` pour ne pas reconstruire. Scénarios dans `e2e/` (37 aujourd'hui, avec un faux service d'IA pour Observer) : parcours
   (onboarding, écrans, cocher/Annuler, fête, catalogue, fiche d'une nouvelle plante, feuille du bas qui se ferme,
   suggestions de saison, Saisons rangé par type), météo (pluie + eau économisée, gel + Saisons,
   orage, vent, canicule, « Pas aujourd'hui », retour météo réelle), compte (code de connexion lu dans
@@ -81,7 +81,7 @@ visuelle, retour immédiat.
 
 ## Où on en est
 
-**Nouvelle conversation ? L'onboarding (`docs/chantier-onboarding.md`) et le pas-à-pas pour planter (`docs/chantier-pas-a-pas.md`) sont testés par le porteur et en PR vers `main` : https://github.com/NLB44850/Balco/pull/28 (ouverte le 06/10, à fusionner par lui). Chantier suivant, validé : rempotage selon le besoin (point 4 ci-dessous).**
+**Nouvelle conversation ? L'onboarding et le pas-à-pas pour planter sont fusionnés dans `main` (PR https://github.com/NLB44850/Balco/pull/28, 06/10). Chantier en cours : rempotage selon le besoin (point 4 ci-dessous), étape R1 faite, à valider ; ensuite R2 puis R3.**
 
 **Récap pour reprendre (06/10)** : ce bloc fait foi ; les paragraphes plus bas sont l'historique (certains
 décrivent un état ancien, par exemple Saisons « à cocher » ou une fête plein écran à chaque récolte).
@@ -110,14 +110,17 @@ et les 10 étapes du test utilisateur du 04/10 (détail dans « Historique des l
    (`lib/garden/follow-ups.ts` : éclaircir, sortir les plants, pincer), 22 illustrations
    (`components/guide/illustrations.tsx`, revue dans Réglages → Version de test), guide `app/guide/[catalogId].tsx`
    (logique `lib/plants/guide.ts`). Après son test : PR vers `main` (onboarding + pas-à-pas).
-4. **Rempotage selon le besoin** (validé le 06/10, **à faire après la PR** onboarding + pas-à-pas), 3 étapes :
+4. **Rempotage selon le besoin** (validé le 06/10 ; **R1 faite le 06/10, à valider**), 3 étapes :
    1) rythme par vivace vérifié sur le web (menthe chaque année, lavande tous les 2 ans, agrumes et petits fruits 2-3
    ans…) et jamais la première saison (≈ un an dans son pot, compté depuis la plantation notée) ; les autres années,
    geste « Change les 5 cm de terre du dessus » (surfaçage, validé) ; 2) signe à vérifier (« Des racines sortent par
    les trous ? L'eau ressort tout de suite ? Rempote… ») + « Pas besoin cette année », volume du pot retenu et pot
    suivant proposé (≈ +1/3) ; 3) pas-à-pas illustré du rempotage (« Ce qu'il te faut », démêler les racines…).
-   Aujourd'hui : `repotMonths` par défaut [3, 4] pour toute vivace (`plant()` dans `lib/plants/catalog.ts`), sans
-   regarder l'âge (une vivace plantée la veille peut avoir « Rempote… »).
+   R1 fait : `lib/plants/repotting.ts` (37 vivaces, sources) donne `repotMonths` ; `potCareFor` (`lib/plants/calendar.ts`) :
+   rien avant 10 mois dans le pot, « Rempote… » quand le rythme est atteint, sinon « Change la terre du dessus du
+   thym » (`topdress`, événement `<id>:calendar-topdress:<mois>`, ne remet pas le compteur à zéro) ; `potHistory`
+   (garden-logic) : dans son pot depuis le dernier rempotage, sinon la plantation notée, sinon l'arrivée. Corrigé au
+   passage : Saisons ne transmettait pas l'état « à planter » (`calendar.tsx`).
 5. **Après-récolte** des plantes récoltées en une fois (radis, carottes, salades pommées) : « Tout récolté ? » →
    « Ressemer » ou « Libérer le pot ». À décider avec lui.
 6. **Mémoire de Nora sur plusieurs jours** : il doit encore faire le test sur 2-3 jours (retour à recueillir).

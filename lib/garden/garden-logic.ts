@@ -45,6 +45,22 @@ export function startedPlantId(eventId: string) {
   return eventId.endsWith(":start") ? eventId.slice(0, -":start".length) : null;
 }
 
+/**
+ * Depuis quand la plante est dans son pot (dernier rempotage, sinon son premier geste dans l'app, sinon son
+ * arrivée) et quand on a changé la terre du dessus pour la dernière fois : le rempotage en dépend.
+ */
+export function potHistory(plant: GardenPlant, events: MaintenanceEvent[]): { inPotSince: string; lastTopdress?: string } {
+  let inPotSince = events.find((event) => event.id === startEventId(plant.id))?.completedAt ?? plant.addedAt;
+  let lastTopdress: string | undefined;
+  for (const event of events) {
+    if (event.plantId !== plant.id || event.type !== "repotting") continue;
+    if (event.id.includes(":calendar-topdress:")) {
+      if (!lastTopdress || event.completedAt > lastTopdress) lastTopdress = event.completedAt;
+    } else if (event.completedAt > inPotSince) inPotSince = event.completedAt;
+  }
+  return { inPotSince, lastTopdress };
+}
+
 /** En terre depuis : jamais pour une plante à planter, sinon son premier geste ou son arrivée. */
 export function inGroundSince(plant: GardenPlant, events: MaintenanceEvent[]): number | null {
   if (plant.toPlant) return null;
