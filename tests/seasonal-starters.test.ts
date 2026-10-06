@@ -74,3 +74,22 @@ describe("seasonalStarters : plantes de saison seulement", () => {
     }
   });
 });
+
+describe("accueil : chemins, soleil et anciennes envies", () => {
+  it("la barre ne compte que les écrans du chemin suivi", async () => {
+    const { onboardingSteps } = await import("../lib/garden/onboarding");
+    expect(onboardingSteps({ hasPlants: true })).toEqual(["has", "which", "sun", "space"]);
+    expect(onboardingSteps({ hasPlants: false })).toEqual(["has", "sun", "space", "goals", "plants"]);
+    expect(onboardingSteps({})).toEqual(onboardingSteps({ hasPlants: false }));
+  });
+
+  it("« Je ne sais pas » vaut mi-ombre, et « Moins de gaspillage » devient « Des salades à couper »", async () => {
+    const { normalizeOnboarding, sunlightFromChoice } = await import("../lib/garden/onboarding");
+    expect(sunlightFromChoice("unknown")).toBe("partial");
+    expect(sunlightFromChoice("sunny")).toBe("sunny");
+    expect(normalizeOnboarding({ sunlight: "sunny", goals: ["zero-waste", "tomatoes", "salads"] })).toEqual({ sunlight: "sunny", goals: ["salads", "tomatoes"] });
+    expect(normalizeOnboarding(null)).toBeNull();
+    // Le catalogue ne connaît plus que « salads » : la salade à couper est la plante phare.
+    expect(seasonalStarters({ sunlight: "partial", space: "planter", goals: ["salads"] }, { month: 5 }).plants[0].id).toBe("cut-lettuce");
+  });
+});

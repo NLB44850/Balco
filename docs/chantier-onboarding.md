@@ -6,6 +6,13 @@ le porteur, avec toutes les propositions de Claude (« OK pour tes propositions 
 **Avancement** : A1 validée le 6 octobre ; A2 codée le 6 octobre, **en attente de validation sur son
 téléphone (APK : la version web n'a pas de notifications)**. Prochaine action après son accord : l'étape A3.
 
+- B2 (fait, à valider) : `app/welcome.tsx` réécrit. Bienvenue « Ton balcon, au bon moment. » + « C'est parti » /
+  « Passer » ; « Tu as déjà des plantes sur ton balcon ? » ; chemins dans `onboardingSteps`
+  (`lib/garden/onboarding.ts`) : Oui → Lesquelles (recherche `searchCatalog` + raccourcis `COMMON_PLANT_IDS`,
+  ajoutées installées), soleil, espace ; Pas encore → soleil, espace, envies, premières plantes (à planter).
+  Soleil en 3 phrases + « Je ne sais pas » (= mi-ombre, `sunlightFromChoice`). Envie `salads` « Des salades à
+  couper » (catalogue retagué : 15 légumes-feuilles ; `normalizeOnboarding` convertit `zero-waste`). Plus de
+  prénom ni d'expérience dans l'accueil (C1). Réponse gardée : `hasPlants`. E2e « Oui » et « Pas encore ».
 - B1 (fait, à valider) : `GardenPlant.toPlant` (colonne `reminder_plants.toPlant`, migration 0015, synchro).
   À planter : un seul geste `startActivity` (`lib/plants/calendar.ts` : « Plante » si c'est le mois de
   plantation ou si la plante se plante, sinon « Sème », au chaud si besoin ; hors saison « Meilleure période… »),

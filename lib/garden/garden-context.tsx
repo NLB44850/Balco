@@ -6,6 +6,7 @@ import { router } from "expo-router";
 
 import { useAuth, type SignInResult } from "@/hooks/use-auth";
 import type { OnboardingAnswers } from "@/lib/plants/catalog";
+import { normalizeOnboarding } from "@/lib/garden/onboarding";
 import type { MaintenanceEvent } from "@/lib/reminders/reminder-engine";
 import {
   SERVER_PUSH_STORAGE_KEY,
@@ -161,7 +162,7 @@ export function GardenProvider({ children }: { children: ReactNode }) {
       readJson<GardenPlant[]>(GARDEN_PLANTS_STORAGE_KEY, []),
       readJson<MaintenanceEvent[]>(GARDEN_EVENTS_STORAGE_KEY, []),
       readJson<UserProfile>(USER_PROFILE_STORAGE_KEY, {}),
-      readJson<OnboardingAnswers | null>(ONBOARDING_STORAGE_KEY, null),
+      readJson<OnboardingAnswers | null>(ONBOARDING_STORAGE_KEY, null).then(normalizeOnboarding),
       readJson<Outbox>(SYNC_OUTBOX_STORAGE_KEY, emptyOutbox()),
       readJson<SyncMeta>(SYNC_META_STORAGE_KEY, {}),
       readJson<PushRegistration | null>(SERVER_PUSH_STORAGE_KEY, null),
@@ -207,7 +208,8 @@ export function GardenProvider({ children }: { children: ReactNode }) {
     await writeJson(USER_PROFILE_STORAGE_KEY, next);
   }, []);
 
-  const saveOnboarding = useCallback(async (next: OnboardingAnswers | null) => {
+  const saveOnboarding = useCallback(async (incoming: OnboardingAnswers | null) => {
+    const next = normalizeOnboarding(incoming);
     onboardingRef.current = next;
     setOnboarding(next);
     if (next) await writeJson(ONBOARDING_STORAGE_KEY, next);
@@ -390,7 +392,7 @@ export function GardenProvider({ children }: { children: ReactNode }) {
   }, [queue, saveProfile]);
 
   const reloadOnboarding = useCallback(async () => {
-    const stored = await readJson<OnboardingAnswers | null>(ONBOARDING_STORAGE_KEY, null);
+    const stored = normalizeOnboarding(await readJson<OnboardingAnswers | null>(ONBOARDING_STORAGE_KEY, null));
     onboardingRef.current = stored;
     setOnboarding(stored);
     queue(markProfileDirty);

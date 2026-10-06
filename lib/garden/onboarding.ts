@@ -11,10 +11,14 @@ export const EXPERIENCE_OPTIONS: OnboardingOption[] = [
 ];
 
 export const SUNLIGHT_OPTIONS: OnboardingOption[] = [
-  { id: "shade", icon: "☁️", title: "Plutôt ombragé", text: "Moins de 3 h de soleil direct." },
-  { id: "partial", icon: "⛅", title: "Mi-ombre", text: "Entre 3 et 6 h de soleil direct." },
-  { id: "sunny", icon: "☀️", title: "Très ensoleillé", text: "Plus de 6 h de soleil direct." },
+  { id: "sunny", icon: "☀️", title: "Le soleil tape presque toute la journée", text: "Plus de 6 h de soleil direct." },
+  { id: "partial", icon: "⛅", title: "Le matin ou l’après-midi seulement", text: "Entre 3 et 6 h de soleil direct." },
+  { id: "shade", icon: "☁️", title: "Presque jamais", text: "Moins de 3 h de soleil direct." },
 ];
+
+/** Dans l'accueil seulement : « Je ne sais pas » vaut mi-ombre (le choix le plus prudent). */
+export const SUNLIGHT_UNKNOWN: OnboardingOption = { id: "unknown", icon: "🤷", title: "Je ne sais pas", text: "Balco part sur une mi-ombre, tu pourras changer." };
+export const sunlightFromChoice = (id: string) => (id === SUNLIGHT_UNKNOWN.id ? "partial" : id);
 
 export const SPACE_OPTIONS: OnboardingOption[] = [
   { id: "windowsill", icon: "🪟", title: "Un rebord de fenêtre", text: "Quelques pots compacts, près de la lumière." },
@@ -27,9 +31,32 @@ export const GOAL_OPTIONS: OnboardingOption[] = [
   { id: "tomatoes", icon: "🍅", title: "Tomates cerises", text: "Du soleil et du goût à récolter." },
   { id: "aromatics", icon: "🌿", title: "Basilic & menthe", text: "Des aromatiques pour la cuisine." },
   { id: "bees", icon: "🐝", title: "Fleurs pour les abeilles", text: "Accueillir les pollinisateurs en ville." },
-  { id: "zero-waste", icon: "♻️", title: "Moins de gaspillage", text: "Composter, récupérer et arroser mieux." },
+  { id: "salads", icon: "🥬", title: "Des salades à couper", text: "Des feuilles fraîches qui repoussent." },
 ];
+
+/** Raccourcis de « Lesquelles ? » : les plantes qu'on a le plus souvent déjà sur un balcon. */
+export const COMMON_PLANT_IDS = ["basil", "mint", "cherry-tomato", "strawberry", "parsley", "lavender", "thyme", "chives"];
+
+/** Anciennes réponses : « Moins de gaspillage » est devenu « Des salades à couper » (octobre 2026). */
+const LEGACY_GOALS: Record<string, string> = { "zero-waste": "salads" };
+
+export function normalizeOnboarding<T extends { goals?: string[] } | null>(answers: T): T {
+  if (!answers?.goals?.some((goal) => goal in LEGACY_GOALS)) return answers;
+  return { ...answers, goals: Array.from(new Set(answers.goals.map((goal) => LEGACY_GOALS[goal] ?? goal))) };
+}
 
 export function optionTitle(options: OnboardingOption[], id: string | undefined) {
   return options.find((option) => option.id === id)?.title;
+}
+
+/** Les écrans de l'accueil après la bienvenue, selon le chemin suivi. */
+export type OnboardingStep = "has" | "which" | "sun" | "space" | "goals" | "plants";
+
+/**
+ * Le chemin de l'accueil : « Oui, j'ai des plantes » → lesquelles, soleil, espace ; « Pas encore » →
+ * soleil, espace, envies, premières plantes de saison. Tant que la réponse manque, on suppose
+ * « Pas encore » (la barre ne compte que les écrans du chemin suivi).
+ */
+export function onboardingSteps({ hasPlants }: { hasPlants?: boolean }): OnboardingStep[] {
+  return hasPlants ? ["has", "which", "sun", "space"] : ["has", "sun", "space", "goals", "plants"];
 }

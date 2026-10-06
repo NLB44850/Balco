@@ -4,14 +4,14 @@ import { checkboxOf, mockWeather, open, seedBalcony, trackErrors, wateringGroup 
 
 /** Le parcours de tous les jours : arriver, créer son balcon, cocher, annuler, ajouter une plante. */
 
-test("onboarding : de l'accueil à « Aujourd'hui » avec les premières plantes", async ({ page }) => {
+test("onboarding « Pas encore » : soleil, espace, envies, puis des plantes de saison à planter", async ({ page }) => {
   const errors = trackErrors(page);
   await mockWeather(page);
-  await open(page, "/", "On commence par faire connaissance.");
-  await page.getByRole("textbox").fill("Camille");
+  await open(page, "/", "Ton balcon, au bon moment.");
   await page.getByText("C’est parti").click();
-  await page.getByText("Je débute").click();
-  await page.getByText("Très ensoleillé").click();
+  await expect(page.getByLabel("Étape 1 sur 5")).toBeVisible();
+  await page.getByText("Pas encore").click();
+  await page.getByText("Le soleil tape presque toute la journée").click();
   await page.getByText("Un petit balcon").click();
   await page.getByText("Tomates cerises").click();
   await page.getByText("Continuer", { exact: true }).click();
@@ -23,8 +23,31 @@ test("onboarding : de l'accueil à « Aujourd'hui » avec les premières plantes
   }
   await page.getByText(/^Créer mon balcon/).click();
   await expect(page.getByText("Aujourd’hui").first()).toBeVisible();
-  await expect(page.getByText(/Ton balcon/)).toBeVisible();
+  // Choisies, pas encore en terre : leur premier geste est de les semer ou planter.
+  await expect(page.getByRole("checkbox", { name: /^Marquer comme fait : (Sème|Plante) / }).first()).toBeVisible();
+  await expect(page.getByText(/Vérifie la terre/)).toHaveCount(0);
+  expect(errors).toEqual([]);
+});
+
+test("onboarding « Oui » : lesquelles (raccourci + recherche), puis soleil et espace ; plantes installées", async ({ page }) => {
+  const errors = trackErrors(page);
+  await mockWeather(page);
+  await open(page, "/", "Ton balcon, au bon moment.");
+  await page.getByText("C’est parti").click();
+  await page.getByText("Oui", { exact: true }).click();
+  await expect(page.getByText("Lesquelles ?")).toBeVisible();
+  await expect(page.getByLabel("Étape 2 sur 4")).toBeVisible();
+  await page.getByRole("checkbox", { name: "Basilic" }).click();
+  await page.getByLabel("Rechercher une plante").fill("romarin");
+  await page.getByRole("checkbox", { name: "Romarin" }).first().click();
+  await page.getByText("Continuer · 2 plantes").click();
+  await page.getByText("Je ne sais pas").click();
+  await page.getByText("Un petit balcon").click();
+  await expect(page.getByText("Aujourd’hui").first()).toBeVisible();
   await expect(page.getByText("Tes plantes")).toBeVisible();
+  // Déjà en terre : pas de « Plante le basilic », l'arrosage est proposé.
+  await expect(page.getByRole("checkbox", { name: /Plante le basilic|Plante le romarin/ })).toHaveCount(0);
+  await expect(page.getByText(/Vérifie la terre de 2 plantes|Arrose/).first()).toBeVisible();
   expect(errors).toEqual([]);
 });
 

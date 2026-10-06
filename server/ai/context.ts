@@ -50,7 +50,7 @@ export type GardenFacts = {
 type PlantRow = { plantId: string; catalogId: string | null; nickname: string | null; displayName: string; varietyId: string | null; active: number; addedAt: Date | null; removedAt: Date | null; toPlant?: number };
 type EventRow = { plantId: string; type: string; completedAt: Date; note: string | null };
 
-const GOAL_LABELS: Record<string, string> = { tomatoes: "des tomates cerises", aromatics: "des aromatiques pour la cuisine", bees: "des fleurs pour les abeilles", "zero-waste": "moins de gaspillage" };
+const GOAL_LABELS: Record<string, string> = { tomatoes: "des tomates cerises", aromatics: "des aromatiques pour la cuisine", bees: "des fleurs pour les abeilles", salads: "des salades à couper", "zero-waste": "des salades à couper" };
 
 const daysBetween = (from: Date, to: Date) => Math.max(0, Math.floor((to.getTime() - from.getTime()) / DAY_MS));
 
