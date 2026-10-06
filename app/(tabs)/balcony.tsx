@@ -17,11 +17,11 @@ import { glass } from "@/components/ui/glass";
 import { IconSymbol } from "@/components/ui/icon-symbol";
 import { Text } from "@/components/ui/typography";
 import { useColors } from "@/hooks/use-colors";
+import { useDayPlan } from "@/hooks/use-day-plan";
 import { useGarden } from "@/lib/garden/garden-context";
-import { plantDisplayName, plantStatus, type ResolvedPlant } from "@/lib/garden/garden-logic";
-import { nextGesture, STATUS_LABELS } from "@/lib/garden/photos";
+import { dayOf, gestureLine, type PlantTone } from "@/lib/garden/day-plan";
+import { plantDisplayName, type ResolvedPlant } from "@/lib/garden/garden-logic";
 import { usePlantPhotos } from "@/lib/garden/photos-context";
-import { headline } from "@/lib/garden/today";
 
 const GAP = 12;
 
@@ -29,7 +29,7 @@ export default function BalconyScreen() {
   const colors = useColors();
   const router = useRouter();
   const insets = useSafeAreaInsets();
-  const { loaded, resolvedPlants, events } = useGarden();
+  const { loaded, resolvedPlants } = useGarden();
   const { covers } = usePlantPhotos();
   const [gridWidth, setGridWidth] = useState(0);
   const [toast, setToast] = useState<ToastMessage | null>(null);
@@ -41,36 +41,44 @@ export default function BalconyScreen() {
   const hideToast = useCallback(() => setToast(null), []);
   const capture = usePlantPhotoCapture(showToast);
 
-  const now = new Date();
-  const watching = resolvedPlants.filter((resolved) => plantStatus(resolved, events, now).tone === "watch").length;
+  // Le même plan du jour qu'Aujourd'hui et la fiche : même geste, même couleur.
+  const { plan, ready } = useDayPlan();
+  const watching = !ready ? 0 : plan.filter((day) => day.status.tone === "watch" || day.status.tone === "weather").length;
   const subtitle = resolvedPlants.length === 0
     ? "Ajoute ta première plante"
-    : `${resolvedPlants.length} plante${resolvedPlants.length > 1 ? "s" : ""}${watching ? ` · ${watching} à surveiller` : " · toutes en forme"}`;
-  const cardWidth = gridWidth > 0 ? (gridWidth - GAP) / 2 : 0;
+    : `${resolvedPlants.length} plante${resolvedPlants.length > 1 ? "s" : ""}${!ready ? "" : watching ? ` · ${watching} à surveiller` : " · toutes en forme"}`;
+  // Arrondie vers le bas : sur Android, une largeur au demi-pixel près peut faire passer la 2ᵉ carte à la ligne.
+  const cardWidth = gridWidth > 0 ? Math.floor((gridWidth - GAP) / 2) : 0;
+  // Deux cartes par ligne, rangées à la main plutôt qu'avec un retour à la ligne automatique.
+  const rows = Array.from({ length: Math.ceil(resolvedPlants.length / 2) }, (_, index) => resolvedPlants.slice(index * 2, index * 2 + 2));
   const onGridLayout = (event: LayoutChangeEvent) => setGridWidth(event.nativeEvent.layout.width);
 
-  const toneColor = (tone: "good" | "watch" | "new") => (tone === "watch" ? colors.warning : tone === "good" ? colors.primary : colors.muted);
+  const toneColor = (tone: PlantTone) => (tone === "weather" ? colors.frost : tone === "watch" ? colors.warning : tone === "good" ? colors.primary : colors.muted);
 
   const card = (resolved: ResolvedPlant) => {
     const { plant } = resolved;
     const name = plantDisplayName(resolved);
-    const status = plantStatus(resolved, events, now);
-    const gesture = nextGesture(resolved, events, now);
+    const day = dayOf(plan, plant.id);
+    // Tant que la météo n'est pas chargée, on n'affiche pas un état qui changerait aussitôt.
+    const status = ready ? day?.status ?? { tone: "new" as const, label: "Nouvelle" } : null;
+    const pending = !!day?.first && !day.first.done;
     const hasPhoto = covers.has(plant.id);
-    const line = !gesture ? "Rien à faire aujourd’hui" : gesture.done ? "✓ Fait aujourd’hui" : headline(gesture.task.title);
+    const line = ready ? gestureLine(day) : " ";
     return (
       <Pressable
         key={plant.id}
         accessibilityRole="button"
-        accessibilityLabel={`${name}, ${STATUS_LABELS[status.tone]}, voir la fiche`}
+        accessibilityLabel={status ? `${name}, ${status.label}, voir la fiche` : `${name}, voir la fiche`}
         onPress={() => router.push({ pathname: "/garden/[id]", params: { id: plant.id } })}
         style={({ pressed }) => [{ width: cardWidth }, styles.card, pressed && styles.pressed]}
       >
         <PlantPicture resolved={resolved} style={[styles.picture, { height: cardWidth * 1.2 }]}>
-          <View style={styles.statusChip}>
-            <View style={[styles.dot, { backgroundColor: toneColor(status.tone) }]} />
-            <Text style={[styles.statusText, { color: colors.foreground }]}>{STATUS_LABELS[status.tone]}</Text>
-          </View>
+          {status && (
+            <View style={styles.statusChip}>
+              <View style={[styles.dot, { backgroundColor: toneColor(status.tone) }]} />
+              <Text style={[styles.statusText, { color: colors.foreground }]}>{status.label}</Text>
+            </View>
+          )}
           {!hasPhoto && (
             <Pressable accessibilityRole="button" accessibilityLabel={`Ajouter une photo de ${name}`} hitSlop={6} onPress={() => capture.ask(plant.id, name)} style={({ pressed }) => [styles.addPhoto, pressed && styles.pressed]}>
               <IconSymbol name="camera.fill" size={15} color={colors.primary} />
@@ -79,7 +87,7 @@ export default function BalconyScreen() {
           )}
         </PlantPicture>
         <Text style={[styles.name, { color: colors.foreground }]} numberOfLines={1}>{name}</Text>
-        <Text style={[styles.line, { color: gesture && !gesture.done ? colors.foreground : colors.muted }]} numberOfLines={2}>{line}</Text>
+        <Text style={[styles.line, { color: pending ? colors.foreground : colors.muted }]} numberOfLines={2}>{line}</Text>
       </Pressable>
     );
   };
@@ -98,7 +106,7 @@ export default function BalconyScreen() {
 
         {resolvedPlants.length > 0 && (
           <View style={styles.grid} onLayout={onGridLayout}>
-            {cardWidth > 0 && resolvedPlants.map(card)}
+            {cardWidth > 0 && rows.map((row) => <View key={row[0].plant.id} style={styles.row}>{row.map(card)}</View>)}
           </View>
         )}
 
@@ -120,7 +128,8 @@ const styles = StyleSheet.create({
   empty: { padding: 20, gap: 6 },
   emptyTitle: { fontSize: 18, fontWeight: "800" },
   small: { fontSize: 13, lineHeight: 19 },
-  grid: { flexDirection: "row", flexWrap: "wrap", gap: GAP, rowGap: 18 },
+  grid: { gap: 18 },
+  row: { flexDirection: "row", gap: GAP },
   card: { gap: 4 },
   picture: { borderRadius: 18, marginBottom: 4 },
   statusChip: { position: "absolute", top: 8, left: 8, flexDirection: "row", alignItems: "center", gap: 6, borderRadius: 999, paddingHorizontal: 9, paddingVertical: 5, backgroundColor: "rgba(255,255,255,0.9)" },

@@ -1,4 +1,4 @@
-import { useFocusEffect, useRouter } from "expo-router";
+import { useRouter } from "expo-router";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Animated, Platform, Pressable, ScrollView, StyleSheet, View } from "react-native";
 import { Text } from "@/components/ui/typography";
@@ -16,50 +16,44 @@ import { BottomSheet } from "@/components/today/bottom-sheet";
 import { TODAY_ROW_PICTURE, TodayRow } from "@/components/today/today-row";
 import { useCelebration } from "@/components/today/celebration";
 import { UndoToast, type ToastMessage } from "@/components/today/undo-toast";
-import { useLocalWeather } from "@/hooks/use-local-weather";
+import { WeatherBanner } from "@/components/today/weather-banner";
+import { useDayPlan } from "@/hooks/use-day-plan";
 import { useColors } from "@/hooks/use-colors";
 import { useVacation } from "@/hooks/use-vacation";
 import { useWeatherSimulation } from "@/hooks/use-weather-simulation";
+import { cameraWasInterrupted } from "@/lib/ai/camera-interrupt";
 import { setPendingPhoto } from "@/lib/ai/pending-photo";
 import { pickPlantPhoto } from "@/lib/ai/photo";
 import { useGarden } from "@/lib/garden/garden-context";
 import { trpc } from "@/lib/trpc";
+import { deviceId as loadDeviceId } from "@/lib/sync/device-id";
 import { usePlantPhotos } from "@/lib/garden/photos-context";
-import { celebrationFor, formatLiters, litersPerWatering } from "@/lib/garden/progress";
+import { celebrationFor, formatLiters, litersPerWatering, withCheer } from "@/lib/garden/progress";
 import { awayOn, preparationSteps, vacationRange, vacationState } from "@/lib/garden/vacation";
 import {
   POINTS_PER_GESTURE,
-  buildDailySession,
   dayKey,
-  careProfileFor,
   eventForSessionTask,
   plantDisplayName,
-  plantStatus,
-  streakDays,
+  followedDays,
 } from "@/lib/garden/garden-logic";
 import { potsFor, skyScene } from "@/lib/garden/sky";
 import { publishSky } from "@/lib/garden/sky-store";
-import { balconyStatus, buildTodayList, doneSubtitle, type TodayItem } from "@/lib/garden/today";
+import type { PlantTone } from "@/lib/garden/day-plan";
+import { balconyStatus, buildTodayList, doneSubtitle, isInfoBanner, layoutTodayList, rainSavingsToLog, splitTodayList, type TodayItem } from "@/lib/garden/today";
 import { notificationsUnavailableReason } from "@/lib/notifications/module";
-import { eventForActivity, seasonalToDo } from "@/lib/plants/calendar";
+import { eventForActivity } from "@/lib/plants/calendar";
 import { PLANT_CATALOG, recommendPlants } from "@/lib/plants/catalog";
 import { seasonalSuggestions, type SeasonalSuggestion } from "@/lib/plants/suggestions";
-import { climateZoneFor } from "@/lib/plants/climate";
-import { addSnooze, eventForReminder, planGroupedNotification, withoutSnoozed, type ReminderSnooze } from "@/lib/reminders/reminder-actions";
-import { decideReminders, type MaintenanceEvent } from "@/lib/reminders/reminder-engine";
-import { groupReminders, selectGroups, type ReminderGroup } from "@/lib/reminders/reminder-groups";
+import { addSnooze, eventForReminder, planGroupedNotification, wakeSnoozeFor, type ReminderSnooze } from "@/lib/reminders/reminder-actions";
+import type { MaintenanceEvent } from "@/lib/reminders/reminder-engine";
+import type { ReminderGroup } from "@/lib/reminders/reminder-groups";
 import {
   cancelBalcoReminderNotifications,
-  defaultLocalReminderSettings,
-  loadLocalReminderSettings,
-  loadReminderSnoozes,
   saveLocalReminderSettings,
   saveReminderSnoozes,
   scheduleLocalReminder,
   sendReminderPreview,
-  subscribeReminderSettings,
-  subscribeReminderSnoozes,
-  type LocalReminderSettings,
 } from "@/lib/reminders/local-notifications";
 import { scenarioLabel } from "@/lib/weather/simulation";
 
@@ -69,24 +63,34 @@ const haptic = () => {
 
 /**
  * Accueil « Aujourd'hui » : une seule question, que faire maintenant ?
- * L'état du balcon, puis une liste de gestes à cocher en une touche (alertes météo, gestes du jour,
- * gestes de saison), le détail dans une feuille qui monte du bas, et un message avec « Annuler ».
+ * Les alertes météo en bandeaux, l'état du balcon, puis une liste de gestes à cocher en une touche
+ * (gestes du jour, gestes de saison), le détail dans une feuille qui monte du bas, et un message avec
+ * « Annuler ».
  */
 export default function HomeScreen() {
   const colors = useColors();
   const router = useRouter();
   const { loaded, resolvedPlants, events, onboarding, account, addPlant, removePlant, logEvent, removeEvent, reportLocation } = useGarden();
   const aiStatus = trpc.ai.status.useQuery(undefined, { enabled: account.signedIn, retry: false });
+  // Sans compte : l'analyse offerte de cet appareil (Observer sans compte).
+  const [device, setDevice] = useState<string | null>(null);
+  useEffect(() => {
+    if (!account.signedIn) void loadDeviceId().then(setDevice);
+  }, [account.signedIn]);
+  const guestStatus = trpc.ai.guestStatus.useQuery({ deviceId: device ?? "" }, { enabled: !account.signedIn && !!device, retry: false });
   const { vacation } = useVacation();
 
   /**
    * Le bouton appareil photo : la photo se prend tout de suite, puis Observer l'affiche prête à
-   * analyser. Sans compte, sans analyse restante ou si le service manque, on ouvre simplement
+   * analyser (avec ou sans compte). Sans analyse restante ou si le service manque, on ouvre simplement
    * Observer, qui explique pourquoi.
    */
   const observe = async () => {
     const status = aiStatus.data;
-    const canScan = account.signedIn && status?.available !== false && !status?.paused && (status?.scan.remaining ?? 1) > 0;
+    const guest = guestStatus.data;
+    const canScan = account.signedIn
+      ? status?.available !== false && !status?.paused && (status?.scan.remaining ?? 1) > 0
+      : guest?.available === true && !guest.paused && guest.scanLeft;
     if (canScan) {
       try {
         const result = await pickPlantPhoto("camera");
@@ -98,17 +102,17 @@ export default function HomeScreen() {
     }
     router.push("/(tabs)/scanner");
   };
+  // Revenue rechargée pendant la photo (navigateur) : Observer s'ouvre et explique quoi faire.
+  useEffect(() => {
+    if (cameraWasInterrupted()) router.push("/(tabs)/scanner");
+  }, [router]);
   const { covers } = usePlantPhotos();
-  const [now, setNow] = useState(() => new Date());
-  const [snoozes, setSnoozes] = useState<ReminderSnooze[]>([]);
-  const [snoozesLoaded, setSnoozesLoaded] = useState(false);
-  const [reminderSettings, setReminderSettings] = useState<LocalReminderSettings>(defaultLocalReminderSettings);
-  const [reminderSettingsLoaded, setReminderSettingsLoaded] = useState(false);
+  // Plan du jour, météo, réglages et reports : les mêmes que Balcon et la fiche plante.
+  const { weather, weatherSnapshot, now, climate, snoozes, snoozesLoaded, reminderSettings, setReminderSettings, reminderSettingsLoaded, reminderDecisions, visibleGroups, plan } = useDayPlan();
   const [sheetKey, setSheetKey] = useState<string | null>(null);
   const [toast, setToast] = useState<ToastMessage | null>(null);
   const toastId = useRef(0);
   const { celebrate, overlay: celebration } = useCelebration();
-  const { weather, weatherSnapshot } = useLocalWeather();
   const simulation = useWeatherSimulation();
   const insets = useSafeAreaInsets();
   const sky = useMemo(() => skyScene(weatherSnapshot, now, weather.isFallback), [now, weather.isFallback, weatherSnapshot]);
@@ -119,94 +123,73 @@ export default function HomeScreen() {
   const [previewStatus, setPreviewStatus] = useState<"idle" | "sent" | "denied">("idle");
   useEffect(() => setPreviewStatus("idle"), [simulation.scenario]);
 
-  // Recharge l'heure et les réglages (modifiables depuis le profil) à chaque retour sur l'écran.
-  useFocusEffect(useCallback(() => {
-    setNow(new Date());
-    let active = true;
-    loadLocalReminderSettings().then((settings) => {
-      if (!active) return;
-      setReminderSettings(settings);
-      setReminderSettingsLoaded(true);
-    });
-    return () => {
-      active = false;
-    };
-  }, []));
-
-  // Réglages modifiés depuis le profil ou un autre appareil.
-  useEffect(() => subscribeReminderSettings((settings) => setReminderSettings(settings)), []);
-
-  // Rappels mis en sommeil, ici ou depuis les boutons d'une notification.
-  useEffect(() => {
-    void loadReminderSnoozes().then((stored) => {
-      setSnoozes(stored);
-      setSnoozesLoaded(true);
-    });
-    return subscribeReminderSnoozes(setSnoozes);
-  }, []);
-
   // Le serveur a besoin de la vraie position pour les rappels app fermée ; jamais de la ville de repli.
   useEffect(() => {
     if (weather.isFallback) return;
     reportLocation({ city: weather.city, latitude: weather.latitude, longitude: weather.longitude, timezone: Intl.DateTimeFormat().resolvedOptions().timeZone || "Europe/Paris" });
   }, [reportLocation, weather.city, weather.isFallback, weather.latitude, weather.longitude]);
 
-  const session = useMemo(() => buildDailySession(resolvedPlants, events, now), [events, now, resolvedPlants]);
-  const climate = useMemo(() => (weather.isFallback ? null : climateZoneFor(weather.latitude, weather.longitude, weatherSnapshot.elevationM)), [weather.isFallback, weather.latitude, weather.longitude, weatherSnapshot.elevationM]);
-  // Gestes de saison du calendrier (semer, planter, rempoter) pas encore notés ce mois-ci.
-  const seasonal = useMemo(
-    () => seasonalToDo(resolvedPlants.map((resolved) => ({ id: resolved.plant.id, entry: resolved.entry, displayName: plantDisplayName(resolved), addedAt: resolved.plant.addedAt })), events, now, { climate, now }),
-    [climate, events, now, resolvedPlants],
-  );
   // Idée du mois : une plante à semer ou planter maintenant, adaptée au balcon, qu'on n'a pas encore.
   const monthIdea = useMemo(
     () => (resolvedPlants.length === 0 ? null : seasonalSuggestions(onboarding, { month: now.getMonth() + 1, climate, ownedCatalogIds: resolvedPlants.map((resolved) => resolved.entry.id), limit: 1, seed: dayKey(now) })[0] ?? null),
     [climate, now, onboarding, resolvedPlants],
   );
 
-  const reminderPlants = useMemo(
-    () => resolvedPlants.filter(({ plant }) => reminderSettings.enabledPlantIds.length === 0 || reminderSettings.enabledPlantIds.includes(plant.id)),
-    [reminderSettings.enabledPlantIds, resolvedPlants],
-  );
-  const reminderDecisions = useMemo(() => {
-    if (!reminderSettingsLoaded || weather.isFallback) return [];
-    // La liste du jour montre toujours les conseils ; « rappels activés » ne décide que des notifications.
-    const settings = { enabled: true, skipWateringWhenRainExpected: reminderSettings.skipWateringWhenRainExpected, maxNormalRemindersPerDay: reminderSettings.maxNormalRemindersPerDay };
-    const decisions = decideReminders(reminderPlants.map((resolved) => ({ plant: careProfileFor(resolved), history: events, weather: weatherSnapshot, settings })));
-    // Une alerte par cause météo ; toutes les alertes importantes, puis au plus N conseils ordinaires (cf. spec §6).
-    return selectGroups(groupReminders(decisions), reminderSettings.maxNormalRemindersPerDay).flatMap((group) => group.decisions);
-  }, [events, reminderPlants, reminderSettings, reminderSettingsLoaded, weather.isFallback, weatherSnapshot]);
-  const visibleReminders = useMemo(() => groupReminders(withoutSnoozed(reminderDecisions, snoozes, new Date())), [reminderDecisions, snoozes]);
+  // « N'arrose pas » déjà lu sur le bandeau (et compté) : inutile de le redire par une notification.
+  const unseenDecisions = useMemo(() => {
+    const known = new Set(events.map((event) => event.id));
+    return reminderDecisions.filter((decision) => decision.cause !== "rain" || !known.has(eventForReminder(decision, now).id));
+  }, [events, now, reminderDecisions]);
 
   // Une seule notification programmée : le prochain conseil utile, à l'heure préférée ou au réveil d'un « Dans 3 h ».
   useEffect(() => {
     if (!reminderSettingsLoaded || !snoozesLoaded || !reminderSettings.enabled || weather.isFallback) return;
-    const plan = planGroupedNotification(reminderDecisions, snoozes, reminderSettings, new Date());
+    const plan = planGroupedNotification(unseenDecisions, snoozes, reminderSettings, new Date());
     // Mode vacances : aucun rappel pendant l'absence (la notification « Bon retour » est à part).
     if (plan && !awayOn(vacation, dayKey(plan.date))) void scheduleLocalReminder(plan.group, reminderSettings, plan.date);
     else void cancelBalcoReminderNotifications();
-  }, [reminderDecisions, reminderSettings, reminderSettingsLoaded, snoozes, snoozesLoaded, vacation, weather.isFallback]);
+  }, [reminderSettings, reminderSettingsLoaded, snoozes, snoozesLoaded, unseenDecisions, vacation, weather.isFallback]);
 
   const trip = vacationState(vacation, now);
   const away = trip.phase === "away";
   const tripPlan = useMemo(() => (vacation ? preparationSteps(resolvedPlants, vacation, now) : []), [now, resolvedPlants, vacation]);
 
-  const wateredToday = useMemo(() => events.filter((event) => event.type === "watering" && dayKey(new Date(event.completedAt)) === dayKey(now)).map((event) => event.plantId), [events, now]);
-  const items = useMemo(() => buildTodayList({ groups: visibleReminders, session, seasonal, decisions: reminderDecisions, wateredToday }), [reminderDecisions, seasonal, session, visibleReminders, wateredToday]);
+  const items = useMemo(() => buildTodayList({ groups: visibleGroups, plan }), [plan, visibleGroups]);
+  // Les alertes météo en bandeaux tout en haut, les gestes dans la liste (lib/garden/today.ts).
+  const { banners, rest } = useMemo(() => splitTodayList(items), [items]);
   const status = useMemo(() => balconyStatus(items, events, now), [events, items, now]);
-  const streak = useMemo(() => streakDays(events, now), [events, now]);
+  const streak = useMemo(() => followedDays(resolvedPlants, events, now), [events, now, resolvedPlants]);
   const sheetItem = items.find((item) => item.key === sheetKey) ?? null;
+  // Arrosages regroupés, gestes pas urgents repliés au-delà de 5 lignes (lib/garden/today.ts).
+  const lines = useMemo(() => layoutTodayList(rest), [rest]);
+  const [wateringOpen, setWateringOpen] = useState(false);
+  const [moreOpen, setMoreOpen] = useState(false);
+  const wateringLine = lines.find((line) => line.type === "watering") ?? null;
+  const wateringSheet = wateringOpen && wateringLine ? wateringLine : null;
   const recommendations = useMemo(() => (resolvedPlants.length === 0 ? recommendPlants(onboarding, { month: now.getMonth() + 1 }).slice(0, 3) : []), [now, onboarding, resolvedPlants.length]);
 
-  // Couleur du point d'état de chaque plante : alerte en cours, soif, en forme.
-  const plantDots = useMemo(() => {
-    const dots = new Map<string, string>();
-    for (const group of visibleReminders) {
-      const color = group.cause === "heat" ? colors.terracotta : group.cause === "thirst" ? colors.warning : colors.frost;
-      group.decisions.forEach((decision) => dots.set(decision.plantId, color));
-    }
-    return dots;
-  }, [colors.frost, colors.terracotta, colors.warning, visibleReminders]);
+  // Couleur du point d'état de chaque plante : la même que sur Balcon et la fiche (plan du jour).
+  const toneColor = (tone: PlantTone) => (tone === "weather" ? colors.frost : tone === "watch" ? colors.warning : tone === "good" ? colors.primary : colors.muted);
+  const plantDots = useMemo(() => new Map(plan.map((day) => [day.resolved.plant.id, day.status])), [plan]);
+
+  // Jour de pluie : l'arrosage évité est compté tout seul, dès que le bandeau s'affiche.
+  useEffect(() => {
+    if (!loaded || away) return;
+    const toLog = rainSavingsToLog(banners, events, new Date());
+    if (toLog.length === 0) return;
+    void (async () => {
+      for (const event of toLog) await logEvent(event);
+    })();
+  }, [away, banners, events, loaded, logEvent]);
+
+  /** « ≈ 1,2 L d'eau économisés aujourd'hui » : ce que la pluie évite d'arroser. */
+  const rainNote = (group: ReminderGroup) => {
+    const liters = group.decisions.reduce((total, decision) => {
+      const resolved = resolvedPlants.find(({ plant }) => plant.id === decision.plantId);
+      return total + (resolved ? litersPerWatering(resolved) : 0);
+    }, 0);
+    return liters > 0 ? `≈ ${formatLiters(Math.round(liters * 10) / 10)} d’eau économisés aujourd’hui, sans rien faire.` : undefined;
+  };
 
   const showToast = (text: string, onUndo?: () => void) => {
     toastId.current += 1;
@@ -214,7 +197,10 @@ export default function HomeScreen() {
   };
   const hideToast = useCallback(() => setToast(null), []);
 
-  /** Un badge, un niveau, une série ou une première récolte débloqués par ce geste : on le fête. */
+  /**
+   * Un badge, un niveau, une série ou une récolte débloqués par ce geste : plein écran pour un badge ou une
+   * 1ʳᵉ récolte (une fois par jour), sinon un mot devant le message du bas.
+   */
   const cheer = (logged: MaintenanceEvent[]) => celebrate(celebrationFor(resolvedPlants, events, [...logged, ...events.filter((event) => !logged.some((item) => item.id === event.id))]));
 
   const logAll = async (toLog: MaintenanceEvent[]) => {
@@ -226,23 +212,15 @@ export default function HomeScreen() {
     };
   };
 
-  /** « Fait » sur une alerte : le geste est noté pour chaque plante concernée, et l'alerte se tait jusqu'à demain. */
+  /** « C'est fait » sur une alerte : le geste est noté pour chaque plante concernée, et l'alerte se tait jusqu'à demain. */
   const completeAlert = async (group: ReminderGroup) => {
     const previous = snoozes;
     const moment = new Date();
-    // « N'arrose pas » suivi : l'arrosage évité est noté, pour compter l'eau économisée dans Ma semaine.
-    const skip = group.action === "skip";
     const logged = group.decisions.map((decision) => eventForReminder(decision, moment));
     const undoEvents = await logAll(logged);
     await saveReminderSnoozes(group.decisions.reduce((current, decision) => addSnooze(current, decision, "skip", reminderSettings, moment), snoozes));
     haptic();
-    const liters = group.decisions.reduce((total, decision) => {
-      const resolved = resolvedPlants.find(({ plant }) => plant.id === decision.plantId);
-      return total + (resolved ? litersPerWatering(resolved) : 0);
-    }, 0);
-    const usual = skip ? `Arrosage évité : ≈ ${formatLiters(Math.round(liters * 10) / 10)} d’eau économisés` : `C’est noté · +${POINTS_PER_GESTURE * group.decisions.length} points`;
-    cheer(logged);
-    showToast(usual, () => {
+    showToast(withCheer(cheer(logged), `C’est noté · +${POINTS_PER_GESTURE * group.decisions.length} points`), () => {
       undoEvents();
       void saveReminderSnoozes(previous);
     });
@@ -256,31 +234,40 @@ export default function HomeScreen() {
   };
 
   const toggleItem = async (item: TodayItem) => {
+    // La pluie se lit seulement : son eau économisée est déjà comptée.
+    if (isInfoBanner(item)) return;
     if (item.kind === "alert") return completeAlert(item.group);
     if (item.kind === "season") {
+      if (item.done) {
+        const id = eventForActivity(item.activity, now).id;
+        const previous = events.find((event) => event.id === id);
+        await removeEvent(id);
+        return showToast("Geste retiré de ta journée", previous ? () => void logEvent(previous) : undefined);
+      }
       const logged = [eventForActivity(item.activity, new Date())];
       const undo = await logAll(logged);
       haptic();
-      cheer(logged);
-      return showToast(`${item.title} : noté pour ce mois-ci`, undo);
+      return showToast(withCheer(cheer(logged), `${item.title} : noté pour ce mois-ci`), undo);
     }
     if (item.done) {
       const previous = events.find((event) => event.id === item.task.eventId);
+      const previousSnoozes = snoozes;
       await removeEvent(item.task.eventId);
-      return showToast("Geste retiré de ta journée", previous ? () => void logEvent(previous) : undefined);
+      // Noté depuis un conseil météo (« Arrose la menthe ») : décoché, le conseil revient.
+      if (previous) await saveReminderSnoozes(wakeSnoozeFor(snoozes, previous));
+      return showToast("Geste retiré de ta journée", previous ? () => { void logEvent(previous); void saveReminderSnoozes(previousSnoozes); } : undefined);
     }
     const logged = [eventForSessionTask(item.task, new Date())];
     const undo = await logAll(logged);
     haptic();
-    cheer(logged);
-    showToast(`${item.title} : noté · +${POINTS_PER_GESTURE} points`, undo);
+    showToast(withCheer(cheer(logged), `${item.title} : noté · +${POINTS_PER_GESTURE} points`), undo);
   };
 
   const activateReminders = async () => {
     const nextSettings = { ...reminderSettings, enabled: true };
     setReminderSettings(nextSettings);
     await saveLocalReminderSettings(nextSettings);
-    const plan = planGroupedNotification(reminderDecisions, snoozes, nextSettings, new Date());
+    const plan = planGroupedNotification(unseenDecisions, snoozes, nextSettings, new Date());
     if (plan && !awayOn(vacation, dayKey(plan.date))) await scheduleLocalReminder(plan.group, nextSettings, plan.date);
     showToast(`Rappels activés : Balco te préviendra vers ${nextSettings.preferredHour} h ${String(nextSettings.preferredMinute).padStart(2, "0")}`);
   };
@@ -298,6 +285,19 @@ export default function HomeScreen() {
   };
 
   const closeSheet = () => setSheetKey(null);
+  const itemRow = (item: TodayItem) => (
+    <TodayRow
+      key={item.key}
+      icon={item.icon}
+      tone={item.tone}
+      title={item.title}
+      subtitle={item.done ? doneSubtitle(item, events) : item.subtitle}
+      done={item.done}
+      picture={seasonPicture(item)}
+      onToggle={() => void toggleItem(item)}
+      onOpen={() => setSheetKey(item.key)}
+    />
+  );
   const evening = now.getHours() >= 17;
   const metaLine = weather.isFallback
     ? weather.city
@@ -335,10 +335,10 @@ export default function HomeScreen() {
         {simulation.scenario !== "none" && (
           <View style={[styles.simulation, { backgroundColor: colors.surface }]}>
             <Text style={[styles.simulationTitle, { color: colors.foreground }]}>🧪 Simulation : {scenarioLabel(simulation.scenario).toLowerCase()}</Text>
-            <Text style={[styles.small, { color: colors.muted }]}>{weather.isFallback ? "La météo réelle n’a pas encore chargé : la simulation s’appliquera dès qu’elle sera là." : reminderDecisions.length === 0 ? "Aucune alerte pour ce scénario : vérifie tes plantes et leurs derniers arrosages." : visibleReminders.length === 0 ? "Alerte simulée déjà traitée aujourd’hui." : "Les alertes ci-dessous sont simulées."}</Text>
+            <Text style={[styles.small, { color: colors.muted }]}>{weather.isFallback ? "La météo réelle n’a pas encore chargé : la simulation s’appliquera dès qu’elle sera là." : reminderDecisions.length === 0 ? "Aucune alerte pour ce scénario : vérifie tes plantes et leurs derniers arrosages." : visibleGroups.length === 0 ? "Alerte simulée déjà traitée aujourd’hui." : "Les alertes ci-dessous sont simulées."}</Text>
             <View style={styles.inlineActions}>
-              {notificationsUnavailableReason === null && visibleReminders.length > 0 && (
-                <Pressable accessibilityRole="button" onPress={() => void sendReminderPreview(visibleReminders[0]).then((result) => setPreviewStatus(result === "sent" ? "sent" : "denied"))} style={({ pressed }) => [styles.pill, { backgroundColor: colors.foreground }, pressed && styles.pressed]}>
+              {notificationsUnavailableReason === null && visibleGroups.length > 0 && (
+                <Pressable accessibilityRole="button" onPress={() => void sendReminderPreview(visibleGroups[0]).then((result) => setPreviewStatus(result === "sent" ? "sent" : "denied"))} style={({ pressed }) => [styles.pill, { backgroundColor: colors.foreground }, pressed && styles.pressed]}>
                   <Text style={[styles.pillText, { color: colors.background }]}>Me notifier dans 5 s</Text>
                 </Pressable>
               )}
@@ -350,6 +350,19 @@ export default function HomeScreen() {
             {previewStatus === "denied" && <Text style={[styles.small, { color: colors.error }]}>Les notifications sont bloquées : autorise-les pour Balco dans les réglages du téléphone.</Text>}
           </View>
         )}
+
+        {!away && banners.map((banner) => (
+          <WeatherBanner
+            key={banner.key}
+            icon={banner.icon}
+            tone={banner.tone}
+            title={banner.title}
+            subtitle={banner.subtitle}
+            note={isInfoBanner(banner) ? rainNote(banner.group) : undefined}
+            onDone={isInfoBanner(banner) ? undefined : () => void completeAlert(banner.group)}
+            onOpen={() => setSheetKey(banner.key)}
+          />
+        ))}
 
         {loaded && hasPlants && !away && (
           <Pressable accessibilityRole="button" accessibilityLabel={`Ton balcon, ${status.label}`} onPress={() => router.push("/(tabs)/balcony")} style={({ pressed }) => [styles.status, styles.glass, pressed && styles.pressed]}>
@@ -392,22 +405,20 @@ export default function HomeScreen() {
           </FadeIn>
         )}
 
-        {items.length > 0 && !away && (
+        {lines.length > 0 && !away && (
           <View>
-            {items.map((item) => (
-              <TodayRow
-                key={item.key}
-                icon={item.icon}
-                tone={item.tone}
-                title={item.title}
-                subtitle={item.done ? doneSubtitle(item, events) : item.subtitle}
-                done={item.done}
-                checkLabel={item.kind === "alert" && item.group.action === "skip" ? "Compris" : undefined}
-                picture={seasonPicture(item)}
-                onToggle={() => void toggleItem(item)}
-                onOpen={() => setSheetKey(item.key)}
-              />
-            ))}
+            {lines.map((line) => {
+              if (line.type === "item") return itemRow(line.item);
+              if (line.type === "watering") {
+                return <TodayRow key={line.key} icon="💧" tone="water" title={line.title} subtitle={line.subtitle} done={line.done} onOpen={() => setWateringOpen(true)} />;
+              }
+              return (
+                <View key={line.key}>
+                  <TodayRow icon="🌿" tone="care" title={line.title} subtitle={moreOpen ? "Touche pour les replier" : line.subtitle} done={false} onOpen={() => setMoreOpen((open) => !open)} />
+                  {moreOpen && line.items.map(itemRow)}
+                </View>
+              );
+            })}
           </View>
         )}
 
@@ -446,10 +457,10 @@ export default function HomeScreen() {
             </View>
             <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.shelfRow}>
               {resolvedPlants.map((resolved) => {
-                const tone = plantStatus(resolved, events, now).tone;
-                const dot = plantDots.get(resolved.plant.id) ?? (tone === "good" ? colors.primary : tone === "watch" ? colors.warning : colors.border);
+                const state = plantDots.get(resolved.plant.id) ?? { tone: "new" as const, label: "Nouvelle" };
+                const dot = toneColor(state.tone);
                 return (
-                  <Pressable key={resolved.plant.id} accessibilityRole="button" accessibilityLabel={plantDisplayName(resolved)} onPress={() => router.push({ pathname: "/garden/[id]", params: { id: resolved.plant.id } })} style={({ pressed }) => [styles.plant, pressed && styles.pressed]}>
+                  <Pressable key={resolved.plant.id} accessibilityRole="button" accessibilityLabel={`${plantDisplayName(resolved)}, ${state.label}`} onPress={() => router.push({ pathname: "/garden/[id]", params: { id: resolved.plant.id } })} style={({ pressed }) => [styles.plant, pressed && styles.pressed]}>
                     <View>
                       <PlantPicture resolved={resolved} style={styles.plantBubble} />
                       <View style={[styles.plantDot, { backgroundColor: dot, borderColor: colors.background }]} />
@@ -494,8 +505,41 @@ export default function HomeScreen() {
         {sheetItem && <SheetContent item={sheetItem} events={events} onClose={closeSheet} onToggle={() => { closeSheet(); void toggleItem(sheetItem); }} onSnooze={(kind) => { closeSheet(); if (sheetItem.kind === "alert") void snoozeAlert(sheetItem.group, kind); }} onOpenPlant={(id) => { closeSheet(); router.push({ pathname: "/garden/[id]", params: { id } }); }} onOpenCalendar={() => { closeSheet(); router.push("/(tabs)/calendar"); }} />}
       </BottomSheet>
 
-      <UndoToast message={toast} onDone={hideToast} />
-      {celebration}
+      <BottomSheet
+        visible={wateringSheet !== null}
+        onClose={() => setWateringOpen(false)}
+        overlay={<><UndoToast message={toast} onDone={hideToast} />{celebration}</>}
+      >
+        {wateringSheet && (
+          <View style={styles.sheet}>
+            <Text style={[styles.sheetKind, { color: colors.primary }]}>💧  {wateringSheet.items.filter((item) => item.done).length} sur {wateringSheet.items.length} faites</Text>
+            <Text style={[styles.sheetTitle, { color: colors.foreground }]}>{wateringSheet.title}</Text>
+            <Text style={[styles.sheetBody, { color: colors.muted }]}>Enfonce ton doigt dans la terre de chaque pot : si elle est sèche, arrose au pied et coche. Touche une ligne pour le détail.</Text>
+            <View>
+              {wateringSheet.items.map((item) => (
+                <TodayRow
+                  key={`sheet-${item.key}`}
+                  icon={item.icon}
+                  tone={item.tone}
+                  title={item.title}
+                  subtitle={item.done ? doneSubtitle(item, events) : item.subtitle}
+                  done={item.done}
+                  onToggle={() => void toggleItem(item)}
+                  onOpen={() => {
+                    // Le détail s'ouvre une fois la feuille des arrosages repliée.
+                    setWateringOpen(false);
+                    setTimeout(() => setSheetKey(item.key), 320);
+                  }}
+                />
+              ))}
+            </View>
+          </View>
+        )}
+      </BottomSheet>
+
+      {/* Pendant que la feuille des arrosages est ouverte, ils s'affichent par-dessus elle. */}
+      {wateringSheet === null && <UndoToast message={toast} onDone={hideToast} />}
+      {wateringSheet === null && celebration}
     </ScreenContainer>
   );
 }

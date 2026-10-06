@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { activityGroupSummary, activityGroupTitle, calendarActivities, groupActivities, upcomingMonths } from "../lib/plants/calendar";
+import { activityDoneLabel, activityDoneSoFar, activityGroupSummary, activityGroupTitle, calendarActivities, groupActivities, upcomingMonths } from "../lib/plants/calendar";
 import { getCatalogPlant } from "../lib/plants/catalog";
 
 const subject = (catalogId: string, id = catalogId) => ({ id, entry: getCatalogPlant(catalogId)!, displayName: getCatalogPlant(catalogId)!.name });
@@ -177,3 +177,22 @@ describe("plantation des plantes déjà sur le balcon", () => {
   });
 });
 
+
+describe("Saisons : ce qui est déjà fait", () => {
+  const now = new Date(2026, 9, 5, 18);
+  const harvest = calendarActivities([subject("mint", "mint-1")], 10, { now }).find((activity) => activity.kind === "harvest")!;
+  const event = (type: "harvest" | "repotting" | "watering", date: Date) => ({ id: `${type}-${date.getTime()}`, plantId: "mint-1", type, completedAt: date.toISOString(), source: "daily_task" as const });
+
+  it("voit une récolte faite aujourd'hui sur Aujourd'hui, pas celle d'hier", () => {
+    expect(activityDoneSoFar(harvest, [event("harvest", new Date(2026, 9, 5, 9))], now)).toBe(true);
+    expect(activityDoneSoFar(harvest, [event("harvest", new Date(2026, 9, 4, 9))], now)).toBe(false);
+    expect(activityDoneSoFar(harvest, [event("watering", new Date(2026, 9, 5, 9))], now)).toBe(false);
+    expect(activityDoneLabel(harvest)).toBe("✓ Faite aujourd’hui");
+  });
+
+  it("voit un semis ou un rempotage fait ce mois-ci", () => {
+    const sow = calendarActivities([subject("basil", "basil-1")], 4, { now: new Date(2026, 3, 10) }).find((activity) => activity.kind === "sow")!;
+    expect(activityDoneSoFar(sow, [eventForActivity(sow, new Date(2026, 3, 2))], new Date(2026, 3, 20))).toBe(true);
+    expect(activityDoneLabel(sow)).toBe("✓ Fait ce mois-ci");
+  });
+});

@@ -5,7 +5,7 @@
  */
 import { MONTH_LONG, type Month } from "../plants/catalog";
 import type { MaintenanceEvent } from "../reminders/reminder-engine";
-import { computeBadges, computeProgress, computeStats, dayKey, daysBetween, plantDisplayName, streakDays, type ResolvedPlant } from "./garden-logic";
+import { computeBadges, computeProgress, computeStats, dayKey, daysBetween, followedDays, isAvoidedWatering, plantDisplayName, type ResolvedPlant } from "./garden-logic";
 import type { PlantPhoto } from "./photos";
 
 const DAY_MS = 86_400_000;
@@ -14,10 +14,7 @@ const WATERING_SHARE_OF_POT = 0.2;
 
 // --- Eau économisée -------------------------------------------------------------
 
-/** Un « N'arrose pas, il va pleuvoir » suivi : l'arrosage évité est noté comme une observation. */
-export function isAvoidedWatering(event: MaintenanceEvent) {
-  return event.source === "reminder" && event.type === "observation" && /^N[’']arrose pas/u.test(event.note ?? "");
-}
+export { isAvoidedWatering } from "./garden-logic";
 
 export function litersPerWatering(resolved: ResolvedPlant) {
   return Math.round(resolved.entry.potLiters * WATERING_SHARE_OF_POT * 10) / 10;
@@ -167,11 +164,13 @@ export function sinceLabel(days: number) {
 
 const STREAK_STEPS = [3, 7, 14, 30, 60, 100];
 
-export type Celebration = { kind: "badge" | "level" | "streak" | "harvest"; emoji: string; title: string; detail: string };
+/** `big` : fête en plein écran (nouveau badge, 1ʳᵉ récolte d'une plante) ; sinon, un mot dans le message du bas. */
+export type Celebration = { kind: "badge" | "level" | "streak" | "harvest"; emoji: string; title: string; detail: string; big: boolean };
 
 /**
- * Ce qu'un geste vient de débloquer, pour le fêter tout de suite en grand : un badge, un niveau,
- * une série de jours, une récolte (toujours un beau moment). Rien sinon (le message habituel suffit).
+ * Ce qu'un geste vient de débloquer : un badge, un niveau, une série de jours, une récolte. Seuls un
+ * nouveau badge et la première récolte d'une plante se fêtent en grand ; le reste se dit en un mot dans
+ * le message du bas (la ligne cochée a déjà son animation). Rien sinon.
  */
 export function celebrationFor(plants: ResolvedPlant[], before: MaintenanceEvent[], after: MaintenanceEvent[], now = new Date()): Celebration | null {
   const beforeStats = computeStats(plants, before, now);
@@ -179,17 +178,16 @@ export function celebrationFor(plants: ResolvedPlant[], before: MaintenanceEvent
   const beforeBadges = computeBadges(beforeStats);
   const afterBadges = computeBadges(afterStats);
   const badge = afterBadges.find((item, index) => item.unlocked && !beforeBadges[index].unlocked);
-  if (badge) return { kind: "badge", emoji: "🏅", title: `Nouveau badge : ${badge.title}`, detail: `${badge.detail} : c’est fait, bravo !` };
+  if (badge) return { kind: "badge", emoji: "🏅", title: `Nouveau badge : ${badge.title}`, detail: `${badge.detail} : c’est fait, bravo !`, big: true };
 
   const beforeLevel = computeProgress(beforeStats, beforeBadges);
   const afterLevel = computeProgress(afterStats, afterBadges);
-  if (afterLevel.level > beforeLevel.level) return { kind: "level", emoji: "🌟", title: `Niveau ${afterLevel.level}`, detail: `Te voilà ${afterLevel.levelTitle}. Ton balcon te dit merci !` };
+  if (afterLevel.level > beforeLevel.level) return { kind: "level", emoji: "🌟", title: `Niveau ${afterLevel.level}`, detail: `Te voilà ${afterLevel.levelTitle}. Ton balcon te dit merci !`, big: false };
 
-  const ids = new Set(plants.map(({ plant }) => plant.id));
-  const streakBefore = streakDays(before.filter((event) => ids.has(event.plantId)), now);
-  const streakAfter = streakDays(after.filter((event) => ids.has(event.plantId)), now);
+  const streakBefore = followedDays(plants, before, now);
+  const streakAfter = followedDays(plants, after, now);
   const step = STREAK_STEPS.find((days) => streakAfter >= days && streakBefore < days);
-  if (step) return { kind: "streak", emoji: "🔥", title: `${step} jours de suite`, detail: "Ton balcon adore ta régularité." };
+  if (step) return { kind: "streak", emoji: "🔥", title: `${step} jours de suite`, detail: "Ton balcon adore ta régularité.", big: false };
 
   const known = new Set(before.map((event) => event.id));
   for (const event of after) {
@@ -199,10 +197,25 @@ export function celebrationFor(plants: ResolvedPlant[], before: MaintenanceEvent
     const name = plantDisplayName(resolved);
     const first = !before.some((old) => old.plantId === event.plantId && old.type === "harvest");
     return first
-      ? { kind: "harvest", emoji: "🧺", title: `Première récolte de ${name}`, detail: "Le plus beau moment du balcon. Bravo !" }
-      : { kind: "harvest", emoji: "🧺", title: `Récolte de ${name}`, detail: "Bon appétit ! Récolter souvent l’encourage à produire." };
+      ? { kind: "harvest", emoji: "🧺", title: `Première récolte de ${name}`, detail: "Le plus beau moment du balcon. Bravo !", big: true }
+      : { kind: "harvest", emoji: "🧺", title: `Récolte de ${name}`, detail: "Bon appétit ! Récolter souvent l’encourage à produire.", big: false };
   }
   return null;
+}
+
+/**
+ * Comment fêter : en plein écran au plus une fois par jour (`lastBigDay` : le jour de la dernière grande
+ * fête), sinon un mot devant le message du bas (« 🔥 3 jours de suite »). Rien à fêter : rien.
+ */
+export function celebrationStyle(celebration: Celebration | null, lastBigDay: string | null, now = new Date()): { big: boolean; line: string | null } {
+  if (!celebration) return { big: false, line: null };
+  if (celebration.big && lastBigDay !== dayKey(now)) return { big: true, line: null };
+  return { big: false, line: `${celebration.emoji} ${celebration.title}` };
+}
+
+/** « 🔥 3 jours de suite · Arrose le thym : noté · +4 points » : le mot de la fête devant le message habituel. */
+export function withCheer(line: string | null, text: string) {
+  return line ? `${line} · ${text}` : text;
 }
 
 /** Pour les tests et l'affichage : le jour d'un jalon. */

@@ -91,8 +91,22 @@ describe("offre gratuit / Balco+ (lib/plans.ts)", () => {
   });
 
   it("écrit le message de quota au singulier pour une seule analyse", () => {
-    expect(quotaMessage("scan", 1, "2026-11-01T00:00:00.000Z", "free")).toBe("Tu as utilisé ton analyse offerte ce mois-ci. Le compteur repart le 1er novembre.");
-    expect(quotaMessage("chat", 5, "2026-11-01T00:00:00.000Z", "free")).toBe("Tu as utilisé tes 5 questions offertes ce mois-ci. Le compteur repart le 1er novembre.");
+    expect(quotaMessage("scan", 1, "2026-11-01T00:00:00.000Z", "free")).toBe("Tu as utilisé ton analyse offerte ce mois-ci. Le compteur repart le 1er novembre. Avec Balco+, 20 photos analysées chaque mois.");
+    expect(quotaMessage("chat", 5, "2026-11-01T00:00:00.000Z", "free")).toBe("Tu as utilisé tes 5 questions offertes ce mois-ci. Le compteur repart le 1er novembre. Avec Balco+, 100 questions à Nora chaque mois.");
     expect(quotaMessage("chat", 100, "2026-11-01T00:00:00.000Z", "plus")).toBe("Tu as utilisé tes 100 questions ce mois-ci. Le compteur repart le 1er novembre.");
+  });
+});
+
+describe("offre Balco+ dite en bénéfices", () => {
+  it("parle de ce que la personne y gagne, avec les vrais quotas", async () => {
+    const { freeBenefits, plusBenefits, plusQuotaHint, PLANS } = await import("../lib/plans");
+    expect(plusBenefits()).toEqual([
+      "Prévenu du gel et de l’orage, même application fermée",
+      "Ton balcon sur ton téléphone et ta tablette, toujours à jour",
+      `${PLANS.plus.aiQuota.scan} photos analysées et ${PLANS.plus.aiQuota.chat} questions à Nora chaque mois`,
+    ]);
+    expect(freeBenefits()[2]).toBe("1 photo analysée et 5 questions à Nora chaque mois");
+    expect(plusQuotaHint("scan")).toBe("Avec Balco+, 20 photos analysées chaque mois.");
+    expect(plusQuotaHint("chat")).toBe("Avec Balco+, 100 questions à Nora chaque mois.");
   });
 });

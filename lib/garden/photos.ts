@@ -5,7 +5,7 @@
  */
 import { SUNLIGHT_LABELS, type CatalogPlant, type Sunlight } from "../plants/catalog";
 import type { MaintenanceEvent } from "../reminders/reminder-engine";
-import { buildDailySession, dayKey, daysBetween, eventsForPlant, historyDayLabel, relativeDay, type ResolvedPlant, type SessionTask } from "./garden-logic";
+import { dayKey, daysBetween, eventsForPlant, historyDayLabel, relativeDay, type ResolvedPlant } from "./garden-logic";
 
 export type PlantPhoto = {
   id: string;
@@ -80,14 +80,6 @@ export function sunlightLabel(entry: CatalogPlant) {
   const labels = order.filter((value) => entry.sunlight.includes(value)).map((value) => SUNLIGHT_LABELS[value]);
   if (labels.length === 0 || labels.length === order.length) return "Toute exposition";
   return [labels[0], ...labels.slice(1).map((label) => label.toLowerCase())].join(" ou ");
-}
-
-/** L'état d'une plante en deux mots, à côté de son point de couleur. */
-export const STATUS_LABELS = { good: "En forme", watch: "À surveiller", new: "Nouvelle" } as const;
-
-/** Le prochain geste utile pour cette plante aujourd'hui (le même que sur l'accueil), s'il y en a un. */
-export function nextGesture(resolved: ResolvedPlant, events: MaintenanceEvent[], now = new Date()): SessionTask | null {
-  return buildDailySession([resolved], events, now, 1)[0] ?? null;
 }
 
 export type JournalDay = { key: string; label: string; events: MaintenanceEvent[]; photos: PlantPhoto[] };

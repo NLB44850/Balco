@@ -48,6 +48,8 @@ type Seed = {
   plants: string[];
   /** Arrosage de toutes les plantes il y a N jours (absent : jamais arrosées dans l'app). */
   wateredDaysAgo?: number;
+  /** Arrosages par plante, en jours passés (« thyme »: [2, 8]), pour une série par exemple. */
+  waterings?: Record<string, number[]>;
   /** Gestes déjà notés, en jours passés (pour une série, par exemple). */
   pastGestureDays?: number[];
   scenario?: Scenario;
@@ -65,6 +67,7 @@ export async function seedBalcony(page: Page, seed: Seed) {
   const plants = seed.plants.map((catalogId, index) => ({ id: `${catalogId}-e2e`, catalogId, addedAt: new Date(now - (30 - index) * DAY_MS).toISOString() }));
   const events = [
     ...(seed.wateredDaysAgo === undefined ? [] : plants.map((plant) => ({ id: `w-${plant.id}`, plantId: plant.id, type: "watering", completedAt: new Date(now - seed.wateredDaysAgo! * DAY_MS).toISOString(), source: "manual" }))),
+    ...Object.entries(seed.waterings ?? {}).flatMap(([catalogId, days]) => days.map((days) => ({ id: `w-${catalogId}-${days}`, plantId: `${catalogId}-e2e`, type: "watering", completedAt: new Date(now - days * DAY_MS).toISOString(), source: "manual" }))),
     ...(seed.pastGestureDays ?? []).map((days) => ({ id: `past-${days}`, plantId: plants[0].id, type: "observation", completedAt: new Date(now - days * DAY_MS).toISOString(), source: "manual" })),
   ];
   const storage: Record<string, string> = {
@@ -92,6 +95,11 @@ export async function open(page: Page, url: string, ready: string | RegExp) {
 /** Le rond à cocher d'une ligne de la liste (Aujourd'hui, Saisons), retrouvé par le titre de la ligne. */
 export function checkboxOf(page: Page, title: string | RegExp) {
   return page.getByRole("checkbox", { name: title }).first();
+}
+
+/** La ligne qui regroupe les arrosages du jour (« Vérifie la terre de 3 plantes »), dès qu'il y en a deux. */
+export function wateringGroup(page: Page) {
+  return page.getByRole("button", { name: /^Vérifie la terre de \d+ plantes, détail$/ }).filter({ visible: true });
 }
 
 /** Les erreurs JavaScript de la page : un écran qui plante fait échouer le test. */

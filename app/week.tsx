@@ -41,7 +41,8 @@ export default function WeekScreen() {
     { value: summary.streak, label: summary.streak > 1 ? "jours de suite" : "jour de suite", hint: summary.streak >= 3 ? "Belle régularité" : "" },
     { value: summary.harvests, label: summary.harvests > 1 ? "récoltes" : "récolte", hint: "" },
     { value: summary.photos, label: summary.photos > 1 ? "photos" : "photo", hint: "" },
-  ];
+    // Pas de « 0 photo » : la case n'apparaît qu'une fois une photo prise cette semaine.
+  ].filter((tile) => tile.label !== "photo" || tile.value > 0);
 
   return (
     <LightScreen bottom>
@@ -77,6 +78,7 @@ export default function WeekScreen() {
             </FadeIn>
           ))}
         </View>
+        <Text style={[styles.text, { color: colors.muted }]}>Jours de suite : un jour compte quand chaque plante qui avait soif a été arrosée (ou que la pluie s’en est chargée), ou quand il n’y avait rien à arroser.</Text>
         {summary.weatherTips > 0 && (
           <Text style={[styles.text, { color: colors.muted }]}>🌦  {plural(summary.weatherTips, "conseil")} météo suivi{summary.weatherTips > 1 ? "s" : ""} : tu as agi au bon moment.</Text>
         )}

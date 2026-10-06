@@ -9,6 +9,7 @@ export const themeColors: {
   warning: { light: string; dark: string };
   error: { light: string; dark: string };
   terracotta: { light: string; dark: string };
+  heatSoft: { light: string; dark: string };
   cream: { light: string; dark: string };
   leaf: { light: string; dark: string };
   sun: { light: string; dark: string };

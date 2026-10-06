@@ -1,6 +1,6 @@
 import { expect, test } from "@playwright/test";
 
-import { checkboxOf, mockWeather, open, seedBalcony, trackErrors } from "./helpers";
+import { checkboxOf, mockWeather, open, seedBalcony, trackErrors, wateringGroup } from "./helpers";
 
 /** Le parcours de tous les jours : arriver, créer son balcon, cocher, annuler, ajouter une plante. */
 
@@ -54,15 +54,32 @@ test("cocher un geste, puis « Annuler »", async ({ page }) => {
   await expect(checkboxOf(page, `Marquer comme fait : ${name}`)).toBeVisible();
 });
 
-test("une série de 3 jours se fête en grand", async ({ page }) => {
+test("une série de 3 jours se dit dans le message du bas, sans plein écran", async ({ page }) => {
   await mockWeather(page);
-  await seedBalcony(page, { plants: ["basil", "mint"], wateredDaysAgo: 1, pastGestureDays: [1, 2] });
+  // Thym arrosé il y a 2 jours (et 8), ciboulette il y a 3 jours : hier et avant-hier sont des jours
+  // suivis, il y a 3 jours le thym avait soif. Aujourd'hui, seule la ciboulette est à arroser.
+  await seedBalcony(page, { plants: ["thyme", "chives"], waterings: { thyme: [2, 8], chives: [3] } });
   await open(page, "/", "Tes plantes");
-  await page.getByRole("checkbox", { name: /^Marquer comme fait : / }).first().click();
-  await expect(page.getByText("3 jours de suite", { exact: true })).toBeVisible();
-  await expect(page.getByText("Ton balcon adore ta régularité.")).toBeVisible();
-  // Le message habituel reste en bas, avec « Annuler ».
+  await page.getByRole("checkbox", { name: /^Marquer comme fait : Arrose la ciboulette/ }).click();
+  await expect(page.getByText(/^🔥 3 jours de suite · /u)).toBeVisible();
+  await expect(page.getByRole("button", { name: /\. Fermer$/ })).toHaveCount(0);
+  // Le message garde son « Annuler ».
   await expect(page.getByRole("button", { name: "Annuler" })).toBeVisible();
+});
+
+test("une 1ʳᵉ récolte se fête en grand, une seule fois par jour", async ({ page }) => {
+  await mockWeather(page);
+  await seedBalcony(page, { plants: ["mint", "thyme"], wateredDaysAgo: 0 });
+  await open(page, "/", "Tes plantes");
+  await page.getByRole("checkbox", { name: /^Marquer comme fait : Récolte la menthe/ }).click();
+  const party = page.getByRole("button", { name: /^(Nouveau badge|Première récolte).*\. Fermer$/u });
+  await expect(party).toBeVisible();
+  await party.click();
+  await expect(party).toHaveCount(0);
+  // La 2ᵉ grande occasion du jour se dit dans le message du bas.
+  await page.getByRole("checkbox", { name: /^Marquer comme fait : Récolte le thym/ }).click();
+  await expect(page.getByText(/^(🧺|🏅) .+ · Récolte le thym : noté/u)).toBeVisible();
+  await expect(page.getByRole("button", { name: /\. Fermer$/ })).toHaveCount(0);
 });
 
 test("catalogue : ajouter une plante puis ouvrir sa fiche", async ({ page }) => {
@@ -153,26 +170,54 @@ test("suggestions de saison : idée du mois sur Aujourd'hui, carte de Saisons, c
   expect(errors).toEqual([]);
 });
 
-test("Saisons : gestes rangés par type, cochés dans la feuille, suggestions aussi par saison", async ({ page }) => {
+test("Saisons : calendrier à lire, rangé par type ; les gestes du mois se font sur Aujourd'hui", async ({ page }) => {
   const errors = trackErrors(page);
   await mockWeather(page);
   await seedBalcony(page, { plants: ["basil", "mint", "thyme", "cherry-tomato", "strawberry", "parsley", "chives"], wateredDaysAgo: 1 });
   await open(page, "/calendar", /^À semer ou planter en /);
+  await expect(page.getByText(/^Ton calendrier : ce qui t’attend dans les prochains mois\. Les gestes de ce mois se font depuis Aujourd’hui\.$/)).toBeVisible();
+  // Rien ne se coche dans Saisons.
+  await expect(page.getByRole("checkbox").filter({ visible: true })).toHaveCount(0);
 
-  // Une ligne par type de geste (« À récolter · 5 plantes »), qui ouvre la liste des plantes.
+  // Une ligne par type de geste (« À récolter · 5 plantes »), qui ouvre la liste des plantes, à lire.
   const group = page.getByRole("button", { name: /^(À récolter|Entretien|Engrais|À rempoter|À planter|À semer) · \d+ (plantes|gestes), détail$/ }).first();
   await expect(group).toBeVisible();
   await group.click();
-  await expect(page.getByText(/^0 sur \d+ fait$/)).toBeVisible();
-  await page.getByRole("checkbox", { name: /^Noter comme fait : / }).first().click();
-  await expect(page.getByText(/^1 sur \d+ fait$/)).toBeVisible();
-  // Le message « Annuler » s'affiche par-dessus la feuille.
-  await expect(page.getByText(/ : noté$/)).toBeVisible();
-  await page.getByRole("button", { name: "Fermer la fiche" }).click();
-  await expect(page.getByText(/^1 sur \d+ fait · /).first()).toBeVisible();
+  await expect(page.getByText(/^Ces gestes se font depuis Aujourd’hui, plante par plante\./)).toBeVisible();
+  await expect(page.getByRole("checkbox").filter({ visible: true })).toHaveCount(0);
 
-  // En vue par saison, les suggestions sont là aussi.
+  // Le détail d'un geste du mois renvoie vers Aujourd'hui.
+  await page.getByRole("button", { name: /, détail$/ }).filter({ visible: true }).last().click();
+  await page.getByRole("button", { name: "Le faire sur Aujourd’hui" }).click();
+  await expect(page.getByText("Tes plantes")).toBeVisible();
+
+  // Un mois à venir se lit aussi, sans bouton.
+  await page.getByRole("tab", { name: /Saisons/ }).click();
   await page.getByRole("button", { name: "Par saison" }).click();
   await expect(page.getByText(/^À semer ou planter (au|en) /)).toBeVisible();
   expect(errors).toEqual([]);
+});
+
+test("Aujourd'hui : une fois la plante arrosée, sa récolte du mois prend la place ; décocher se voit partout", async ({ page }) => {
+  await mockWeather(page);
+  await seedBalcony(page, { plants: ["mint"], wateredDaysAgo: 3 });
+  await open(page, "/", "Tes plantes");
+  await checkboxOf(page, /^Marquer comme fait : Arrose la menthe/).click();
+  await expect(checkboxOf(page, /^Marquer comme fait : Récolte la menthe/)).toBeVisible();
+  await expect(checkboxOf(page, /^Annuler ce geste : Arrose la menthe/)).toBeVisible();
+
+  // Récoltée sur Aujourd'hui : Saisons le montre (sans rien à cocher).
+  await checkboxOf(page, /^Marquer comme fait : Récolte la menthe/).click();
+  await page.getByRole("tab", { name: /Saisons/ }).click();
+  await expect(page.getByText("✓ Faite aujourd’hui").filter({ visible: true })).toBeVisible();
+
+  // Décocher sur Aujourd'hui se voit partout : la récolte revient, puis l'arrosage revient.
+  await page.getByRole("tab", { name: /Aujourd’hui/ }).click();
+  await checkboxOf(page, /^Annuler ce geste : Récolte la menthe/).click();
+  await expect(checkboxOf(page, /^Marquer comme fait : Récolte la menthe/)).toBeVisible();
+  await page.getByRole("tab", { name: /Saisons/ }).click();
+  await expect(page.getByText("✓ Faite aujourd’hui").filter({ visible: true })).toHaveCount(0);
+  await page.getByRole("tab", { name: /Aujourd’hui/ }).click();
+  await checkboxOf(page, /^Annuler ce geste : Arrose la menthe/).click();
+  await expect(checkboxOf(page, /^Marquer comme fait : Arrose la menthe/)).toBeVisible();
 });

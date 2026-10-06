@@ -75,6 +75,16 @@ export async function reserve(userId: number, plan: Plan, kind: AiKind, now = ne
   return result.id;
 }
 
+/** Les analyses sans compte sont notées sous ce numéro : elles comptent dans le budget, pas dans un quota. */
+export const GUEST_USER_ID = 0;
+
+/** Note une analyse sans compte en cours (son coût s'ajoutera au budget du mois une fois soldée). */
+export async function reserveGuest(kind: AiKind, now = new Date()) {
+  const db = await requireDb();
+  const [result] = await db.insert(aiRequests).values({ userId: GUEST_USER_ID, kind, status: "pending", createdAt: now }).$returningId();
+  return result.id;
+}
+
 export type Usage = { model: string; inputTokens: number; outputTokens: number; cacheReadTokens: number; cacheWriteTokens: number };
 
 export async function settle(requestId: number, status: "ok" | "refused" | "error", usage?: Usage) {

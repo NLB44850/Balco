@@ -33,6 +33,8 @@ export type PlantCareProfile = {
   frostSensitive?: boolean;
   preferredWateringWindows?: Array<"morning" | "evening">;
   allowedTaskTypes?: MaintenanceTaskType[];
+  /** Profondeur à laquelle tâter la terre avant d'arroser (2 cm par défaut). */
+  soilCheckCm?: number;
 };
 
 export type WeatherSnapshot = {
@@ -227,7 +229,7 @@ function wateringDecision(
   const lastWatering = lastEventOfType(history, plant.plantId, "watering");
   const name = plant.label ?? plant.displayName;
   const elapsed = lastWatering ? hoursBetween(lastWatering, now) : Infinity;
-  // Jamais arrosée dans l'app : l'accueil propose « arrose si besoin », donc la pluie annoncée le
+  // Jamais arrosée dans l'app : l'accueil propose déjà d'arroser, donc la pluie annoncée le
   // remplace par « n'arrose pas ». En revanche, sans historique, Balco n'invente pas de soif.
   const due = elapsed >= plant.wateringIntervalHours;
   const rainMm = weather.next12h.precipitationMm;
@@ -250,7 +252,7 @@ function wateringDecision(
   }
 
   // Forte chaleur : alerte aussi pour une plante jamais arrosée dans l'app (comme pour la pluie),
-  // car l'accueil propose déjà « arrose si besoin » et la chaleur rend ce geste pressant.
+  // car l'accueil propose déjà d'arroser et la chaleur rend ce geste pressant.
   if (hot && elapsed >= 24) {
     const since = lastWatering ? `Dernier arrosage il y a ${formatElapsed(elapsed)}. ` : "";
     return {
@@ -273,8 +275,9 @@ function wateringDecision(
       priority: "normal",
       action: "observe",
       cause: "thirst",
-      title: `Arrose ${name} si la terre est sèche`,
-      body: `Dernier arrosage il y a ${formatElapsed(elapsed)} et pas de pluie prévue : arrose si la terre est sèche sur 2 cm.`,
+      // Le titre dit l'action ; le texte dit comment vérifier, en une phrase concrète.
+      title: `Arrose ${name}`,
+      body: `Dernier arrosage il y a ${formatElapsed(elapsed)}, pas de pluie prévue. Enfonce ton doigt : sèche sur ${plant.soilCheckCm ?? 2} cm ? Arrose.`,
       reason: `Délai de ${plant.wateringIntervalHours} h dépassé, ${round(rainMm)} mm prévus d’ici 12 h.`,
     };
   }

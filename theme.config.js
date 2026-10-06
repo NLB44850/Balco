@@ -15,6 +15,7 @@ const themeColors = {
   error: { light: '#C0452F', dark: '#F09B87' },
   // Chaleur et touches chaudes (anciennement terre cuite).
   terracotta: { light: '#D2642A', dark: '#E69B82' },
+  heatSoft: { light: '#FBEDE4', dark: '#4A3024' },
   cream: { light: '#F4F6F3', dark: '#2A4639' },
   leaf: { light: '#E3F1E8', dark: '#315441' },
   sun: { light: '#B8E28A', dark: '#D5E96B' },

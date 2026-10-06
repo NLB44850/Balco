@@ -19,7 +19,7 @@ describe("Balco MVP content", () => {
   });
 
   it("contains the requested gardening prototype content", () => {
-    expect(readProjectFile("lib/plants/catalog.ts")).toContain("arrose ${label} si besoin");
+    expect(readProjectFile("lib/plants/catalog.ts")).toContain("Arrose ${label}");
     expect(readProjectFile("app/(tabs)/assistant.tsx")).toContain("quickQuestions(resolvedPlants)");
     expect(readProjectFile("app/(tabs)/scanner.tsx")).toContain("Solution naturelle");
     expect(readProjectFile("lib/garden/garden-logic.ts")).toContain("Ami des Abeilles");
@@ -52,7 +52,7 @@ describe("Balco MVP content", () => {
     expect(home).toContain("useGarden");
     expect(home).toContain("recommendPlants");
     expect(home).toContain("Voir les {PLANT_CATALOG.length} plantes");
-    expect(home).toContain("buildDailySession");
+    expect(home).toContain("useDayPlan");
     expect(home).toContain("buildTodayList");
     expect(home).toContain("balconyStatus");
     expect(home).toContain("BottomSheet");
@@ -102,7 +102,8 @@ describe("Balco MVP content", () => {
     expect(calendar).toContain("Ton climat, en direct");
     expect(calendar).toContain("calendarActivities");
     expect(calendar).toContain("selectedMonth");
-    expect(calendar).toContain("Noter comme fait");
+    expect(calendar).toContain("Le faire sur Aujourd’hui");
+    expect(calendar).not.toContain("Noter comme fait");
     expect(calendar).toContain("+ Ajouter à mon balcon");
     expect(readProjectFile("app/(tabs)/_layout.tsx")).toContain('name="calendar"');
     expect(readProjectFile("app/(tabs)/_layout.tsx")).toContain('title: "Saisons"');
@@ -174,10 +175,12 @@ describe("Balco MVP content", () => {
 
   it("supports grouped reminders for several garden plants", () => {
     const home = readProjectFile("app/(tabs)/index.tsx");
+    // Les conseils sont calculés une fois pour Aujourd'hui, Balcon et la fiche (hooks/use-day-plan.ts).
+    const plan = readProjectFile("hooks/use-day-plan.ts");
     const card = readProjectFile("components/contextual-reminder-card.tsx");
     expect(home).toContain("reminderDecisions");
-    expect(home).toContain("groupReminders");
-    expect(home).toContain("decideReminders");
+    expect(plan).toContain("groupReminders");
+    expect(plan).toContain("decideReminders");
     expect(card).toContain("onComplete");
     expect(card).toContain("onSnooze");
     expect(card).toContain("Pas aujourd’hui");

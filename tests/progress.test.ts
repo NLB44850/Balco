@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import { resolvePlants } from "../lib/garden/garden-logic";
-import { careWeeksLabel, celebrationFor, formatLiters, plantProgress, plantStage, sinceLabel, upcomingHarvests, waterSaved } from "../lib/garden/progress";
+import { careWeeksLabel, celebrationFor, celebrationStyle, formatLiters, withCheer, plantProgress, plantStage, sinceLabel, upcomingHarvests, waterSaved } from "../lib/garden/progress";
 import { weekSummary } from "../lib/garden/week";
 import type { MaintenanceEvent } from "../lib/reminders/reminder-engine";
 
@@ -75,16 +75,39 @@ describe("petites victoires", () => {
     expect(celebrationFor(plants, [harvest], [second, harvest], NOW)).toMatchObject({ kind: "harvest", title: "Récolte de Tomates cerises" });
     expect(celebrationFor(plants, [harvest], [event("basil-1", "pruning", 0), harvest], NOW)).toBeNull();
 
-    const week = [1, 2, 3, 4, 5, 6].map((days) => event("basil-1", "watering", days));
-    const withBadge = [event("tomato-1", "harvest", 30), ...week];
-    expect(title(plants, withBadge, [event("basil-1", "watering", 0), ...withBadge], NOW)).toBe("Nouveau badge : Main Verte");
+    // Série de jours suivis (chaque plante assoiffée arrosée) : 6 jours, puis l'arrosage du jour fait le 7ᵉ.
+    const basilOnly = plants.filter(({ plant }) => plant.id === "basil-1");
+    const week = [3, 5, 6].map((days) => event("basil-1", "watering", days));
+    expect(title(basilOnly, week, [event("basil-1", "watering", 0), ...week], NOW)).toBe("Nouveau badge : Main Verte");
 
-    const two = [1, 2].map((days) => event("basil-1", "pruning", days));
-    const base = [event("tomato-1", "harvest", 30), ...two];
-    expect(title(plants, base, [event("basil-1", "pruning", 0), ...base], NOW)).toBe("3 jours de suite");
+    // Thym arrosé il y a 2 jours (et 8), ciboulette il y a 3 jours : 2 jours suivis, l'arrosage de la ciboulette fait le 3ᵉ.
+    const pair = resolvePlants([{ id: "thyme-1", catalogId: "thyme", addedAt: at(20) }, { id: "chives-1", catalogId: "chives", addedAt: at(20) }]);
+    const base = [event("thyme-1", "watering", 2), event("thyme-1", "watering", 8), event("chives-1", "watering", 3)];
+    expect(title(pair, base, [event("chives-1", "watering", 0), ...base], NOW)).toBe("3 jours de suite");
+    // Une taille (bonus) ne fait pas avancer la série.
+    expect(celebrationFor(pair, base, [event("chives-1", "pruning", 0), ...base], NOW)).toBeNull();
+
+    // Grand écran : un nouveau badge, une 1ʳᵉ récolte ; le reste se dit dans le message du bas.
+    expect(celebrationFor(plants, [], [harvest], NOW)?.big).toBe(true);
+    expect(celebrationFor(plants, [harvest], [second, harvest], NOW)?.big).toBe(false);
+    expect(celebrationFor(pair, base, [event("chives-1", "watering", 0), ...base], NOW)?.big).toBe(false);
 
     const pepperHarvest = event("pepper-1", "harvest", 0);
     const quiet = [event("tomato-1", "harvest", 30), event("basil-1", "pruning", 4)];
     expect(title(plants, quiet, [pepperHarvest, ...quiet], NOW)).toBe("Première récolte de Poivron");
+  });
+
+  it("fête en grand au plus une fois par jour, sinon un mot dans le message du bas", () => {
+    const big = { kind: "badge" as const, emoji: "🏅", title: "Nouveau badge : Main Verte", detail: "", big: true };
+    const small = { kind: "streak" as const, emoji: "🔥", title: "3 jours de suite", detail: "", big: false };
+    expect(celebrationStyle(big, null, NOW)).toEqual({ big: true, line: null });
+    expect(celebrationStyle(big, "2026-07-14", NOW)).toEqual({ big: true, line: null });
+    // Déjà une grande fête aujourd'hui : la suivante devient un mot dans le message.
+    const today = `${NOW.getFullYear()}-${String(NOW.getMonth() + 1).padStart(2, "0")}-${String(NOW.getDate()).padStart(2, "0")}`;
+    expect(celebrationStyle(big, today, NOW)).toEqual({ big: false, line: "🏅 Nouveau badge : Main Verte" });
+    expect(celebrationStyle(small, null, NOW)).toEqual({ big: false, line: "🔥 3 jours de suite" });
+    expect(celebrationStyle(null, null, NOW)).toEqual({ big: false, line: null });
+    expect(withCheer("🔥 3 jours de suite", "Arrose le thym : noté · +4 points")).toBe("🔥 3 jours de suite · Arrose le thym : noté · +4 points");
+    expect(withCheer(null, "C’est noté")).toBe("C’est noté");
   });
 });

@@ -2,7 +2,7 @@
  * Logique pure du jardin de l'utilisateur : session du jour, état des plantes,
  * statistiques, badges et points. Aucune dépendance React Native, pour rester testable.
  */
-import { getCatalogPlant, tasksForMonth, type CareTask, type CatalogPlant } from "../plants/catalog";
+import { getCatalogPlant, soilCheckDepthCm, tasksForMonth, type CareTask, type CatalogPlant } from "../plants/catalog";
 import type { MaintenanceEvent, MaintenanceTaskType, PlantCareProfile } from "../reminders/reminder-engine";
 
 export type GardenPlant = {
@@ -57,6 +57,7 @@ export function careProfileFor(resolved: ResolvedPlant): PlantCareProfile {
     label: plant.nickname?.trim() || entry.label,
     ...entry.care,
     allowedTaskTypes: Array.from(new Set<MaintenanceTaskType>([...entry.tasks.map((task) => task.type), "observation", "protection"])),
+    soilCheckCm: soilCheckDepthCm(entry),
   };
 }
 
@@ -66,11 +67,11 @@ export function dayKey(date: Date) {
   return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
 }
 
-function startOfDay(date: Date) {
+export function startOfDay(date: Date) {
   return new Date(date.getFullYear(), date.getMonth(), date.getDate());
 }
 
-function dayOfYear(date: Date) {
+export function dayOfYear(date: Date) {
   return Math.floor((startOfDay(date).getTime() - new Date(date.getFullYear(), 0, 1).getTime()) / DAY_MS);
 }
 
@@ -193,39 +194,6 @@ export function sessionEventId(plantId: string, taskId: string, now: Date) {
 }
 
 /**
- * Choisit un geste par plante pour aujourd'hui, puis garde les plus utiles.
- * Le classement ignore les gestes du jour pour que la liste ne se réordonne pas
- * au moment où l'utilisateur valide une tâche.
- */
-export function buildDailySession(plants: ResolvedPlant[], events: MaintenanceEvent[], now = new Date(), limit = 3): SessionTask[] {
-  const today = startOfDay(now);
-  const month = now.getMonth() + 1;
-  const eventIds = new Set(events.map((event) => event.id));
-
-  return plants
-    .map((resolved, index) => {
-      // Un geste espacé (engrais) n'est proposé que s'il est dû ; il passe alors avant les autres.
-      const candidates = tasksForMonth(resolved.entry, month).filter((task) => !task.everyDays || spacedTaskDue(resolved, task, events, today));
-      if (candidates.length === 0) return null;
-      const interval = resolved.entry.care.wateringIntervalHours * HOUR_MS;
-      const lastWatering = lastEventDate(events, resolved.plant.id, "watering", today);
-      const wateringTask = candidates.find((task) => task.type === "watering");
-      const wateringDue = !lastWatering || today.getTime() - lastWatering.getTime() >= interval;
-      const spaced = candidates.find((task) => task.everyDays);
-      const task = wateringTask && wateringDue ? wateringTask : spaced ?? candidates[(dayOfYear(now) + index) % candidates.length];
-
-      const lastCare = lastEventDate(events, resolved.plant.id, undefined, today);
-      const urgency = lastCare ? (today.getTime() - lastCare.getTime()) / interval : 10;
-      const eventId = sessionEventId(resolved.plant.id, task.id, now);
-      return { item: { resolved, task, eventId, done: eventIds.has(eventId) }, urgency };
-    })
-    .filter((value): value is { item: SessionTask; urgency: number } => value !== null)
-    .sort((a, b) => b.urgency - a.urgency)
-    .slice(0, limit)
-    .map(({ item }) => item);
-}
-
-/**
  * Un geste espacé est dû quand le dernier date d'au moins `everyDays` jours (gestes d'aujourd'hui
  * exclus, pour qu'il reste coché dans la liste du jour). Jamais fait : on compte depuis l'arrivée de
  * la plante, dont le terreau neuf la nourrit déjà.
@@ -246,13 +214,51 @@ export function eventForSessionTask({ resolved, task, eventId }: SessionTask, no
 
 export type GardenStats = { gestures: number; streakDays: number; plants: number; harvests: number; observations: number; weatherTipsFollowed: number; melliferousPlants: number };
 
-export function streakDays(events: MaintenanceEvent[], now = new Date()) {
-  const days = new Set(events.map((event) => dayKey(new Date(event.completedAt))));
+/** Un « N'arrose pas, il va pleuvoir » suivi : l'arrosage évité est noté comme une observation. */
+export function isAvoidedWatering(event: MaintenanceEvent) {
+  return event.source === "reminder" && event.type === "observation" && /^N[’']arrose pas/u.test(event.note ?? "");
+}
+
+/** Au-delà, la série s'arrête de compter (une année). */
+const MAX_FOLLOWED_DAYS = 366;
+
+/**
+ * Série de « jours suivis » : un jour compte quand chaque plante qui avait besoin d'eau ce jour-là a été
+ * arrosée (ou que la pluie s'en est chargée), ou quand il n'y avait rien à arroser. Récoltes, entretien,
+ * engrais et semis sont des bonus : ils ne cassent pas la série. Les alertes météo passées ne sont pas
+ * gardées, elles ne comptent donc pas. Aujourd'hui compte dès qu'il est suivi, sans casser la série tant
+ * que la journée n'est pas finie. Les jours d'avant la première plante arrêtent la série.
+ */
+export function followedDays(plants: ResolvedPlant[], events: MaintenanceEvent[], now = new Date()) {
+  if (plants.length === 0) return 0;
+  const byPlant = plants.map((resolved) => {
+    const own = events.filter((event) => event.plantId === resolved.plant.id);
+    const waterings = own.filter((event) => event.type === "watering").map((event) => new Date(event.completedAt).getTime()).filter(Number.isFinite).sort((a, b) => a - b);
+    const coveredDays = new Set(own.filter((event) => event.type === "watering" || isAvoidedWatering(event)).map((event) => dayKey(new Date(event.completedAt))));
+    return { resolved, addedAt: new Date(resolved.plant.addedAt).getTime(), waterings, coveredDays };
+  });
+
+  /** true : suivi ; false : un arrosage manquait ; null : pas encore de plante ce jour-là. */
+  const followed = (day: Date): boolean | null => {
+    const start = day.getTime();
+    const end = start + DAY_MS;
+    const key = dayKey(day);
+    const month = day.getMonth() + 1;
+    const present = byPlant.filter((plant) => plant.addedAt < end);
+    if (present.length === 0) return null;
+    return present.every(({ resolved, waterings, coveredDays }) => {
+      if (!tasksForMonth(resolved.entry, month).some((task) => task.type === "watering")) return true;
+      const last = waterings.filter((time) => time < start).at(-1);
+      // Même règle que le plan du jour : à arroser si jamais arrosée, ou si son rythme est dépassé.
+      const due = last === undefined || start - last >= resolved.entry.care.wateringIntervalHours * HOUR_MS;
+      return !due || coveredDays.has(key);
+    });
+  };
+
   const cursor = startOfDay(now);
-  // Une journée sans geste n'est pas encore perdue tant qu'elle n'est pas finie.
-  if (!days.has(dayKey(cursor))) cursor.setDate(cursor.getDate() - 1);
+  if (followed(cursor) !== true) cursor.setDate(cursor.getDate() - 1);
   let streak = 0;
-  while (days.has(dayKey(cursor))) {
+  while (streak < MAX_FOLLOWED_DAYS && followed(cursor) === true) {
     streak += 1;
     cursor.setDate(cursor.getDate() - 1);
   }
@@ -263,8 +269,9 @@ export function computeStats(plants: ResolvedPlant[], events: MaintenanceEvent[]
   const plantIds = new Set(plants.map(({ plant }) => plant.id));
   const own = events.filter((event) => plantIds.has(event.plantId));
   return {
-    gestures: own.length,
-    streakDays: streakDays(own, now),
+    // L'arrosage évité grâce à la pluie est compté tout seul : ce n'est pas un geste (ni des points).
+    gestures: own.filter((event) => !isAvoidedWatering(event)).length,
+    streakDays: followedDays(plants, own, now),
     plants: plants.length,
     harvests: own.filter((event) => event.type === "harvest").length,
     observations: own.filter((event) => event.type === "observation").length,

@@ -1,6 +1,8 @@
 import { ImageManipulator, SaveFormat } from "expo-image-manipulator";
 import * as ImagePicker from "expo-image-picker";
 
+import { clearCameraOpening, markCameraOpening } from "./camera-interrupt";
+
 /** Côté le plus long envoyé à l'IA : assez pour voir taches et insectes, sans payer une photo de 12 Mpx. */
 const MAX_SIDE = 1024;
 
@@ -17,7 +19,14 @@ export async function pickPlantPhoto(source: "camera" | "library", format: Photo
     if (!permission.granted) return { status: "denied" };
   }
   const options: ImagePicker.ImagePickerOptions = { mediaTypes: ["images"], quality: 1, exif: false };
-  const result = source === "camera" ? await ImagePicker.launchCameraAsync(options) : await ImagePicker.launchImageLibraryAsync(options);
+  // Dans un navigateur, la page peut se recharger pendant la prise de vue : on le note pour l'expliquer.
+  if (source === "camera") markCameraOpening();
+  let result: ImagePicker.ImagePickerResult;
+  try {
+    result = source === "camera" ? await ImagePicker.launchCameraAsync(options) : await ImagePicker.launchImageLibraryAsync(options);
+  } finally {
+    if (source === "camera") clearCameraOpening();
+  }
   if (result.canceled || !result.assets?.[0]) return { status: "canceled" };
 
   const asset = result.assets[0];

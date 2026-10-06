@@ -1,14 +1,14 @@
 import { describe, expect, it } from "vitest";
 
+import { eventForGesture, planDay } from "../lib/garden/day-plan";
+
 import {
   appendEvent,
-  buildDailySession,
   careProfileFor,
   computeBadges,
   computeProgress,
   computeStats,
   createGardenPlant,
-  eventForSessionTask,
   formatLongDate,
   gardenDay,
   greeting,
@@ -18,8 +18,8 @@ import {
   plantStatus,
   relativeDay,
   resolvePlants,
+  followedDays,
   seasonName,
-  streakDays,
   type GardenPlant,
 } from "../lib/garden/garden-logic";
 import type { MaintenanceEvent } from "../lib/reminders/reminder-engine";
@@ -69,49 +69,70 @@ describe("plant status", () => {
   });
 });
 
-describe("daily session", () => {
+describe("daily plan", () => {
   const plants = resolvePlants([gardenPlant("basil"), gardenPlant("mint"), gardenPlant("radish"), gardenPlant("thyme")]);
 
-  it("proposes one task per plant, capped at three", () => {
-    const session = buildDailySession(plants, [], now);
-    expect(session).toHaveLength(3);
-    expect(new Set(session.map((item) => item.resolved.plant.id)).size).toBe(3);
+  it("plans every plant of the balcony, without a cap", () => {
+    expect(planDay({ plants, events: [], now }).map((day) => day.resolved.plant.id)).toEqual(plants.map(({ plant }) => plant.id));
   });
 
   it("asks to check the soil when watering is due", () => {
-    const session = buildDailySession(resolvePlants([gardenPlant("basil")]), [], now);
-    expect(session[0].task.type).toBe("watering");
-    expect(session[0].task.title).toContain("arrose le basilic");
+    const [basil] = planDay({ plants: resolvePlants([gardenPlant("basil")]), events: [], now });
+    expect(basil.first?.kind).toBe("watering");
+    expect(basil.first?.title.toLowerCase()).toContain("arrose le basilic");
   });
 
-  it("puts the most neglected plant first", () => {
-    const events = [event("basil", "watering", daysAgo(1)), event("mint", "watering", daysAgo(1)), event("thyme", "watering", daysAgo(1))];
-    expect(buildDailySession(plants, events, now)[0].resolved.plant.id).toBe("radish");
-  });
-
-  it("marks a task as done without reordering the session", () => {
-    const before = buildDailySession(plants, [], now);
-    const doneEvent = eventForSessionTask(before[0], now);
-    const after = buildDailySession(plants, [doneEvent], now);
-    expect(after.map((item) => item.eventId)).toEqual(before.map((item) => item.eventId));
-    expect(after[0].done).toBe(true);
-    expect(after.slice(1).every((item) => !item.done)).toBe(true);
-    expect(doneEvent).toMatchObject({ plantId: before[0].resolved.plant.id, type: before[0].task.type, source: "daily_task" });
+  it("marks a gesture as done without reordering the plan", () => {
+    const before = planDay({ plants, events: [], now });
+    const doneEvent = eventForGesture(before[0].first!, now);
+    const after = planDay({ plants, events: [doneEvent], now });
+    expect(after.map((day) => day.first?.key)).toEqual(before.map((day) => day.first?.key));
+    expect(after[0].first?.done).toBe(true);
+    expect(after.slice(1).every((day) => !day.first?.done)).toBe(true);
+    expect(doneEvent).toMatchObject({ plantId: before[0].resolved.plant.id, type: "watering", source: "daily_task" });
   });
 
   it("never proposes a harvest out of season", () => {
     const winter = new Date(2026, 0, 15, 10);
-    const session = buildDailySession(resolvePlants([gardenPlant("cherry-tomato")]), [], winter);
-    expect(session.every((item) => item.task.type !== "harvest")).toBe(true);
+    const [tomato] = planDay({ plants: resolvePlants([gardenPlant("cherry-tomato")]), events: [], now: winter });
+    expect(tomato.gestures.every((gesture) => gesture.kind !== "harvest")).toBe(true);
   });
 });
 
 describe("stats, badges and progress", () => {
-  it("counts consecutive days, tolerating an unfinished today", () => {
-    const events = [event("basil", "watering", daysAgo(1)), event("basil", "observation", daysAgo(2)), event("basil", "watering", daysAgo(4))];
-    expect(streakDays(events, now)).toBe(2);
-    expect(streakDays([...events, event("basil", "harvest", now)], now)).toBe(3);
-    expect(streakDays([event("basil", "watering", daysAgo(3))], now)).toBe(0);
+  it("compte les jours suivis : chaque plante qui avait soif a été arrosée", () => {
+    // Basilic (36 h) ajouté il y a 4 jours : jamais arrosé, il était à arroser chaque jour.
+    const basil = resolvePlants([gardenPlant("basil", "basil", 4)]);
+    const watered = (days: number[]) => days.map((day) => event("basil", "watering", daysAgo(day)));
+    // Arrosé hier et avant-hier : aujourd'hui, rien à arroser encore (14 h depuis hier) → le jour compte.
+    expect(followedDays(basil, watered([1, 2]), now)).toBe(3);
+    // À arroser aujourd'hui, pas encore fait : la journée ne casse pas la série (elle n'est pas finie).
+    expect(followedDays(basil, watered([2, 3, 4]), now)).toBe(4);
+    // Hier, il fallait arroser et rien n'a été fait : la série est cassée.
+    expect(followedDays(basil, watered([3]), now)).toBe(0);
+    // Les jours d'avant l'arrivée de la plante ne comptent pas.
+    expect(followedDays(basil, watered([0, 1, 2, 3, 4]), now)).toBe(5);
+    expect(followedDays([], [], now)).toBe(0);
+  });
+
+  it("compte un jour où il n'y avait rien à arroser, et un jour de pluie", () => {
+    // Thym (96 h) arrosé il y a 3 jours : rien à faire hier ni avant-hier.
+    const thyme = resolvePlants([gardenPlant("thyme", "thyme", 10)]);
+    const events = [event("thyme", "watering", daysAgo(3)), event("thyme", "watering", daysAgo(7)), event("thyme", "watering", daysAgo(10))];
+    expect(followedDays(thyme, events, now)).toBeGreaterThanOrEqual(3);
+    // Pluie : l'arrosage évité couvre la journée.
+    const basil = resolvePlants([gardenPlant("basil", "basil", 2)]);
+    const rain = event("basil", "observation", daysAgo(1), { source: "reminder", note: "N’arrose pas le basilic aujourd’hui" });
+    expect(followedDays(basil, [event("basil", "watering", daysAgo(2)), rain], now)).toBe(2);
+    // Un geste qui n'est pas un arrosage (récolte) ne suffit pas quand il fallait arroser.
+    const later = resolvePlants([gardenPlant("basil", "basil", 3)]);
+    expect(followedDays(later, [event("basil", "watering", daysAgo(3)), event("basil", "harvest", daysAgo(1))], now)).toBe(0);
+  });
+
+  it("ne compte pas l'arrosage évité comme un geste (pas de points)", () => {
+    const basil = resolvePlants([gardenPlant("basil")]);
+    const rain = event("basil", "observation", daysAgo(1), { source: "reminder", note: "N’arrose pas le basilic aujourd’hui" });
+    expect(computeStats(basil, [rain, event("basil", "harvest", daysAgo(1))], now).gestures).toBe(1);
   });
 
   it("ignores events of removed plants", () => {
@@ -122,7 +143,8 @@ describe("stats, badges and progress", () => {
 
   it("unlocks badges from real activity", () => {
     const plants = resolvePlants([gardenPlant("basil"), gardenPlant("lavender"), gardenPlant("borage")]);
-    const events = [event("basil", "harvest", daysAgo(1)), ...[1, 2, 3, 4, 5].map((day) => event("lavender", "observation", daysAgo(day)))];
+    const plantsWatered = [0, 1, 2, 3, 4].flatMap((day) => ["basil", "lavender", "borage"].map((id) => event(id, "watering", daysAgo(day))));
+    const events = [event("basil", "harvest", daysAgo(1)), ...[1, 2, 3, 4, 5].map((day) => event("lavender", "observation", daysAgo(day))), ...plantsWatered];
     const badges = computeBadges(computeStats(plants, events, now));
     const unlocked = badges.filter((badge) => badge.unlocked).map((badge) => badge.id);
     expect(unlocked).toEqual(expect.arrayContaining(["first-pot", "bees", "bio", "plate"]));

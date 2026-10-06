@@ -87,8 +87,9 @@ export default function ProfileScreen() {
         <Text style={[styles.impactHeroCaption, { color: colors.muted }]}>{progress.pointsToNext} points avant le niveau suivant</Text>
       </View>
       <View style={styles.statsRow}>
-        <View style={[glass.card, styles.statCard]}><Text style={[styles.statValue, { color: colors.foreground }]}>{stats.gestures}</Text><Text style={[styles.statLabel, { color: colors.muted }]}>geste{stats.gestures > 1 ? "s" : ""} fait{stats.gestures > 1 ? "s" : ""}</Text></View>
-        <View style={[glass.card, styles.statCard]}><Text style={[styles.statValue, { color: colors.foreground }]}>{stats.streakDays}</Text><Text style={[styles.statLabel, { color: colors.muted }]}>jour{stats.streakDays > 1 ? "s" : ""} de suite</Text></View>
+        {/* Les chiffres de la semaine, du même calcul que Ma semaine (lib/garden/week.ts). */}
+        <View style={[glass.card, styles.statCard]} accessibilityLabel={`${week.gestures} geste${week.gestures > 1 ? "s" : ""} cette semaine`}><Text style={[styles.statValue, { color: colors.foreground }]}>{week.gestures}</Text><Text style={[styles.statLabel, { color: colors.muted }]}>geste{week.gestures > 1 ? "s" : ""} cette semaine</Text></View>
+        <View style={[glass.card, styles.statCard]} accessibilityLabel={`${week.streak} jour${week.streak > 1 ? "s" : ""} de suite`}><Text style={[styles.statValue, { color: colors.foreground }]}>{week.streak}</Text><Text style={[styles.statLabel, { color: colors.muted }]}>jour{week.streak > 1 ? "s" : ""} de suite</Text></View>
         <View style={[glass.card, styles.statCard]}><Text style={[styles.statValue, { color: colors.foreground }]}>{unlockedCount}</Text><Text style={[styles.statLabel, { color: colors.muted }]}>badge{unlockedCount > 1 ? "s" : ""}</Text></View>
       </View>
       <View style={styles.badgeHeading}><View><Text style={[styles.sectionEyebrow, { color: colors.muted }]}>Petites victoires</Text><Text style={[styles.sectionTitle, { color: colors.foreground }]}>Mes badges éco</Text></View><Text style={[styles.badgeCount, { color: colors.primary }]}>{unlockedCount}/{badges.length}</Text></View>
@@ -166,9 +167,9 @@ const styles = StyleSheet.create({
   heroProgressFill: { height: 6, borderRadius: 3 },
   impactHeroCaption: { fontSize: 13 },
   statsRow: { flexDirection: "row", gap: 9, marginTop: 14, marginBottom: 27 },
-  statCard: { flex: 1, paddingVertical: 13, alignItems: "center" },
+  statCard: { flex: 1, paddingVertical: 13, alignItems: "center", paddingHorizontal: 6 },
   statValue: { fontSize: 21, fontWeight: "800" },
-  statLabel: { fontSize: 12, marginTop: 3 },
+  statLabel: { fontSize: 12, marginTop: 3, textAlign: "center" },
   badgeHeading: { flexDirection: "row", alignItems: "flex-end", justifyContent: "space-between", marginBottom: 13 },
   sectionEyebrow: { fontSize: 13, fontWeight: "600" },
   sectionTitle: { fontSize: 21, fontWeight: "800", marginTop: 4, letterSpacing: -0.5 },

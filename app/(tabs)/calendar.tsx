@@ -1,10 +1,9 @@
 /**
- * Onglet « Saisons » : les gestes de saison de tes plantes (semis, plantation, rempotage, récolte,
- * entretien), rangés par type (« À récolter · 5 plantes ») pour que la liste reste courte ; un type qui
- * ne concerne qu'une plante reste une ligne à cocher, comme sur Aujourd'hui. Le mois en cours se coche ; les mois et
- * les saisons à venir se lisent. Le détail s'ouvre dans la feuille du bas, avec « Annuler » après
- * chaque geste, et « Tout est fait » quand le mois est bouclé. Sous la liste, « À semer ou planter
- * en … » propose des plantes de saison pour ton balcon (par mois ou par saison), à ajouter d'un « + ».
+ * Onglet « Saisons » : ton calendrier, à lire. Les gestes de saison de tes plantes (semis, plantation,
+ * rempotage, récolte, entretien), rangés par type (« À récolter · 5 plantes ») pour que la liste reste
+ * courte, mois par mois ou saison par saison. Rien ne s'y coche : les gestes du mois se font depuis
+ * Aujourd'hui (le détail y renvoie). Sous la liste, « À semer ou planter en … » propose des plantes de
+ * saison pour ton balcon, à ajouter d'un « + ».
  */
 import { useRouter } from "expo-router";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
@@ -12,29 +11,26 @@ import { Modal, Pressable, ScrollView, StyleSheet, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { LightScreen } from "@/components/light-screen";
-import { FadeIn } from "@/components/motion";
 import { PlantPicture } from "@/components/plant-picture";
 import { ScreenHeader } from "@/components/screen-header";
 import { SeasonalSuggestions } from "@/components/seasonal-suggestions";
 import { BottomSheet } from "@/components/today/bottom-sheet";
 import { TODAY_ROW_PICTURE, TodayRow } from "@/components/today/today-row";
-import { useCelebration } from "@/components/today/celebration";
 import { UndoToast, type ToastMessage } from "@/components/today/undo-toast";
 import { glass } from "@/components/ui/glass";
 import { Text, TextInput } from "@/components/ui/typography";
 import { type CityResult, useLocalWeather } from "@/hooks/use-local-weather";
 import { useColors } from "@/hooks/use-colors";
 import { useGarden } from "@/lib/garden/garden-context";
-import { celebrationFor } from "@/lib/garden/progress";
 import { careProfileFor, dayKey, plantDisplayName, type ResolvedPlant } from "@/lib/garden/garden-logic";
 import {
   ACTIVITY_KIND_LABELS,
-  activityDone,
+  activityDoneLabel,
+  activityDoneSoFar,
   activityGroupSummary,
   activityGroupTitle,
   calendarActivities,
   describeMonths,
-  eventForActivity,
   groupActivities,
   seasonActivities,
   upcomingMonths,
@@ -64,7 +60,7 @@ export default function CalendarScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const { weather, weatherSnapshot, isLoading, refresh, requestDeviceLocation, searchCities, selectCity } = useLocalWeather();
-  const { resolvedPlants, events, onboarding, addPlant, removePlant, logEvent, removeEvent, reportLocation } = useGarden();
+  const { resolvedPlants, events, onboarding, addPlant, removePlant, reportLocation } = useGarden();
   const now = useMemo(() => new Date(), []);
 
   // Une ville choisie ici doit aussi servir aux rappels envoyés par le serveur.
@@ -83,7 +79,6 @@ export default function CalendarScreen() {
   const [groupKey, setGroupKey] = useState<ActivityGroupKind | null>(null);
   const [toast, setToast] = useState<ToastMessage | null>(null);
   const toastId = useRef(0);
-  const { celebrate, overlay: celebration } = useCelebration();
   const showToast = (text: string, onUndo?: () => void) => {
     toastId.current += 1;
     setToast({ id: toastId.current, text, onUndo });
@@ -117,17 +112,15 @@ export default function CalendarScreen() {
     () => (view === "season" ? seasonActivities(filteredSubjects, { ...season, months: seasonMonths }, { climate, now }) : calendarActivities(filteredSubjects, selectedMonth, { climate, now })),
     [climate, filteredSubjects, now, season, seasonMonths, selectedMonth, view],
   );
-  // Seul le mois en cours se coche : on ne note pas un semis de mars en septembre.
-  const checkable = !showingIdeas && view === "month" && selectedMonth === currentMonth;
-  const doneCount = checkable ? currentActivities.filter((activity) => activityDone(activity, events, now)).length : 0;
-  const allDone = checkable && currentActivities.length > 0 && doneCount === currentActivities.length;
-  // Ce qui reste à faire d'abord, ce qui est fait ensuite (comme sur Aujourd'hui).
-  const ordered = checkable ? [...currentActivities.filter((activity) => !activityDone(activity, events, now)), ...currentActivities.filter((activity) => activityDone(activity, events, now))] : currentActivities;
+  // Le mois en cours : ses gestes se font depuis Aujourd'hui (le détail y renvoie).
+  const thisMonth = !showingIdeas && view === "month" && selectedMonth === currentMonth;
+  // Rien ne se coche ici, mais ce qui est déjà fait (sur Aujourd'hui ou la fiche) se voit, et passe en bas.
+  const isDone = (activity: CalendarActivity) => thisMonth && activityDoneSoFar(activity, events, new Date());
+  const ordered = [...currentActivities.filter((activity) => !isDone(activity)), ...currentActivities.filter(isDone)];
   const sheetActivity = currentActivities.find((activity) => activity.key === sheetKey) ?? null;
   // Rangés par type de geste, sauf quand on regarde une seule plante (on veut alors tout son détail).
   const grouped = !showingIdeas && activeFilter === "all";
   const groups = grouped ? groupActivities(ordered) : [];
-  // Dans la feuille, l'ordre ne bouge pas quand on coche : les plantes ne sautent pas sous le doigt.
   const sheetGroup = useMemo(() => (groupKey ? groupActivities(currentActivities).find((group) => group.key === groupKey) ?? null : null), [currentActivities, groupKey]);
 
   // Les alertes déjà traitées sur Aujourd'hui (« Fait », « Pas aujourd'hui », « Dans 3 h ») ne s'affichent plus ici.
@@ -155,19 +148,8 @@ export default function CalendarScreen() {
     return groupReminders(withoutSnoozed(decisions, snoozes, new Date())).filter((group) => group.cause && group.cause !== "thirst");
   }, [events, resolvedPlants, snoozes, weather.isFallback, weatherSnapshot]);
 
-  const toggleActivity = async (activity: CalendarActivity) => {
-    const today = new Date();
-    const event = eventForActivity(activity, today);
-    if (activityDone(activity, events, today)) {
-      const previous = events.find((item) => item.id === event.id);
-      await removeEvent(event.id);
-      showToast("Geste retiré", previous ? () => void logEvent(previous) : undefined);
-      return;
-    }
-    await logEvent(event);
-    celebrate(celebrationFor(resolvedPlants, events, [event, ...events.filter((item) => item.id !== event.id)]));
-    showToast(`${activity.title} : noté`, () => void removeEvent(event.id));
-  };
+  /** Le geste du mois se fait sur Aujourd'hui : on y va. */
+  const openToday = () => router.push("/(tabs)");
 
   const addSuggestion = async ({ entry }: SeasonalSuggestion) => {
     const created = await addPlant(entry.id);
@@ -203,39 +185,36 @@ export default function CalendarScreen() {
     return resolved ? <PlantPicture resolved={resolved} style={TODAY_ROW_PICTURE} /> : undefined;
   };
   const rowSubtitle = (activity: CalendarActivity) => {
+    if (isDone(activity)) return activityDoneLabel(activity);
     const when = view === "season" && activity.months ? capitalize(describeMonths(activity.months)) : null;
     const subject = subjects.find((item) => item.id === activity.subjectId)?.displayName;
     return [activity.eventType === "fertilizing" ? "Engrais" : ACTIVITY_KIND_LABELS[activity.kind], when ?? subject].filter(Boolean).join(" · ");
   };
   const periodLabel = view === "season" ? SEASON_IN[season.id] : `en ${MONTH_LONG[selectedMonth - 1]}`;
-  const groupDoneCount = (group: ActivityGroup) => (checkable ? group.activities.filter((activity) => activityDone(activity, events, now)).length : 0);
   const groupSubtitle = (group: ActivityGroup) => {
     // L'entretien réunit des gestes différents : on les nomme ; ailleurs, les plantes suffisent.
     const names = group.key === "care" ? group.activities.map((activity) => activity.title) : group.activities.map((activity) => subjects.find((item) => item.id === activity.subjectId)?.displayName ?? activity.entry.name);
     const summary = activityGroupSummary(names);
-    return checkable ? `${groupDoneCount(group)} sur ${group.activities.length} fait${groupDoneCount(group) > 1 ? "s" : ""} · ${summary}` : summary;
+    const done = group.activities.filter(isDone).length;
+    return done > 0 ? `${done} sur ${group.activities.length} déjà fait${done > 1 ? "s" : ""} · ${summary}` : summary;
   };
   const memberSubtitle = (activity: CalendarActivity) => {
+    if (isDone(activity)) return activityDoneLabel(activity);
     const subject = subjects.find((item) => item.id === activity.subjectId)?.displayName ?? activity.entry.name;
     return view === "season" && activity.months ? `${subject} · ${describeMonths(activity.months)}` : subject;
   };
-  const activityRow = (activity: CalendarActivity) => {
-    const done = checkable && activityDone(activity, events, now);
-    return (
-      <TodayRow
-        key={`${activeFilter}-${view}-${activity.key}`}
-        icon={showingIdeas ? activity.entry.emoji : KIND_ICONS[activity.kind]}
-        picture={picture(activity)}
-        tone="season"
-        title={activity.title}
-        subtitle={rowSubtitle(activity)}
-        done={done}
-        checkLabel={done ? "Annuler ce geste" : "Noter comme fait"}
-        onToggle={checkable ? () => void toggleActivity(activity) : undefined}
-        onOpen={() => setSheetKey(activity.key)}
-      />
-    );
-  };
+  const activityRow = (activity: CalendarActivity) => (
+    <TodayRow
+      key={`${activeFilter}-${view}-${activity.key}`}
+      icon={showingIdeas ? activity.entry.emoji : KIND_ICONS[activity.kind]}
+      picture={picture(activity)}
+      tone="season"
+      title={activity.title}
+      subtitle={rowSubtitle(activity)}
+      done={isDone(activity)}
+      onOpen={() => setSheetKey(activity.key)}
+    />
+  );
   const climateLine = weather.isFallback || !climate ? "Paris par défaut : choisis ta ville pour des dates justes." : climateSummary(climate);
 
   return (
@@ -243,7 +222,7 @@ export default function CalendarScreen() {
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={[styles.content, { paddingTop: insets.top + 14 }]}>
         <ScreenHeader
           title="Saisons"
-          subtitle={showingIdeas ? "Idées de saison pour ton balcon" : checkable && currentActivities.length > 0 ? `${currentActivities.length - doneCount} geste${currentActivities.length - doneCount > 1 ? "s" : ""} de saison ce mois-ci` : `${resolvedPlants.length} plante${resolvedPlants.length > 1 ? "s" : ""} suivie${resolvedPlants.length > 1 ? "s" : ""}`}
+          subtitle={showingIdeas ? "Idées de saison pour ton balcon" : `${resolvedPlants.length} plante${resolvedPlants.length > 1 ? "s" : ""} suivie${resolvedPlants.length > 1 ? "s" : ""}`}
         />
 
         {/* Ton climat en une carte : la météo, la ville (à toucher pour changer), ce que ça change. */}
@@ -305,27 +284,15 @@ export default function CalendarScreen() {
 
         <View style={styles.periodHead}>
           <Text style={[styles.periodTitle, { color: colors.foreground }]}>{capitalize(periodLabel)}</Text>
-          <Text style={[styles.text, { color: colors.muted }]}>{showingIdeas ? "Ton balcon est vide : voici ce que tu pourrais cultiver. Ajoute une plante pour un calendrier sur mesure." : checkable ? "Coche ce que tu as fait : l’accueil le saura aussi." : "À venir : prépare-toi, rien à cocher pour l’instant."}</Text>
+          <Text style={[styles.text, { color: colors.muted }]}>{showingIdeas ? "Ton balcon est vide : voici ce que tu pourrais cultiver. Ajoute une plante pour un calendrier sur mesure." : `Ton calendrier : ce qui t’attend dans les prochains mois.${thisMonth ? " Les gestes de ce mois se font depuis Aujourd’hui." : ""}`}</Text>
         </View>
-
-        {allDone && (
-          <FadeIn style={styles.allDone}>
-            <Text style={styles.allDoneIcon}>🌿</Text>
-            <Text style={[styles.allDoneTitle, { color: colors.foreground }]}>Tout est fait pour {MONTH_LONG[currentMonth - 1]}</Text>
-            <Text style={[styles.allDoneText, { color: colors.muted }]}>Tes gestes de saison sont notés. Regarde le mois prochain pour t’organiser.</Text>
-            <Pressable accessibilityRole="button" onPress={() => router.push("/week")} style={({ pressed }) => [styles.weekButton, { backgroundColor: colors.primary }, pressed && styles.pressed]}>
-              <Text style={styles.weekButtonText}>Voir ma semaine</Text>
-            </Pressable>
-          </FadeIn>
-        )}
 
         {ordered.length > 0 && (
           <View style={[glass.card, styles.list]}>
             {grouped
               ? groups.map((group) => {
                 if (group.activities.length === 1) return activityRow(group.activities[0]);
-                const done = checkable && groupDoneCount(group) === group.activities.length;
-                return <TodayRow key={`group-${view}-${group.key}`} icon={GROUP_ICONS[group.key]} tone="season" title={activityGroupTitle(group)} subtitle={groupSubtitle(group)} done={done} onOpen={() => setGroupKey(group.key)} />;
+                return <TodayRow key={`group-${view}-${group.key}`} icon={GROUP_ICONS[group.key]} tone="season" title={activityGroupTitle(group)} subtitle={groupSubtitle(group)} done={group.activities.every(isDone)} onOpen={() => setGroupKey(group.key)} />;
               })
               : ordered.map(activityRow)}
           </View>
@@ -342,7 +309,6 @@ export default function CalendarScreen() {
 
       <BottomSheet visible={sheetActivity !== null} onClose={() => setSheetKey(null)}>
         {sheetActivity && (() => {
-          const done = checkable && activityDone(sheetActivity, events, now);
           const resolved = resolvedById.get(sheetActivity.subjectId);
           return (
             <View style={styles.sheet}>
@@ -351,10 +317,12 @@ export default function CalendarScreen() {
               <Text style={[styles.sheetBody, { color: colors.muted }]}>{sheetActivity.description}</Text>
               {showingIdeas ? (
                 <Pressable accessibilityRole="button" onPress={() => { setSheetKey(null); void addIdea(sheetActivity); }} style={({ pressed }) => [styles.cta, { backgroundColor: colors.primary }, pressed && styles.pressed]}><Text style={[styles.ctaText, { color: "#FFFFFF" }]}>+ Ajouter à mon balcon</Text></Pressable>
-              ) : checkable ? (
-                <Pressable accessibilityRole="button" onPress={() => { setSheetKey(null); void toggleActivity(sheetActivity); }} style={({ pressed }) => [styles.cta, { backgroundColor: done ? colors.surface : colors.foreground }, pressed && styles.pressed]}><Text style={[styles.ctaText, { color: done ? colors.foreground : colors.background }]}>{done ? "Annuler ce geste" : "C’est fait"}</Text></Pressable>
+              ) : isDone(sheetActivity) ? (
+                <Text style={[styles.small, { color: colors.primary }]}>{activityDoneLabel(sheetActivity)} : c’est noté sur Aujourd’hui.</Text>
+              ) : thisMonth ? (
+                <Pressable accessibilityRole="button" onPress={() => { setSheetKey(null); openToday(); }} style={({ pressed }) => [styles.cta, { backgroundColor: colors.foreground }, pressed && styles.pressed]}><Text style={[styles.ctaText, { color: colors.background }]}>Le faire sur Aujourd’hui</Text></Pressable>
               ) : (
-                <Text style={[styles.small, { color: colors.muted }]}>Tu pourras le cocher le moment venu : Balco te le rappellera sur l’accueil.</Text>
+                <Text style={[styles.small, { color: colors.muted }]}>Le moment venu, Balco te le proposera sur Aujourd’hui.</Text>
               )}
               {resolved && (
                 <Pressable accessibilityRole="button" onPress={() => { setSheetKey(null); router.push({ pathname: "/garden/[id]", params: { id: resolved.plant.id } }); }} style={styles.sheetLink}><Text style={[styles.link, { color: colors.primary }]}>Voir la fiche de {plantDisplayName(resolved)}</Text></Pressable>
@@ -367,35 +335,30 @@ export default function CalendarScreen() {
       <BottomSheet
         visible={sheetGroup !== null}
         onClose={() => setGroupKey(null)}
-        overlay={<><UndoToast message={toast} onDone={hideToast} />{celebration}</>}
+        overlay={<UndoToast message={toast} onDone={hideToast} />}
       >
         {sheetGroup && (
           <View style={styles.sheet}>
-            <Text style={[styles.sheetKind, { color: colors.primary }]}>{checkable ? `${groupDoneCount(sheetGroup)} sur ${sheetGroup.activities.length} fait${groupDoneCount(sheetGroup) > 1 ? "s" : ""}` : capitalize(periodLabel)}</Text>
+            <Text style={[styles.sheetKind, { color: colors.primary }]}>{capitalize(periodLabel)}</Text>
             <Text style={[styles.sheetTitle, { color: colors.foreground }]}>{sheetGroup.label} {periodLabel}</Text>
-            <Text style={[styles.sheetBody, { color: colors.muted }]}>{checkable ? "Coche chaque geste une fois fait. Touche une ligne pour le détail." : "Tu pourras les cocher le moment venu. Touche une ligne pour le détail."}</Text>
+            <Text style={[styles.sheetBody, { color: colors.muted }]}>{thisMonth ? "Ces gestes se font depuis Aujourd’hui, plante par plante. Touche une ligne pour le détail." : "Le moment venu, Balco te les proposera sur Aujourd’hui. Touche une ligne pour le détail."}</Text>
             <View>
-              {sheetGroup.activities.map((activity) => {
-                const done = checkable && activityDone(activity, events, now);
-                return (
-                  <TodayRow
-                    key={`sheet-${activity.key}`}
-                    icon={KIND_ICONS[activity.kind]}
-                    picture={picture(activity)}
-                    tone="season"
-                    title={activity.title}
-                    subtitle={memberSubtitle(activity)}
-                    done={done}
-                    checkLabel={done ? "Annuler ce geste" : "Noter comme fait"}
-                    onToggle={checkable ? () => void toggleActivity(activity) : undefined}
-                    onOpen={() => {
-                      // La feuille du geste s'ouvre une fois celle du groupe repliée.
-                      setGroupKey(null);
-                      setTimeout(() => setSheetKey(activity.key), 320);
-                    }}
-                  />
-                );
-              })}
+              {sheetGroup.activities.map((activity) => (
+                <TodayRow
+                  key={`sheet-${activity.key}`}
+                  icon={KIND_ICONS[activity.kind]}
+                  picture={picture(activity)}
+                  tone="season"
+                  title={activity.title}
+                  subtitle={memberSubtitle(activity)}
+                  done={isDone(activity)}
+                  onOpen={() => {
+                    // La feuille du geste s'ouvre une fois celle du groupe repliée.
+                    setGroupKey(null);
+                    setTimeout(() => setSheetKey(activity.key), 320);
+                  }}
+                />
+              ))}
             </View>
           </View>
         )}
@@ -424,9 +387,8 @@ export default function CalendarScreen() {
       <Modal visible={cityModalVisible} transparent animationType="slide" onRequestClose={() => setCityModalVisible(false)}>
         <View style={styles.modalBackdrop}><View style={[styles.modalCard, { backgroundColor: colors.surface }]}><View style={styles.modalHeader}><View><Text style={[styles.modalOverline, { color: colors.muted }]}>Ta ville</Text><Text style={[styles.modalTitle, { color: colors.foreground }]}>Où pousse ton jardin ?</Text></View><Pressable onPress={() => setCityModalVisible(false)} style={styles.closeButton}><Text style={[styles.closeText, { color: colors.muted }]}>×</Text></Pressable></View><Text style={[styles.modalIntro, { color: colors.muted }]}>Choisis une ville pour adapter la météo et les conseils de culture.</Text><TextInput value={cityQuery} onChangeText={setCityQuery} onSubmitEditing={() => void searchManualCity()} placeholder="Rechercher une ville…" placeholderTextColor={colors.muted} returnKeyType="search" style={[styles.cityInput, { borderColor: colors.border, color: colors.foreground, backgroundColor: colors.background }]} /><Pressable onPress={() => void searchManualCity()} style={({ pressed }) => [styles.searchButton, { backgroundColor: colors.primary }, pressed && styles.pressed]}><Text style={styles.searchButtonText}>{citySearchLoading ? "Recherche…" : "Rechercher"}</Text></Pressable>{citySearchError && <Text style={[styles.searchError, { color: colors.error }]}>{citySearchError}</Text>}<View style={styles.resultList}>{cityResults.map((city) => <Pressable key={`${city.id}-${city.latitude}`} onPress={() => void chooseCity(city)} style={({ pressed }) => [styles.resultRow, { borderColor: colors.border }, pressed && styles.pressed]}><Text style={[styles.resultName, { color: colors.foreground }]}>{city.name}</Text><Text style={[styles.resultMeta, { color: colors.muted }]}>{[city.admin1, city.country].filter(Boolean).join(" · ")}</Text></Pressable>)}</View><Pressable onPress={() => { setCityModalVisible(false); void requestDeviceLocation(); }} style={({ pressed }) => [styles.deviceLink, pressed && styles.pressed]}><Text style={[styles.deviceLinkText, { color: colors.primary }]}>⌖ Utiliser ma position actuelle</Text></Pressable></View></View>
       </Modal>
-      {/* Pendant que la feuille d'un groupe est ouverte, ils s'affichent par-dessus elle. */}
+      {/* Pendant que la feuille d'un groupe est ouverte, le message s'affiche par-dessus elle. */}
       {sheetGroup === null && <UndoToast message={toast} onDone={hideToast} />}
-      {sheetGroup === null && celebration}
     </LightScreen>
   );
 }
@@ -459,12 +421,6 @@ const styles = StyleSheet.create({
   periodHead: { gap: 4 },
   periodTitle: { fontSize: 22, fontWeight: "800", letterSpacing: -0.5 },
   empty: { textAlign: "center", paddingVertical: 18 },
-  allDone: { alignItems: "center", gap: 6, paddingVertical: 6 },
-  allDoneIcon: { fontSize: 36 },
-  allDoneTitle: { fontSize: 20, fontWeight: "800", textAlign: "center", letterSpacing: -0.3 },
-  allDoneText: { fontSize: 14, lineHeight: 20, textAlign: "center" },
-  weekButton: { marginTop: 8, borderRadius: 999, paddingHorizontal: 18, paddingVertical: 11 },
-  weekButtonText: { color: "#FFFFFF", fontSize: 14, fontWeight: "700" },
   sheet: { gap: 12 },
   sheetKind: { fontSize: 13, fontWeight: "700" },
   sheetTitle: { fontSize: 22, fontWeight: "800", letterSpacing: -0.4, lineHeight: 27 },
