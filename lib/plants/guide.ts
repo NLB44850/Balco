@@ -8,10 +8,18 @@ import type { IllustrationId } from "./illustration-names";
 import { MONTH_LONG, type CatalogPlant } from "./catalog";
 import { sowsOnWindowsill } from "./indoor";
 import { PLANTING, type Planting } from "./planting";
-import { startActivity } from "./calendar";
+import { ofLabel, potSizes, startActivity } from "./calendar";
+import { REPOTTING } from "./repotting";
 import type { ClimateInfo } from "./climate";
 
-export type GuideModel = "sow-pot" | "sow-indoor" | "plant-seedling" | "plant-bulb" | "perennial-pot";
+export type GuideModel = "sow-pot" | "sow-indoor" | "plant-seedling" | "plant-bulb" | "perennial-pot" | "repot" | "topdress";
+
+/** Les gestes du pot d'une vivace installée : rempoter, ou changer la terre du dessus. */
+export type PotTask = "repot" | "topdress";
+export const isPotTask = (value: unknown): value is PotTask => value === "repot" || value === "topdress";
+
+/** Pour le pot suivant : combien de fois elle a déjà été rempotée (`potHistory`). */
+export type GuideOptions = { repots?: number };
 
 /**
  * Bulbes et tubercules : on ne les sème pas, on ne plante pas un « plant ». Profondeur de plantation et ce qu'on
@@ -63,8 +71,9 @@ export type Supply = { id: string; label: string; detail?: string; shared: boole
 /** Semis serré coupé jeune (micro-pousses, cresson) : une barquette suffit. */
 const isDenseSowing = (planting: Planting) => planting.perPot === 0;
 
-export function supplies(entry: CatalogPlant, model: GuideModel): Supply[] {
+export function supplies(entry: CatalogPlant, model: GuideModel, options: GuideOptions = {}): Supply[] {
   const planting = plantingOf(entry);
+  if (model === "repot" || model === "topdress") return potCareSupplies(entry, model, options);
   const potLabel = model === "perennial-pot" ? `Un grand pot percé de ${entry.potLiters} L ou plus` : `Un pot percé d’au moins ${entry.potLiters} L`;
   const pot: Supply = isDenseSowing(planting)
     ? { id: "tray", label: "Une barquette ou une assiette creuse", detail: "Quelques centimètres de terreau suffisent.", shared: false }
@@ -96,6 +105,26 @@ export function supplies(entry: CatalogPlant, model: GuideModel): Supply[] {
   return isDenseSowing(planting) ? [what, pot, soil, can] : [what, pot, clay, soil, can];
 }
 
+/** Le pot suivant (un tiers de plus) ; la terre du dessus ne demande qu'une fourchette et un peu de terreau. */
+function potCareSupplies(entry: CatalogPlant, task: PotTask, { repots = 0 }: GuideOptions): Supply[] {
+  const acid = entry.id === "blueberry";
+  const can: Supply = { id: "watering-can", label: "Un arrosoir", shared: true };
+  if (task === "topdress") {
+    return [
+      { id: "fork", label: "Une vieille fourchette ou une petite griffe", detail: "Pour gratter sans abîmer les racines.", shared: true },
+      acid ? { id: "heath-soil", label: "De la terre de bruyère", detail: "Quelques poignées suffisent.", shared: true } : { id: "soil", label: "Du terreau", detail: "Quelques poignées suffisent.", shared: true },
+      can,
+    ];
+  }
+  const pot = potSizes(entry, repots);
+  return [
+    { id: "next-pot", label: `Un pot percé d’environ ${pot.next} L`, detail: `${pot.nextWidthCm} cm de large : un tiers de plus que l’actuel.`, shared: false },
+    { id: "clay-balls", label: "Une poignée de billes d’argile", detail: "Au fond du pot, l’eau s’écoule mieux.", shared: true },
+    acid ? { id: "heath-soil", label: "De la terre de bruyère", detail: "Il ne pousse que dans une terre acide.", shared: true } : { id: "soil", label: "Du terreau", detail: "Un sac de 20 L remplit deux ou trois pots moyens.", shared: true },
+    can,
+  ];
+}
+
 /** « 5 à 15 jours », « 2 à 3 mois », « l’an prochain » : un délai lisible. */
 export function delayText([min, max]: [number, number], unit: "days" | "weeks") {
   if (unit === "days") return min === max ? `${min} jours` : `${min} à ${max} jours`;
@@ -111,6 +140,8 @@ export function delayText([min, max]: [number, number], unit: "days" | "weeks") 
  * Ex. « Les pousses sortent dans 7 à 10 jours. Garde la terre humide. »
  */
 export function whatsNext(entry: CatalogPlant, model: GuideModel): string[] {
+  if (model === "repot") return ["Garde-la quelques jours à l’ombre légère : ses racines s’installent.", "Arrose un peu moins les deux premières semaines."];
+  if (model === "topdress") return ["Le terreau neuf la nourrit pour toute la saison."];
   const planting = plantingOf(entry);
   const flower = entry.category === "flower";
   const lines: string[] = [];
@@ -197,19 +228,54 @@ function plantingSteps(entry: CatalogPlant, planting: Planting, model: GuideMode
   return steps;
 }
 
+/** Rempoter : vérifier le signe, un pot à peine plus grand, démêler les racines, au même niveau qu'avant. */
+function repotSteps(entry: CatalogPlant, { repots = 0 }: GuideOptions): GuideStep[] {
+  const pot = potSizes(entry, repots);
+  return [
+    { illustration: "roots-out", text: "Regarde sous le pot si des racines sortent.", why: "Ou si l’eau ressort tout de suite : elle manque de place." },
+    { illustration: "clay-balls", text: "Mets des billes d’argile au fond du nouveau pot.", why: `Environ ${pot.next} L, ${pot.nextWidthCm} cm de large.`, mistake: "Erreur à éviter : un pot bien plus grand. La terre resterait trempée." },
+    { illustration: "unpot", text: "Sors la plante en tapotant le pot retourné.", why: "Arrosée la veille, la motte sort plus facilement." },
+    { illustration: "loosen-roots", text: "Démêle du bout des doigts les racines qui tournent.", why: "Elles partiront dans la terre neuve." },
+    { illustration: "place-plant", text: "Pose la motte au centre, au même niveau qu’avant.", why: "Mets un peu de terreau dessous pour la remonter." },
+    { illustration: "firm-soil", text: "Ajoute du terreau autour, puis tasse avec les mains." },
+    { illustration: "water-well", text: "Arrose bien, jusqu’à ce que l’eau coule dessous.", why: "La terre neuve se colle aux racines." },
+  ];
+}
+
+/** Changer la terre du dessus : 5 cm grattés, du terreau neuf, sans changer de pot. */
+function topdressSteps(): GuideStep[] {
+  return [
+    { illustration: "scrape-top", text: "Gratte la terre du dessus sur 5 cm.", why: "Avec une vieille fourchette, en restant en surface.", mistake: "Erreur à éviter : gratter trop profond. Tu abîmerais les racines." },
+    { illustration: "fill-soil", text: "Remets du terreau neuf jusqu’au même niveau.", why: "Laisse 2 cm sous le bord pour arroser." },
+    { illustration: "firm-soil", text: "Tasse doucement avec le plat de la main." },
+    { illustration: "water-well", text: "Arrose bien, jusqu’à ce que l’eau coule dessous." },
+  ];
+}
+
 /** Les étapes du guide, selon son modèle et les données de la plante. */
-export function guideSteps(entry: CatalogPlant, model: GuideModel): GuideStep[] {
+export function guideSteps(entry: CatalogPlant, model: GuideModel, options: GuideOptions = {}): GuideStep[] {
+  if (model === "repot") return repotSteps(entry, options);
+  if (model === "topdress") return topdressSteps();
   const planting = plantingOf(entry);
   return isSowing(model) ? sowingSteps(entry, planting, model === "sow-indoor") : plantingSteps(entry, planting, model);
 }
 
 /** Le titre de l'écran : « Planter la lavande », « Semer la mâche ». */
 export function guideTitle(entry: CatalogPlant, model: GuideModel) {
+  if (model === "repot") return `Rempoter ${entry.label}`;
+  if (model === "topdress") return `Changer la terre ${ofLabel(entry.label)}`;
   return `${isSowing(model) ? "Semer" : "Planter"} ${entry.label}`;
 }
 
 /** « Et après ? », en plus de la levée et de la récolte : les gestes de suite que Balco rappellera. */
 export function nextGestures(entry: CatalogPlant, model: GuideModel): string[] {
+  if (model === "repot" || model === "topdress") {
+    const data = REPOTTING[entry.id];
+    if (model === "topdress" || !data) return ["L’an prochain, Balco te dira s’il faut rempoter ou changer la terre."];
+    const [min, max] = data.everyYears;
+    const when = max === 1 ? "l’an prochain" : min === max ? `dans ${min} ans` : `dans ${min} à ${max} ans`;
+    return [`Prochain rempotage ${when} : Balco te le dira.`, ...(data.topdress && min > 1 ? ["Entre-temps, tu changeras la terre du dessus."] : [])];
+  }
   const planting = plantingOf(entry);
   const lines: string[] = [];
   if (isSowing(model) && planting.thinning) lines.push("Une semaine après la levée, tu éclairciras : Balco te le dira.");
@@ -237,5 +303,6 @@ export function toggleHave(have: HaveState, catalogId: string, item: Supply): Ha
 
 /** Le texte partagé par le téléphone : seulement ce qui manque. */
 export function shareText(entry: CatalogPlant, model: GuideModel, missing: Supply[]) {
-  return [`Pour ${isSowing(model) ? "semer" : "planter"} ${entry.label}, il me faut :`, ...missing.map((item) => `• ${item.label}`)].join("\n");
+  const what = model === "repot" ? `rempoter ${entry.label}` : model === "topdress" ? `changer la terre ${ofLabel(entry.label)}` : `${isSowing(model) ? "semer" : "planter"} ${entry.label}`;
+  return [`Pour ${what}, il me faut :`, ...missing.map((item) => `• ${item.label}`)].join("\n");
 }

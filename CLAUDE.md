@@ -39,18 +39,18 @@ Tout se passe dans son GitHub Codespace (pas de Docker sur son PC).
 
 - `pnpm -s check`, `pnpm -s lint`, puis `TEST_DATABASE_URL=mysql://balco:balco@localhost:3306/balco_cal npx vitest run`
   (MariaDB locale : `service mariadb start` si elle s'est arrêtée, `apt-get install -y mariadb-server` si elle manque,
-  puis `DATABASE_URL=… npx drizzle-kit migrate` ; 482 tests à ce jour). Dans un conteneur
+  puis `DATABASE_URL=… npx drizzle-kit migrate` ; 485 tests à ce jour). Dans un conteneur
   neuf : `apt-get install -y mariadb-server`, `service mariadb start`, créer la base `balco_cal` et l'utilisateur
   `balco`/`balco`, puis `pnpm -s build && DATABASE_URL=mysql://balco:balco@localhost:3306/balco_cal node dist/migrate.mjs`.
 - `npx expo export --platform android` pour s'assurer que le bundle Android se construit.
 - **Tests de bout en bout** (à lancer quand le porteur le demande, et avant chaque grosse évolution) :
   `bash scripts/e2e.sh` (≈ 4 min : construit l'app web avec la simulation météo, migre la base, démarre
   le vrai serveur sur le port 3100, lance Playwright). `bash scripts/e2e.sh meteo` pour un seul fichier,
-  `E2E_SKIP_BUILD=1` pour ne pas reconstruire. Scénarios dans `e2e/` (37 aujourd'hui, avec un faux service d'IA pour Observer) : parcours
+  `E2E_SKIP_BUILD=1` pour ne pas reconstruire. Scénarios dans `e2e/` (39 aujourd'hui, avec un faux service d'IA pour Observer) : parcours
   (onboarding, écrans, cocher/Annuler, fête, catalogue, fiche d'une nouvelle plante, feuille du bas qui se ferme,
   suggestions de saison, Saisons rangé par type), météo (pluie + eau économisée, gel + Saisons,
   orage, vent, canicule, « Pas aujourd'hui », retour météo réelle), compte (code de connexion lu dans
-  `dist/e2e-server.log`, balcon retrouvé sur un 2ᵉ téléphone, le 1ᵉʳ prévenu « sauvegardé depuis un autre téléphone ») et vacances. Open-Meteo est simulé
+  `dist/e2e-server.log`, balcon retrouvé sur un 2ᵉ téléphone, le 1ᵉʳ prévenu « sauvegardé depuis un autre téléphone ») et vacances, rempotage (`10-rempotage`). Open-Meteo est simulé
   (`e2e/helpers.ts`, `mockWeather`), le balcon est posé dans le stockage (`seedBalcony`). Les cases à
   cocher s'appellent « Marquer comme fait : <titre> ». Échecs : captures dans `dist/e2e-results/`.
 - Rendu web : `npx expo export --platform web`, serveur `node dist/standalone/index.mjs` avec
@@ -81,7 +81,7 @@ visuelle, retour immédiat.
 
 ## Où on en est
 
-**Nouvelle conversation ? L'onboarding et le pas-à-pas pour planter sont fusionnés dans `main` (PR https://github.com/NLB44850/Balco/pull/28, 06/10). Chantier en cours : rempotage selon le besoin (point 4 ci-dessous), étape R1 faite, à valider ; ensuite R2 puis R3.**
+**Nouvelle conversation ? L'onboarding et le pas-à-pas pour planter sont fusionnés dans `main` (PR https://github.com/NLB44850/Balco/pull/28, 06/10). Chantier en cours : rempotage selon le besoin (point 4 ci-dessous), R1, R2 et R3 codées le 06/10, à tester sur son téléphone, puis PR vers `main`. Tous les pas-à-pas listés dans `docs/pas-a-pas.md`.**
 
 **Récap pour reprendre (06/10)** : ce bloc fait foi ; les paragraphes plus bas sont l'historique (certains
 décrivent un état ancien, par exemple Saisons « à cocher » ou une fête plein écran à chaque récolte).
@@ -110,7 +110,7 @@ et les 10 étapes du test utilisateur du 04/10 (détail dans « Historique des l
    (`lib/garden/follow-ups.ts` : éclaircir, sortir les plants, pincer), 22 illustrations
    (`components/guide/illustrations.tsx`, revue dans Réglages → Version de test), guide `app/guide/[catalogId].tsx`
    (logique `lib/plants/guide.ts`). Après son test : PR vers `main` (onboarding + pas-à-pas).
-4. **Rempotage selon le besoin** (validé le 06/10 ; **R1 faite le 06/10, à valider**), 3 étapes :
+4. **Rempotage selon le besoin** (validé le 06/10 ; **R1, R2, R3 codées le 06/10, à valider**), 3 étapes :
    1) rythme par vivace vérifié sur le web (menthe chaque année, lavande tous les 2 ans, agrumes et petits fruits 2-3
    ans…) et jamais la première saison (≈ un an dans son pot, compté depuis la plantation notée) ; les autres années,
    geste « Change les 5 cm de terre du dessus » (surfaçage, validé) ; 2) signe à vérifier (« Des racines sortent par
@@ -121,6 +121,17 @@ et les 10 étapes du test utilisateur du 04/10 (détail dans « Historique des l
    thym » (`topdress`, événement `<id>:calendar-topdress:<mois>`, ne remet pas le compteur à zéro) ; `potHistory`
    (garden-logic) : dans son pot depuis le dernier rempotage, sinon la plantation notée, sinon l'arrivée. Corrigé au
    passage : Saisons ne transmettait pas l'état « à planter » (`calendar.tsx`).
+   R2 fait : description de « Rempote… » = signe de la plante (`REPOTTING[id].sign`, sinon `GENERIC_REPOT_SIGN`) + pot
+   suivant (`potSizes` : pot conseillé × 4/3 par rempotage noté, `potHistory().repots`, largeur en cm `potWidthCm`) ;
+   « Pas besoin cette année » dans la feuille du bas d'Aujourd'hui = mise en sommeil locale `repot:<id>` jusqu'au
+   1ᵉʳ janvier (`lib/garden/repot-skip.ts`, `repotSkippedUntil` du `CalendarSubject`, lu par `use-day-plan` et Saisons) :
+   la terre du dessus prend le relais. Corrigé : un rempotage ou une terre neuve noté ce mois-ci reste affiché coché
+   (`lastRepot` / `lastTopdress` dans `potCareFor`), au lieu de disparaître.
+   R3 fait : modèles de guide `repot` et `topdress` (`lib/plants/guide.ts`, `potCareActivity` dans calendar.ts), route
+   `/guide/<id>?plantId=…&task=repot|topdress` (« C'est rempoté » / « Terre changée » cochent le geste du mois) ; entrées :
+   « Pas à pas » dans la feuille du bas d'Aujourd'hui et « Comment la rempoter › » dans la fiche ; 3 dessins
+   (`roots-out`, `loosen-roots`, `scrape-top`, 25 en tout). Document lisible de tous les pas-à-pas : `docs/pas-a-pas.md`
+   (proposé : petits guides pour éclaircir, pincer, sortir les plants).
 5. **Après-récolte** des plantes récoltées en une fois (radis, carottes, salades pommées) : « Tout récolté ? » →
    « Ressemer » ou « Libérer le pot ». À décider avec lui.
 6. **Mémoire de Nora sur plusieurs jours** : il doit encore faire le test sur 2-3 jours (retour à recueillir).

@@ -48,6 +48,8 @@ export type CalendarSubject = {
   inPotSince?: string;
   /** Dernière fois qu'on a changé la terre du dessus. */
   lastTopdress?: string;
+  /** Dernier rempotage noté : fait ce mois-là, le geste reste affiché (coché). */
+  lastRepot?: string;
   /** Rempotages déjà notés : le pot a grandi d'un tiers à chacun. */
   repots?: number;
   /** « Pas besoin cette année » : pas de rempotage avant cette date (la terre du dessus à la place). */
@@ -97,11 +99,7 @@ export function calendarActivities(subjects: CalendarSubject[], month: number, o
     }
     // Rempotage selon le besoin : jamais la première saison, puis à son rythme ; les autres années, la terre du dessus.
     const potCare = potCareFor(subject, entry, m, options.now ?? new Date());
-    if (potCare === "repot") {
-      activities.push({ ...base, key: `${id}:repot`, kind: "repot", typeLabel: "REMPOTAGE", title: `Rempote ${entry.label}`, description: repotDescription(entry, subject.repots ?? 0), tone: "coral", eventType: "repotting" });
-    } else if (potCare === "topdress") {
-      activities.push({ ...base, key: `${id}:topdress`, kind: "repot", typeLabel: "TERRE NEUVE", title: `Change la terre du dessus ${ofLabel(entry.label)}`, description: "Gratte les 5 cm de terre du dessus sans abîmer les racines, puis remets du terreau neuf. Pas besoin de changer de pot cette année.", tone: "coral", eventType: "repotting", topdress: true });
-    }
+    if (potCare) activities.push(potCareActivity(subject, entry, potCare));
     if (entry.harvestMonths.includes(m)) {
       activities.push({ ...base, key: `${id}:harvest`, kind: "harvest", typeLabel: "RÉCOLTE", title: `Récolte ${entry.label}`, description: entry.harvestTip, tone: "green", eventType: "harvest" });
     }
@@ -161,7 +159,15 @@ export function startActivity(subject: CalendarSubject, month: number, options: 
 }
 
 /** « du romarin », « de la menthe », « des fraisiers », « de l’ail des ours ». */
-function ofLabel(label: string) {
+/** Le geste du pot : « Rempote le thym » ou « Change la terre du dessus du thym ». Aussi pour le pas-à-pas. */
+export function potCareActivity(subject: Pick<CalendarSubject, "id" | "displayName" | "repots">, entry: CatalogPlant, care: "repot" | "topdress"): CalendarActivity {
+  const base = { subjectId: subject.id, entry, tag: subject.displayName.toUpperCase(), kind: "repot" as const, tone: "coral" as const, eventType: "repotting" as const };
+  if (care === "repot") return { ...base, key: `${subject.id}:repot`, typeLabel: "REMPOTAGE", title: `Rempote ${entry.label}`, description: repotDescription(entry, subject.repots ?? 0) };
+  return { ...base, key: `${subject.id}:topdress`, typeLabel: "TERRE NEUVE", title: `Change la terre du dessus ${ofLabel(entry.label)}`, description: "Gratte les 5 cm de terre du dessus sans abîmer les racines, puis remets du terreau neuf. Pas besoin de changer de pot cette année.", topdress: true };
+}
+
+/** « du thym », « de la menthe », « des fraisiers ». */
+export function ofLabel(label: string) {
   if (label.startsWith("le ")) return `du ${label.slice(3)}`;
   if (label.startsWith("les ")) return `des ${label.slice(4)}`;
   return `de ${label}`;
@@ -175,12 +181,16 @@ const MONTH_MS = 30.44 * 86_400_000;
  * Le soin du pot d'une vivace installée, ce mois-là : « repot » quand son rythme est atteint (tous les N ans),
  * « topdress » (changer la terre du dessus) les autres années, rien la première saison ni hors de ses mois.
  */
-export function potCareFor(subject: Pick<CalendarSubject, "id" | "addedAt" | "toPlant" | "inPotSince" | "lastTopdress" | "repotSkippedUntil">, entry: CatalogPlant, month: number, now: Date): "repot" | "topdress" | null {
+export function potCareFor(subject: Pick<CalendarSubject, "id" | "addedAt" | "toPlant" | "inPotSince" | "lastTopdress" | "lastRepot" | "repotSkippedUntil">, entry: CatalogPlant, month: number, now: Date): "repot" | "topdress" | null {
   const data = REPOTTING[entry.id];
   if (!entry.perennial || !data || subject.addedAt === undefined || subject.toPlant || !entry.repotMonths.includes(month as Month)) return null;
   // Le mois regardé : ce mois-ci, sinon sa prochaine occurrence (Saisons montre les mois à venir).
   const current = now.getMonth() + 1;
   const when = month === current ? now : new Date(now.getFullYear() + (month < current ? 1 : 0), month - 1, 15);
+  // Déjà fait ce mois-là : le geste reste, coché (sinon il disparaîtrait aussitôt noté).
+  const sameMonth = (iso?: string) => iso !== undefined && monthKey(new Date(iso)) === monthKey(when);
+  if (sameMonth(subject.lastRepot)) return "repot";
+  if (sameMonth(subject.lastTopdress)) return "topdress";
   const age = (when.getTime() - new Date(subject.inPotSince ?? subject.addedAt).getTime()) / MONTH_MS;
   if (age < FIRST_SEASON_MONTHS) return null;
   const skipped = subject.repotSkippedUntil !== undefined && when.getTime() < new Date(subject.repotSkippedUntil).getTime();

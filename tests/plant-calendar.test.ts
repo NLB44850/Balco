@@ -68,7 +68,11 @@ describe("rempotage selon le besoin", () => {
     const thyme = { id: "t", catalogId: "thyme", addedAt: new Date(2024, 2, 1).toISOString() };
     const repot = { id: "t:calendar-repot:2026-03", plantId: "t", type: "repotting" as const, completedAt: new Date(2026, 2, 10).toISOString(), source: "manual" as const };
     const topdress = { id: "t:calendar-topdress:2026-09", plantId: "t", type: "repotting" as const, completedAt: new Date(2026, 8, 10).toISOString(), source: "manual" as const };
-    expect(potHistory(thyme, [repot, topdress])).toEqual({ inPotSince: repot.completedAt, lastTopdress: topdress.completedAt, repots: 1 });
+    expect(potHistory(thyme, [repot, topdress])).toEqual({ inPotSince: repot.completedAt, lastTopdress: topdress.completedAt, lastRepot: repot.completedAt, repots: 1 });
+    // Noté ce mois-ci : le geste reste (coché), il ne disparaît pas.
+    const now = new Date(2026, 2, 20);
+    expect(repots(calendarActivities([{ ...potted("thyme", new Date(2024, 2, 1), "t"), ...potHistory(thyme, [repot]) }], 3, { now }))).toEqual(["Rempote le thym"]);
+    expect(repots(calendarActivities([{ ...potted("thyme", new Date(2025, 2, 1), "t"), lastTopdress: new Date(2026, 2, 12).toISOString() }], 3, { now }))).toEqual(["Change la terre du dessus du thym"]);
   });
 
   it("donne le signe à vérifier et le pot suivant, un tiers plus grand à chaque rempotage", () => {

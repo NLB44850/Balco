@@ -6,7 +6,7 @@ import { mockWeather, open, seedBalcony, trackErrors } from "./helpers";
 /** L'écran de revue des illustrations (Réglages → Version de test) : tous les dessins s'affichent. */
 test("illustrations du pas-à-pas : toutes visibles, chacune nommée", async ({ page }) => {
   const errors = trackErrors(page);
-  await page.setViewportSize({ width: 412, height: 2600 });
+  await page.setViewportSize({ width: 412, height: 3000 });
   await mockWeather(page);
   await seedBalcony(page, { plants: ["basil"], wateredDaysAgo: 1 });
   await open(page, "/illustrations", "Illustrations");

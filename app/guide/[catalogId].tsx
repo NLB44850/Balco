@@ -3,7 +3,9 @@
  * 2) une action par écran, illustrée, qu'on fait glisser, avec l'erreur à éviter à son étape, 3) « Et après ? »
  * et « C'est planté » (coche le premier geste de la plante, petite animation, pas de fête plein écran).
  * Entrées : le détail d'un geste « à planter » (Aujourd'hui), la fiche plante, et le catalogue (`mode=need` :
- * seulement « Ce qu'il te faut »). Logique dans lib/plants/guide.ts.
+ * seulement « Ce qu'il te faut »). `task=repot` ou `task=topdress` : rempoter une vivace, ou changer la terre
+ * du dessus (détail du geste sur Aujourd'hui, fiche plante) ; « C'est rempoté » coche ce geste.
+ * Logique dans lib/plants/guide.ts.
  */
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import * as Haptics from "expo-haptics";
@@ -20,8 +22,8 @@ import { glass } from "@/components/ui/glass";
 import { Text } from "@/components/ui/typography";
 import { useColors } from "@/hooks/use-colors";
 import { useGarden } from "@/lib/garden/garden-context";
-import { startEventId } from "@/lib/garden/garden-logic";
-import { eventForActivity, startActivity } from "@/lib/plants/calendar";
+import { potHistory, startEventId } from "@/lib/garden/garden-logic";
+import { activityDone, eventForActivity, potCareActivity, startActivity } from "@/lib/plants/calendar";
 import { getCatalogPlant } from "@/lib/plants/catalog";
 import {
   emptyHave,
@@ -29,6 +31,7 @@ import {
   guideSteps,
   guideTitle,
   hasItem,
+  isPotTask,
   isSowing,
   nextGestures,
   shareText,
@@ -51,15 +54,18 @@ export default function GuideScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const { width } = useWindowDimensions();
-  const params = useLocalSearchParams<{ catalogId: string; plantId?: string; mode?: string }>();
+  const params = useLocalSearchParams<{ catalogId: string; plantId?: string; mode?: string; task?: string }>();
   const entry = getCatalogPlant(params.catalogId ?? "");
   const { plants, events, logEvent } = useGarden();
   const plant = plants.find((candidate) => candidate.id === params.plantId && !candidate.removedAt);
   const needOnly = params.mode === "need";
   const month = new Date().getMonth() + 1;
-  const model = entry ? guideModelFor(entry, month) : "sow-pot";
-  const items = useMemo(() => (entry ? supplies(entry, model) : []), [entry, model]);
-  const steps = useMemo(() => (entry ? guideSteps(entry, model) : []), [entry, model]);
+  const potTask = isPotTask(params.task) ? params.task : null;
+  const model = potTask ?? (entry ? guideModelFor(entry, month) : "sow-pot");
+  // Rempotage : le pot suivant dépend des rempotages déjà notés.
+  const repots = plant && potTask ? potHistory(plant, events).repots : 0;
+  const items = useMemo(() => (entry ? supplies(entry, model, { repots }) : []), [entry, model, repots]);
+  const steps = useMemo(() => (entry ? guideSteps(entry, model, { repots }) : []), [entry, model, repots]);
 
   const [have, setHave] = useState<HaveState>(emptyHave);
   const [phase, setPhase] = useState<Phase>("need");
@@ -105,16 +111,22 @@ export default function GuideScreen() {
   const previous = () => (index === 0 ? setPhase("need") : goTo(index - 1));
 
   // « C'est planté » : le même geste que sur Aujourd'hui ; la plante passe « installée ».
-  const canPlant = Boolean(plant?.toPlant) && !events.some((event) => event.id === startEventId(plant!.id));
+  // « C'est rempoté » / « C'est fait » : le geste du pot de ce mois, s'il n'est pas déjà noté.
+  const displayName = plant?.nickname?.trim() || entry.name;
+  const potActivity = plant && potTask && !plant.toPlant ? potCareActivity({ id: plant.id, displayName, repots }, entry, potTask) : null;
+  const canPlant = potActivity
+    ? !activityDone(potActivity, events, new Date())
+    : Boolean(plant?.toPlant) && !events.some((event) => event.id === startEventId(plant!.id));
   const markPlanted = async () => {
     if (!plant) return;
-    const activity = startActivity({ id: plant.id, entry, displayName: plant.nickname?.trim() || entry.name, addedAt: plant.addedAt, toPlant: true }, month);
+    const activity = potActivity ?? startActivity({ id: plant.id, entry, displayName, addedAt: plant.addedAt, toPlant: true }, month);
     await logEvent(eventForActivity(activity, new Date()));
     if (Platform.OS !== "web") void Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => undefined);
     setPlanted(true);
     setTimeout(() => router.back(), 1400);
   };
 
+  const doneLabel = potTask === "repot" ? "C’est rempoté" : potTask === "topdress" ? "Terre changée" : isSowing(model) ? "C’est semé" : "C’est planté";
   const subtitle = needOnly ? "Ce qu’il te faut" : phase === "steps" ? `Étape ${index + 1} sur ${steps.length}` : phase === "after" ? "Et après ?" : `${steps.length} étapes · ce qu’il te faut d’abord`;
 
   return (
@@ -181,7 +193,7 @@ export default function GuideScreen() {
         {phase === "after" && (
           <>
             <View style={[glass.card, styles.after]}>
-              <GuideIllustration id={isSowing(model) ? "sprouts" : "water-well"} size={140} />
+              <GuideIllustration id={isSowing(model) ? "sprouts" : potTask === "repot" ? "harden-off" : "water-well"} size={140} />
               {[...whatsNext(entry, model), ...nextGestures(entry, model)].map((line) => (
                 <Text key={line} style={[styles.afterLine, { color: colors.foreground }]}>{line}</Text>
               ))}
@@ -189,11 +201,11 @@ export default function GuideScreen() {
             {planted ? (
               <PopIn style={styles.planted}>
                 <View style={[styles.check, { backgroundColor: colors.primary }]}><Text style={styles.checkMark}>✓</Text></View>
-                <Text style={[styles.itemLabel, { color: colors.primary }]}>{isSowing(model) ? "C’est semé" : "C’est planté"} : bien joué !</Text>
+                <Text style={[styles.itemLabel, { color: colors.primary }]}>{doneLabel} : bien joué !</Text>
               </PopIn>
             ) : canPlant ? (
               <Pressable accessibilityRole="button" onPress={() => void markPlanted()} style={({ pressed }) => [styles.cta, { backgroundColor: colors.primary }, pressed && styles.pressed]}>
-                <Text style={styles.ctaText}>{isSowing(model) ? "C’est semé" : "C’est planté"}</Text>
+                <Text style={styles.ctaText}>{doneLabel}</Text>
               </Pressable>
             ) : (
               <Pressable accessibilityRole="button" onPress={() => router.back()} style={({ pressed }) => [styles.cta, { backgroundColor: colors.foreground }, pressed && styles.pressed]}>

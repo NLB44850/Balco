@@ -61,17 +61,18 @@ describe("modèles de guide et « Ce qu'il te faut »", () => {
 });
 
 describe("les étapes du pas-à-pas (P7) : règles d'écriture", () => {
-  const VERBS = ["Mets", "Remplis", "Fais", "Pose", "Sème", "Recouvre", "Rebouche", "Laisse", "Arrose", "Couvre", "Pose-les", "Sors", "Ajoute", "Enfonce-les"];
+  const VERBS = ["Mets", "Remplis", "Fais", "Pose", "Sème", "Recouvre", "Rebouche", "Laisse", "Arrose", "Couvre", "Pose-les", "Sors", "Ajoute", "Enfonce-les", "Regarde", "Démêle", "Gratte", "Remets", "Tasse"];
   const words = (text: string) => text.split(/\s+/u).filter(Boolean).length;
-  const models = ["sow-pot", "sow-indoor", "plant-seedling", "plant-bulb", "perennial-pot"] as const;
+  const models = ["sow-pot", "sow-indoor", "plant-seedling", "plant-bulb", "perennial-pot", "repot", "topdress"] as const;
 
   it("pour chaque plante et chaque mois : une action par écran, verbe en tête, moins de 12 mots, une seule erreur à éviter", async () => {
     const { ILLUSTRATION_IDS } = await import("../lib/plants/illustration-names");
     const { guideSteps } = await import("../lib/plants/guide");
+    const { REPOTTING } = await import("../lib/plants/repotting");
     for (const entry of PLANT_CATALOG) {
-      for (let month = 1; month <= 12; month += 1) {
-        const model = guideModelFor(entry, month);
-        const steps = guideSteps(entry, model);
+      const pot = REPOTTING[entry.id] ? (["repot", "topdress"] as const) : [];
+      for (const model of [...Array.from({ length: 12 }, (_, month) => guideModelFor(entry, month + 1)), ...pot]) {
+        const steps = guideSteps(entry, model, { repots: 1 });
         expect(steps.length, `${entry.id} ${model}`).toBeGreaterThanOrEqual(4);
         expect(steps.length, `${entry.id} ${model}`).toBeLessThanOrEqual(7);
         expect(steps.filter((step) => step.mistake).length, `${entry.id} ${model}`).toBe(1);
@@ -84,7 +85,27 @@ describe("les étapes du pas-à-pas (P7) : règles d'écriture", () => {
         }
       }
     }
-    expect(models.length).toBe(5);
+    expect(models.length).toBe(7);
+  });
+
+  it("rempoter et changer la terre du dessus : le pot suivant, l'erreur à éviter, la suite", async () => {
+    const { guideSteps, guideTitle, nextGestures, shareText, supplies, whatsNext } = await import("../lib/plants/guide");
+    const { potSizes } = await import("../lib/plants/calendar");
+    const thyme = plant("thyme");
+    const next = potSizes(thyme, 1);
+    expect(guideTitle(thyme, "repot")).toBe("Rempoter le thym");
+    expect(guideTitle(thyme, "topdress")).toBe("Changer la terre du thym");
+    const repot = guideSteps(thyme, "repot", { repots: 1 });
+    expect(repot[0].text).toBe("Regarde sous le pot si des racines sortent.");
+    expect(repot.find((step) => step.mistake)?.why).toBe(`Environ ${next.next} L, ${next.nextWidthCm} cm de large.`);
+    expect(supplies(thyme, "repot", { repots: 1 })[0]).toMatchObject({ id: "next-pot", label: `Un pot percé d’environ ${next.next} L` });
+    expect(supplies(thyme, "topdress").map((item) => item.id)).toEqual(["fork", "soil", "watering-can"]);
+    expect(supplies(plant("blueberry"), "repot").map((item) => item.id)).toContain("heath-soil");
+    expect(guideSteps(thyme, "topdress")[0].mistake).toBe("Erreur à éviter : gratter trop profond. Tu abîmerais les racines.");
+    expect(whatsNext(thyme, "repot")[0]).toContain("ombre légère");
+    expect(nextGestures(thyme, "repot")).toEqual(["Prochain rempotage dans 2 à 4 ans : Balco te le dira.", "Entre-temps, tu changeras la terre du dessus."]);
+    expect(nextGestures(plant("mint"), "repot")).toEqual(["Prochain rempotage l’an prochain : Balco te le dira."]);
+    expect(shareText(thyme, "topdress", supplies(thyme, "topdress").slice(0, 1))).toBe("Pour changer la terre du thym, il me faut :\n• Une vieille fourchette ou une petite griffe");
   });
 
   it("des exemples concrets", async () => {
