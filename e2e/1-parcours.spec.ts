@@ -91,7 +91,7 @@ test("catalogue : ajouter une plante puis ouvrir sa fiche", async ({ page }) => 
   const errors = trackErrors(page);
   await mockWeather(page);
   await seedBalcony(page, { plants: ["basil"], wateredDaysAgo: 1 });
-  await open(page, "/garden/add", "Basilic");
+  await open(page, "/garden/add", "Ajouter une plante");
   await page.getByPlaceholder("Basilic, fraisier, lavande…").fill("menthe");
   await page.getByRole("button", { name: /^Ajouter Menthe/ }).first().click();
   await expect(page.getByText("Ajouté à ton balcon : Menthe")).toBeVisible();

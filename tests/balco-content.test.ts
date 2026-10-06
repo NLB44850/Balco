@@ -127,7 +127,9 @@ describe("Balco MVP content", () => {
     expect(weather).toContain("balco.location.preference.v1");
     expect(weather).toContain("geocoding-api.open-meteo.com/v1/search");
     expect(weather).toContain("selectCity");
-    expect(readProjectFile("app/(tabs)/calendar.tsx")).toContain("Où pousse ton jardin ?");
+    expect(readProjectFile("components/city-picker.tsx")).toContain("Où pousse ton jardin ?");
+    expect(readProjectFile("app/(tabs)/calendar.tsx")).toContain("<CityPicker");
+    expect(readProjectFile("app/(tabs)/index.tsx")).toContain("Météo de Paris par défaut");
     expect(readProjectFile("app.config.ts")).toContain("expo-location");
   });
 

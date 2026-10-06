@@ -6,6 +6,9 @@ le porteur, avec toutes les propositions de Claude (« OK pour tes propositions 
 **Avancement** : A1 validée le 6 octobre ; A2 codée le 6 octobre, **en attente de validation sur son
 téléphone (APK : la version web n'a pas de notifications)**. Prochaine action après son accord : l'étape A3.
 
+- A3 (fait, à valider) : recherche de ville sortie en composant `components/city-picker.tsx` (Saisons,
+  Aujourd'hui, Réglages) ; bandeau « Météo de Paris par défaut · Choisir ma ville » sur Aujourd'hui dès que la
+  météo est celle de repli ; ligne « 📍 Ta ville · Lyon » dans Réglages → Mon balcon. E2e `e2e/6-ville.spec.ts`.
 - A2 (fait, à valider) : `activateReminders` dans `lib/reminders/activate.ts` (autorisation demandée d'abord,
   `enabled` + toutes les plantes enregistrés seulement après un accord, puis programmation du prochain conseil
   s'il y en a un ; refus = alerte `NOTIFICATIONS_DENIED`, rien d'enregistré). Utilisée par Aujourd'hui

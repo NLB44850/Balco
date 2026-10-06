@@ -7,6 +7,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { FadeIn } from "@/components/motion";
 import { ScreenContainer } from "@/components/screen-container";
+import { CityPicker } from "@/components/city-picker";
 import { ScreenHeader } from "@/components/screen-header";
 import { glass } from "@/components/ui/glass";
 import { IconSymbol } from "@/components/ui/icon-symbol";
@@ -110,7 +111,7 @@ export default function HomeScreen() {
   }, [router]);
   const { covers } = usePlantPhotos();
   // Plan du jour, météo, réglages et reports : les mêmes que Balcon et la fiche plante.
-  const { weather, weatherSnapshot, now, climate, snoozes, snoozesLoaded, reminderSettings, setReminderSettings, reminderSettingsLoaded, reminderDecisions, visibleGroups, plan } = useDayPlan();
+  const { weather, weatherSnapshot, isLoading: weatherLoading, searchCities, selectCity, requestDeviceLocation, now, climate, snoozes, snoozesLoaded, reminderSettings, setReminderSettings, reminderSettingsLoaded, reminderDecisions, visibleGroups, plan } = useDayPlan();
   const [sheetKey, setSheetKey] = useState<string | null>(null);
   const [toast, setToast] = useState<ToastMessage | null>(null);
   const toastId = useRef(0);
@@ -268,6 +269,7 @@ export default function HomeScreen() {
   };
 
   // L'autorisation du téléphone d'abord : rien n'est enregistré tant qu'elle n'est pas donnée.
+  const [cityPickerOpen, setCityPickerOpen] = useState(false);
   const turnOnReminders = async () => {
     const result = await activateReminders(reminderSettings, {
       requestPermission: requestLocalNotificationPermission,
@@ -360,6 +362,19 @@ export default function HomeScreen() {
             </View>
             {previewStatus === "sent" && <Text style={[styles.small, { color: colors.muted }]}>Envoyée : verrouille ton téléphone pour la voir arriver.</Text>}
             {previewStatus === "denied" && <Text style={[styles.small, { color: colors.error }]}>Les notifications sont bloquées : autorise-les pour Balco dans les réglages du téléphone.</Text>}
+          </View>
+        )}
+
+        {/* Ville inconnue (position refusée ou pas encore choisie) : pas d'alerte météo tant qu'elle manque. */}
+        {!weatherLoading && weather.isFallback && (
+          <View style={[glass.card, styles.cityBanner]}>
+            <View style={styles.flex}>
+              <Text style={[styles.cityBannerTitle, { color: colors.foreground }]}>Météo de Paris par défaut</Text>
+              <Text style={[styles.small, { color: colors.muted }]}>Choisis ta ville pour être prévenu du gel, de la pluie et de la chaleur chez toi.</Text>
+            </View>
+            <Pressable accessibilityRole="button" onPress={() => setCityPickerOpen(true)} style={({ pressed }) => [styles.pill, { backgroundColor: colors.primary }, pressed && styles.pressed]}>
+              <Text style={[styles.pillText, { color: "#FFFFFF" }]}>Choisir ma ville</Text>
+            </Pressable>
           </View>
         )}
 
@@ -553,6 +568,7 @@ export default function HomeScreen() {
       {/* Pendant que la feuille des arrosages est ouverte, ils s'affichent par-dessus elle. */}
       {wateringSheet === null && <UndoToast message={toast} onDone={hideToast} />}
       {wateringSheet === null && celebration}
+      <CityPicker visible={cityPickerOpen} onClose={() => setCityPickerOpen(false)} searchCities={searchCities} selectCity={selectCity} requestDeviceLocation={requestDeviceLocation} />
     </ScreenContainer>
   );
 }
@@ -629,6 +645,8 @@ const styles = StyleSheet.create({
   allDoneTitle: { fontSize: 20, fontWeight: "800", textAlign: "center", letterSpacing: -0.3 },
   weekButton: { marginTop: 8, paddingHorizontal: 18, paddingVertical: 11 },
   allDoneText: { fontSize: 14, lineHeight: 20, textAlign: "center" },
+  cityBanner: { flexDirection: "row", alignItems: "center", gap: 12, padding: 14 },
+  cityBannerTitle: { fontSize: 15, fontWeight: "700" },
   remindersRow: { flexDirection: "row", alignItems: "center", gap: 12 },
   flex: { flex: 1 },
   shelf: { gap: 12 },
