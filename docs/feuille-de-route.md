@@ -162,7 +162,7 @@ Très cohérent avec la promesse écologique.
 |---|---|---|
 | Réponses basées sur les plantes possédées | ✅ | Le serveur transmet les plantes, avec la variété choisie |
 | Ville, saison, exposition | ✅ | Ville, balcon, exposition et date transmis à chaque question |
-| Conseils pour débutants | ✅ | Niveau choisi à l'accueil, modifiable dans Réglages ou dans « Nora se souvient de toi » (Je débute / Je me lance / J'ai déjà un potager) : Nora adapte la longueur et le vocabulaire |
+| Conseils pour débutants | ✅ | Nora parle simplement par défaut ; niveau réglable dans Réglages ou dans « Nora se souvient de toi » (Je débute / Je me lance / J'ai déjà un potager) : Nora adapte la longueur et le vocabulaire (l'accueil ne le demande plus depuis le 6 octobre) |
 | Questions rapides | ✅ | Boutons de questions prêtes à l'emploi |
 | Analyse de l'historique | ✅ | Les 90 derniers jours résumés plante par plante (allégé le 2 octobre pour réduire le coût de chaque question) : nombre de gestes par type, date du dernier, gestes conseillés jamais notés, derniers gestes, plantes retirées dans l'année. Bouton « Fais le point sur mes plantes ». Nouveau geste « Engrais » (26 plantes gourmandes, rythme par plante) : Nora sait dire « pas d'engrais depuis 3 semaines » |
 | Mémoire des préférences et du niveau | ✅ | 9 préférences à cocher (réponses courtes, animal, enfants, peu de temps, économiser l'eau…) et faits retenus en discutant (« A un chat »), affichés sous la réponse avec « Oublier », et « Tout oublier ». Stockés sur le serveur (table `nora_memories`), effacés avec le compte. Chaque fait retenu porte sa date, et la conversation est datée jour par jour : Nora reçoit les échanges des 2 derniers jours et, pour le reste, ce qu'elle a retenu |
@@ -287,7 +287,7 @@ L'ordre suit la priorité fixée par le porteur du projet. Chaque étape est val
 **À faire ensuite, dans l'ordre** (6 octobre) :
 
 1. Revérifier sur le prochain APK : l'aperçu de la photo dans Observer, l'appareil photo depuis Aujourd'hui, les notifications.
-2. **Refaire l'accueil de première ouverture (onboarding)** : plan validé le 6 octobre (`docs/chantier-onboarding.md`). D'abord corriger les vrais défauts (plantes de saison seulement, bouton « Activer les rappels », ville par défaut), puis un nouveau parcours : « Tu as déjà des plantes ? », recherche de tes plantes, soleil, espace, ville, rappels, carte de bienvenue ; le prénom et l'expérience sortent de l'accueil.
+2. **Refaire l'accueil de première ouverture (onboarding)** : plan validé le 6 octobre (`docs/chantier-onboarding.md`), **codé le 6 octobre (8 étapes), à tester sur téléphone** : plantes de saison seulement dans le climat de la ville, « Activer les rappels » corrigé, bandeau « Météo de Paris par défaut », plantes « à planter » ou « installées », parcours « Tu as déjà des plantes ? » (Oui / Pas encore), ville avant les plantes, rappels, carte de bienvenue, « Passer » + « Quelques questions », prénom demandé par Nora, expérience dans Réglages seulement.
 3. Décider de l'après-récolte des plantes qu'on arrache (radis, carottes, salades) : « Ressemer » ou « Libérer le pot ».
 4. Tester la mémoire de Nora sur plusieurs jours.
 5. Proposé : une version web toujours en ligne et l'APK construit automatiquement, pour tester sans Codespace.

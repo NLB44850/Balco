@@ -3,8 +3,17 @@
 Document de reprise : tout ce qui a été établi dans la conversation du 6 octobre. **Le plan est validé par
 le porteur, avec toutes les propositions de Claude (« OK pour tes propositions »).**
 
-**Avancement** : A1 validée le 6 octobre ; A2 codée le 6 octobre, **en attente de validation sur son
-téléphone (APK : la version web n'a pas de notifications)**. Prochaine action après son accord : l'étape A3.
+**Avancement** : A1 validée le 6 octobre. **A2 à C2 codées d'affilée le 6 octobre** (à sa demande : « enchaîne
+toutes les étapes et je testerai à la fin »), chacune en un commit testé. Prochaine action : recueillir ses
+retours de test, corriger, puis proposer la PR vers `main`.
+
+- C2 (fait) : parcours de bout en bout pour chaque chemin (Playwright, `e2e/1-parcours.spec.ts` : « Pas encore »
+  avec ville choisie, « Oui » avec position refusée, « Passer » + « Quelques questions » + « Refaire l'accueil »,
+  prénom par Nora ; `e2e/6-ville.spec.ts` : bandeau puis Lyon). Docs à jour (CLAUDE.md, feuille de route, récap).
+  **À décider avec lui** : (1) en décembre-janvier, 1 ou 2 plantes de saison seulement (règle appliquée telle
+  quelle) : ajouter des « à préparer pour le printemps » ? (2) une plante ajoutée depuis le catalogue arrive
+  « installée », une idée de saison « à planter » : demander « Déjà en terre ? » au catalogue ? (3) « Je ne sais
+  pas » pour le soleil = mi-ombre. (4) Réglages affiche les nouvelles phrases du soleil en pastilles (plus longues).
 
 - C1 (fait, à valider) : `lib/ai/greeting.ts` (`noraGreeting`) : sans prénom, Nora demande « Comment je
   t'appelle ? » dans sa conversation (champ + OK + « Plus tard », gardé sous `balco.nora.name-asked.v1`), sans

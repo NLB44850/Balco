@@ -39,14 +39,14 @@ Tout se passe dans son GitHub Codespace (pas de Docker sur son PC).
 
 - `pnpm -s check`, `pnpm -s lint`, puis `TEST_DATABASE_URL=mysql://balco:balco@localhost:3306/balco_cal npx vitest run`
   (MariaDB locale : `service mariadb start` si elle s'est arrêtée, `apt-get install -y mariadb-server` si elle manque,
-  puis `DATABASE_URL=… npx drizzle-kit migrate` ; 443 tests à ce jour). Dans un conteneur
+  puis `DATABASE_URL=… npx drizzle-kit migrate` ; 456 tests à ce jour). Dans un conteneur
   neuf : `apt-get install -y mariadb-server`, `service mariadb start`, créer la base `balco_cal` et l'utilisateur
   `balco`/`balco`, puis `pnpm -s build && DATABASE_URL=mysql://balco:balco@localhost:3306/balco_cal node dist/migrate.mjs`.
 - `npx expo export --platform android` pour s'assurer que le bundle Android se construit.
 - **Tests de bout en bout** (à lancer quand le porteur le demande, et avant chaque grosse évolution) :
   `bash scripts/e2e.sh` (≈ 4 min : construit l'app web avec la simulation météo, migre la base, démarre
   le vrai serveur sur le port 3100, lance Playwright). `bash scripts/e2e.sh meteo` pour un seul fichier,
-  `E2E_SKIP_BUILD=1` pour ne pas reconstruire. Scénarios dans `e2e/` (25 aujourd'hui, avec un faux service d'IA pour Observer) : parcours
+  `E2E_SKIP_BUILD=1` pour ne pas reconstruire. Scénarios dans `e2e/` (30 aujourd'hui, avec un faux service d'IA pour Observer) : parcours
   (onboarding, écrans, cocher/Annuler, fête, catalogue, fiche d'une nouvelle plante, feuille du bas qui se ferme,
   suggestions de saison, Saisons rangé par type), météo (pluie + eau économisée, gel + Saisons,
   orage, vent, canicule, « Pas aujourd'hui », retour météo réelle), compte (code de connexion lu dans
@@ -81,7 +81,7 @@ visuelle, retour immédiat.
 
 ## Où on en est
 
-**Nouvelle conversation ? Commencer par le chantier onboarding (point 2 ci-dessous, `docs/chantier-onboarding.md`).**
+**Nouvelle conversation ? L'onboarding est codé (8 étapes, 06/10) et attend son test sur téléphone : recueillir ses retours (point 2 ci-dessous, `docs/chantier-onboarding.md`), puis proposer la PR vers `main`.**
 
 **Récap pour reprendre (06/10)** : ce bloc fait foi ; les paragraphes plus bas sont l'historique (certains
 décrivent un état ancien, par exemple Saisons « à cocher » ou une fête plein écran à chaque récolte).
@@ -95,7 +95,13 @@ et les 10 étapes du test utilisateur du 04/10 (détail dans « Historique des l
    (`expo-image`), l'appareil photo depuis Aujourd'hui, les notifications, Balcon à deux cartes par ligne.
 2. **Refonte de l'onboarding : chantier en cours, plan validé le 06/10.** Tout est dans
    **`docs/chantier-onboarding.md`** (état des lieux vérifié, plan en 8 étapes A1, A2, A3, B1 à B4, C1, C2, et les
-   8 décisions prises). **A1 validée le 06/10 ; A2 (« Activer les rappels » sur Aujourd'hui) codée le 06/10, à valider sur l'APK ; ensuite A3.** Ne pas reposer les questions déjà tranchées.
+   8 décisions prises). **A1 validée le 06/10 ; A2 à C2 codées d'affilée le 06/10 à sa demande (« enchaîne, je testerai
+   à la fin »)** : à tester (web pour tout le parcours, APK pour les rappels et la position) ; ensuite PR vers `main`.
+   Ce qui en reste dans le code : `seasonalStarters` (plantes de saison), `lib/reminders/activate.ts`,
+   `components/city-picker.tsx` + bandeau « Météo de Paris par défaut », `GardenPlant.toPlant` (« à planter »,
+   migration 0015, `startActivity`, événement `<id>:start`), `app/welcome.tsx` (`onboardingSteps`, `arrivalCard`,
+   relance `/welcome?again=1`), `lib/ai/greeting.ts` (prénom demandé par Nora). Plus aucune demande de position
+   d'office (`use-local-weather.ts`). Ne pas reposer les questions déjà tranchées.
 3. **Après-récolte** des plantes récoltées en une fois (radis, carottes, salades pommées) : « Tout récolté ? » →
    « Ressemer » ou « Libérer le pot ». À décider avec lui.
 4. **Mémoire de Nora sur plusieurs jours** : il doit encore faire le test sur 2-3 jours (retour à recueillir).
