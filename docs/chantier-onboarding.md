@@ -6,6 +6,12 @@ le porteur, avec toutes les propositions de Claude (« OK pour tes propositions 
 **Avancement** : A1 validée le 6 octobre ; A2 codée le 6 octobre, **en attente de validation sur son
 téléphone (APK : la version web n'a pas de notifications)**. Prochaine action après son accord : l'étape A3.
 
+- B3 (fait, à valider) : étape « Où est ton balcon ? » (juste avant les plantes ; après l'espace sur le chemin
+  Oui) : « ⌖ Utiliser ma position » (seule demande de position de l'app, 20 s au plus), recherche de ville,
+  « Plus tard » ; les plantes de saison suivent alors le climat de la ville. Sur téléphone, dernière étape
+  « Je te préviens s'il gèle cette nuit ou si tes plantes ont soif. » (logique de A2, refus = message et
+  « Créer mon balcon »). `use-local-weather.ts` ne demande plus la position d'office (sans ville : Paris et le
+  bandeau de A3) ; `requestDeviceLocation` renvoie true/false. E2e : refus simulé par `denyGeolocation`.
 - B2 (fait, à valider) : `app/welcome.tsx` réécrit. Bienvenue « Ton balcon, au bon moment. » + « C'est parti » /
   « Passer » ; « Tu as déjà des plantes sur ton balcon ? » ; chemins dans `onboardingSteps`
   (`lib/garden/onboarding.ts`) : Oui → Lesquelles (recherche `searchCatalog` + raccourcis `COMMON_PLANT_IDS`,

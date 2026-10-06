@@ -15,7 +15,7 @@ type Props = {
   onClose: () => void;
   searchCities: (query: string) => Promise<CityResult[]>;
   selectCity: (city: CityResult) => Promise<void>;
-  requestDeviceLocation: () => Promise<void>;
+  requestDeviceLocation: () => Promise<unknown>;
 };
 
 export function CityPicker({ visible, onClose, searchCities, selectCity, requestDeviceLocation }: Props) {

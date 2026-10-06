@@ -50,13 +50,15 @@ export function optionTitle(options: OnboardingOption[], id: string | undefined)
 }
 
 /** Les écrans de l'accueil après la bienvenue, selon le chemin suivi. */
-export type OnboardingStep = "has" | "which" | "sun" | "space" | "goals" | "plants";
+export type OnboardingStep = "has" | "which" | "sun" | "space" | "goals" | "city" | "plants" | "reminders";
 
 /**
- * Le chemin de l'accueil : « Oui, j'ai des plantes » → lesquelles, soleil, espace ; « Pas encore » →
- * soleil, espace, envies, premières plantes de saison. Tant que la réponse manque, on suppose
- * « Pas encore » (la barre ne compte que les écrans du chemin suivi).
+ * Le chemin de l'accueil : « Oui, j'ai des plantes » → lesquelles, soleil, espace, ville ; « Pas encore » →
+ * soleil, espace, envies, ville (juste avant les plantes : le filtre de saison dépend du climat), premières
+ * plantes de saison. Sur un téléphone qui sait notifier, les rappels ferment la marche. Tant que la réponse
+ * manque, on suppose « Pas encore » (la barre ne compte que les écrans du chemin suivi).
  */
-export function onboardingSteps({ hasPlants }: { hasPlants?: boolean }): OnboardingStep[] {
-  return hasPlants ? ["has", "which", "sun", "space"] : ["has", "sun", "space", "goals", "plants"];
+export function onboardingSteps({ hasPlants, reminders = false }: { hasPlants?: boolean; reminders?: boolean }): OnboardingStep[] {
+  const path: OnboardingStep[] = hasPlants ? ["has", "which", "sun", "space", "city"] : ["has", "sun", "space", "goals", "city", "plants"];
+  return reminders ? [...path, "reminders"] : path;
 }

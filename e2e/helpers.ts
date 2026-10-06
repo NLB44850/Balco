@@ -114,3 +114,21 @@ export function loginCodes(email: string) {
   const log = readFileSync(path.resolve(__dirname, "../dist/e2e-server.log"), "utf8");
   return [...log.matchAll(new RegExp(`login code for ${email.replace(/[.+]/g, "\\$&")}: (\\d{6})`, "g"))].map((match) => match[1]);
 }
+
+/** Le navigateur refuse la position (comme « Bloquer » dans Chrome) : sans cela, sa demande reste en attente. */
+export async function denyGeolocation(page: Page) {
+  await page.addInitScript(() => {
+    const denied = { code: 1, message: "User denied Geolocation", PERMISSION_DENIED: 1, POSITION_UNAVAILABLE: 2, TIMEOUT: 3 };
+    const geolocation = {
+      getCurrentPosition: (_success: unknown, error?: (reason: typeof denied) => void) => setTimeout(() => error?.(denied), 10),
+      watchPosition: (_success: unknown, error?: (reason: typeof denied) => void) => (setTimeout(() => error?.(denied), 10), 0),
+      clearWatch: () => undefined,
+    };
+    Object.defineProperty(navigator, "geolocation", { value: geolocation, configurable: true });
+    const query = navigator.permissions?.query?.bind(navigator.permissions);
+    if (navigator.permissions) {
+      navigator.permissions.query = (descriptor: PermissionDescriptor) =>
+        descriptor.name === "geolocation" ? Promise.resolve({ state: "denied", onchange: null } as unknown as PermissionStatus) : query!(descriptor);
+    }
+  });
+}

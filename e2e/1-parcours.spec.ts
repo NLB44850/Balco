@@ -1,6 +1,6 @@
 import { expect, test } from "@playwright/test";
 
-import { checkboxOf, mockWeather, open, seedBalcony, trackErrors, wateringGroup } from "./helpers";
+import { checkboxOf, denyGeolocation, mockWeather, open, seedBalcony, trackErrors, wateringGroup } from "./helpers";
 
 /** Le parcours de tous les jours : arriver, créer son balcon, cocher, annuler, ajouter une plante. */
 
@@ -9,12 +9,17 @@ test("onboarding « Pas encore » : soleil, espace, envies, puis des plantes de 
   await mockWeather(page);
   await open(page, "/", "Ton balcon, au bon moment.");
   await page.getByText("C’est parti").click();
-  await expect(page.getByLabel("Étape 1 sur 5")).toBeVisible();
+  await expect(page.getByLabel("Étape 1 sur 6")).toBeVisible();
   await page.getByText("Pas encore").click();
   await page.getByText("Le soleil tape presque toute la journée").click();
   await page.getByText("Un petit balcon").click();
   await page.getByText("Tomates cerises").click();
   await page.getByText("Continuer", { exact: true }).click();
+  // La ville juste avant les plantes : leur saison suit son climat.
+  await expect(page.getByText("Où est ton balcon ?")).toBeVisible();
+  await page.getByPlaceholder("Rechercher une ville…").fill("Lyon");
+  await page.getByRole("button", { name: "Rechercher" }).click();
+  await page.getByText("Lyon", { exact: true }).click();
   await expect(page.getByText("Tes premières plantes")).toBeVisible();
   // Plantes de saison seulement : hors de mars à juin, pas de tomates, mais une phrase pour patienter.
   if (![3, 4, 5, 6].includes(new Date().getMonth() + 1)) {
@@ -23,28 +28,35 @@ test("onboarding « Pas encore » : soleil, espace, envies, puis des plantes de 
   }
   await page.getByText(/^Créer mon balcon/).click();
   await expect(page.getByText("Aujourd’hui").first()).toBeVisible();
+  await expect(page.getByText("Météo de Paris par défaut")).toHaveCount(0);
   // Choisies, pas encore en terre : leur premier geste est de les semer ou planter.
   await expect(page.getByRole("checkbox", { name: /^Marquer comme fait : (Sème|Plante) / }).first()).toBeVisible();
   await expect(page.getByText(/Vérifie la terre/)).toHaveCount(0);
   expect(errors).toEqual([]);
 });
 
-test("onboarding « Oui » : lesquelles (raccourci + recherche), puis soleil et espace ; plantes installées", async ({ page }) => {
+test("onboarding « Oui » : lesquelles (raccourci + recherche), soleil, espace, ville refusée ; plantes installées", async ({ page }) => {
   const errors = trackErrors(page);
   await mockWeather(page);
+  await denyGeolocation(page);
   await open(page, "/", "Ton balcon, au bon moment.");
   await page.getByText("C’est parti").click();
   await page.getByText("Oui", { exact: true }).click();
   await expect(page.getByText("Lesquelles ?")).toBeVisible();
-  await expect(page.getByLabel("Étape 2 sur 4")).toBeVisible();
+  await expect(page.getByLabel("Étape 2 sur 5")).toBeVisible();
   await page.getByRole("checkbox", { name: "Basilic" }).click();
   await page.getByLabel("Rechercher une plante").fill("romarin");
   await page.getByRole("checkbox", { name: "Romarin" }).first().click();
   await page.getByText("Continuer · 2 plantes").click();
   await page.getByText("Je ne sais pas").click();
   await page.getByText("Un petit balcon").click();
+  // Position refusée : Balco le dit, on passe, et Aujourd'hui propose de choisir la ville.
+  await page.getByRole("button", { name: "⌖ Utiliser ma position" }).click();
+  await expect(page.getByText("Position indisponible : cherche ta ville, ou passe pour l’instant.")).toBeVisible();
+  await page.getByRole("button", { name: "Plus tard" }).click();
   await expect(page.getByText("Aujourd’hui").first()).toBeVisible();
   await expect(page.getByText("Tes plantes")).toBeVisible();
+  await expect(page.getByText("Météo de Paris par défaut")).toBeVisible();
   // Déjà en terre : pas de « Plante le basilic », l'arrosage est proposé.
   await expect(page.getByRole("checkbox", { name: /Plante le basilic|Plante le romarin/ })).toHaveCount(0);
   await expect(page.getByText(/Vérifie la terre de 2 plantes|Arrose/).first()).toBeVisible();

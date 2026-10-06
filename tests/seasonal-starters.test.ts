@@ -78,9 +78,13 @@ describe("seasonalStarters : plantes de saison seulement", () => {
 describe("accueil : chemins, soleil et anciennes envies", () => {
   it("la barre ne compte que les écrans du chemin suivi", async () => {
     const { onboardingSteps } = await import("../lib/garden/onboarding");
-    expect(onboardingSteps({ hasPlants: true })).toEqual(["has", "which", "sun", "space"]);
-    expect(onboardingSteps({ hasPlants: false })).toEqual(["has", "sun", "space", "goals", "plants"]);
+    expect(onboardingSteps({ hasPlants: true })).toEqual(["has", "which", "sun", "space", "city"]);
+    // La ville juste avant les plantes : leur saison dépend du climat.
+    expect(onboardingSteps({ hasPlants: false })).toEqual(["has", "sun", "space", "goals", "city", "plants"]);
     expect(onboardingSteps({})).toEqual(onboardingSteps({ hasPlants: false }));
+    // Sur un téléphone qui sait notifier, les rappels en dernier.
+    expect(onboardingSteps({ hasPlants: true, reminders: true }).at(-1)).toBe("reminders");
+    expect(onboardingSteps({ hasPlants: false, reminders: true })).toEqual(["has", "sun", "space", "goals", "city", "plants", "reminders"]);
   });
 
   it("« Je ne sais pas » vaut mi-ombre, et « Moins de gaspillage » devient « Des salades à couper »", async () => {

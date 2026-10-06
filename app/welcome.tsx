@@ -4,6 +4,8 @@
  * « Tu as déjà des plantes ? » ouvre deux chemins (lib/garden/onboarding.ts, `onboardingSteps`) :
  * - Oui : lesquelles (recherche + raccourcis), ajoutées installées ; puis soleil et espace.
  * - Pas encore : soleil, espace, envies, puis « Tes premières plantes », de saison, ajoutées à planter.
+ * La ville est demandée juste avant les plantes (« Utiliser ma position » : la fenêtre du téléphone n'arrive
+ * qu'à ce moment-là), puis, sur un téléphone, les rappels. « Plus tard » laisse Paris par défaut.
  */
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { Redirect, useRouter } from "expo-router";
@@ -18,6 +20,7 @@ import { glass } from "@/components/ui/glass";
 import { IconSymbol } from "@/components/ui/icon-symbol";
 import { Text, TextInput } from "@/components/ui/typography";
 import { useColors } from "@/hooks/use-colors";
+import { type CityResult, useLocalWeather } from "@/hooks/use-local-weather";
 import { ONBOARDING_STORAGE_KEY, useGarden } from "@/lib/garden/garden-context";
 import {
   COMMON_PLANT_IDS,
@@ -32,6 +35,10 @@ import {
 } from "@/lib/garden/onboarding";
 import { getCatalogPlant, searchCatalog, type CatalogPlant, type OnboardingAnswers } from "@/lib/plants/catalog";
 import { seasonalStarters } from "@/lib/plants/suggestions";
+import { climateZoneFor } from "@/lib/plants/climate";
+import { notificationsUnavailableReason } from "@/lib/notifications/module";
+import { activateReminders, NOTIFICATIONS_DENIED } from "@/lib/reminders/activate";
+import { loadLocalReminderSettings, requestLocalNotificationPermission, saveLocalReminderSettings } from "@/lib/reminders/local-notifications";
 
 const HAS_OPTIONS: OnboardingOption[] = [
   { id: "yes", icon: "🪴", title: "Oui", text: "Balco te dit quoi faire pour celles que tu as." },
@@ -50,6 +57,7 @@ const QUESTIONS: Partial<Record<OnboardingStep, Question>> = {
 /** Le temps de voir son choix coché avant de passer à la question suivante. */
 const ADVANCE_MS = 280;
 const SEARCH_RESULTS = 6;
+const LOCATE_TIMEOUT_MS = 20_000;
 
 type Answers = { has?: "yes" | "no"; sun?: string; space?: string; goals: string[] };
 
@@ -65,10 +73,16 @@ export default function OnboardingScreen() {
   const [query, setQuery] = useState("");
   const [picked, setPicked] = useState<string[] | null>(null);
   const [saving, setSaving] = useState(false);
+  const location = useLocalWeather();
+  const [cityQuery, setCityQuery] = useState("");
+  const [cityResults, setCityResults] = useState<CityResult[]>([]);
+  const [cityMessage, setCityMessage] = useState<string | null>(null);
+  const [locating, setLocating] = useState(false);
+  const [remindersDenied, setRemindersDenied] = useState(false);
   const advanceTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const hasPlants = answers.has === "yes";
-  const steps = onboardingSteps({ hasPlants });
+  const steps = onboardingSteps({ hasPlants, reminders: notificationsUnavailableReason === null });
   const step = index > 0 ? steps[index - 1] : null;
   const question = step ? QUESTIONS[step] ?? null : null;
 
@@ -76,8 +90,10 @@ export default function OnboardingScreen() {
     () => ({ hasPlants: answers.has === undefined ? undefined : answers.has === "yes", sunlight: answers.sun ? sunlightFromChoice(answers.sun) : undefined, space: answers.space, goals: answers.has === "yes" ? [] : answers.goals }),
     [answers],
   );
-  // Seulement ce qui se sème ou se plante ce mois-ci ; la ville n'est pas encore connue : climat de Paris.
-  const starters = useMemo(() => seasonalStarters(onboardingAnswers, { month: new Date().getMonth() + 1, climate: null }), [onboardingAnswers]);
+  // Seulement ce qui se sème ou se plante ce mois-ci, dans le climat de la ville choisie (Paris sinon).
+  const { weather } = location;
+  const climate = useMemo(() => (weather.isFallback ? null : climateZoneFor(weather.latitude, weather.longitude, weather.snapshot.elevationM)), [weather.isFallback, weather.latitude, weather.longitude, weather.snapshot.elevationM]);
+  const starters = useMemo(() => seasonalStarters(onboardingAnswers, { month: new Date().getMonth() + 1, climate }), [climate, onboardingAnswers]);
   const suggestions = starters.plants;
   // Les trois premières idées sont cochées d'office : moins de touchers pour démarrer.
   const chosen = (picked ?? suggestions.slice(0, 3).map((entry) => entry.id)).filter((id) => suggestions.some((entry) => entry.id === id));
@@ -113,6 +129,39 @@ export default function OnboardingScreen() {
     else setAnswers((current) => ({ ...current, space: id }));
     if (advanceTimer.current) clearTimeout(advanceTimer.current);
     advanceTimer.current = setTimeout(() => nextRef.current(), ADVANCE_MS);
+  };
+
+  const locateMe = async () => {
+    setLocating(true);
+    setCityMessage(null);
+    // Fenêtre de permission ignorée : on ne laisse pas le bouton bloqué sur « Un instant… ».
+    const found = await Promise.race([location.requestDeviceLocation(), new Promise<boolean>((resolve) => setTimeout(() => resolve(false), LOCATE_TIMEOUT_MS))]);
+    setLocating(false);
+    if (found) next();
+    else setCityMessage("Position indisponible : cherche ta ville, ou passe pour l’instant.");
+  };
+
+  const searchCity = async () => {
+    setCityMessage(null);
+    try {
+      const results = await location.searchCities(cityQuery);
+      setCityResults(results);
+      if (results.length === 0) setCityMessage("Aucune ville trouvée : vérifie l’orthographe.");
+    } catch (error) {
+      setCityMessage(error instanceof Error ? error.message : "Recherche indisponible.");
+    }
+  };
+
+  const chooseCity = async (city: CityResult) => {
+    await location.selectCity(city);
+    next();
+  };
+
+  // Même logique qu'Aujourd'hui : l'autorisation d'abord, les rappels activés seulement après un accord.
+  const turnOnReminders = async () => {
+    const result = await activateReminders(await loadLocalReminderSettings(), { requestPermission: requestLocalNotificationPermission, save: (settings) => saveLocalReminderSettings(settings) });
+    if (result.status === "denied") setRemindersDenied(true);
+    else void finish();
   };
 
   const toggleOwned = (id: string) => setOwned((current) => (current.includes(id) ? current.filter((value) => value !== id) : [...current, id]));
@@ -233,6 +282,55 @@ export default function OnboardingScreen() {
           </FadeIn>
         )}
 
+        {step === "city" && (
+          <FadeIn style={styles.step}>
+            <Text style={[styles.title, { color: colors.foreground }]}>Où est ton balcon ?</Text>
+            <Text style={[styles.subtitle, { color: colors.muted }]}>Pour te prévenir du gel, de la pluie et de la chaleur chez toi.</Text>
+            <Pressable accessibilityRole="button" disabled={locating} onPress={() => void locateMe()} style={({ pressed }) => [styles.cta, { backgroundColor: colors.primary }, pressed && styles.pressed]}>
+              <Text style={styles.ctaText}>{locating ? "Un instant…" : "⌖ Utiliser ma position"}</Text>
+            </Pressable>
+            <Text style={[styles.optionText, { color: colors.muted, textAlign: "center" }]}>ou</Text>
+            <View style={styles.searchRow}>
+              <TextInput value={cityQuery} onChangeText={setCityQuery} onSubmitEditing={() => void searchCity()} placeholder="Rechercher une ville…" placeholderTextColor={colors.muted} returnKeyType="search" style={[styles.input, styles.flex, { color: colors.foreground, borderColor: colors.border }]} />
+              <Pressable accessibilityRole="button" onPress={() => void searchCity()} style={({ pressed }) => [styles.searchButton, { backgroundColor: colors.foreground }, pressed && styles.pressed]}>
+                <Text style={[styles.chipText, { color: colors.background }]}>Rechercher</Text>
+              </Pressable>
+            </View>
+            {cityMessage && <Text style={[styles.optionText, { color: colors.error }]}>{cityMessage}</Text>}
+            {cityResults.length > 0 && (
+              <View style={[glass.card, styles.plants]}>
+                {cityResults.map((city, position) => (
+                  <Pressable key={`${city.id}-${city.latitude}`} accessibilityRole="button" onPress={() => void chooseCity(city)} style={({ pressed }) => [styles.plant, position < cityResults.length - 1 && glass.line, pressed && styles.pressed]}>
+                    <View style={styles.flex}>
+                      <Text style={[styles.optionTitle, { color: colors.foreground }]}>{city.name}</Text>
+                      <Text style={[styles.optionText, { color: colors.muted }]}>{[city.admin1, city.country].filter(Boolean).join(" · ")}</Text>
+                    </View>
+                  </Pressable>
+                ))}
+              </View>
+            )}
+            <Pressable accessibilityRole="button" onPress={next} style={({ pressed }) => [styles.ghost, pressed && styles.pressed]}>
+              <Text style={[styles.ghostText, { color: colors.muted }]}>Plus tard</Text>
+            </Pressable>
+          </FadeIn>
+        )}
+
+        {step === "reminders" && (
+          <FadeIn style={styles.step}>
+            <Text style={[styles.title, { color: colors.foreground }]}>Je te préviens au bon moment ?</Text>
+            <Text style={[styles.subtitle, { color: colors.muted }]}>Je te préviens s’il gèle cette nuit ou si tes plantes ont soif.</Text>
+            {remindersDenied && <Text style={[styles.optionText, { color: colors.error }]}>{NOTIFICATIONS_DENIED.title} · {NOTIFICATIONS_DENIED.message}</Text>}
+            <Pressable accessibilityRole="button" disabled={saving} onPress={() => void (remindersDenied ? finish() : turnOnReminders())} style={({ pressed }) => [styles.cta, { backgroundColor: colors.primary }, pressed && styles.pressed]}>
+              <Text style={styles.ctaText}>{saving ? "Un instant…" : remindersDenied ? "Créer mon balcon" : "Activer les rappels"}</Text>
+            </Pressable>
+            {!remindersDenied && (
+              <Pressable accessibilityRole="button" disabled={saving} onPress={() => void finish()} style={({ pressed }) => [styles.ghost, pressed && styles.pressed]}>
+                <Text style={[styles.ghostText, { color: colors.muted }]}>Plus tard</Text>
+              </Pressable>
+            )}
+          </FadeIn>
+        )}
+
         {step === "plants" && (
           <FadeIn style={styles.step}>
             <Text style={[styles.title, { color: colors.foreground }]}>Tes premières plantes</Text>
@@ -245,7 +343,7 @@ export default function OnboardingScreen() {
               })}
             </View>
             <Pressable accessibilityRole="button" disabled={saving} onPress={next} style={({ pressed }) => [styles.cta, { backgroundColor: colors.primary }, pressed && styles.pressed]}>
-              <Text style={styles.ctaText}>{saving ? "Un instant…" : chosen.length > 0 ? `Créer mon balcon · ${chosen.length} plante${chosen.length > 1 ? "s" : ""}` : "Créer mon balcon"}</Text>
+              <Text style={styles.ctaText}>{saving ? "Un instant…" : `${index < steps.length ? "Continuer" : "Créer mon balcon"}${chosen.length > 0 ? ` · ${chosen.length} plante${chosen.length > 1 ? "s" : ""}` : ""}`}</Text>
             </Pressable>
           </FadeIn>
         )}
@@ -280,6 +378,8 @@ const styles = StyleSheet.create({
   plants: { paddingHorizontal: 14 },
   plant: { flexDirection: "row", alignItems: "center", gap: 12, paddingVertical: 12 },
   plantIcon: { width: 46, height: 46, borderRadius: 23, alignItems: "center", justifyContent: "center" },
+  searchRow: { flexDirection: "row", alignItems: "center", gap: 8 },
+  searchButton: { borderRadius: 12, paddingHorizontal: 14, paddingVertical: 13 },
   chips: { flexDirection: "row", flexWrap: "wrap", gap: 8 },
   chip: { borderRadius: 999, borderWidth: 1, paddingHorizontal: 12, paddingVertical: 8 },
   chipText: { fontSize: 14, fontWeight: "600" },
