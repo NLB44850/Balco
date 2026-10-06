@@ -81,7 +81,7 @@ visuelle, retour immédiat.
 
 ## Où on en est
 
-**Nouvelle conversation ? L'onboarding (`docs/chantier-onboarding.md`) et le pas-à-pas pour planter (`docs/chantier-pas-a-pas.md`) sont codés (06/10) et attendent son test sur téléphone : recueillir ses retours, corriger, puis proposer la PR vers `main`.**
+**Nouvelle conversation ? L'onboarding (`docs/chantier-onboarding.md`) et le pas-à-pas pour planter (`docs/chantier-pas-a-pas.md`) sont testés par le porteur et en PR vers `main` : https://github.com/NLB44850/Balco/pull/28 (ouverte le 06/10, à fusionner par lui). Chantier suivant, validé : rempotage selon le besoin (point 4 ci-dessous).**
 
 **Récap pour reprendre (06/10)** : ce bloc fait foi ; les paragraphes plus bas sont l'historique (certains
 décrivent un état ancien, par exemple Saisons « à cocher » ou une fête plein écran à chaque récolte).
