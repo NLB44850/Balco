@@ -20,7 +20,13 @@ Avancement :
 - P3 (fait) : `lib/plants/planting.ts` (100 plantes, sources par plante, recherche faite par 4 sous-agents en
   parallèle, choix notés dans `docs/sources-calendrier.md`) ; `lib/plants/guide.ts` : 5 modèles (le 5ᵉ,
   `plant-bulb`, pour ail, pommes de terre, oca, crosnes, dahlias), `supplies` (« Ce qu'il te faut », objets
-  communs `shared`), `whatsNext` (« Les pousses sortent dans… », « Première récolte dans… »), `delayText`. Une étape = un commit testé (check, lint, Vitest, e2e,
+  communs `shared`), `whatsNext` (« Les pousses sortent dans… », « Première récolte dans… »), `delayText`.
+- P4 (fait) : audit : avant, 2 plantes seulement avaient « Éclaircis… ». `lib/garden/follow-ups.ts`
+  (`followUpsFor`) : après un premier geste `<id>:start`, « Éclaircis… » (65 plantes à éclaircir, une semaine
+  après la levée la plus lente), « Sors tes plants de basilic sur le balcon » (semis au chaud ou à l'intérieur, au
+  mois de plantation, 4 semaines au moins après), « Pince… » (33 plantes, texte des données) ; chacun une fois
+  (`<id>:thin|outdoors|pinch`), effacé après 3 semaines d'oubli ; `CalendarActivity.followUp`. Corrigé au
+  passage : une plante semée ou plantée ce mois-ci ne se voit plus reproposer « Sème… » le même mois. Une étape = un commit testé (check, lint, Vitest, e2e,
 bundle Android), compte rendu, validation sur son téléphone avant la suivante (sauf s'il demande d'enchaîner).
 
 ## Ce que le porteur a décidé (6 octobre)

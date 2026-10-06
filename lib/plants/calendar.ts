@@ -24,6 +24,8 @@ export type CalendarActivity = {
   months?: Month[];
   /** Premier geste d'une plante à planter : le cocher l'installe sur le balcon. */
   start?: true;
+  /** Geste de suite (éclaircir, sortir les plants, pincer) : une seule fois par plante. */
+  followUp?: "thin" | "outdoors" | "pinch";
 };
 
 /** Le type de geste, écrit simplement (sans capitales), pour les écrans. */
@@ -140,6 +142,7 @@ function monthKey(date: Date) {
  */
 export function activityEventId(activity: CalendarActivity, now: Date) {
   if (activity.start) return startEventId(activity.subjectId);
+  if (activity.followUp) return `${activity.subjectId}:${activity.followUp}`;
   if (activity.kind === "care" && activity.taskId) return sessionEventId(activity.subjectId, activity.taskId, now);
   if (activity.kind === "harvest") return `${activity.subjectId}:calendar-harvest:${dayKey(now)}`;
   return `${activity.subjectId}:calendar-${activity.kind}:${monthKey(now)}`;

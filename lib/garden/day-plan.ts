@@ -6,6 +6,7 @@
  * (ou semis, rempotage), engrais, entretien. Le classement ignore les gestes notés aujourd'hui : cocher un
  * geste le marque « fait » sans faire changer la liste sous le doigt. Logique pure.
  */
+import { followUpsFor } from "./follow-ups";
 import { activityDone, calendarActivities, eventForActivity, startActivity, type CalendarActivity, type CalendarSubject } from "../plants/calendar";
 import { tasksForMonth, type CareTask } from "../plants/catalog";
 import type { ClimateInfo } from "../plants/climate";
@@ -197,8 +198,17 @@ export function planDay({ plants, events, now, decisions = [], allDecisions = de
     const started = events.find((event) => event.id === startEventId(plantId));
     if (started && dayKey(new Date(started.completedAt)) === todayKey) gestures.push(startGesture(true, started.id));
 
-    // Plantation, semis, rempotage du mois (déjà notés avant aujourd'hui : ils ne reviennent pas).
-    for (const activity of seasonByPlant.get(plantId) ?? []) {
+    // Plantation, semis, rempotage du mois, puis les gestes de suite d'un semis ou d'une plantation
+    // (éclaircir, sortir les plants, pincer). Déjà notés avant aujourd'hui : ils ne reviennent pas.
+    const followUps = followUpsFor(resolved, events, now, climate);
+    const doneFollowUps = (["thin", "outdoors", "pinch"] as const)
+      .map((kind) => events.find((event) => event.id === `${plantId}:${kind}` && dayKey(new Date(event.completedAt)) === todayKey))
+      .filter((event): event is MaintenanceEvent => Boolean(event))
+      .map((event) => ({ key: `${plantId}:${event.id.split(":").at(-1)}`, kind: "care" as const, subjectId: plantId, entry: resolved.entry, typeLabel: "", title: event.note ?? "Geste fait", description: "", tag: "", tone: "lime" as const, eventType: event.type, followUp: event.id.split(":").at(-1) as "thin" }));
+    // Semée ou plantée ce mois-ci par son premier geste : pas de « Sème… » ou « Plante… » en plus ce mois-là.
+    const startedThisMonth = started !== undefined && new Date(started.completedAt).getMonth() === now.getMonth() && new Date(started.completedAt).getFullYear() === now.getFullYear();
+    const season = (seasonByPlant.get(plantId) ?? []).filter((activity) => !(startedThisMonth && (activity.kind === "sow" || activity.kind === "plant")));
+    for (const activity of [...season, ...followUps, ...doneFollowUps]) {
       if (activityDone(activity, events, now)) {
         const event = eventForActivity(activity, now);
         const logged = events.find((candidate) => candidate.id === event.id);
