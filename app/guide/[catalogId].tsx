@@ -9,12 +9,12 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import * as Haptics from "expo-haptics";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Platform, Pressable, ScrollView, Share, StyleSheet, useWindowDimensions, View } from "react-native";
+import { PanResponder, Platform, Pressable, ScrollView, Share, StyleSheet, useWindowDimensions, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { GuideIllustration } from "@/components/guide/illustrations";
 import { LightScreen } from "@/components/light-screen";
-import { PopIn } from "@/components/motion";
+import { FadeIn, PopIn } from "@/components/motion";
 import { ScreenHeader } from "@/components/screen-header";
 import { glass } from "@/components/ui/glass";
 import { Text } from "@/components/ui/typography";
@@ -43,6 +43,9 @@ const HAVE_STORAGE_KEY = "balco.guide.have.v1";
 
 type Phase = "need" | "steps" | "after";
 
+/** Distance du doigt, en points, pour changer d'étape. */
+const SWIPE_DISTANCE = 50;
+
 export default function GuideScreen() {
   const colors = useColors();
   const router = useRouter();
@@ -62,7 +65,20 @@ export default function GuideScreen() {
   const [phase, setPhase] = useState<Phase>("need");
   const [index, setIndex] = useState(0);
   const [planted, setPlanted] = useState(false);
-  const pager = useRef<ScrollView>(null);
+  // Le geste lit toujours l'étape courante (le PanResponder est créé une seule fois).
+  const swipeRef = useRef({ next: () => {}, previous: () => {} });
+  const swipe = useMemo(
+    () =>
+      PanResponder.create({
+        // Un glissement surtout horizontal : la page peut toujours défiler verticalement.
+        onMoveShouldSetPanResponder: (_event, gesture) => Math.abs(gesture.dx) > 12 && Math.abs(gesture.dx) > Math.abs(gesture.dy) * 1.5,
+        onPanResponderRelease: (_event, gesture) => {
+          if (gesture.dx <= -SWIPE_DISTANCE) swipeRef.current.next();
+          else if (gesture.dx >= SWIPE_DISTANCE) swipeRef.current.previous();
+        },
+      }),
+    [],
+  );
   const pageWidth = Math.min(width, 520) - 40;
 
   useEffect(() => {
@@ -80,12 +96,13 @@ export default function GuideScreen() {
     void AsyncStorage.setItem(HAVE_STORAGE_KEY, JSON.stringify(next)).catch(() => undefined);
   };
 
+  swipeRef.current = { next: () => next(), previous: () => previous() };
+
   const share = () => void Share.share({ message: shareText(entry, model, missing) }).catch(() => undefined);
 
-  const goTo = (target: number) => {
-    setIndex(target);
-    pager.current?.scrollTo({ x: target * pageWidth, animated: true });
-  };
+  const goTo = (target: number) => setIndex(Math.max(0, Math.min(steps.length - 1, target)));
+  const next = () => (index >= steps.length - 1 ? setPhase("after") : goTo(index + 1));
+  const previous = () => (index === 0 ? setPhase("need") : goTo(index - 1));
 
   // « C'est planté » : le même geste que sur Aujourd'hui ; la plante passe « installée ».
   const canPlant = Boolean(plant?.toPlant) && !events.some((event) => event.id === startEventId(plant!.id));
@@ -140,29 +157,21 @@ export default function GuideScreen() {
 
         {phase === "steps" && (
           <>
-            <ScrollView
-              ref={pager}
-              horizontal
-              pagingEnabled
-              showsHorizontalScrollIndicator={false}
-              onMomentumScrollEnd={(event) => setIndex(Math.round(event.nativeEvent.contentOffset.x / pageWidth))}
-              style={{ width: pageWidth }}
-            >
-              {steps.map((step, stepIndex) => (
-                <View key={stepIndex} style={[styles.page, { width: pageWidth }]} accessibilityElementsHidden={stepIndex !== index} importantForAccessibility={stepIndex === index ? "auto" : "no-hide-descendants"}>
-                  <View style={[glass.card, styles.art]}><GuideIllustration id={step.illustration} size={Math.min(220, pageWidth - 60)} /></View>
-                  <Text style={[styles.stepText, { color: colors.foreground }]}>{step.text}</Text>
-                  {step.why && <Text style={[styles.why, { color: colors.muted }]}>{step.why}</Text>}
-                  {step.mistake && <Text style={[styles.mistake, { color: colors.warning, borderColor: colors.warning }]}>{step.mistake}</Text>}
-                </View>
-              ))}
-            </ScrollView>
+            {/* Une étape à la fois ; un glissement du doigt vers la gauche ou la droite change d'étape (web et téléphone). */}
+            <View {...swipe.panHandlers} style={styles.page}>
+              <FadeIn key={index} style={styles.pageInner}>
+                <View style={[glass.card, styles.art]}><GuideIllustration id={steps[index].illustration} size={Math.min(220, pageWidth - 60)} /></View>
+                <Text style={[styles.stepText, { color: colors.foreground }]}>{steps[index].text}</Text>
+                {steps[index].why && <Text style={[styles.why, { color: colors.muted }]}>{steps[index].why}</Text>}
+                {steps[index].mistake && <Text style={[styles.mistake, { color: colors.warning, borderColor: colors.warning }]}>{steps[index].mistake}</Text>}
+              </FadeIn>
+            </View>
             <View style={styles.dots}>{steps.map((_, dot) => <View key={dot} style={[styles.dot, { backgroundColor: dot === index ? colors.primary : colors.border }]} />)}</View>
             <View style={styles.nav}>
-              <Pressable accessibilityRole="button" onPress={() => (index === 0 ? setPhase("need") : goTo(index - 1))} style={({ pressed }) => [styles.secondary, styles.flex, { borderColor: colors.border }, pressed && styles.pressed]}>
+              <Pressable accessibilityRole="button" onPress={previous} style={({ pressed }) => [styles.secondary, styles.flex, { borderColor: colors.border }, pressed && styles.pressed]}>
                 <Text style={[styles.secondaryText, { color: colors.foreground }]}>Retour</Text>
               </Pressable>
-              <Pressable accessibilityRole="button" onPress={() => (index >= steps.length - 1 ? setPhase("after") : goTo(index + 1))} style={({ pressed }) => [styles.cta, styles.flex, { backgroundColor: colors.primary, marginTop: 0 }, pressed && styles.pressed]}>
+              <Pressable accessibilityRole="button" onPress={next} style={({ pressed }) => [styles.cta, styles.flex, { backgroundColor: colors.primary, marginTop: 0 }, pressed && styles.pressed]}>
                 <Text style={styles.ctaText}>{index >= steps.length - 1 ? "Et après ?" : "Suivant"}</Text>
               </Pressable>
             </View>
@@ -208,7 +217,8 @@ const styles = StyleSheet.create({
   why: { fontSize: 14, lineHeight: 20, marginTop: 2 },
   have: { borderRadius: 999, borderWidth: 1, paddingHorizontal: 12, paddingVertical: 7 },
   haveText: { fontSize: 13, fontWeight: "700" },
-  page: { alignItems: "center", gap: 10 },
+  page: { alignSelf: "stretch" },
+  pageInner: { alignItems: "center", gap: 10 },
   art: { width: "100%", alignItems: "center", paddingVertical: 18 },
   stepText: { fontSize: 22, lineHeight: 28, fontWeight: "800", textAlign: "center", letterSpacing: -0.4, marginTop: 6 },
   mistake: { fontSize: 14, lineHeight: 20, borderWidth: 1, borderRadius: 12, paddingHorizontal: 12, paddingVertical: 9, marginTop: 4, alignSelf: "stretch" },

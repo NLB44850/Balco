@@ -21,13 +21,29 @@ test("pas-à-pas : ce qu'il te faut, les étapes, puis « C'est planté » coche
   // Les étapes, une par écran, jusqu'à « Et après ? ».
   await page.getByRole("button", { name: "Commencer le pas-à-pas" }).click();
   await expect(page.getByText("Mets une poignée de billes d’argile au fond.")).toBeVisible();
+
+  // Glisser du doigt change d'étape, comme « Suivant » et « Retour » : le texte et le compteur suivent.
+  const swipe = async (fromX: number, toX: number) => {
+    const box = (await page.getByText(/^Mets une poignée|^Remplis le pot/).first().boundingBox())!;
+    const y = box.y - 60;
+    await page.mouse.move(fromX, y);
+    await page.mouse.down();
+    for (const x of [fromX + (toX - fromX) / 3, fromX + (2 * (toX - fromX)) / 3, toX]) await page.mouse.move(x, y, { steps: 4 });
+    await page.mouse.up();
+  };
+  await swipe(320, 60);
+  await expect(page.getByText("Étape 2 sur 6")).toBeVisible();
+  await expect(page.getByText("Remplis le pot de terreau aux deux tiers.")).toBeVisible();
+  await swipe(60, 320);
+  await expect(page.getByText("Étape 1 sur 6")).toBeVisible();
   await page.getByRole("button", { name: "Suivant" }).click();
   await page.waitForTimeout(400);
   await page.screenshot({ path: "dist/guide-step.png" });
-  for (let step = 0; step < 4; step += 1) await page.getByRole("button", { name: "Suivant" }).click();
-  await page.waitForTimeout(400);
+  for (let step = 0; step < 2; step += 1) await page.getByRole("button", { name: "Suivant" }).click();
+  // Étape 4 : l'erreur à éviter est à l'étape qu'elle concerne.
+  await expect(page.getByText("Erreur à éviter : enterrer la tige plus bas qu’avant. Elle pourrirait.")).toBeVisible();
   await page.screenshot({ path: "dist/guide-mistake.png" });
-  await expect(page.getByText("Erreur à éviter : enterrer la tige plus bas qu’avant. Elle pourrirait.")).toBeAttached();
+  for (let step = 0; step < 2; step += 1) await page.getByRole("button", { name: "Suivant" }).click();
   await page.getByRole("button", { name: "Et après ?" }).click();
   await expect(page.getByText(/^Premières fleurs dans /)).toBeVisible();
 
