@@ -161,10 +161,17 @@ test("catalogue : ajouter une plante puis ouvrir sa fiche", async ({ page }) => 
   await seedBalcony(page, { plants: ["basil"], wateredDaysAgo: 1 });
   await open(page, "/garden/add", "Ajouter une plante");
   await page.getByPlaceholder("Basilic, fraisier, lavande…").fill("menthe");
+  // « + » : déjà sur le balcon, ou à planter ?
   await page.getByRole("button", { name: /^Ajouter Menthe/ }).first().click();
+  await page.getByRole("button", { name: "Menthe : Déjà sur mon balcon" }).click();
   await expect(page.getByText("Ajouté à ton balcon : Menthe")).toBeVisible();
   await expect(page.getByText("✓ Sur ton balcon")).toBeVisible();
-  await page.getByRole("button", { name: "Voir mon balcon · 2 plantes" }).click();
+  // La même, à planter : son premier geste sera de la planter.
+  await page.getByPlaceholder("Basilic, fraisier, lavande…").fill("lavande");
+  await page.getByRole("button", { name: /^Ajouter Lavande/ }).first().click();
+  await page.getByRole("button", { name: "Lavande : À planter" }).click();
+  await expect(page.getByText("À planter sur ton balcon : Lavande")).toBeVisible();
+  await page.getByRole("button", { name: "Voir mon balcon · 3 plantes" }).click();
   await page.getByRole("button", { name: /^Menthe, .*voir la fiche/ }).click();
   await expect(page.getByText(/Photo d’exemple|Ajoute ta photo/).first()).toBeVisible();
   expect(errors).toEqual([]);
@@ -197,8 +204,8 @@ test("fiche du bas : jamais plus haute que l'écran, se ferme par « × » ou en
   await expect(close).toBeVisible();
   const box = await close.boundingBox();
   expect(box!.y).toBeGreaterThanOrEqual(0);
-  await page.getByRole("button", { name: "Ajouter à mon balcon" }).scrollIntoViewIfNeeded();
-  await expect(page.getByRole("button", { name: "Ajouter à mon balcon" })).toBeInViewport();
+  await page.getByRole("button", { name: "Déjà sur mon balcon" }).scrollIntoViewIfNeeded();
+  await expect(page.getByRole("button", { name: "Déjà sur mon balcon" })).toBeInViewport();
 
   // « × » ferme la fiche.
   await close.click();

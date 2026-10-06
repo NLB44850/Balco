@@ -70,3 +70,12 @@ describe("deux états pour une plante : installée ou à planter", () => {
     expect(push.plants[0].toPlant).toBe(true);
   });
 });
+
+describe("catalogue : déjà sur le balcon, ou à planter ?", () => {
+  it("« À planter » d'abord quand c'est sa saison, sinon « Déjà sur mon balcon »", async () => {
+    const { addChoices, ADD_CHOICE_LABELS } = await import("../lib/plants/suggestions");
+    expect(addChoices(getCatalogPlant("lavender")!, 10)).toEqual(["toPlant", "installed"]);
+    expect(addChoices(getCatalogPlant("cherry-tomato")!, 10)).toEqual(["installed", "toPlant"]);
+    expect(ADD_CHOICE_LABELS).toEqual({ installed: "Déjà sur mon balcon", toPlant: "À planter" });
+  });
+});

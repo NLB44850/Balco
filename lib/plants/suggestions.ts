@@ -266,3 +266,12 @@ export function seasonalStarters(
   const notice = notices.length > 0 ? `${notices.map((item) => item.sentence).join(" ")} ${ending}` : null;
   return { plants: inSeason.slice(0, limit), notice };
 }
+
+/** Ajouter depuis le catalogue : la plante est-elle déjà sur le balcon, ou à semer / planter ? */
+export type AddChoice = "installed" | "toPlant";
+export const ADD_CHOICE_LABELS: Record<AddChoice, string> = { installed: "Déjà sur mon balcon", toPlant: "À planter" };
+
+/** L'ordre des deux boutons : « À planter » d'abord si c'est sa saison, sinon « Déjà sur mon balcon ». */
+export function addChoices(entry: CatalogPlant, month: number, climate?: ClimateInfo | null): AddChoice[] {
+  return suggestionFor(entry, month, climate) ? ["toPlant", "installed"] : ["installed", "toPlant"];
+}

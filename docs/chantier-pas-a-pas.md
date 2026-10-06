@@ -1,6 +1,11 @@
 # Chantier : pas-à-pas pour planter, et fin de l'accueil (plan proposé le 6 octobre 2026)
 
-Statut : **plan proposé, en attente de sa validation**. Une étape = un commit testé (check, lint, Vitest, e2e,
+Statut : **plan validé le 6 octobre (« OK pour les 3, enchaîne toutes les étapes »)** : ordre accueil d'abord,
+« J'ai déjà » commun pour terreau / billes / arrosoir et par plante pour le reste, rappel du samedi à 9 h.
+
+Avancement :
+- P1 (fait) : `addChoices` / `ADD_CHOICE_LABELS` (`lib/plants/suggestions.ts`) ; le « + » du catalogue ouvre deux
+  boutons sous la ligne, la fiche du catalogue aussi ; toast « À planter sur ton balcon : Lavande ». Une étape = un commit testé (check, lint, Vitest, e2e,
 bundle Android), compte rendu, validation sur son téléphone avant la suivante (sauf s'il demande d'enchaîner).
 
 ## Ce que le porteur a décidé (6 octobre)
