@@ -95,7 +95,7 @@ export default function CalendarScreen() {
   const subjects = useMemo<CalendarSubject[]>(
     () => starters
       ? starters.plants.map((entry) => ({ id: entry.id, entry, displayName: entry.name }))
-      : resolvedPlants.map((resolved) => ({ id: resolved.plant.id, entry: resolved.entry, displayName: plantDisplayName(resolved), addedAt: resolved.plant.addedAt })),
+      : resolvedPlants.map((resolved) => ({ id: resolved.plant.id, entry: resolved.entry, displayName: plantDisplayName(resolved), addedAt: resolved.plant.addedAt, toPlant: resolved.plant.toPlant })),
     [resolvedPlants, starters],
   );
   const resolvedById = useMemo(() => new Map<string, ResolvedPlant>(resolvedPlants.map((resolved) => [resolved.plant.id, resolved])), [resolvedPlants]);
