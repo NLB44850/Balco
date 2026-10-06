@@ -46,7 +46,7 @@ Tout se passe dans son GitHub Codespace (pas de Docker sur son PC).
 - **Tests de bout en bout** (à lancer quand le porteur le demande, et avant chaque grosse évolution) :
   `bash scripts/e2e.sh` (≈ 4 min : construit l'app web avec la simulation météo, migre la base, démarre
   le vrai serveur sur le port 3100, lance Playwright). `bash scripts/e2e.sh meteo` pour un seul fichier,
-  `E2E_SKIP_BUILD=1` pour ne pas reconstruire. Scénarios dans `e2e/` (33 aujourd'hui, avec un faux service d'IA pour Observer) : parcours
+  `E2E_SKIP_BUILD=1` pour ne pas reconstruire. Scénarios dans `e2e/` (34 aujourd'hui, avec un faux service d'IA pour Observer) : parcours
   (onboarding, écrans, cocher/Annuler, fête, catalogue, fiche d'une nouvelle plante, feuille du bas qui se ferme,
   suggestions de saison, Saisons rangé par type), météo (pluie + eau économisée, gel + Saisons,
   orage, vent, canicule, « Pas aujourd'hui », retour météo réelle), compte (code de connexion lu dans

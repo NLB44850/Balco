@@ -26,7 +26,12 @@ Avancement :
   après la levée la plus lente), « Sors tes plants de basilic sur le balcon » (semis au chaud ou à l'intérieur, au
   mois de plantation, 4 semaines au moins après), « Pince… » (33 plantes, texte des données) ; chacun une fois
   (`<id>:thin|outdoors|pinch`), effacé après 3 semaines d'oubli ; `CalendarActivity.followUp`. Corrigé au
-  passage : une plante semée ou plantée ce mois-ci ne se voit plus reproposer « Sème… » le même mois. Une étape = un commit testé (check, lint, Vitest, e2e,
+  passage : une plante semée ou plantée ce mois-ci ne se voit plus reproposer « Sème… » le même mois.
+- P6 (fait) : 22 dessins au trait (`components/guide/illustrations.tsx`, noms dans `illustration-names.ts`),
+  vert Balco, terre beige, une flèche pour le geste ; relus sur capture (7 redessinés : arbuste qui faisait un
+  visage, bulbe, mains, ciseaux, doigts, sachet de graines, trou de la motte). Écran de revue `app/illustrations.tsx`
+  (Réglages → Version de test → « Illustrations du pas-à-pas ») ; e2e `e2e/8-illustrations.spec.ts` (capture
+  `dist/illustrations.png`). Une étape = un commit testé (check, lint, Vitest, e2e,
 bundle Android), compte rendu, validation sur son téléphone avant la suivante (sauf s'il demande d'enchaîner).
 
 ## Ce que le porteur a décidé (6 octobre)

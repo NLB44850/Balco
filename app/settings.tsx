@@ -289,6 +289,9 @@ export default function SettingsScreen() {
               <Text style={[styles.testButtonText, { color: colors.primary }]}>Refaire l’accueil</Text>
             </Pressable>
             <Text style={[styles.testHint, { color: colors.muted }]}>Repasse les questions du début, sans toucher à tes plantes.</Text>
+            <Pressable accessibilityRole="button" onPress={() => router.push("/illustrations")} style={({ pressed }) => [styles.testButton, { borderColor: colors.primary, marginTop: 12 }, pressed && styles.pressed]}>
+              <Text style={[styles.testButtonText, { color: colors.primary }]}>Illustrations du pas-à-pas</Text>
+            </Pressable>
           </View>
         )}
       </ScrollView>
