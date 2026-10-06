@@ -4,7 +4,8 @@
  * et « C'est planté » (coche le premier geste de la plante, petite animation, pas de fête plein écran).
  * Entrées : le détail d'un geste « à planter » (Aujourd'hui), la fiche plante, et le catalogue (`mode=need` :
  * seulement « Ce qu'il te faut »). `task=repot` ou `task=topdress` : rempoter une vivace, ou changer la terre
- * du dessus (détail du geste sur Aujourd'hui, fiche plante) ; « C'est rempoté » coche ce geste.
+ * du dessus ; `task=thin|pinch|outdoors` : éclaircir, pincer, sortir les plants semés au chaud (détail du geste
+ * sur Aujourd'hui, fiche plante) ; le dernier bouton (« C'est rempoté », « C'est pincé »…) coche ce geste.
  * Logique dans lib/plants/guide.ts.
  */
 import AsyncStorage from "@react-native-async-storage/async-storage";
@@ -21,6 +22,7 @@ import { ScreenHeader } from "@/components/screen-header";
 import { glass } from "@/components/ui/glass";
 import { Text } from "@/components/ui/typography";
 import { useColors } from "@/hooks/use-colors";
+import { followUpsFor } from "@/lib/garden/follow-ups";
 import { useGarden } from "@/lib/garden/garden-context";
 import { potHistory, startEventId } from "@/lib/garden/garden-logic";
 import { activityDone, eventForActivity, potCareActivity, startActivity } from "@/lib/plants/calendar";
@@ -31,6 +33,8 @@ import {
   guideSteps,
   guideTitle,
   hasItem,
+  isFollowUpTask,
+  isGuideTask,
   isPotTask,
   isSowing,
   nextGestures,
@@ -60,8 +64,10 @@ export default function GuideScreen() {
   const plant = plants.find((candidate) => candidate.id === params.plantId && !candidate.removedAt);
   const needOnly = params.mode === "need";
   const month = new Date().getMonth() + 1;
-  const potTask = isPotTask(params.task) ? params.task : null;
-  const model = potTask ?? (entry ? guideModelFor(entry, month) : "sow-pot");
+  const task = isGuideTask(params.task) ? params.task : null;
+  const potTask = isPotTask(task) ? task : null;
+  const followUp = isFollowUpTask(task) ? task : null;
+  const model = task ?? (entry ? guideModelFor(entry, month) : "sow-pot");
   // Rempotage : le pot suivant dépend des rempotages déjà notés.
   const repots = plant && potTask ? potHistory(plant, events).repots : 0;
   const items = useMemo(() => (entry ? supplies(entry, model, { repots }) : []), [entry, model, repots]);
@@ -114,19 +120,23 @@ export default function GuideScreen() {
   // « C'est rempoté » / « C'est fait » : le geste du pot de ce mois, s'il n'est pas déjà noté.
   const displayName = plant?.nickname?.trim() || entry.name;
   const potActivity = plant && potTask && !plant.toPlant ? potCareActivity({ id: plant.id, displayName, repots }, entry, potTask) : null;
-  const canPlant = potActivity
-    ? !activityDone(potActivity, events, new Date())
+  // Geste de suite (éclaircir, pincer, sortir les plants) : seulement quand Balco le propose, une seule fois.
+  const followUpActivity = plant && followUp ? followUpsFor({ plant, entry }, events, new Date()).find((activity) => activity.followUp === followUp) ?? null : null;
+  const taskActivity = potActivity ?? followUpActivity;
+  const canPlant = task
+    ? taskActivity !== null && !activityDone(taskActivity, events, new Date())
     : Boolean(plant?.toPlant) && !events.some((event) => event.id === startEventId(plant!.id));
   const markPlanted = async () => {
     if (!plant) return;
-    const activity = potActivity ?? startActivity({ id: plant.id, entry, displayName, addedAt: plant.addedAt, toPlant: true }, month);
+    const activity = taskActivity ?? startActivity({ id: plant.id, entry, displayName, addedAt: plant.addedAt, toPlant: true }, month);
     await logEvent(eventForActivity(activity, new Date()));
     if (Platform.OS !== "web") void Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => undefined);
     setPlanted(true);
     setTimeout(() => router.back(), 1400);
   };
 
-  const doneLabel = potTask === "repot" ? "C’est rempoté" : potTask === "topdress" ? "Terre changée" : isSowing(model) ? "C’est semé" : "C’est planté";
+  const DONE_LABELS = { repot: "C’est rempoté", topdress: "Terre changée", thin: "C’est éclairci", pinch: "C’est pincé", outdoors: "Plants installés" } as const;
+  const doneLabel = task ? DONE_LABELS[task] : isSowing(model) ? "C’est semé" : "C’est planté";
   const subtitle = needOnly ? "Ce qu’il te faut" : phase === "steps" ? `Étape ${index + 1} sur ${steps.length}` : phase === "after" ? "Et après ?" : `${steps.length} étapes · ce qu’il te faut d’abord`;
 
   return (
@@ -193,7 +203,7 @@ export default function GuideScreen() {
         {phase === "after" && (
           <>
             <View style={[glass.card, styles.after]}>
-              <GuideIllustration id={isSowing(model) ? "sprouts" : potTask === "repot" ? "harden-off" : "water-well"} size={140} />
+              <GuideIllustration id={isSowing(model) || followUp === "thin" ? "sprouts" : followUp === "pinch" ? "two-shoots" : potTask === "repot" || followUp === "outdoors" ? "harden-off" : "water-well"} size={140} />
               {[...whatsNext(entry, model), ...nextGestures(entry, model)].map((line) => (
                 <Text key={line} style={[styles.afterLine, { color: colors.foreground }]}>{line}</Text>
               ))}

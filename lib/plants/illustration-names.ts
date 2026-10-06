@@ -24,7 +24,8 @@ export type IllustrationId =
   | "harden-off"
   | "roots-out"
   | "loosen-roots"
-  | "scrape-top";
+  | "scrape-top"
+  | "two-shoots";
 
 /** Le nom de chaque dessin, pour l'écran de revue et l'accessibilité. */
 export const ILLUSTRATION_LABELS: Record<IllustrationId, string> = {
@@ -53,6 +54,7 @@ export const ILLUSTRATION_LABELS: Record<IllustrationId, string> = {
   "roots-out": "Des racines sortent sous le pot",
   "loosen-roots": "Des doigts démêlent les racines de la motte",
   "scrape-top": "Une fourchette gratte la terre du dessus",
+  "two-shoots": "Deux tiges repartent sous la coupe",
 };
 
 export const ILLUSTRATION_IDS = Object.keys(ILLUSTRATION_LABELS) as IllustrationId[];

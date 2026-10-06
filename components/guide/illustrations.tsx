@@ -358,6 +358,20 @@ const DRAWINGS: Record<IllustrationId, () => ReactNode> = {
       <Arrow d="M50 44 C 42 42 38 46 36 50" head="M35 43 L 36 50 L 42 48" />
     </>
   ),
+  "two-shoots": () => (
+    <>
+      <Pot soilTop={70} />
+      {/* La tige pincée (coupe plate) et, sous la coupe, deux nouvelles pousses de part et d'autre. */}
+      <Line x1={60} y1={70} x2={60} y2={28} {...stroke} />
+      <Line x1={55} y1={28} x2={65} y2={28} {...stroke} />
+      <Path d="M60 56 C 48 56 42 48 44 42 C 52 43 58 50 60 56 Z" fill={LEAF} {...thin} />
+      <Path d="M60 56 C 72 56 78 48 76 42 C 68 43 62 50 60 56 Z" fill={LEAF} {...thin} />
+      <Path d="M60 36 C 52 30 44 30 38 22" fill="none" {...thin} />
+      <Path d="M60 36 C 68 30 76 30 82 22" fill="none" {...thin} />
+      <Path d="M38 22 C 30 22 28 14 32 10 C 38 12 40 18 38 22 Z" fill={LEAF} {...thin} />
+      <Path d="M82 22 C 90 22 92 14 88 10 C 82 12 80 18 82 22 Z" fill={LEAF} {...thin} />
+    </>
+  ),
 };
 
 export function GuideIllustration({ id, size = 120 }: { id: IllustrationId; size?: number }) {
