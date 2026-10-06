@@ -110,16 +110,24 @@ et les 10 étapes du test utilisateur du 04/10 (détail dans « Historique des l
    (`lib/garden/follow-ups.ts` : éclaircir, sortir les plants, pincer), 22 illustrations
    (`components/guide/illustrations.tsx`, revue dans Réglages → Version de test), guide `app/guide/[catalogId].tsx`
    (logique `lib/plants/guide.ts`). Après son test : PR vers `main` (onboarding + pas-à-pas).
-4. **Après-récolte** des plantes récoltées en une fois (radis, carottes, salades pommées) : « Tout récolté ? » →
+4. **Rempotage selon le besoin** (validé le 06/10, **à faire après la PR** onboarding + pas-à-pas), 3 étapes :
+   1) rythme par vivace vérifié sur le web (menthe chaque année, lavande tous les 2 ans, agrumes et petits fruits 2-3
+   ans…) et jamais la première saison (≈ un an dans son pot, compté depuis la plantation notée) ; les autres années,
+   geste « Change les 5 cm de terre du dessus » (surfaçage, validé) ; 2) signe à vérifier (« Des racines sortent par
+   les trous ? L'eau ressort tout de suite ? Rempote… ») + « Pas besoin cette année », volume du pot retenu et pot
+   suivant proposé (≈ +1/3) ; 3) pas-à-pas illustré du rempotage (« Ce qu'il te faut », démêler les racines…).
+   Aujourd'hui : `repotMonths` par défaut [3, 4] pour toute vivace (`plant()` dans `lib/plants/catalog.ts`), sans
+   regarder l'âge (une vivace plantée la veille peut avoir « Rempote… »).
+5. **Après-récolte** des plantes récoltées en une fois (radis, carottes, salades pommées) : « Tout récolté ? » →
    « Ressemer » ou « Libérer le pot ». À décider avec lui.
-5. **Mémoire de Nora sur plusieurs jours** : il doit encore faire le test sur 2-3 jours (retour à recueillir).
-6. **Tester sans Codespace** (proposé, pas encore demandé) : version web hébergée qui se met à jour seule et APK
+6. **Mémoire de Nora sur plusieurs jours** : il doit encore faire le test sur 2-3 jours (retour à recueillir).
+7. **Tester sans Codespace** (proposé, pas encore demandé) : version web hébergée qui se met à jour seule et APK
    construit par une action GitHub (EXPO_TOKEN qu'il enregistre lui-même dans les secrets du dépôt).
-7. **À la publication** (pas encore décidée) : notifications serveur Android (FCM), reports « Dans 3 h »
+8. **À la publication** (pas encore décidée) : notifications serveur Android (FCM), reports « Dans 3 h »
    synchronisés avec le serveur, photos des plantes sur le serveur, paiement Balco+ (RevenueCat ; les textes
    disent « Bientôt »), Expo 54 → 57, politique de confidentialité, fiche et compte Play Store
    (`docs/avant-publication.md`).
-8. **Version suivante** (feuille de route) : suivi photo d'une plante dans le temps, balcon visuel (plan,
+9. **Version suivante** (feuille de route) : suivi photo d'une plante dans le temps, balcon visuel (plan,
    emplacement, exposition), récoltes et recettes, défis communautaires.
 
 Fait (validé sur son téléphone) :
