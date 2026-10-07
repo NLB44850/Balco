@@ -70,7 +70,7 @@ const PLANTS = {
   cucamelon: "Melothria scabra",
   "mini-melon": "Cucumis melo plant",
   "cut-lettuce": "Lactuca sativa lettuce",
-  "head-lettuce": "butterhead lettuce Lactuca sativa capitata",
+  "head-lettuce": "Lactuca sativa capitata",
   arugula: "Eruca vesicaria sativa rocket",
   spinach: "Spinacia oleracea",
   chard: "Swiss chard Beta vulgaris",
