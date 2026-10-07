@@ -53,3 +53,11 @@ export function possessive(plant: Agreeable) {
 }
 
 export const capitalize = (text: string) => text.charAt(0).toUpperCase() + text.slice(1);
+
+/** « des radis », « de l’ail », « du pak choï », « de la mâche » : une quantité de la plante. */
+export function partitive(plant: Agreeable) {
+  const bare = withoutArticle(plant);
+  if (plant.plural) return `des ${bare}`;
+  if (/^[aeéèêiouyhœ]/iu.test(bare)) return `de l’${bare}`;
+  return plant.gender === "f" ? `de la ${bare}` : `du ${bare}`;
+}

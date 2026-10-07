@@ -9,7 +9,7 @@ import { eventForReminder } from "../reminders/reminder-actions";
 import type { MaintenanceEvent } from "../reminders/reminder-engine";
 import type { ReminderGroup } from "../reminders/reminder-groups";
 import { GESTURE_ORDER, type GestureKind, type PlantDay } from "./day-plan";
-import { dayKey, plantDisplayName, type SessionTask } from "./garden-logic";
+import { dayKey, plantDisplayName, type ResolvedPlant, type SessionTask } from "./garden-logic";
 import { isAvoidedWatering } from "./progress";
 
 export type TodayTone = "frost" | "heat" | "rain" | "storm" | "wind" | "water" | "care" | "season";
@@ -20,7 +20,9 @@ type TodayBase = { key: string; tone: TodayTone; icon: string; title: string; su
 export type TodayItem =
   | (TodayBase & { kind: "alert"; done: false; group: ReminderGroup })
   | (TodayBase & { kind: "task"; done: boolean; task: SessionTask })
-  | (TodayBase & { kind: "season"; done: boolean; activity: CalendarActivity });
+  | (TodayBase & { kind: "season"; done: boolean; activity: CalendarActivity })
+  /** « Tes radis sont-ils tous récoltés ? » ou « Ton pot est libre » : la ligne ouvre la feuille du pot libre. */
+  | (TodayBase & { kind: "harvest-end"; done: false; stage: "question" | "free"; resolved: ResolvedPlant });
 
 /**
  * Une ligne de l'écran : un geste seul, les arrosages regroupés (« Vérifie la terre de 3 plantes », qui
@@ -131,6 +133,9 @@ function rowFor(day: PlantDay, gesture: PlantDay["gestures"][number], groups: Re
       done: gesture.done,
       task: { ...item, done: gesture.done, eventId: gesture.doneEventId ?? item.eventId },
     };
+  }
+  if (source.type === "harvest-end") {
+    return { kind: "harvest-end", key: gesture.key, ...common, tone: "care", icon: "🧺", title: gesture.title, subtitle: gesture.instruction, done: false, stage: source.stage, resolved: source.resolved };
   }
   return { kind: "season", key: `season:${source.activity.key}`, ...common, tone: "season", icon: source.activity.entry.emoji, title: gesture.title, subtitle: "De saison · à faire ce mois-ci", done: gesture.done, activity: source.activity };
 }

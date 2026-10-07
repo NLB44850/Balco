@@ -1,5 +1,6 @@
 import type { MaintenanceTaskType } from "../reminders/reminder-engine";
 import { fertilizeTask } from "./fertilizing";
+import { HARVEST_ONCE } from "./harvest-once";
 import { REPOTTING } from "./repotting";
 import { SOWING } from "./sowing";
 import { PLANT_VARIETIES } from "./varieties";
@@ -73,6 +74,11 @@ export type CatalogPlant = {
   indoorSowMonths: Month[];
   plantMonths: Month[];
   harvestMonths: Month[];
+  /**
+   * Se récolte en une fois (radis, carottes, ail…) : jours pour tout récolter après la première récolte
+   * (lib/plants/harvest-once.ts). Absent : la plante produit au fil des cueillettes.
+   */
+  harvestOnceDays?: number;
   /** Mois de rempotage des vivaces (terreau neuf, pot un peu plus grand) ; vide pour les annuelles. */
   repotMonths: Month[];
   harvestTip: string;
@@ -153,7 +159,7 @@ function customTask(task: Omit<CareTask, "doneTitle" | "doneText"> & Partial<Pic
   return { doneTitle: "Geste fait, journée gagnée.", doneText: "Ta plante te remerciera dans quelques jours.", ...task };
 }
 
-type PlantInput = Omit<CatalogPlant, "tasks" | "varieties" | "repotMonths" | "indoorSowMonths" | "sources"> & { varieties?: PlantVariety[]; repotMonths?: Month[]; extraTasks?: CareTask[]; wateringMonths?: Month[]; wateringInstruction?: string };
+type PlantInput = Omit<CatalogPlant, "tasks" | "varieties" | "repotMonths" | "indoorSowMonths" | "sources" | "harvestOnceDays"> & { varieties?: PlantVariety[]; repotMonths?: Month[]; extraTasks?: CareTask[]; wateringMonths?: Month[]; wateringInstruction?: string };
 
 function plant({ extraTasks = [], wateringMonths, wateringInstruction, varieties, repotMonths, ...data }: PlantInput): CatalogPlant {
   const activeMonths = wateringMonths ?? GROWING_SEASON;
@@ -166,6 +172,7 @@ function plant({ extraTasks = [], wateringMonths, wateringInstruction, varieties
     varieties: varieties ?? PLANT_VARIETIES[data.id] ?? [],
     indoorSowMonths: (SOWING[data.id]?.indoor ?? []).filter((month) => data.sowMonths.includes(month)),
     sources: SOWING[data.id]?.sources ?? [],
+    ...(HARVEST_ONCE[data.id] ? { harvestOnceDays: HARVEST_ONCE[data.id].harvestDays } : {}),
     tasks: [
       wateringTask(data.label, activeMonths, wateringInstruction),
       observeTask(data.label, activeMonths),

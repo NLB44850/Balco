@@ -4,7 +4,8 @@ import { Text } from "@/components/ui/typography";
 
 import { useColors } from "@/hooks/use-colors";
 
-export type ToastMessage = { id: number; text: string; onUndo?: () => void };
+/** `actionLabel` : le bouton à la place de « Annuler » (« Oui » après la récolte d'une plante récoltée en une fois). */
+export type ToastMessage = { id: number; text: string; onUndo?: () => void; actionLabel?: string };
 
 type UndoToastProps = { message: ToastMessage | null; onDone: () => void; bottom?: number };
 
@@ -29,7 +30,7 @@ export function UndoToast({ message, onDone, bottom = 16 }: UndoToastProps) {
       <Text style={styles.text} numberOfLines={2}>{message.text}</Text>
       {message.onUndo && (
         <Pressable accessibilityRole="button" onPress={() => { message.onUndo?.(); onDone(); }} hitSlop={10}>
-          <Text style={[styles.undo, { color: colors.sun }]}>Annuler</Text>
+          <Text style={[styles.undo, { color: colors.sun }]}>{message.actionLabel ?? "Annuler"}</Text>
         </Pressable>
       )}
     </Animated.View>

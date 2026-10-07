@@ -311,8 +311,12 @@ export function followedDays(plants: ResolvedPlant[], events: MaintenanceEvent[]
   return streak;
 }
 
-export function computeStats(plants: ResolvedPlant[], events: MaintenanceEvent[], now = new Date()): GardenStats {
-  const plantIds = new Set(plants.map(({ plant }) => plant.id));
+/**
+ * `past` : les plantes qui ont quitté le balcon (pot libéré après la récolte, plante retirée). Leurs gestes et
+ * leurs récoltes restent dans la progression ; seules les plantes du balcon comptent comme plantes et pour la série.
+ */
+export function computeStats(plants: ResolvedPlant[], events: MaintenanceEvent[], now = new Date(), past: ResolvedPlant[] = []): GardenStats {
+  const plantIds = new Set([...plants, ...past].map(({ plant }) => plant.id));
   const own = events.filter((event) => plantIds.has(event.plantId));
   return {
     // L'arrosage évité grâce à la pluie est compté tout seul : ce n'est pas un geste (ni des points).

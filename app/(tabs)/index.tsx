@@ -18,6 +18,7 @@ import { TODAY_ROW_PICTURE, TodayRow } from "@/components/today/today-row";
 import { useCelebration } from "@/components/today/celebration";
 import { UndoToast, type ToastMessage } from "@/components/today/undo-toast";
 import { WeatherBanner } from "@/components/today/weather-banner";
+import { useFreePot } from "@/components/free-pot-sheet";
 import { useDayPlan } from "@/hooks/use-day-plan";
 import { useColors } from "@/hooks/use-colors";
 import { useVacation } from "@/hooks/use-vacation";
@@ -50,6 +51,7 @@ import { activateReminders, NOTIFICATIONS_DENIED, remindersEnabledText } from "@
 import { arrivalCard } from "@/lib/garden/onboarding";
 import { springCard } from "@/lib/garden/spring";
 import { skipRepotThisYear } from "@/lib/garden/repot-skip";
+import { harvestedToastText, isHarvestedOnce } from "@/lib/garden/harvest-end";
 import { REPOTTING } from "@/lib/plants/repotting";
 import { guideTaskOf } from "@/lib/plants/guide";
 import { nextSaturdayMorning, postponeStart, saturdayReminder, saturdaySource } from "@/lib/garden/postpone";
@@ -80,7 +82,7 @@ const haptic = () => {
 export default function HomeScreen() {
   const colors = useColors();
   const router = useRouter();
-  const { loaded, resolvedPlants, events, onboarding, account, addPlant, removePlant, logEvent, removeEvent, reportLocation, updateOnboarding } = useGarden();
+  const { loaded, resolvedPlants, pastPlants, events, onboarding, account, addPlant, removePlant, logEvent, removeEvent, reportLocation, updateOnboarding } = useGarden();
   const aiStatus = trpc.ai.status.useQuery(undefined, { enabled: account.signedIn, retry: false });
   // Sans compte : l'analyse offerte de cet appareil (Observer sans compte).
   const [device, setDevice] = useState<string | null>(null);
@@ -203,17 +205,19 @@ export default function HomeScreen() {
     return liters > 0 ? `≈ ${formatLiters(Math.round(liters * 10) / 10)} d’eau économisés aujourd’hui, sans rien faire.` : undefined;
   };
 
-  const showToast = (text: string, onUndo?: () => void) => {
+  const showToast = (text: string, onUndo?: () => void, actionLabel?: string) => {
     toastId.current += 1;
-    setToast({ id: toastId.current, text, onUndo });
+    setToast({ id: toastId.current, text, onUndo, actionLabel });
   };
   const hideToast = useCallback(() => setToast(null), []);
+  // Après la récolte d'une plante récoltée en une fois : « Tout récolté ? », puis « Ton pot est libre ».
+  const freePot = useFreePot({ climate, onDone: (text) => showToast(text), overlay: <><UndoToast message={toast} onDone={hideToast} />{celebration}</> });
 
   /**
    * Un badge, un niveau, une série ou une récolte débloqués par ce geste : plein écran pour un badge ou une
    * 1ʳᵉ récolte (une fois par jour), sinon un mot devant le message du bas.
    */
-  const cheer = (logged: MaintenanceEvent[]) => celebrate(celebrationFor(resolvedPlants, events, [...logged, ...events.filter((event) => !logged.some((item) => item.id === event.id))]));
+  const cheer = (logged: MaintenanceEvent[]) => celebrate(celebrationFor(resolvedPlants, events, [...logged, ...events.filter((event) => !logged.some((item) => item.id === event.id))], new Date(), pastPlants));
 
   const logAll = async (toLog: MaintenanceEvent[]) => {
     for (const event of toLog) await logEvent(event);
@@ -248,6 +252,8 @@ export default function HomeScreen() {
   const toggleItem = async (item: TodayItem) => {
     // La pluie se lit seulement : son eau économisée est déjà comptée.
     if (isInfoBanner(item)) return;
+    // « Tes radis sont-ils tous récoltés ? » cochée : oui ; « Ton pot est libre » : ses choix.
+    if (item.kind === "harvest-end") return item.stage === "question" ? freePot.answerYes(item.resolved.plant.id) : freePot.openFreePot(item.resolved.plant.id);
     if (item.kind === "alert") return completeAlert(item.group);
     if (item.kind === "season") {
       if (item.done) {
@@ -272,6 +278,11 @@ export default function HomeScreen() {
     const logged = [eventForSessionTask(item.task, new Date())];
     const undo = await logAll(logged);
     haptic();
+    // Une plante récoltée en une fois : « Radis récoltés : noté · Tout récolté ? » avec « Oui » à la place de « Annuler ».
+    const { resolved } = item.task;
+    if (item.task.task.type === "harvest" && isHarvestedOnce(resolved.entry)) {
+      return showToast(withCheer(cheer(logged), harvestedToastText(resolved.entry)), () => void freePot.answerYes(resolved.plant.id), "Oui");
+    }
     showToast(withCheer(cheer(logged), `${item.title} : noté · +${POINTS_PER_GESTURE} points`), undo);
   };
 
@@ -335,7 +346,7 @@ export default function HomeScreen() {
       done={item.done}
       picture={seasonPicture(item)}
       onToggle={() => void toggleItem(item)}
-      onOpen={() => setSheetKey(item.key)}
+      onOpen={() => (item.kind === "harvest-end" ? (item.stage === "question" ? freePot.openQuestion(item.resolved.plant.id) : freePot.openFreePot(item.resolved.plant.id)) : setSheetKey(item.key))}
     />
   );
   const evening = now.getHours() >= 17;
@@ -626,9 +637,11 @@ export default function HomeScreen() {
         )}
       </BottomSheet>
 
-      {/* Pendant que la feuille des arrosages est ouverte, ils s'affichent par-dessus elle. */}
-      {wateringSheet === null && <UndoToast message={toast} onDone={hideToast} />}
-      {wateringSheet === null && celebration}
+      {freePot.sheet}
+
+      {/* Pendant que la feuille des arrosages ou du pot libre est ouverte, ils s'affichent par-dessus elle. */}
+      {wateringSheet === null && !freePot.isOpen && <UndoToast message={toast} onDone={hideToast} />}
+      {wateringSheet === null && !freePot.isOpen && celebration}
       <CityPicker visible={cityPickerOpen} onClose={() => setCityPickerOpen(false)} searchCities={searchCities} selectCity={selectCity} requestDeviceLocation={requestDeviceLocation} />
     </ScreenContainer>
   );
@@ -655,7 +668,7 @@ function SheetContent({ item, events, onToggle, onSnooze, onOpenPlant, onOpenCal
   const colors = useColors();
   const alertTone = item.tone === "frost" || item.tone === "rain" || item.tone === "storm" || item.tone === "wind" ? colors.frost : item.tone === "heat" ? colors.terracotta : colors.primary;
   const info = item.kind === "alert" && item.group.action === "skip";
-  const body = item.kind === "alert" ? item.group.body : item.kind === "task" ? item.task.task.instruction : item.activity.description;
+  const body = item.kind === "alert" ? item.group.body : item.kind === "task" ? item.task.task.instruction : item.kind === "season" ? item.activity.description : item.subtitle;
 
   return (
     <View style={styles.sheet}>

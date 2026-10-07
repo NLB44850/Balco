@@ -14,8 +14,10 @@ import { usePlantPhotoCapture } from "@/components/photo-source-sheet";
 import { PlantPicture, stockPhoto } from "@/components/plant-picture";
 import { ScreenContainer } from "@/components/screen-container";
 import { useCelebration } from "@/components/today/celebration";
+import { useFreePot } from "@/components/free-pot-sheet";
 import { UndoToast, type ToastMessage } from "@/components/today/undo-toast";
 import { careWeeksLabel, celebrationFor, milestoneDate, plantProgress, sinceLabel, withCheer } from "@/lib/garden/progress";
+import { harvestedToastText, isHarvestedOnce } from "@/lib/garden/harvest-end";
 import { IconSymbol } from "@/components/ui/icon-symbol";
 import { Text, TextInput } from "@/components/ui/typography";
 import { useColors } from "@/hooks/use-colors";
@@ -40,8 +42,8 @@ export default function PlantScreen() {
   const insets = useSafeAreaInsets();
   const { width } = useWindowDimensions();
   const { id } = useLocalSearchParams<{ id: string }>();
-  const { loaded, resolvedPlants, events, logEvent, removeEvent, removePlant, renamePlant, setPlantVariety } = useGarden();
-  const { plan, ready, snoozes, reminderSettings } = useDayPlan();
+  const { loaded, resolvedPlants, pastPlants, events, logEvent, removeEvent, removePlant, renamePlant, setPlantVariety } = useGarden();
+  const { plan, ready, snoozes, reminderSettings, climate } = useDayPlan();
   const { photos, removePhoto } = usePlantPhotos();
   const [shownPhotoId, setShownPhotoId] = useState<string | null>(null);
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
@@ -53,11 +55,13 @@ export default function PlantScreen() {
   const toastId = useRef(0);
   const { celebrate, overlay: celebration } = useCelebration();
   const scrollRef = useRef<ScrollView>(null);
-  const showToast = useCallback((text: string, onUndo?: () => void) => {
+  const showToast = useCallback((text: string, onUndo?: () => void, actionLabel?: string) => {
     toastId.current += 1;
-    setToast({ id: toastId.current, text, onUndo });
+    setToast({ id: toastId.current, text, onUndo, actionLabel });
   }, []);
   const hideToast = useCallback(() => setToast(null), []);
+  // Après la récolte d'une plante récoltée en une fois. Pot vidé ou donné à une autre plante : la fiche se ferme.
+  const freePot = useFreePot({ climate, onDone: (text, kind) => (kind === "restart" ? showToast(text) : back()), overlay: <><UndoToast message={toast} onDone={hideToast} />{celebration}</> });
   const capture = usePlantPhotoCapture(showToast);
   const now = new Date();
   const resolved = resolvedPlants.find((item) => item.plant.id === id);
@@ -112,13 +116,17 @@ export default function PlantScreen() {
 
   const doGesture = async () => {
     if (!gesture || gesture.done) return;
+    if (gesture.source.type === "harvest-end") return gesture.source.stage === "question" ? freePot.answerYes(plant.id) : freePot.openFreePot(plant.id);
     const moment = new Date();
     const event = eventForGesture(gesture, moment);
     await logEvent(event);
     // Un conseil météo suivi se tait jusqu'à demain, ici comme sur Aujourd'hui.
     if (gesture.source.type === "decision") await saveReminderSnoozes(addSnooze(snoozes, gesture.source.decision, "skip", reminderSettings, moment));
     void Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => undefined);
-    const cheer = celebrate(celebrationFor(resolvedPlants, events, [event, ...events.filter((item) => item.id !== event.id)]));
+    const cheer = celebrate(celebrationFor(resolvedPlants, events, [event, ...events.filter((item) => item.id !== event.id)], moment, pastPlants));
+    if (gesture.source.type === "task" && gesture.source.task.task.type === "harvest" && isHarvestedOnce(entry)) {
+      return showToast(withCheer(cheer, harvestedToastText(entry)), () => void freePot.answerYes(plant.id), "Oui");
+    }
     showToast(withCheer(cheer, `${gesture.source.type === "task" ? gesture.source.task.task.doneTitle : `${gesture.title} : noté.`} +${POINTS_PER_GESTURE} points`), () => void removeEvent(event.id));
   };
 
@@ -220,7 +228,7 @@ export default function PlantScreen() {
                 <Text style={[styles.nextTitle, { color: colors.foreground }]}>{gesture.title}</Text>
                 <Text style={[styles.text, { color: colors.muted }]}>{gesture.instruction}</Text>
                 <Pressable accessibilityRole="button" onPress={() => void doGesture()} style={({ pressed }) => [styles.cta, { backgroundColor: colors.primary }, pressed && styles.pressed]}>
-                  <Text style={styles.ctaText}>C’est fait</Text>
+                  <Text style={styles.ctaText}>{gesture.source.type === "harvest-end" ? (gesture.source.stage === "question" ? "Oui, tout est récolté" : "Choisir quoi y mettre") : "C’est fait"}</Text>
                 </Pressable>
               </>
             )}
@@ -394,8 +402,9 @@ export default function PlantScreen() {
         </View>
       </ScrollView>
       {capture.sheet}
-      <UndoToast message={toast} onDone={hideToast} bottom={insets.bottom + 16} />
-      {celebration}
+      {freePot.sheet}
+      {!freePot.isOpen && <UndoToast message={toast} onDone={hideToast} bottom={insets.bottom + 16} />}
+      {!freePot.isOpen && celebration}
     </View>
   );
 }

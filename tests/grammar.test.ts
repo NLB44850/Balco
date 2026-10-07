@@ -7,6 +7,7 @@ import { getCatalogPlant, PLANT_CATALOG, type CatalogPlant } from "../lib/plants
 import { agree, bareName, objectBefore, possessive } from "../lib/plants/grammar";
 import { guideLinkText, guideSteps, guideTitle, nextGestures, whatsNext, type GuideModel } from "../lib/plants/guide";
 import type { MaintenanceEvent } from "../lib/reminders/reminder-engine";
+import { freePotSubtitle, harvestedToastText, harvestQuestion, restartLabel } from "../lib/garden/harvest-end";
 
 const DAY = 86_400_000;
 const catalog = (id: string) => getCatalogPlant(id)!;
@@ -145,5 +146,31 @@ describe("chaque modèle de texte, accordé", () => {
     expect(nextGestures(catalog("basil"), "sow-pot")).toContain("Plus tard, tu le pinceras pour qu’il soit plus touffu.");
     expect(nextGestures(catalog("mint"), "plant-seedling")).toContain("Plus tard, tu la pinceras pour qu’elle soit plus touffue.");
     expect(whatsNext(catalog("thyme"), "pinch")).toEqual(["En quelques semaines, il repart plus dense."]);
+  });
+});
+
+describe("après la récolte : les phrases accordées", () => {
+  it("le message du bas : « Radis récoltés », « Ail récolté », « Carottes récoltées »", () => {
+    expect(harvestedToastText(catalog("radish"))).toBe("Radis récoltés : noté · Tout récolté ?");
+    expect(harvestedToastText(catalog("garlic"))).toBe("Ail récolté : noté · Tout récolté ?");
+    expect(harvestedToastText(catalog("round-carrot"))).toBe("Carottes récoltées : noté · Tout récolté ?");
+    expect(harvestedToastText(catalog("pak-choi"))).toBe("Pak choï récolté : noté · Tout récolté ?");
+  });
+
+  it("la question : masculin, féminin, pluriels", () => {
+    expect(harvestQuestion(catalog("radish"))).toBe("Tes radis sont-ils tous récoltés ?");
+    expect(harvestQuestion(catalog("garlic"))).toBe("Ton ail est-il tout récolté ?");
+    expect(harvestQuestion(catalog("beetroot"))).toBe("Tes betteraves sont-elles toutes récoltées ?");
+    expect(harvestQuestion(catalog("kohlrabi"))).toBe("Ton chou-rave est-il tout récolté ?");
+    expect(harvestQuestion({ ...catalog("kohlrabi"), label: "la laitue", gender: "f" })).toBe("Ta laitue est-elle toute récoltée ?");
+  });
+
+  it("« Ton pot est libre » : ce qui a été récolté, et ressemer ou replanter", () => {
+    expect(freePotSubtitle(catalog("radish"))).toBe("Radis récoltés · que veux-tu y mettre ?");
+    expect(freePotSubtitle(catalog("potato"))).toBe("Pommes de terre récoltées · que veux-tu y mettre ?");
+    expect(restartLabel(catalog("radish"), 5)).toBe("Ressemer des radis");
+    expect(restartLabel(catalog("garlic"), 10)).toBe("Replanter de l’ail");
+    expect(restartLabel(catalog("pak-choi"), 8)).toBe("Ressemer du pak choï");
+    expect(restartLabel({ ...catalog("pak-choi"), label: "la laitue", gender: "f" }, 8)).toBe("Ressemer de la laitue");
   });
 });

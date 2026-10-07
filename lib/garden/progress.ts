@@ -173,9 +173,9 @@ export type Celebration = { kind: "badge" | "level" | "streak" | "harvest"; emoj
  * nouveau badge et la première récolte d'une plante se fêtent en grand ; le reste se dit en un mot dans
  * le message du bas (la ligne cochée a déjà son animation). Rien sinon.
  */
-export function celebrationFor(plants: ResolvedPlant[], before: MaintenanceEvent[], after: MaintenanceEvent[], now = new Date()): Celebration | null {
-  const beforeStats = computeStats(plants, before, now);
-  const afterStats = computeStats(plants, after, now);
+export function celebrationFor(plants: ResolvedPlant[], before: MaintenanceEvent[], after: MaintenanceEvent[], now = new Date(), past: ResolvedPlant[] = []): Celebration | null {
+  const beforeStats = computeStats(plants, before, now, past);
+  const afterStats = computeStats(plants, after, now, past);
   const beforeBadges = computeBadges(beforeStats);
   const afterBadges = computeBadges(afterStats);
   const badge = afterBadges.find((item, index) => item.unlocked && !beforeBadges[index].unlocked);

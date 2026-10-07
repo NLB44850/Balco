@@ -39,18 +39,18 @@ Tout se passe dans son GitHub Codespace (pas de Docker sur son PC).
 
 - `pnpm -s check`, `pnpm -s lint`, puis `TEST_DATABASE_URL=mysql://balco:balco@localhost:3306/balco_cal npx vitest run`
   (MariaDB locale : `service mariadb start` si elle s'est arrêtée, `apt-get install -y mariadb-server` si elle manque,
-  puis `DATABASE_URL=… npx drizzle-kit migrate` ; 490 tests à ce jour). Dans un conteneur
+  puis `DATABASE_URL=… npx drizzle-kit migrate` ; 521 tests à ce jour). Dans un conteneur
   neuf : `apt-get install -y mariadb-server`, `service mariadb start`, créer la base `balco_cal` et l'utilisateur
   `balco`/`balco`, puis `pnpm -s build && DATABASE_URL=mysql://balco:balco@localhost:3306/balco_cal node dist/migrate.mjs`.
 - `npx expo export --platform android` pour s'assurer que le bundle Android se construit.
 - **Tests de bout en bout** (à lancer quand le porteur le demande, et avant chaque grosse évolution) :
   `bash scripts/e2e.sh` (≈ 4 min : construit l'app web avec la simulation météo, migre la base, démarre
   le vrai serveur sur le port 3100, lance Playwright). `bash scripts/e2e.sh meteo` pour un seul fichier,
-  `E2E_SKIP_BUILD=1` pour ne pas reconstruire. Scénarios dans `e2e/` (42 aujourd'hui, avec un faux service d'IA pour Observer et Nora) : parcours
+  `E2E_SKIP_BUILD=1` pour ne pas reconstruire. Scénarios dans `e2e/` (44 aujourd'hui, avec un faux service d'IA pour Observer et Nora) : parcours
   (onboarding, écrans, cocher/Annuler, fête, catalogue, fiche d'une nouvelle plante, feuille du bas qui se ferme,
   suggestions de saison, Saisons rangé par type), météo (pluie + eau économisée, gel + Saisons,
   orage, vent, canicule, « Pas aujourd'hui », retour météo réelle), compte (code de connexion lu dans
-  `dist/e2e-server.log`, balcon retrouvé sur un 2ᵉ téléphone, le 1ᵉʳ prévenu « sauvegardé depuis un autre téléphone ») et vacances, rempotage (`10-rempotage`), gestes de suite (`11-gestes-de-suite`), Nora quand la connexion se coupe (`12-nora-erreur`), Saisons en octobre (`13-saisons-octobre`). Open-Meteo est simulé
+  `dist/e2e-server.log`, balcon retrouvé sur un 2ᵉ téléphone, le 1ᵉʳ prévenu « sauvegardé depuis un autre téléphone ») et vacances, rempotage (`10-rempotage`), gestes de suite (`11-gestes-de-suite`), Nora quand la connexion se coupe (`12-nora-erreur`), Saisons en octobre (`13-saisons-octobre`), après-récolte (`14-apres-recolte`). Open-Meteo est simulé
   (`e2e/helpers.ts`, `mockWeather`), le balcon est posé dans le stockage (`seedBalcony`). Les cases à
   cocher s'appellent « Marquer comme fait : <titre> ». Échecs : captures dans `dist/e2e-results/`.
 - Rendu web : `npx expo export --platform web`, serveur `node dist/standalone/index.mjs` avec
@@ -84,7 +84,8 @@ visuelle, retour immédiat.
 **Nouvelle conversation ? Tout est validé sur son téléphone et fusionné dans `main` : l'onboarding et le pas-à-pas
 pour planter (PR https://github.com/NLB44850/Balco/pull/28, 06/10), puis le rempotage (R1 à R3), les 11 pas-à-pas
 (`docs/pas-a-pas.md`), Nora qui récupère sa réponse perdue et Saisons corrigé (PR https://github.com/NLB44850/Balco/pull/29,
-07/10). Prochaine étape : l'APK (point 1 ci-dessous), puis décider de l'après-récolte (point 5). Récap pour claude.ai :
+07/10). Livré le 07/10, à valider sur son téléphone : accords des textes et après-récolte (point 5). Ensuite : laitue
+pommée, fin de saison des annuelles, l'APK (point 1). Récap pour claude.ai :
 `docs/recap-pour-claude.md` + captures `docs/captures/` (refaites par `bash scripts/captures.sh`, spec
 `e2e/captures.spec.ts` sautée sans `CAPTURES=1`).**
 
@@ -140,8 +141,23 @@ et les 10 étapes du test utilisateur du 04/10 (détail dans « Historique des l
    puis rempoter chaque plant) ; `guideTaskOf(activity)` donne la tâche du guide d'un geste ; route `task=thin|pinch|
    outdoors` (le geste vient de `followUpsFor`, « C'est éclairci / pincé », « Plants installés ») ; entrées : feuille du
    bas d'Aujourd'hui et lien de la fiche ; dessin `two-shoots` (26 en tout).
-5. **Après-récolte** des plantes récoltées en une fois (radis, carottes, salades pommées) : « Tout récolté ? » →
-   « Ressemer » ou « Libérer le pot ». À décider avec lui.
+5. **Accords et après-récolte (livrés le 07/10, à valider)**, plan validé avec lui :
+   - Accords : `gender` / `plural` de chaque plante (valent pour `label`), outil `lib/plants/grammar.ts` (`byForm`,
+     `subjectPronoun`, `objectPronoun`, `objectBefore`, `agree`, `bareName`, `possessive`, `partitive`), utilisé par les
+     pas-à-pas, gestes de suite, « Installe-le », signe de rempotage, étapes de « Sa progression », liens de la fiche
+     (`guideLinkText`). Test `tests/grammar.test.ts` : chaque modèle aux 4 formes (`PHRASES`). Tout nouveau texte qui
+     parle de la plante passe par cet outil.
+   - Après-récolte : `lib/plants/harvest-once.ts` (11 plantes, `harvestOnceDays` du catalogue, 21 j par défaut ; durées
+     prudentes tirées de tailles limites, les sources ne donnent pas de durée) ; logique `lib/garden/harvest-end.ts`
+     (question due à min(1ʳᵉ récolte de la saison + durée, fin des mois de récolte), une seule fois : jour gardé
+     `harvest-asked:<id>:<jour>` ; « Oui » = `harvest-done:<id>`, dans les `ReminderSnooze` du téléphone) ; `planDay` :
+     source `harvest-end` (question ou « Ton pot est libre », seule ligne de la plante, plus d'arrosage ni de rappel) ;
+     feuille `components/free-pot-sheet.tsx` (`useFreePot`, Aujourd'hui et fiche) ; message du bas avec « Oui » à la
+     place de « Annuler » (`actionLabel` de `ToastMessage`). Ressemer = même plante (`restartPlant` : `archiveSeason`
+     renomme `<id>:start`, `:thin`, `:outdoors`, `:pinch` en `…:<date>`, puis « à planter »). Pot vide ou autre plante :
+     `removePlant` ; les plantes retirées (`pastPlants` du contexte) comptent dans `computeStats`, `weekSummary` et
+     `celebrationFor`. E2e `14-apres-recolte`.
+   - Étapes suivantes : laitue pommée au catalogue (photo, calendrier vérifié), puis fin de saison des annuelles.
 6. **Mémoire de Nora sur plusieurs jours** : il doit encore faire le test sur 2-3 jours (retour à recueillir).
 7. **Tester sans Codespace** (proposé, pas encore demandé) : version web hébergée qui se met à jour seule et APK
    construit par une action GitHub (EXPO_TOKEN qu'il enregistre lui-même dans les secrets du dépôt).
