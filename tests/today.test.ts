@@ -39,7 +39,7 @@ const wateringRows = (items: ReturnType<typeof buildTodayList>) => items.filter(
 describe("liste « Aujourd'hui »", () => {
   it("met l'alerte gel en tête, avec l'échéance et la température", () => {
     const { items } = list(-2);
-    expect(items[0]).toMatchObject({ kind: "alert", tone: "frost", icon: "❄", title: "Gel cette nuit : protège 2 plantes", subtitle: "Avant la nuit · jusqu’à -2 °C" });
+    expect(items[0]).toMatchObject({ kind: "alert", tone: "frost", icon: "❄", title: "Gel cette nuit : récolte tout avant ce soir", subtitle: "Avant la nuit · jusqu’à -2 °C" });
   });
 
   it("n'affiche pas deux fois l'arrosage d'une plante qui a déjà une alerte de soif", () => {
@@ -120,7 +120,7 @@ describe("alertes météo en bandeaux", () => {
     const { items } = list(-2);
     const { banners, rest } = splitTodayList(items);
     expect(banners).toHaveLength(1);
-    expect(banners[0]).toMatchObject({ tone: "frost", title: "Gel cette nuit : protège 2 plantes" });
+    expect(banners[0]).toMatchObject({ tone: "frost", title: "Gel cette nuit : récolte tout avant ce soir" });
     expect(isInfoBanner(banners[0])).toBe(false);
     expect(rest.some((item) => item.kind === "alert" && item.group.cause === "frost")).toBe(false);
     expect(rest.length).toBe(items.length - 1);

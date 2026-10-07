@@ -203,7 +203,8 @@ describe.skipIf(!TEST_DATABASE_URL)("garden sync and server reminders (MySQL)", 
     expect(result.sent).toBe(1);
     expect(pushRequests).toHaveLength(1);
     const message = pushRequests[0][0] as unknown as { title: string; body: string; data: { plantIds: string[] }; categoryId: string };
-    expect(message.title).toBe("Gel cette nuit : protège 2 plantes");
+    // Fin septembre, deux annuelles frileuses : le gel finit leur saison, on récolte tout avant la nuit.
+    expect(message.title).toBe("Gel cette nuit : récolte tout avant ce soir");
     // basil-a porte le surnom « Basilic cuisine » donné plus haut.
     expect(message.body).toContain("Basilic cuisine et le poivron");
     expect(message.data.plantIds.sort()).toEqual(["basil-a", "pepper-a"]);

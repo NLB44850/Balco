@@ -9,7 +9,8 @@ import { useLocalWeather } from "@/hooks/use-local-weather";
 import { planDay } from "@/lib/garden/day-plan";
 import { postponedStarts } from "@/lib/garden/postpone";
 import { skippedRepots } from "@/lib/garden/repot-skip";
-import { harvestEndStates, markHarvestAsked, potIsFree } from "@/lib/garden/harvest-end";
+import { endsWithSeason, harvestEndStates, markHarvestAsked, markSeasonAsked, markSeasonFrost, potIsFree } from "@/lib/garden/harvest-end";
+import { dayKey } from "@/lib/garden/garden-logic";
 import { useGarden } from "@/lib/garden/garden-context";
 import { careProfileFor } from "@/lib/garden/garden-logic";
 import { climateZoneFor } from "@/lib/plants/climate";
@@ -79,13 +80,24 @@ export function useDayPlan() {
   const repotSkips = useMemo(() => skippedRepots(snoozes, now), [now, snoozes]);
   const plan = useMemo(() => planDay({ plants: resolvedPlants, events, now, decisions: visibleDecisions, allDecisions, climate, postponed, repotSkips, harvestEnds }), [allDecisions, climate, events, harvestEnds, now, postponed, repotSkips, resolvedPlants, visibleDecisions]);
 
-  // « Tes radis sont-ils tous récoltés ? » ne se pose qu'un jour : on note le jour où elle s'affiche.
+  // « Tes radis sont-ils tous récoltés ? » ne se pose qu'un jour, « Ta saison de basilic est finie ? » un jour puis
+  // une relance : on note le jour où elle s'affiche. Et le soir de gel qui finit la saison d'une annuelle frileuse.
   useEffect(() => {
     if (!snoozesLoaded) return;
-    const asked = plan.filter((day) => day.first?.source.type === "harvest-end" && day.first.source.stage === "question" && !harvestEnds.get(day.resolved.plant.id)?.askedOn);
-    if (asked.length === 0) return;
-    void loadReminderSnoozes().then((stored) => saveReminderSnoozes(asked.reduce((current, day) => markHarvestAsked(current, day.resolved.plant.id, now), stored)));
-  }, [harvestEnds, now, plan, snoozesLoaded]);
+    const today = dayKey(now);
+    const asked = plan.filter((day) => {
+      if (day.first?.source.type !== "harvest-end" || day.first.source.stage !== "question") return false;
+      const state = harvestEnds.get(day.resolved.plant.id);
+      return endsWithSeason(day.resolved.entry) ? !state?.seasonAsked?.includes(today) : !state?.askedOn;
+    });
+    const frosts = allDecisions.filter((decision) => decision.cause === "frost" && decision.taskType === "harvest" && !harvestEnds.get(decision.plantId)?.frostOn);
+    if (asked.length === 0 && frosts.length === 0) return;
+    void loadReminderSnoozes().then((stored) => {
+      let next = asked.reduce((current, day) => (endsWithSeason(day.resolved.entry) ? markSeasonAsked : markHarvestAsked)(current, day.resolved.plant.id, now), stored);
+      next = frosts.reduce((current, decision) => markSeasonFrost(current, decision.plantId, now), next);
+      return saveReminderSnoozes(next);
+    });
+  }, [allDecisions, harvestEnds, now, plan, snoozesLoaded]);
 
   // Prêt quand la météo (ou son repli) et les réglages sont là : avant, l'état d'une plante changerait
   // sous les yeux (« En forme », puis « À surveiller » une fois la soif connue).

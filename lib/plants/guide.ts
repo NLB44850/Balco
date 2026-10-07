@@ -11,7 +11,7 @@ import { PLANTING, type Planting } from "./planting";
 import { ofLabel, potSizes, startActivity } from "./calendar";
 import { REPOTTING } from "./repotting";
 import type { ClimateInfo } from "./climate";
-import { agree, byForm, capitalize, objectBefore, objectPronoun, stressedPronoun, subjectPronoun, verb } from "./grammar";
+import { agree, byForm, elides, capitalize, objectBefore, objectPronoun, stressedPronoun, subjectPronoun, verb } from "./grammar";
 
 export type GuideModel = "sow-pot" | "sow-indoor" | "plant-seedling" | "plant-bulb" | "perennial-pot" | GuideTask;
 
@@ -73,7 +73,7 @@ export const isSowing = (model: GuideModel) => model === "sow-pot" || model === 
 /** « de mâche », « d’agastache », « de tomates cerises ». */
 export function ofName(name: string) {
   const lower = name.charAt(0).toLowerCase() + name.slice(1);
-  return /^[aeéèêiouyh]/iu.test(lower) ? `d’${lower}` : `de ${lower}`;
+  return elides(lower) ? `d’${lower}` : `de ${lower}`;
 }
 
 /**
