@@ -1,6 +1,6 @@
 # Balco : récapitulatif à coller au début d'une conversation avec Claude
 
-*À jour au 7 octobre 2026 (rempotage, 11 pas-à-pas, Nora et Saisons corrigés, tout validé). Copier tout le texte sous
+*À jour au 7 octobre 2026 (rempotage, 11 pas-à-pas, Nora et Saisons corrigés, tout validé et intégré à la version principale). Copier tout le texte sous
 la ligne ci-dessous dans une nouvelle conversation sur claude.ai, puis y joindre les captures de `docs/captures/`
 (liste et légendes dans `docs/captures/LISEZ-MOI.md`).*
 
@@ -53,7 +53,7 @@ Balco dit chaque jour quoi faire pour chaque plante du balcon, selon la saison e
 - **Coulisses** : budget IA mensuel avec pause automatique, protections contre les abus, tests automatiques
   (490 tests et 42 parcours complets dans un vrai navigateur).
 
-## Ce qui vient d'être fait et validé (6 et 7 octobre)
+## Ce qui vient d'être fait, validé et intégré à la version principale (6 et 7 octobre)
 
 1. **Pas-à-pas illustrés, 11 en tout** (captures 03 à 06 et 08 à 10, 14). Toujours facultatifs : on touche un geste
    sur Aujourd'hui, puis « Pas à pas, avec ce qu'il te faut ». Chaque guide a trois parties : **Ce qu'il te faut**
@@ -80,16 +80,15 @@ Balco dit chaque jour quoi faire pour chaque plante du balcon, selon la saison e
 
 ## La suite de la feuille de route, dans l'ordre
 
-1. **Intégrer ce bloc** dans la branche principale (`main`).
-2. **Revérifier sur le prochain APK** (la vraie app Android) : l'aperçu de la photo dans Observer, l'appareil photo
+1. **Revérifier sur le prochain APK** (la vraie app Android) : l'aperçu de la photo dans Observer, l'appareil photo
    depuis Aujourd'hui, les notifications, la position et les rappels de l'accueil.
-3. **Après la récolte** des plantes qu'on récolte en une fois (radis, carottes, salades pommées) : « Tout récolté ? »
+2. **Après la récolte** des plantes qu'on récolte en une fois (radis, carottes, salades pommées) : « Tout récolté ? »
    puis « Ressemer » ou « Libérer le pot ». **À décider.**
-4. **Mémoire de Nora sur plusieurs jours** : test à faire sur 2 ou 3 jours.
-5. **Tester sans Codespace** (idée) : une version web toujours en ligne et l'APK construit automatiquement.
-6. **Avant la publication** (pas encore décidée) : notifications envoyées par le serveur (Firebase), paiement Balco+
+3. **Mémoire de Nora sur plusieurs jours** : test à faire sur 2 ou 3 jours.
+4. **Tester sans Codespace** (idée) : une version web toujours en ligne et l'APK construit automatiquement.
+5. **Avant la publication** (pas encore décidée) : notifications envoyées par le serveur (Firebase), paiement Balco+
    (RevenueCat), mise à jour d'Expo (54 → 57), politique de confidentialité, fiche et compte Google Play.
-7. **Version suivante** : suivi d'une plante en photos dans le temps, balcon visuel (plan, emplacement, exposition),
+6. **Version suivante** : suivi d'une plante en photos dans le temps, balcon visuel (plan, emplacement, exposition),
    récoltes et recettes, défis entre jardiniers.
 
 ## Décisions déjà prises (à ne pas remettre en question sans moi)
@@ -115,5 +114,5 @@ Balco dit chaque jour quoi faire pour chaque plante du balcon, selon la saison e
 
 ---
 
-*Ma demande pour cette conversation :* aide-moi à décider de l'après-récolte (point 3 de la suite) : faut-il proposer
+*Ma demande pour cette conversation :* aide-moi à décider de l'après-récolte (point 2 de la suite) : faut-il proposer
 « Ressemer » ou « Libérer le pot » quand on a tout récolté, et comment, sans alourdir Aujourd'hui ?

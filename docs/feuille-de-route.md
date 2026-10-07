@@ -295,13 +295,14 @@ L'ordre suit la priorité fixée par le porteur du projet. Chaque étape est val
 
 Captures d'écran de ces nouveautés : `docs/captures/` (refaites par `bash scripts/captures.sh`).
 
+Ce bloc est intégré à la version principale le 7 octobre (PR #29).
+
 **À faire ensuite, dans l'ordre** (7 octobre) :
 
-1. Intégrer ce bloc dans la version principale (PR vers `main`).
-2. Revérifier sur le prochain APK : l'aperçu de la photo dans Observer, l'appareil photo depuis Aujourd'hui, les notifications, la position et les rappels de l'accueil.
-3. Décider de l'après-récolte des plantes qu'on arrache (radis, carottes, salades) : « Ressemer » ou « Libérer le pot ».
-4. Tester la mémoire de Nora sur plusieurs jours.
-5. Proposé : une version web toujours en ligne et l'APK construit automatiquement, pour tester sans Codespace.
+1. Revérifier sur le prochain APK : l'aperçu de la photo dans Observer, l'appareil photo depuis Aujourd'hui, les notifications, la position et les rappels de l'accueil.
+2. Décider de l'après-récolte des plantes qu'on arrache (radis, carottes, salades) : « Ressemer » ou « Libérer le pot ».
+3. Tester la mémoire de Nora sur plusieurs jours.
+4. Proposé : une version web toujours en ligne et l'APK construit automatiquement, pour tester sans Codespace.
 
 Choix notés : l'app ne copie pas les photos dans la galerie du téléphone (décidé le 6 octobre).
 
