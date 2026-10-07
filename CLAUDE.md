@@ -39,18 +39,18 @@ Tout se passe dans son GitHub Codespace (pas de Docker sur son PC).
 
 - `pnpm -s check`, `pnpm -s lint`, puis `TEST_DATABASE_URL=mysql://balco:balco@localhost:3306/balco_cal npx vitest run`
   (MariaDB locale : `service mariadb start` si elle s'est arrêtée, `apt-get install -y mariadb-server` si elle manque,
-  puis `DATABASE_URL=… npx drizzle-kit migrate` ; 486 tests à ce jour). Dans un conteneur
+  puis `DATABASE_URL=… npx drizzle-kit migrate` ; 488 tests à ce jour). Dans un conteneur
   neuf : `apt-get install -y mariadb-server`, `service mariadb start`, créer la base `balco_cal` et l'utilisateur
   `balco`/`balco`, puis `pnpm -s build && DATABASE_URL=mysql://balco:balco@localhost:3306/balco_cal node dist/migrate.mjs`.
 - `npx expo export --platform android` pour s'assurer que le bundle Android se construit.
 - **Tests de bout en bout** (à lancer quand le porteur le demande, et avant chaque grosse évolution) :
   `bash scripts/e2e.sh` (≈ 4 min : construit l'app web avec la simulation météo, migre la base, démarre
   le vrai serveur sur le port 3100, lance Playwright). `bash scripts/e2e.sh meteo` pour un seul fichier,
-  `E2E_SKIP_BUILD=1` pour ne pas reconstruire. Scénarios dans `e2e/` (40 aujourd'hui, avec un faux service d'IA pour Observer) : parcours
+  `E2E_SKIP_BUILD=1` pour ne pas reconstruire. Scénarios dans `e2e/` (41 aujourd'hui, avec un faux service d'IA pour Observer) : parcours
   (onboarding, écrans, cocher/Annuler, fête, catalogue, fiche d'une nouvelle plante, feuille du bas qui se ferme,
   suggestions de saison, Saisons rangé par type), météo (pluie + eau économisée, gel + Saisons,
   orage, vent, canicule, « Pas aujourd'hui », retour météo réelle), compte (code de connexion lu dans
-  `dist/e2e-server.log`, balcon retrouvé sur un 2ᵉ téléphone, le 1ᵉʳ prévenu « sauvegardé depuis un autre téléphone ») et vacances, rempotage (`10-rempotage`), gestes de suite (`11-gestes-de-suite`). Open-Meteo est simulé
+  `dist/e2e-server.log`, balcon retrouvé sur un 2ᵉ téléphone, le 1ᵉʳ prévenu « sauvegardé depuis un autre téléphone ») et vacances, rempotage (`10-rempotage`), gestes de suite (`11-gestes-de-suite`), Nora quand la connexion se coupe (`12-nora-erreur`). Open-Meteo est simulé
   (`e2e/helpers.ts`, `mockWeather`), le balcon est posé dans le stockage (`seedBalcony`). Les cases à
   cocher s'appellent « Marquer comme fait : <titre> ». Échecs : captures dans `dist/e2e-results/`.
 - Rendu web : `npx expo export --platform web`, serveur `node dist/standalone/index.mjs` avec
@@ -372,6 +372,11 @@ et route réservée à `role = admin`. Balco+ sera payant (offre commerciale Ope
       et les messages de quota ; bouton « Créer mon compte ou me connecter ».
   Après la fusion : Observer affiche la photo avec `expo-image` (zone vide sur Android avec l'Image de React
   Native, vu dans l'APK du 06/10) ; **à revérifier dans le prochain APK**.
+- **Erreur de Nora « Failed to execute 'json' on 'Response' »** (vue le 07/10, question du 05/10) : réponse vide du
+  transfert de port du Codespace (serveur qui redémarre ou délai dépassé), pas une erreur du serveur. Corrigé :
+  `lib/ai/error-text.ts` (`aiErrorText` garde les messages du serveur, remplace ceux du navigateur ; `noticeText`
+  réécrit les anciennes notices), bouton « Réessayer » sur la dernière notice de Nora, Observer idem ; question à
+  Nora limitée à 40 s par essai et un seul nouvel essai (`CHAT_TIMEOUT_MS`, `server/ai/claude.ts`).
 - Réponses données au porteur, à ne pas reproposer : l'app ne copie pas les photos dans la galerie du téléphone
   (« on laisse comme ça », 06/10) ; IDE sur mobile = ouvrir le Codespace dans Chrome (« Open in browser »).
 

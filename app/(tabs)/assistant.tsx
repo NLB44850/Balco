@@ -14,6 +14,7 @@ import { conversationForNora, withDaySeparators, type ConversationItem } from "@
 import { isNoraLevel, type NoraMemoryView } from "@/lib/ai/memory";
 import { NAME_ASKED_STORAGE_KEY, noraGreeting } from "@/lib/ai/greeting";
 import { quickQuestions } from "@/lib/ai/quick-questions";
+import { aiErrorText, noticeText } from "@/lib/ai/error-text";
 import { quotaLabel } from "@/lib/ai/quota-text";
 import { plusQuotaHint } from "@/lib/plans";
 import { useGarden } from "@/lib/garden/garden-context";
@@ -24,7 +25,7 @@ import { trpc } from "@/lib/trpc";
  * d'oublier. Affichés, mais jamais renvoyés à Nora.
  */
 /** `at` : date du message (absente des messages enregistrés avant le 4 octobre 2026). */
-type Message = { id: string; from: "bot" | "user" | "notice" | "memory"; text: string; time: string; noteId?: string; at?: string };
+type Message = { id: string; from: "bot" | "user" | "notice" | "memory"; text: string; time: string; noteId?: string; at?: string; retry?: boolean };
 
 const HISTORY_STORAGE_KEY = "balco.assistant.history.v1";
 const MAX_STORED_MESSAGES = 40;
@@ -113,9 +114,13 @@ export default function AssistantScreen() {
     const next = [...messages, userMessage];
     setMessages(next);
     setDraft("");
-    // Seuls les vrais échanges des deux derniers jours partent (ni notices ni souvenirs) ; pour le reste,
-    // Nora s'appuie sur ce qu'elle a retenu.
-    const history = conversationForNora(next);
+    askNora(next);
+  };
+
+  // Seuls les vrais échanges des deux derniers jours partent (ni notices ni souvenirs) ; pour le reste,
+  // Nora s'appuie sur ce qu'elle a retenu.
+  const askNora = (conversation: Message[]) => {
+    const history = conversationForNora(conversation);
     // Les derniers gestes et la ville partent d'abord : Nora répond sur un balcon à jour.
     setSyncing(true);
     void syncNow().catch(() => undefined).finally(() => ask.mutate({ messages: history }, {
@@ -130,9 +135,18 @@ export default function AssistantScreen() {
         ]);
         if (result.remembered.length > 0 || result.forgotten.length > 0) void utils.ai.memory.invalidate();
       },
-      onError: (error) => setMessages((current) => [...current, { id: `${Date.now()}-notice`, from: "notice", text: error.message, time: clock(), at: new Date().toISOString() }]),
+      // En mots simples, avec « Réessayer » : la question reste, on la renvoie telle quelle.
+      onError: (error) => setMessages((current) => [...current, { id: `${Date.now()}-notice`, from: "notice", text: aiErrorText(error), time: clock(), at: new Date().toISOString(), retry: true }]),
       onSettled: () => setSyncing(false),
     }));
+  };
+
+  /** « Réessayer » : la notice disparaît et la même question repart. */
+  const retry = (noticeId: string) => {
+    if (!canAsk) return;
+    const conversation = messages.filter((message) => message.id !== noticeId);
+    setMessages(conversation);
+    askNora(conversation);
   };
 
   const changePreferences = (preferences: string[]) => {
@@ -224,7 +238,15 @@ export default function AssistantScreen() {
               )}
             </View>
           ) : item.from === "notice" ? (
-            <Text accessibilityRole="alert" style={[styles.notice, { color: colors.warning, backgroundColor: "rgba(255,255,255,0.8)" }]}>{item.text}</Text>
+            <View style={[styles.noticeBox, { backgroundColor: "rgba(255,255,255,0.8)" }]}>
+              <Text accessibilityRole="alert" style={[styles.notice, { color: colors.warning }]}>{noticeText(item.text)}</Text>
+              {/* Seulement sur la dernière notice, quand la question attend encore sa réponse. */}
+              {item.retry && item.id === messages.at(-1)?.id && (
+                <Pressable accessibilityRole="button" onPress={() => retry(item.id)} disabled={!canAsk} hitSlop={6} style={({ pressed }) => [styles.retry, { borderColor: colors.primary }, pressed && styles.pressed]}>
+                  <Text style={[styles.retryText, { color: colors.primary }]}>Réessayer</Text>
+                </Pressable>
+              )}
+            </View>
           ) : (
             <View style={[styles.messageRow, item.from === "user" && styles.messageRowUser]}>
               {item.from === "bot" && <View style={[styles.smallAvatar, { backgroundColor: colors.primary }]}><Text style={styles.smallAvatarText}>N</Text></View>}
@@ -295,7 +317,10 @@ const styles = StyleSheet.create({
   observeArrow: { fontSize: 26, fontWeight: "300" },
   content: { paddingHorizontal: 20, paddingBottom: 16, gap: 12 },
   clearText: { fontSize: 14, fontWeight: "600" },
-  notice: { fontSize: 13, lineHeight: 18, fontWeight: "600", borderRadius: 14, padding: 12, overflow: "hidden" },
+  noticeBox: { borderRadius: 14, padding: 12, gap: 10, overflow: "hidden" },
+  notice: { fontSize: 13, lineHeight: 18, fontWeight: "600" },
+  retry: { alignSelf: "flex-start", borderRadius: 999, borderWidth: 1, paddingHorizontal: 14, paddingVertical: 7 },
+  retryText: { fontSize: 13, fontWeight: "700" },
   quota: { fontSize: 12, fontWeight: "600", textAlign: "center", marginBottom: 6, marginHorizontal: 20 },
   loginBar: { borderRadius: 16, paddingVertical: 16, alignItems: "center", marginBottom: 12, marginHorizontal: 20 },
   loginBarText: { color: "#FFFFFF", fontSize: 15, fontWeight: "700" },

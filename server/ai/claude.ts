@@ -41,6 +41,9 @@ function getClient() {
   return client;
 }
 
+/** Délai d'une question à Nora (par essai, un seul nouvel essai) : 90 s au pire, sous la coupure des proxys. */
+const CHAT_TIMEOUT_MS = 40_000;
+
 export class AiUnavailableError extends Error {
   constructor() {
     super("ANTHROPIC_API_KEY is not configured");
@@ -224,7 +227,9 @@ export async function askNora(history: ChatTurn[], gardenDescription: string): P
       { type: "text", text: `Ce que l'on sait de la personne et de son balcon :\n${gardenDescription}` },
     ],
     messages: history.map((turn) => ({ role: turn.role, content: turn.content })),
-  });
+    // Une réponse de Nora tient en quelques secondes : au-delà, mieux vaut un message clair que d'attendre
+    // jusqu'à 3 minutes (60 s × 3 essais), que le transfert de port du Codespace coupe avant (réponse vide).
+  }, { timeout: CHAT_TIMEOUT_MS, maxRetries: 1 });
   const usage = usageOf(message);
   const text = textOf(message, "chat");
   let reply: NoraReply;

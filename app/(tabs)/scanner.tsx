@@ -20,6 +20,7 @@ import { usePlantPhotos } from "@/lib/garden/photos-context";
 import { getCatalogPlant } from "@/lib/plants/catalog";
 import { PLANS, plusQuotaHint } from "@/lib/plans";
 import { deviceId as loadDeviceId } from "@/lib/sync/device-id";
+import { aiErrorText, SCAN_CONNECTION_LOST } from "@/lib/ai/error-text";
 import { trpc } from "@/lib/trpc";
 import type { AppRouter } from "@/server/routers";
 import type { inferRouterOutputs } from "@trpc/server";
@@ -235,7 +236,7 @@ export default function ScannerScreen() {
         )}
 
         {notice && <Text accessibilityRole="alert" style={[styles.notice, { color: colors.warning }]}>{notice}</Text>}
-        {diagnose.error && <Text accessibilityRole="alert" style={[styles.notice, { color: colors.error }]}>{diagnose.error.message}</Text>}
+        {diagnose.error && <Text accessibilityRole="alert" style={[styles.notice, { color: colors.error }]}>{aiErrorText(diagnose.error, SCAN_CONNECTION_LOST)}</Text>}
 
         {diagnosis ? (
           <View style={[glass.card, styles.card]}>
