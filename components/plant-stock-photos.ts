@@ -33,6 +33,7 @@ export const STOCK_PHOTOS: Record<string, number> = {
   "garden-cress": require("@/assets/plants/garden-cress.jpg"),
   "garlic": require("@/assets/plants/garlic.jpg"),
   "hardy-geranium": require("@/assets/plants/hardy-geranium.jpg"),
+  "head-lettuce": require("@/assets/plants/head-lettuce.jpg"),
   "hyssop": require("@/assets/plants/hyssop.jpg"),
   "ice-plant": require("@/assets/plants/ice-plant.jpg"),
   "kale": require("@/assets/plants/kale.jpg"),
