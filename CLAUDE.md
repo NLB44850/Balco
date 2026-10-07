@@ -84,7 +84,7 @@ visuelle, retour immédiat.
 **Nouvelle conversation ? Tout est validé sur son téléphone et fusionné dans `main` : l'onboarding et le pas-à-pas
 pour planter (PR https://github.com/NLB44850/Balco/pull/28, 06/10), puis le rempotage (R1 à R3), les 11 pas-à-pas
 (`docs/pas-a-pas.md`), Nora qui récupère sa réponse perdue et Saisons corrigé (PR https://github.com/NLB44850/Balco/pull/29,
-07/10). Validé sur son téléphone le 08/10 : accords des textes, après-récolte et laitue pommée (point 5), PR vers `main` ouverte le 08/10.
+07/10). Validé sur son téléphone le 08/10 : accords des textes, après-récolte et laitue pommée (point 5), PR https://github.com/NLB44850/Balco/pull/30 vers `main` ouverte le 08/10.
 Ensuite : fin de saison des annuelles (quand il le dira), l'APK (point 1). Récap pour claude.ai :
 `docs/recap-pour-claude.md` + captures `docs/captures/` (refaites par `bash scripts/captures.sh`, spec
 `e2e/captures.spec.ts` sautée sans `CAPTURES=1`).**
