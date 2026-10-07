@@ -39,14 +39,14 @@ Tout se passe dans son GitHub Codespace (pas de Docker sur son PC).
 
 - `pnpm -s check`, `pnpm -s lint`, puis `TEST_DATABASE_URL=mysql://balco:balco@localhost:3306/balco_cal npx vitest run`
   (MariaDB locale : `service mariadb start` si elle s'est arrêtée, `apt-get install -y mariadb-server` si elle manque,
-  puis `DATABASE_URL=… npx drizzle-kit migrate` ; 488 tests à ce jour). Dans un conteneur
+  puis `DATABASE_URL=… npx drizzle-kit migrate` ; 489 tests à ce jour). Dans un conteneur
   neuf : `apt-get install -y mariadb-server`, `service mariadb start`, créer la base `balco_cal` et l'utilisateur
   `balco`/`balco`, puis `pnpm -s build && DATABASE_URL=mysql://balco:balco@localhost:3306/balco_cal node dist/migrate.mjs`.
 - `npx expo export --platform android` pour s'assurer que le bundle Android se construit.
 - **Tests de bout en bout** (à lancer quand le porteur le demande, et avant chaque grosse évolution) :
   `bash scripts/e2e.sh` (≈ 4 min : construit l'app web avec la simulation météo, migre la base, démarre
   le vrai serveur sur le port 3100, lance Playwright). `bash scripts/e2e.sh meteo` pour un seul fichier,
-  `E2E_SKIP_BUILD=1` pour ne pas reconstruire. Scénarios dans `e2e/` (41 aujourd'hui, avec un faux service d'IA pour Observer) : parcours
+  `E2E_SKIP_BUILD=1` pour ne pas reconstruire. Scénarios dans `e2e/` (41 aujourd'hui, avec un faux service d'IA pour Observer et Nora) : parcours
   (onboarding, écrans, cocher/Annuler, fête, catalogue, fiche d'une nouvelle plante, feuille du bas qui se ferme,
   suggestions de saison, Saisons rangé par type), météo (pluie + eau économisée, gel + Saisons,
   orage, vent, canicule, « Pas aujourd'hui », retour météo réelle), compte (code de connexion lu dans
@@ -377,6 +377,11 @@ et route réservée à `role = admin`. Balco+ sera payant (offre commerciale Ope
   `lib/ai/error-text.ts` (`aiErrorText` garde les messages du serveur, remplace ceux du navigateur ; `noticeText`
   réécrit les anciennes notices), bouton « Réessayer » sur la dernière notice de Nora, Observer idem ; question à
   Nora limitée à 40 s par essai et un seul nouvel essai (`CHAT_TIMEOUT_MS`, `server/ai/claude.ts`).
+  Puis (07/10, « c'est trompeur, la requête fonctionne quand même ») : le serveur répondait bien, seule la réponse se
+  perdait. Chaque question porte un `requestId` ; `server/ai/answer-cache.ts` (`answerOnce`, 15 min, en mémoire)
+  rend la même réponse à la même question (en cours ou faite) sans la décompter ni la facturer deux fois ; l'app
+  redemande en silence après 2, 4 et 8 s (`askRecovering`, `isConnectionLost`) avant d'afficher « La réponse de Nora
+  s'est perdue en route… Réessayer ». E2e `12-nora-erreur` (réponse vidée après passage au serveur).
 - Réponses données au porteur, à ne pas reproposer : l'app ne copie pas les photos dans la galerie du téléphone
   (« on laisse comme ça », 06/10) ; IDE sur mobile = ouvrir le Codespace dans Chrome (« Open in browser »).
 

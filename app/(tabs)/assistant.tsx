@@ -14,7 +14,7 @@ import { conversationForNora, withDaySeparators, type ConversationItem } from "@
 import { isNoraLevel, type NoraMemoryView } from "@/lib/ai/memory";
 import { NAME_ASKED_STORAGE_KEY, noraGreeting } from "@/lib/ai/greeting";
 import { quickQuestions } from "@/lib/ai/quick-questions";
-import { aiErrorText, noticeText } from "@/lib/ai/error-text";
+import { aiErrorText, isConnectionLost, noticeText } from "@/lib/ai/error-text";
 import { quotaLabel } from "@/lib/ai/quota-text";
 import { plusQuotaHint } from "@/lib/plans";
 import { useGarden } from "@/lib/garden/garden-context";
@@ -25,7 +25,11 @@ import { trpc } from "@/lib/trpc";
  * d'oublier. Affichés, mais jamais renvoyés à Nora.
  */
 /** `at` : date du message (absente des messages enregistrés avant le 4 octobre 2026). */
-type Message = { id: string; from: "bot" | "user" | "notice" | "memory"; text: string; time: string; noteId?: string; at?: string; retry?: boolean };
+type Message = { id: string; from: "bot" | "user" | "notice" | "memory"; text: string; time: string; noteId?: string; at?: string; retry?: boolean; requestId?: string };
+
+/** Si la réponse se perd en route, l'app la redemande (même identifiant : ni décomptée ni facturée deux fois). */
+const RECOVERY_DELAYS_MS = [2_000, 4_000, 8_000];
+const wait = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
 const HISTORY_STORAGE_KEY = "balco.assistant.history.v1";
 const MAX_STORED_MESSAGES = 40;
@@ -110,7 +114,7 @@ export default function AssistantScreen() {
       return;
     }
     if (!canAsk) return;
-    const userMessage: Message = { id: `${Date.now()}-user`, from: "user", text: clean, time: clock(), at: new Date().toISOString() };
+    const userMessage: Message = { id: `${Date.now()}-user`, from: "user", text: clean, time: clock(), at: new Date().toISOString(), requestId: `${Date.now()}-${Math.random().toString(36).slice(2, 10)}` };
     const next = [...messages, userMessage];
     setMessages(next);
     setDraft("");
@@ -121,10 +125,13 @@ export default function AssistantScreen() {
   // Nora s'appuie sur ce qu'elle a retenu.
   const askNora = (conversation: Message[]) => {
     const history = conversationForNora(conversation);
+    const requestId = [...conversation].reverse().find((message) => message.from === "user")?.requestId;
     // Les derniers gestes et la ville partent d'abord : Nora répond sur un balcon à jour.
     setSyncing(true);
-    void syncNow().catch(() => undefined).finally(() => ask.mutate({ messages: history }, {
-      onSuccess: (result) => {
+    void (async () => {
+      await syncNow().catch(() => undefined);
+      try {
+        const result = await askRecovering({ messages: history, requestId });
         const now = Date.now();
         const at = new Date(now).toISOString();
         setMessages((current) => [
@@ -134,11 +141,29 @@ export default function AssistantScreen() {
           ...result.forgotten.map((note): Message => ({ id: `${now}-forgot-${note.id}`, from: "memory", text: `Nora a oublié : ${note.text}`, time: "", at })),
         ]);
         if (result.remembered.length > 0 || result.forgotten.length > 0) void utils.ai.memory.invalidate();
-      },
-      // En mots simples, avec « Réessayer » : la question reste, on la renvoie telle quelle.
-      onError: (error) => setMessages((current) => [...current, { id: `${Date.now()}-notice`, from: "notice", text: aiErrorText(error), time: clock(), at: new Date().toISOString(), retry: true }]),
-      onSettled: () => setSyncing(false),
-    }));
+      } catch (error) {
+        // En mots simples, avec « Réessayer » : la question reste, on la renvoie telle quelle.
+        setMessages((current) => [...current, { id: `${Date.now()}-notice`, from: "notice", text: aiErrorText(error as { message: string; data?: unknown }), time: clock(), at: new Date().toISOString(), retry: true }]);
+      } finally {
+        setSyncing(false);
+      }
+    })();
+  };
+
+  /**
+   * La connexion coupée en route (réponse vide du Codespace) alors que le serveur répond quand même : l'app
+   * redemande la même question, avec le même identifiant, et reçoit la réponse déjà faite. Une erreur du serveur
+   * (quota, pause…) s'affiche tout de suite.
+   */
+  const askRecovering = async (input: { messages: ReturnType<typeof conversationForNora>; requestId?: string }) => {
+    for (let attempt = 0; ; attempt += 1) {
+      try {
+        return await ask.mutateAsync(input);
+      } catch (error) {
+        if (!input.requestId || !isConnectionLost(error as { data?: unknown }) || attempt >= RECOVERY_DELAYS_MS.length) throw error;
+        await wait(RECOVERY_DELAYS_MS[attempt]);
+      }
+    }
   };
 
   /** « Réessayer » : la notice disparaît et la même question repart. */

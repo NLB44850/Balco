@@ -203,6 +203,17 @@ describe.skipIf(!TEST_DATABASE_URL)("AI scanner and assistant (fake Messages API
       expect(body.system[1].text).toContain("Léa");
     });
 
+    it("la même question renvoyée (réponse perdue en route) redonne la même réponse, comptée une seule fois", async () => {
+      nextReplies = [{ body: message([thinking, { type: "text", text: "Tes fraisiers vont bien." }]) }];
+      const input = { messages: [{ role: "user" as const, content: "Fais le point sur mes plantes" }], requestId: `e2e-${Date.now()}-abc` };
+      // Deux envois simultanés (le second pendant que le premier attend l'IA), puis un troisième après.
+      const [first, second] = await Promise.all([caller().ai.ask(input), caller().ai.ask(input)]);
+      const third = await caller().ai.ask(input);
+      expect([second.answer, third.answer]).toEqual([first.answer, first.answer]);
+      expect(requests).toHaveLength(1);
+      expect((await caller().ai.status()).chat.used).toBe(first.quota.used);
+    });
+
     it("remembers what the person tells, and forgets it on request or when contradicted", async () => {
       const noraReply = (reply: object): Reply => ({ body: message([thinking, { type: "text", text: JSON.stringify({ remember: [], forget: [], ...reply }) }]) });
       expect(await caller().ai.memory()).toEqual({ level: "beginner", preferences: [], notes: [] });

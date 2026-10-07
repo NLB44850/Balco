@@ -4,19 +4,24 @@
  * redémarre, délai dépassé par le Codespace…), le message technique du navigateur (« Failed to execute 'json'
  * on 'Response'… ») est remplacé. Logique pure.
  */
-export const NORA_CONNECTION_LOST = "Nora n’a pas pu répondre : la connexion avec le serveur s’est coupée. Réessaie dans un instant.";
+export const NORA_CONNECTION_LOST = "La réponse de Nora s’est perdue en route : la connexion avec le serveur s’est coupée. Touche « Réessayer » pour la récupérer.";
 export const SCAN_CONNECTION_LOST = "L’analyse n’a pas pu aboutir : la connexion avec le serveur s’est coupée. Réessaie dans un instant.";
 
 /** Un message de navigateur ou de réseau, jamais écrit pour quelqu'un. */
 const TECHNICAL = /json|fetch|network|unexpected|load failed|aborted|timed? ?out|econn|socket|status code|internal server error/iu;
 
-/** `data` est présent quand le serveur a répondu (tRPC) : son message est fait pour être lu. */
-export function aiErrorText(error: { message: string; data?: unknown }, connectionLost = NORA_CONNECTION_LOST) {
-  if (error.data && !TECHNICAL.test(error.message)) return error.message;
-  return connectionLost;
+/** Pas de réponse lisible du serveur : la question a pu être traitée quand même (on peut la redemander). */
+export function isConnectionLost(error: { message?: string; data?: unknown }) {
+  return !error.data || TECHNICAL.test(error.message ?? "");
 }
 
-/** Une notice déjà enregistrée dans la conversation (avant cette correction) : réécrite à l'affichage. */
+/** `data` est présent quand le serveur a répondu (tRPC) : son message est fait pour être lu. */
+export function aiErrorText(error: { message: string; data?: unknown }, connectionLost = NORA_CONNECTION_LOST) {
+  return isConnectionLost(error) ? connectionLost : error.message;
+}
+
+/** Une notice déjà enregistrée dans la conversation (avant cette correction, sans « Réessayer ») : réécrite. */
+export const OLD_CONNECTION_LOST = "La réponse de Nora s’est perdue en route : la connexion avec le serveur s’était coupée.";
 export function noticeText(text: string) {
-  return TECHNICAL.test(text) ? NORA_CONNECTION_LOST : text;
+  return TECHNICAL.test(text) ? OLD_CONNECTION_LOST : text;
 }

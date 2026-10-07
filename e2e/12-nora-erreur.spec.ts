@@ -4,9 +4,10 @@ import { loginCodes, mockWeather, open, seedBalcony, trackErrors } from "./helpe
 
 /**
  * Nora quand la connexion se coupe : le Codespace renvoie une réponse vide (serveur qui redémarre, délai
- * dépassé). Avant : « Failed to execute 'json' on 'Response'… ». Maintenant : une phrase simple et « Réessayer ».
+ * dépassé), souvent alors que le serveur a bien répondu. Avant : « Failed to execute 'json' on 'Response'… ».
+ * Maintenant : l'app redemande la même question (même identifiant) et récupère la réponse ; sinon « Réessayer ».
  */
-test("Nora : réponse vide du serveur, message clair, puis « Réessayer » renvoie la question", async ({ page }) => {
+test("Nora : réponse perdue en route récupérée en silence ; connexion coupée, message clair et « Réessayer »", async ({ page }) => {
   const errors = trackErrors(page);
   const email = `e2e-nora-${Date.now()}@balco.test`;
   await mockWeather(page);
@@ -18,21 +19,37 @@ test("Nora : réponse vide du serveur, message clair, puis « Réessayer » renv
   await page.getByLabel("Code reçu par e-mail").pressSequentially(loginCodes(email)[0]);
   await expect(page.getByText("Regarde tes e-mails.")).toHaveCount(0, { timeout: 15_000 });
 
-  // La première question tombe sur une réponse vide, comme le proxy du Codespace.
-  let cut = true;
-  await page.route("**/api/trpc/ai.ask**", (route) => (cut ? route.fulfill({ status: 502, body: "" }) : route.fallback()));
+  // Ton cas : le serveur traite la question, mais la réponse arrive vide (proxy du Codespace).
+  let cutAfterServer = true;
+  let cutBeforeServer = false;
+  await page.route("**/api/trpc/ai.ask**", async (route) => {
+    if (cutBeforeServer) return route.fulfill({ status: 502, body: "" });
+    if (!cutAfterServer) return route.fallback();
+    cutAfterServer = false;
+    await route.fetch(); // Le serveur répond bien…
+    return route.fulfill({ status: 502, body: "" }); // … mais rien n'arrive au téléphone.
+  });
   await page.goto("/assistant");
   await expect(page.getByPlaceholder("Écris à Nora…")).toBeVisible({ timeout: 20_000 });
+  const remaining = async () => Number((await page.getByText(/questions? restantes? ce mois-ci/).textContent())?.match(/\d+/)?.[0]);
+  const before = await remaining();
   await page.getByPlaceholder("Écris à Nora…").fill("Mon basilic a soif ?");
   await page.getByPlaceholder("Écris à Nora…").press("Enter");
-  await expect(page.getByText("Nora n’a pas pu répondre : la connexion avec le serveur s’est coupée. Réessaie dans un instant.")).toBeVisible({ timeout: 15_000 });
-  await expect(page.getByText(/Failed to execute|JSON/)).toHaveCount(0);
+  // L'app redemande en silence et récupère la réponse déjà faite : ni erreur, ni question comptée deux fois.
+  await expect(page.getByText(/^Réponse de Nora/)).toHaveCount(1, { timeout: 20_000 });
+  await expect(page.getByText(/s’est perdue en route|Failed to execute|JSON/)).toHaveCount(0);
+  await expect.poll(remaining, { timeout: 10_000 }).toBe(before - 1);
 
-  // « Réessayer » : la notice disparaît, la même question repart et Nora répond (faux service d'IA).
-  cut = false;
+  // Connexion vraiment coupée : après quelques essais, un message clair et « Réessayer ».
+  cutBeforeServer = true;
+  await page.getByPlaceholder("Écris à Nora…").fill("Et ma menthe ?");
+  await page.getByPlaceholder("Écris à Nora…").press("Enter");
+  await expect(page.getByText(/La réponse de Nora s’est perdue en route/)).toBeVisible({ timeout: 30_000 });
+  cutBeforeServer = false;
   await page.getByRole("button", { name: "Réessayer" }).click();
-  await expect(page.getByText("Nora n’a pas pu répondre", { exact: false })).toHaveCount(0, { timeout: 15_000 });
-  await expect(page.getByText("Mon basilic a soif ?")).toHaveCount(1);
-  await expect(page.getByText(/Basilic|basilic/).last()).toBeVisible({ timeout: 15_000 });
+  await expect(page.getByText(/s’est perdue en route/)).toHaveCount(0, { timeout: 15_000 });
+  await expect(page.getByText("Et ma menthe ?")).toHaveCount(1);
+  await expect(page.getByText(/^Réponse de Nora/)).toHaveCount(2, { timeout: 15_000 });
+  await expect.poll(remaining, { timeout: 10_000 }).toBe(before - 2);
   expect(errors).toEqual([]);
 });
