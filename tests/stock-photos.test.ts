@@ -9,7 +9,7 @@ const credits = JSON.parse(fs.readFileSync(path.join(ROOT, "assets/plants/credit
 const index = fs.readFileSync(path.join(ROOT, "components/plant-stock-photos.ts"), "utf8");
 
 /** Plantes qui attendent leur photo d'exemple (l'app montre leur emoji en attendant). Vide : toutes en ont une. */
-const AWAITING_PHOTO = new Set<string>(["head-lettuce"]);
+const AWAITING_PHOTO = new Set<string>([]);
 
 describe("photos d'exemple des plantes", () => {
   it("n'attendent leur photo que pour des plantes qui n'en ont vraiment pas encore", () => {
