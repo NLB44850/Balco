@@ -20,11 +20,11 @@ import { TODAY_ROW_PICTURE, TodayRow } from "@/components/today/today-row";
 import { UndoToast, type ToastMessage } from "@/components/today/undo-toast";
 import { glass } from "@/components/ui/glass";
 import { Text } from "@/components/ui/typography";
-import { useLocalWeather } from "@/hooks/use-local-weather";
+import { useDayPlan } from "@/hooks/use-day-plan";
 import { useColors } from "@/hooks/use-colors";
 import { useGarden } from "@/lib/garden/garden-context";
 import { skippedRepots } from "@/lib/garden/repot-skip";
-import { careProfileFor, dayKey, plantDisplayName, potHistory, type ResolvedPlant } from "@/lib/garden/garden-logic";
+import { dayKey, plantDisplayName, potHistory, type ResolvedPlant } from "@/lib/garden/garden-logic";
 import {
   ACTIVITY_KIND_LABELS,
   activityDoneLabel,
@@ -45,9 +45,7 @@ import {
 import { describeSowing, formatMonthRange, MONTH_LONG, MONTH_SHORT } from "@/lib/plants/catalog";
 import { nextSuggestionMonth, seasonalStarters, seasonalSuggestions, seasonSuggestions, suggestionActionLabel, type SeasonalSuggestion } from "@/lib/plants/suggestions";
 import { climateSummary, climateZoneFor } from "@/lib/plants/climate";
-import { decideReminders } from "@/lib/reminders/reminder-engine";
-import { withoutSnoozed, type ReminderSnooze } from "@/lib/reminders/reminder-actions";
-import { groupReminders } from "@/lib/reminders/reminder-groups";
+import type { ReminderSnooze } from "@/lib/reminders/reminder-actions";
 import { loadReminderSnoozes, subscribeReminderSnoozes } from "@/lib/reminders/local-notifications";
 
 type PlantFilter = "all" | string;
@@ -61,7 +59,8 @@ export default function CalendarScreen() {
   const colors = useColors();
   const router = useRouter();
   const insets = useSafeAreaInsets();
-  const { weather, weatherSnapshot, isLoading, refresh, requestDeviceLocation, searchCities, selectCity } = useLocalWeather();
+  // La météo et les alertes du plan du jour : les mêmes qu'Aujourd'hui (une alerte traitée là-bas disparaît ici).
+  const { weather, weatherSnapshot, isLoading, refresh, requestDeviceLocation, searchCities, selectCity, visibleGroups } = useDayPlan();
   const { resolvedPlants, events, onboarding, addPlant, removePlant, reportLocation } = useGarden();
   const now = useMemo(() => new Date(), []);
 
@@ -145,12 +144,9 @@ export default function CalendarScreen() {
   );
   const [sheetSuggestion, setSheetSuggestion] = useState<SeasonalSuggestion | null>(null);
 
-  // Alertes météo du moment (gel, orage, vent, chaleur, pluie), une par cause, pour les plantes du balcon.
-  const weatherAlerts = useMemo(() => {
-    if (weather.isFallback || resolvedPlants.length === 0) return [];
-    const decisions = decideReminders(resolvedPlants.map((resolved) => ({ plant: careProfileFor(resolved), history: events, weather: weatherSnapshot, settings: { enabled: true } })));
-    return groupReminders(withoutSnoozed(decisions, snoozes, new Date())).filter((group) => group.cause && group.cause !== "thirst");
-  }, [events, resolvedPlants, snoozes, weather.isFallback, weatherSnapshot]);
+  // Alertes météo du moment (gel, orage, vent, chaleur, pluie), une par cause : exactement celles d'Aujourd'hui
+  // (mêmes plantes, sans celles à planter ni les pots libres, mêmes « C'est fait » et « Pas aujourd'hui »).
+  const weatherAlerts = useMemo(() => visibleGroups.filter((group) => group.cause && group.cause !== "thirst"), [visibleGroups]);
 
   /** Le geste du mois se fait sur Aujourd'hui : on y va. */
   const openToday = () => router.push("/(tabs)");

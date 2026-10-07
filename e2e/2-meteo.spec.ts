@@ -116,6 +116,20 @@ test.describe("alertes météo", () => {
     await expect(page.getByRole("checkbox", { name: /^Marquer comme fait : Arrose / })).toHaveCount(0);
   });
 
+  test("vent : traité sur Aujourd'hui, l'alerte disparaît aussi de Saisons, même avec une plante à planter", async ({ page }) => {
+    // Une plante pas encore en terre n'a pas d'alerte sur Aujourd'hui : Saisons ne doit pas lui en inventer une.
+    const now = await atDate(page, new Date(2027, 6, 10, 10));
+    await mockWeather(page);
+    const plants = [...PLANTS.map((id, index) => ({ id: `${id}-e2e`, catalogId: id, addedAt: new Date(2027, 5, 1 + index).toISOString() })), { id: "radish-e2e", catalogId: "radish", addedAt: new Date(2027, 6, 9).toISOString(), toPlant: true }];
+    await seedBalcony(page, { plants: [], now, extra: { "balco.garden.plants.v1": JSON.stringify(plants), "balco.garden.events.v1": "[]" } });
+    await simulate(page, "wind");
+    await doneButton(page, "Vent fort : mets 3 plantes à l’abri").click();
+    await expect(page.getByText(/C’est noté/)).toBeVisible();
+    await page.getByRole("tab", { name: /Saisons/ }).click();
+    await expect(page.getByText(/Ton calendrier/).first()).toBeVisible();
+    await expect(page.getByText("Alerte météo · à voir sur Aujourd’hui")).toHaveCount(0);
+  });
+
   test("« Pas aujourd'hui » fait taire l'alerte jusqu'à demain", async ({ page }) => {
     await mockWeather(page);
     await seedBalcony(page, { plants: PLANTS });

@@ -46,7 +46,7 @@ Tout se passe dans son GitHub Codespace (pas de Docker sur son PC).
 - **Tests de bout en bout** (à lancer quand le porteur le demande, et avant chaque grosse évolution) :
   `bash scripts/e2e.sh` (≈ 4 min : construit l'app web avec la simulation météo, migre la base, démarre
   le vrai serveur sur le port 3100, lance Playwright). `bash scripts/e2e.sh meteo` pour un seul fichier,
-  `E2E_SKIP_BUILD=1` pour ne pas reconstruire. Scénarios dans `e2e/` (47 aujourd'hui, avec un faux service d'IA pour Observer et Nora) : parcours
+  `E2E_SKIP_BUILD=1` pour ne pas reconstruire. Scénarios dans `e2e/` (48 aujourd'hui, avec un faux service d'IA pour Observer et Nora) : parcours
   (onboarding, écrans, cocher/Annuler, fête, catalogue, fiche d'une nouvelle plante, feuille du bas qui se ferme,
   suggestions de saison, Saisons rangé par type), météo (pluie + eau économisée, gel + Saisons,
   orage, vent, canicule, « Pas aujourd'hui », retour météo réelle), compte (code de connexion lu dans
@@ -432,6 +432,10 @@ et route réservée à `role = admin`. Balco+ sera payant (offre commerciale Ope
   craindre avant l'automne » l'été, sinon « gelées possibles jusqu'à début avril » ; `firstFrost`/`firstFrostMonth`
   par zone). Suggestions : quand tout ce qui convient est déjà sur le balcon (`allOwned`), « Tout ce qui se sème ou
   se plante ce mois-ci et convient à ton balcon y est déjà » ; le lien du catalogue reste sur le mois affiché.
+- **Saisons et Aujourd'hui, mêmes alertes** (corrigé le 08/10, vu sur son téléphone : « Coup de vent » resté dans Saisons
+  après « C'est fait » sur Aujourd'hui) : Saisons recalculait ses alertes sur toutes les plantes, y compris « à planter »,
+  pots libres et plantes aux rappels coupés ; il lit maintenant `visibleGroups` de `useDayPlan` (même source qu'Aujourd'hui).
+  E2e « vent : traité sur Aujourd'hui… même avec une plante à planter » (`2-meteo`).
 - Réponses données au porteur, à ne pas reproposer : l'app ne copie pas les photos dans la galerie du téléphone
   (« on laisse comme ça », 06/10) ; IDE sur mobile = ouvrir le Codespace dans Chrome (« Open in browser »).
 
