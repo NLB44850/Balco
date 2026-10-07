@@ -39,14 +39,14 @@ Tout se passe dans son GitHub Codespace (pas de Docker sur son PC).
 
 - `pnpm -s check`, `pnpm -s lint`, puis `TEST_DATABASE_URL=mysql://balco:balco@localhost:3306/balco_cal npx vitest run`
   (MariaDB locale : `service mariadb start` si elle s'est arrêtée, `apt-get install -y mariadb-server` si elle manque,
-  puis `DATABASE_URL=… npx drizzle-kit migrate` ; 539 tests à ce jour). Dans un conteneur
+  puis `DATABASE_URL=… npx drizzle-kit migrate` ; 540 tests à ce jour). Dans un conteneur
   neuf : `apt-get install -y mariadb-server`, `service mariadb start`, créer la base `balco_cal` et l'utilisateur
   `balco`/`balco`, puis `pnpm -s build && DATABASE_URL=mysql://balco:balco@localhost:3306/balco_cal node dist/migrate.mjs`.
 - `npx expo export --platform android` pour s'assurer que le bundle Android se construit.
 - **Tests de bout en bout** (à lancer quand le porteur le demande, et avant chaque grosse évolution) :
   `bash scripts/e2e.sh` (≈ 4 min : construit l'app web avec la simulation météo, migre la base, démarre
   le vrai serveur sur le port 3100, lance Playwright). `bash scripts/e2e.sh meteo` pour un seul fichier,
-  `E2E_SKIP_BUILD=1` pour ne pas reconstruire. Scénarios dans `e2e/` (46 aujourd'hui, avec un faux service d'IA pour Observer et Nora) : parcours
+  `E2E_SKIP_BUILD=1` pour ne pas reconstruire. Scénarios dans `e2e/` (47 aujourd'hui, avec un faux service d'IA pour Observer et Nora) : parcours
   (onboarding, écrans, cocher/Annuler, fête, catalogue, fiche d'une nouvelle plante, feuille du bas qui se ferme,
   suggestions de saison, Saisons rangé par type), météo (pluie + eau économisée, gel + Saisons,
   orage, vent, canicule, « Pas aujourd'hui », retour météo réelle), compte (code de connexion lu dans
@@ -170,7 +170,8 @@ et les 10 étapes du test utilisateur du 04/10 (détail dans « Historique des l
    - 52 annuelles (toutes sauf micro-pousses et plantes récoltées en une fois) : `endsWithSeason` dans
      `lib/plants/season-end.ts`. « Ta saison de basilic est finie ? » (même phrase pour toutes, `seasonQuestion`, `ofBare`)
      remplace la ligne à la fin de la période de récolte ou de floraison en cours (`seasonQuestionDate`,
-     `harvestRunEnd` depuis la mise en terre) ; une seule relance 14 jours après (`season-asked:<id>:<jour>`, deux au
+     `harvestRunEnd` depuis la mise en terre ; plante ajoutée « déjà sur mon balcon » jusqu'à 3 mois après la fin de sa
+     période, comme un basilic en octobre : question tout de suite, `LATE_ARRIVAL_DAYS`, corrigé le 08/10 après son test) ; une seule relance 14 jours après (`season-asked:<id>:<jour>`, deux au
      plus, `isSeasonRetry`, texte « Balco te le redemandera dans deux semaines » puis « ne te le redemandera plus »).
    - Gel en deux temps pour les frileuses d'août à décembre (`SEASON_FROST_MONTHS`) : profil `seasonFrost`
      (`careProfileFor`) → décision `cause: "frost"`, `action: "do"`, `taskType: "harvest"` : « Récolte tout ton basilic

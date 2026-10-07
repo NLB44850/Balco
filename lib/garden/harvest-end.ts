@@ -183,13 +183,23 @@ export function harvestQuestionDue(resolved: ResolvedPlant, events: MaintenanceE
 /** La relance de « Ta saison … est finie ? » : une seule, deux semaines après la première question. */
 const SEASON_RETRY_DAYS = 14;
 
+/** Une plante ajoutée jusqu'à 3 mois après la fin de sa période de récolte a fini sa saison. */
+const LATE_ARRIVAL_DAYS = 92;
+
 /** Le jour où « Ta saison … est finie ? » devient due : le lendemain du soir de gel, sinon la fin de ses mois de récolte ou de floraison. */
 export function seasonQuestionDate(resolved: ResolvedPlant, events: MaintenanceEvent[], state: HarvestEndState | undefined, climate?: ClimateInfo | null): Date | null {
   const { entry, plant } = resolved;
   if (!endsWithSeason(entry) || plant.toPlant) return null;
   const since = inGroundSince(plant, events);
   if (since === null) return null;
-  const runEnd = harvestRunEnd(adaptToClimate(entry, climate).harvestMonths, new Date(since));
+  const months = adaptToClimate(entry, climate).harvestMonths;
+  // Déjà sur le balcon quand on l'a ajoutée (pas de semis ni de plantation notés), juste après la fin de sa
+  // période de récolte (un basilic ajouté en octobre) : sa saison est déjà finie, la question vient tout de suite.
+  if (!events.some((event) => event.id === startEventId(plant.id))) {
+    const previousEnd = harvestRunEnd(months, new Date(since - LATE_ARRIVAL_DAYS * DAY_MS));
+    if (previousEnd && previousEnd.getTime() <= since) return new Date(since);
+  }
+  const runEnd = harvestRunEnd(months, new Date(since));
   if (state?.frostOn) {
     const [year, month, day] = state.frostOn.split("-").map(Number);
     const morningAfter = new Date(year, month - 1, day + 1);

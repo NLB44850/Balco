@@ -99,6 +99,16 @@ describe("quand demander « Ta saison … est finie ? »", () => {
     expect(seasonQuestionDate(plant("lambs-lettuce"), [started(new Date(2026, 8, 1))], undefined)).toEqual(new Date(2027, 3, 1));
   });
 
+  it("ajoutée « déjà sur mon balcon » après la fin de sa saison (basilic en octobre) : la question vient tout de suite", () => {
+    const addedAt = new Date(2026, 9, 8, 10);
+    const basil = plant("basil", { addedAt: addedAt.toISOString() });
+    expect(seasonQuestionDate(basil, [], undefined)).toEqual(addedAt);
+    expect(seasonQuestionDue(basil, [], new Date(2026, 9, 8, 11), undefined)).toBe(true);
+    // En pleine saison, elle attend la fin de ses mois de récolte ; semée dans l'app, la règle habituelle s'applique.
+    expect(seasonQuestionDate(plant("basil", { addedAt: new Date(2026, 6, 8).toISOString() }), [], undefined)).toEqual(new Date(2026, 9, 1));
+    expect(seasonQuestionDate(plant("coriander", { addedAt: new Date(2026, 7, 10).toISOString() }), [started(new Date(2026, 7, 15))], undefined)).toEqual(new Date(2026, 10, 1));
+  });
+
   it("jamais pour une plante récoltée en une fois, une vivace, les micro-pousses ou une plante à planter", () => {
     expect(seasonQuestionDate(plant("radish"), [started(new Date(2026, 3, 1))], undefined)).toBeNull();
     expect(seasonQuestionDate(plant("mint"), [], undefined)).toBeNull();

@@ -73,3 +73,16 @@ test("soir de gel en septembre : « Récolte tout ton basilic avant cette nuit �
   expect(await springWishes(page)).toEqual([]);
   expect(errors).toEqual([]);
 });
+
+test("basilic ajouté « déjà sur mon balcon » en octobre : la question vient tout de suite", async ({ page }) => {
+  const errors = trackErrors(page);
+  const now = new Date(2027, 9, 8, 10);
+  await page.clock.install({ time: now });
+  await page.clock.resume();
+  await mockWeather(page);
+  const arrived = { id: "basil-e2e", catalogId: "basil", addedAt: now.toISOString() };
+  await seedBalcony(page, { plants: [], extra: { "balco.garden.plants.v1": JSON.stringify([arrived]), "balco.garden.events.v1": "[]" } });
+  await open(page, "/", "Ta saison de basilic est finie ?");
+  await expect(page.getByText("Arrose le basilic")).toHaveCount(0);
+  expect(errors).toEqual([]);
+});
