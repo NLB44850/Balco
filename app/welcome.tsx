@@ -91,7 +91,7 @@ export default function OnboardingScreen() {
   const question = step ? QUESTIONS[step] ?? null : null;
 
   const onboardingAnswers: OnboardingAnswers = useMemo(
-    () => ({ hasPlants: answers.has === undefined ? undefined : answers.has === "yes", sunlight: answers.sun ? sunlightFromChoice(answers.sun) : undefined, space: answers.space, goals: answers.has === "yes" ? [] : answers.goals }),
+    () => ({ hasPlants: answers.has === undefined ? undefined : answers.has === "yes", sunlight: answers.sun ? sunlightFromChoice(answers.sun) : undefined, sunlightUnknown: answers.sun === SUNLIGHT_UNKNOWN.id || undefined, space: answers.space, goals: answers.has === "yes" ? [] : answers.goals }),
     [answers],
   );
   // Seulement ce qui se sème ou se plante ce mois-ci, dans le climat de la ville choisie (Paris sinon).

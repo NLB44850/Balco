@@ -39,14 +39,14 @@ Tout se passe dans son GitHub Codespace (pas de Docker sur son PC).
 
 - `pnpm -s check`, `pnpm -s lint`, puis `TEST_DATABASE_URL=mysql://balco:balco@localhost:3306/balco_cal npx vitest run`
   (MariaDB locale : `service mariadb start` si elle s'est arrêtée, `apt-get install -y mariadb-server` si elle manque,
-  puis `DATABASE_URL=… npx drizzle-kit migrate` ; 540 tests à ce jour). Dans un conteneur
+  puis `DATABASE_URL=… npx drizzle-kit migrate` ; 546 tests à ce jour). Dans un conteneur
   neuf : `apt-get install -y mariadb-server`, `service mariadb start`, créer la base `balco_cal` et l'utilisateur
   `balco`/`balco`, puis `pnpm -s build && DATABASE_URL=mysql://balco:balco@localhost:3306/balco_cal node dist/migrate.mjs`.
 - `npx expo export --platform android` pour s'assurer que le bundle Android se construit.
 - **Tests de bout en bout** (à lancer quand le porteur le demande, et avant chaque grosse évolution) :
   `bash scripts/e2e.sh` (≈ 4 min : construit l'app web avec la simulation météo, migre la base, démarre
   le vrai serveur sur le port 3100, lance Playwright). `bash scripts/e2e.sh meteo` pour un seul fichier,
-  `E2E_SKIP_BUILD=1` pour ne pas reconstruire. Scénarios dans `e2e/` (48 aujourd'hui, avec un faux service d'IA pour Observer et Nora) : parcours
+  `E2E_SKIP_BUILD=1` pour ne pas reconstruire. Scénarios dans `e2e/` (49 aujourd'hui, avec un faux service d'IA pour Observer et Nora) : parcours
   (onboarding, écrans, cocher/Annuler, fête, catalogue, fiche d'une nouvelle plante, feuille du bas qui se ferme,
   suggestions de saison, Saisons rangé par type), météo (pluie + eau économisée, gel + Saisons,
   orage, vent, canicule, « Pas aujourd'hui », retour météo réelle), compte (code de connexion lu dans
@@ -85,7 +85,7 @@ visuelle, retour immédiat.
 pour planter (PR https://github.com/NLB44850/Balco/pull/28, 06/10), puis le rempotage (R1 à R3), les 11 pas-à-pas
 (`docs/pas-a-pas.md`), Nora qui récupère sa réponse perdue et Saisons corrigé (PR https://github.com/NLB44850/Balco/pull/29,
 07/10). Validé sur son téléphone le 08/10 : accords des textes, après-récolte et laitue pommée (point 5), fusionnés dans `main` (PR https://github.com/NLB44850/Balco/pull/30, 08/10).
-Validé sur son téléphone le 08/10 : fin de saison des annuelles (point 5 bis), fusionnée dans `main` (PR https://github.com/NLB44850/Balco/pull/31, 08/10). Ensuite : l'APK (point 1). Récap pour claude.ai :
+Validé sur son téléphone le 08/10 : fin de saison des annuelles (point 5 bis), fusionnée dans `main` (PR https://github.com/NLB44850/Balco/pull/31, 08/10). En cours (08/10) : **refonte de Réglages**, plan et décisions dans `docs/chantier-reglages.md` (étape 1, Mon balcon, faite). Ensuite : l'APK (point 1). Récap pour claude.ai :
 `docs/recap-pour-claude.md` + captures `docs/captures/` (refaites par `bash scripts/captures.sh`, spec
 `e2e/captures.spec.ts` sautée sans `CAPTURES=1`).**
 

@@ -1,6 +1,7 @@
 /**
- * Réglages, à part de Moi : ton prénom, ton balcon (expérience, soleil, espace, envies), tes rappels,
- * ta sauvegarde et ton compte. Chaque changement s'enregistre tout de suite, sans bouton « Valider ».
+ * Réglages, à part de Moi : une liste simple où chaque ligne montre sa valeur ; la toucher ouvre une feuille du
+ * bas avec les mêmes choix que l'accueil (lignes : components/settings, valeurs : lib/garden/settings-summary.ts).
+ * Ton balcon, tes rappels, toi, ta sauvegarde et ton compte. Chaque changement s'enregistre tout de suite, sans bouton « Valider ».
  * S'ouvre depuis la roue crantée de Moi.
  */
 import { useRouter } from "expo-router";
@@ -9,8 +10,11 @@ import { Alert, Pressable, ScrollView, StyleSheet, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { CityPicker } from "@/components/city-picker";
+import { ChoiceList } from "@/components/settings/choice-list";
+import { SettingRow, SettingsGroup, SheetHeading } from "@/components/settings/rows";
+import { BottomSheet } from "@/components/today/bottom-sheet";
 import { LightScreen } from "@/components/light-screen";
-import { PlantPicture } from "@/components/plant-picture";
+import { CatalogPicture, PlantPicture } from "@/components/plant-picture";
 import { ScreenHeader } from "@/components/screen-header";
 import { glass } from "@/components/ui/glass";
 import { Text, TextInput } from "@/components/ui/typography";
@@ -20,7 +24,9 @@ import { useLocalWeather } from "@/hooks/use-local-weather";
 import { useWeatherSimulation } from "@/hooks/use-weather-simulation";
 import { useGarden } from "@/lib/garden/garden-context";
 import { plantDisplayName, relativeDay } from "@/lib/garden/garden-logic";
-import { EXPERIENCE_OPTIONS, GOAL_OPTIONS, SPACE_OPTIONS, SUNLIGHT_OPTIONS, type OnboardingOption } from "@/lib/garden/onboarding";
+import { EXPERIENCE_OPTIONS, GOAL_OPTIONS, SPACE_OPTIONS, SUNLIGHT_UNKNOWN, type OnboardingOption } from "@/lib/garden/onboarding";
+import { cityValue, goalsValue, spaceValue, springWishEntries, springWishesValue, SUNLIGHT_CHOICES, sunlightChoice, sunlightPatch, SUNLIGHT_TIP, sunlightValue } from "@/lib/garden/settings-summary";
+import { nextSpringReminder, SPRING_REMINDER_SOURCE, springReminderContent } from "@/lib/garden/spring";
 import { notificationsUnavailableReason } from "@/lib/notifications/module";
 import { activateReminders, NOTIFICATIONS_DENIED } from "@/lib/reminders/activate";
 import {
@@ -29,6 +35,7 @@ import {
   loadLocalReminderSettings,
   requestLocalNotificationPermission,
   saveLocalReminderSettings,
+  scheduleDatedReminder,
   sendTestNotification,
   subscribeReminderSettings,
   type LocalReminderSettings,
@@ -40,6 +47,7 @@ export default function SettingsScreen() {
   const colors = useColors();
   const router = useRouter();
   const { resolvedPlants, profile, onboarding, account, updateProfile, updateOnboarding, signIn, signOut, syncNow, claimThisDevice, deleteAccount } = useGarden();
+  const answers = onboarding?.skipped ? {} : onboarding ?? {};
   const [reminderSettings, setReminderSettings] = useState<LocalReminderSettings>(defaultLocalReminderSettings);
   const [settingsLoaded, setSettingsLoaded] = useState(false);
   const [nameDraft, setNameDraft] = useState(profile.firstName ?? "");
@@ -92,6 +100,22 @@ export default function SettingsScreen() {
 
   const location = useLocalWeather();
   const [cityPickerOpen, setCityPickerOpen] = useState(false);
+  const [sheet, setSheet] = useState<"sun" | "space" | "goals" | "spring" | null>(null);
+  const closeSheet = () => setSheet(null);
+  // « Envies » : plusieurs choix, enregistrés d'un coup par « Enregistrer ».
+  const [goalsDraft, setGoalsDraft] = useState<string[]>([]);
+  const openGoals = () => {
+    setGoalsDraft(answers.goals ?? []);
+    setSheet("goals");
+  };
+  const springWishes = springWishEntries(onboarding?.springWishes);
+  /** « Retirer » : la plante quitte les envies ; la notification du 1er mars suit (plus rien s'il n'en reste pas). */
+  const removeSpringWish = async (catalogId: string) => {
+    const wishes = (onboarding?.springWishes ?? []).filter((id) => id !== catalogId);
+    await updateOnboarding({ springWishes: wishes });
+    const entries = springWishEntries(wishes);
+    void scheduleDatedReminder(SPRING_REMINDER_SOURCE, springReminderContent(entries), entries.length > 0 ? nextSpringReminder(new Date()) : null).catch(() => undefined);
+  };
 
   const toggleReminders = async () => {
     if (reminderSettings.enabled) {
@@ -129,8 +153,7 @@ export default function SettingsScreen() {
           ? `Sauvegardé ${relativeDay(new Date(account.lastSyncedAt))} à ${new Date(account.lastSyncedAt).toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" })}`
           : "Première sauvegarde en cours…";
 
-  const answers = onboarding?.skipped ? {} : onboarding ?? {};
-  /** Une question de l'accueil, en pastilles : un toucher change la réponse. */
+  /** « Ton expérience » en pastilles (devient « Comment Nora te parle » à l'étape suivante). */
   const choices = (label: string, options: OnboardingOption[], selected: (id: string) => boolean, onPick: (id: string) => void) => (
     <View style={styles.choiceGroup}>
       <Text style={[styles.reminderOptionLabel, { color: colors.foreground }]}>{label}</Text>
@@ -146,14 +169,48 @@ export default function SettingsScreen() {
       </View>
     </View>
   );
-  const goals = answers.goals ?? [];
-  const cityLabel = location.weather.isFallback ? "Paris par défaut" : location.weather.city;
 
   return (
     <LightScreen bottom>
       <CityPicker visible={cityPickerOpen} onClose={() => setCityPickerOpen(false)} searchCities={location.searchCities} selectCity={location.selectCity} requestDeviceLocation={location.requestDeviceLocation} />
+      <BottomSheet visible={sheet === "sun"} onClose={closeSheet}>
+        <SheetHeading title="Combien de soleil reçoit ton balcon ?" intro="Une estimation suffit : les plantes proposées seront plus justes." />
+        <ChoiceList choices={SUNLIGHT_CHOICES} selected={(id) => sunlightChoice(answers) === id} onPick={(id) => { void updateOnboarding(sunlightPatch(id)); closeSheet(); }} hints={{ [SUNLIGHT_UNKNOWN.id]: SUNLIGHT_TIP }} />
+      </BottomSheet>
+      <BottomSheet visible={sheet === "space"} onClose={closeSheet}>
+        <SheetHeading title="Quelle place as-tu ?" intro="Balco évite les plantes trop grandes pour ton espace." />
+        <ChoiceList choices={SPACE_OPTIONS} selected={(id) => answers.space === id} onPick={(id) => { void updateOnboarding({ space: id }); closeSheet(); }} />
+      </BottomSheet>
+      <BottomSheet visible={sheet === "goals"} onClose={closeSheet}>
+        <SheetHeading title="Qu’aimerais-tu cultiver ?" intro="Choisis tout ce qui te donne envie." />
+        <ChoiceList multiple choices={GOAL_OPTIONS} selected={(id) => goalsDraft.includes(id)} onPick={(id) => setGoalsDraft((current) => (current.includes(id) ? current.filter((goal) => goal !== id) : [...current, id]))} />
+        <Pressable accessibilityRole="button" onPress={() => { void updateOnboarding({ goals: GOAL_OPTIONS.map((option) => option.id).filter((id) => goalsDraft.includes(id)) }); closeSheet(); }} style={({ pressed }) => [styles.sheetButton, { backgroundColor: colors.foreground }, pressed && styles.pressed]}>
+          <Text style={[styles.sheetButtonText, { color: colors.background }]}>Enregistrer</Text>
+        </Pressable>
+      </BottomSheet>
+      <BottomSheet visible={sheet === "spring"} onClose={closeSheet}>
+        <SheetHeading title="Tes envies du printemps" intro="Balco te les reproposera en mars." />
+        {springWishes.length === 0 && <Text style={[styles.sheetNote, { color: colors.muted }]}>Quand tu laisses un pot au repos, tu peux garder la plante ici pour le printemps.</Text>}
+        {springWishes.map((entry) => (
+          <View key={entry.id} style={[styles.wishRow, { borderColor: colors.border }]}>
+            <CatalogPicture entry={entry} style={styles.wishPicture} />
+            <Text style={[styles.wishName, { color: colors.foreground }]}>{entry.name}</Text>
+            <Pressable accessibilityRole="button" accessibilityLabel={`Retirer ${entry.name}`} onPress={() => void removeSpringWish(entry.id)} hitSlop={6} style={({ pressed }) => [styles.wishRemove, { borderColor: colors.border }, pressed && styles.pressed]}>
+              <Text style={[styles.wishRemoveText, { color: colors.foreground }]}>Retirer</Text>
+            </Pressable>
+          </View>
+        ))}
+      </BottomSheet>
       <ScrollView keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false} contentContainerStyle={[styles.content, { paddingTop: insets.top + 14 }]}>
         <ScreenHeader back title="Réglages" subtitle="Tout s’enregistre tout de suite" style={styles.header} />
+
+        <SettingsGroup title="Mon balcon">
+          <SettingRow label="Ville" value={cityValue(location.weather)} onPress={() => setCityPickerOpen(true)} />
+          <SettingRow label="Soleil" value={sunlightValue(answers)} onPress={() => setSheet("sun")} />
+          <SettingRow label="Espace" value={spaceValue(answers.space)} onPress={() => setSheet("space")} />
+          <SettingRow label="Envies" value={goalsValue(answers.goals)} onPress={openGoals} />
+          <SettingRow label="Envies du printemps" value={springWishesValue(onboarding?.springWishes)} onPress={() => setSheet("spring")} />
+        </SettingsGroup>
 
         <Text style={[styles.section, { color: colors.foreground }]}>Toi</Text>
         <View style={[glass.card, styles.card]}>
@@ -163,26 +220,6 @@ export default function SettingsScreen() {
             <Pressable accessibilityRole="button" onPress={() => void saveName()} style={({ pressed }) => [styles.editButton, { backgroundColor: nameSaved ? colors.leaf : colors.primary }, pressed && styles.pressed]}><Text style={[styles.editButtonText, nameSaved && { color: colors.primary }]}>{nameSaved ? "✓" : "OK"}</Text></Pressable>
           </View>
           {choices("Ton expérience", EXPERIENCE_OPTIONS, (id) => answers.experience === id, (id) => void updateOnboarding({ experience: id }))}
-        </View>
-
-        <Text style={[styles.section, { color: colors.foreground }]}>Mon balcon</Text>
-        <View style={[glass.card, styles.card]}>
-          <Text style={[styles.reminderCardText, { color: colors.muted, marginTop: 0 }]}>Balco s’en sert pour te proposer des plantes et des dates qui marchent chez toi.</Text>
-          <Pressable accessibilityRole="button" accessibilityLabel={`Ta ville : ${cityLabel}, changer`} onPress={() => setCityPickerOpen(true)} style={({ pressed }) => [styles.linkRow, pressed && styles.pressed]}>
-            <Text style={[styles.linkText, { color: colors.primary }]}>📍  Ta ville · {cityLabel}</Text>
-            <Text style={[styles.linkArrow, { color: colors.muted }]}>›</Text>
-          </Pressable>
-          {choices("Soleil", SUNLIGHT_OPTIONS, (id) => answers.sunlight === id, (id) => void updateOnboarding({ sunlight: id }))}
-          {choices("Espace", SPACE_OPTIONS, (id) => answers.space === id, (id) => void updateOnboarding({ space: id }))}
-          {choices("Tes envies (plusieurs choix)", GOAL_OPTIONS, (id) => goals.includes(id), (id) => void updateOnboarding({ goals: goals.includes(id) ? goals.filter((goal) => goal !== id) : [...goals, id] }))}
-          <Pressable accessibilityRole="button" onPress={() => router.push("/(tabs)/balcony")} style={({ pressed }) => [styles.linkRow, pressed && styles.pressed]}>
-            <Text style={[styles.linkText, { color: colors.primary }]}>🪴  Gérer mes plantes</Text>
-            <Text style={[styles.linkArrow, { color: colors.muted }]}>›</Text>
-          </Pressable>
-          <Pressable accessibilityRole="button" onPress={() => router.push("/credits")} style={({ pressed }) => [styles.linkRow, pressed && styles.pressed]}>
-            <Text style={[styles.linkText, { color: colors.primary }]}>📷  Crédits photos</Text>
-            <Text style={[styles.linkArrow, { color: colors.muted }]}>›</Text>
-          </Pressable>
         </View>
 
         <Text style={[styles.section, { color: colors.foreground }]}>Rappels</Text>
@@ -269,6 +306,9 @@ export default function SettingsScreen() {
             </View>
           )}
         </View>
+        <SettingsGroup title="À propos">
+          <SettingRow label="Crédits photos" onPress={() => router.push("/credits")} />
+        </SettingsGroup>
         {simulation.available && (
           <View style={[glass.card, styles.reminderCard]}>
             <Text style={[styles.sectionEyebrow, { color: colors.muted }]}>Version de test</Text>
@@ -359,5 +399,13 @@ const styles = StyleSheet.create({
   plantToggleText: { flex: 1, fontSize: 13, fontWeight: "600" },
   plantToggleCheck: { fontSize: 16, fontWeight: "900" },
   sectionEyebrow: { fontSize: 13, fontWeight: "600" },
+  sheetButton: { borderRadius: 14, paddingVertical: 15, alignItems: "center", marginTop: 14 },
+  sheetButtonText: { fontSize: 16, fontWeight: "700" },
+  sheetNote: { fontSize: 15, lineHeight: 21, marginTop: 6 },
+  wishRow: { flexDirection: "row", alignItems: "center", gap: 12, borderBottomWidth: StyleSheet.hairlineWidth, paddingVertical: 10 },
+  wishPicture: { width: 40, height: 40, borderRadius: 20, alignItems: "center", justifyContent: "center" },
+  wishName: { flex: 1, fontSize: 15, fontWeight: "600" },
+  wishRemove: { borderWidth: 1, borderRadius: 999, paddingHorizontal: 12, paddingVertical: 7 },
+  wishRemoveText: { fontSize: 13, fontWeight: "600" },
   pressed: { opacity: 0.78, transform: [{ scale: 0.98 }] },
 });

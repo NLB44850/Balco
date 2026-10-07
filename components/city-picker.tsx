@@ -1,11 +1,13 @@
 /**
- * Choisir la ville du balcon : recherche par nom (Open-Meteo) ou position du téléphone. Le même écran
+ * Choisir la ville du balcon (feuille du bas) : position du téléphone ou recherche par nom (Open-Meteo). Le même écran
  * pour Saisons (« ⌖ Paris »), le bandeau « Météo de Paris par défaut » d'Aujourd'hui et Réglages.
  * Les actions viennent de l'écran qui l'ouvre (`useLocalWeather`), pour ne pas lancer une 2ᵉ météo.
  */
 import { useState } from "react";
-import { Modal, Pressable, StyleSheet, View } from "react-native";
+import { Pressable, StyleSheet, View } from "react-native";
 
+import { SheetHeading } from "@/components/settings/rows";
+import { BottomSheet } from "@/components/today/bottom-sheet";
 import { Text, TextInput } from "@/components/ui/typography";
 import type { CityResult } from "@/hooks/use-local-weather";
 import { useColors } from "@/hooks/use-colors";
@@ -52,59 +54,41 @@ export function CityPicker({ visible, onClose, searchCities, selectCity, request
   };
 
   return (
-    <Modal visible={visible} transparent animationType="slide" onRequestClose={close}>
-      <View style={styles.backdrop}>
-        <View style={[styles.card, { backgroundColor: colors.surface }]}>
-          <View style={styles.header}>
-            <View>
-              <Text style={[styles.overline, { color: colors.muted }]}>Ta ville</Text>
-              <Text style={[styles.title, { color: colors.foreground }]}>Où pousse ton jardin ?</Text>
-            </View>
-            <Pressable accessibilityRole="button" accessibilityLabel="Fermer" onPress={close} style={styles.closeButton}>
-              <Text style={[styles.closeText, { color: colors.muted }]}>×</Text>
-            </Pressable>
-          </View>
-          <Text style={[styles.intro, { color: colors.muted }]}>Choisis une ville pour adapter la météo et les conseils de culture.</Text>
-          <TextInput value={query} onChangeText={setQuery} onSubmitEditing={() => void search()} placeholder="Rechercher une ville…" placeholderTextColor={colors.muted} returnKeyType="search" style={[styles.input, { borderColor: colors.border, color: colors.foreground, backgroundColor: colors.background }]} />
-          <Pressable accessibilityRole="button" onPress={() => void search()} style={({ pressed }) => [styles.searchButton, { backgroundColor: colors.primary }, pressed && styles.pressed]}>
-            <Text style={styles.searchButtonText}>{loading ? "Recherche…" : "Rechercher"}</Text>
-          </Pressable>
-          {error && <Text style={[styles.error, { color: colors.error }]}>{error}</Text>}
-          <View style={styles.results}>
-            {results.map((city) => (
-              <Pressable key={`${city.id}-${city.latitude}`} accessibilityRole="button" onPress={() => void choose(city)} style={({ pressed }) => [styles.resultRow, { borderColor: colors.border }, pressed && styles.pressed]}>
-                <Text style={[styles.resultName, { color: colors.foreground }]}>{city.name}</Text>
-                <Text style={[styles.resultMeta, { color: colors.muted }]}>{[city.admin1, city.country].filter(Boolean).join(" · ")}</Text>
-              </Pressable>
-            ))}
-          </View>
-          <Pressable accessibilityRole="button" onPress={() => { close(); void requestDeviceLocation(); }} style={({ pressed }) => [styles.deviceLink, pressed && styles.pressed]}>
-            <Text style={[styles.deviceLinkText, { color: colors.primary }]}>⌖ Utiliser ma position actuelle</Text>
-          </Pressable>
-        </View>
+    <BottomSheet visible={visible} onClose={close}>
+      <SheetHeading title="Où est ton balcon ?" intro="Pour te prévenir du gel, de la pluie et de la chaleur chez toi." />
+      <Pressable accessibilityRole="button" onPress={() => { close(); void requestDeviceLocation(); }} style={({ pressed }) => [styles.deviceButton, { borderColor: colors.primary }, pressed && styles.pressed]}>
+        <Text style={[styles.deviceButtonText, { color: colors.primary }]}>⌖  Utiliser ma position</Text>
+      </Pressable>
+      <View style={styles.searchRow}>
+        <TextInput value={query} onChangeText={setQuery} onSubmitEditing={() => void search()} placeholder="Cherche ta ville" placeholderTextColor={colors.muted} returnKeyType="search" style={[styles.input, { borderColor: colors.border, color: colors.foreground, backgroundColor: colors.background }]} />
+        <Pressable accessibilityRole="button" onPress={() => void search()} style={({ pressed }) => [styles.searchButton, { backgroundColor: colors.primary }, pressed && styles.pressed]}>
+          <Text style={styles.searchButtonText}>{loading ? "Recherche…" : "Rechercher"}</Text>
+        </Pressable>
       </View>
-    </Modal>
+      {error && <Text style={[styles.error, { color: colors.error }]}>{error}</Text>}
+      <View style={styles.results}>
+        {results.map((city) => (
+          <Pressable key={`${city.id}-${city.latitude}`} accessibilityRole="button" onPress={() => void choose(city)} style={({ pressed }) => [styles.resultRow, { borderColor: colors.border }, pressed && styles.pressed]}>
+            <Text style={[styles.resultName, { color: colors.foreground }]}>{city.name}</Text>
+            <Text style={[styles.resultMeta, { color: colors.muted }]}>{[city.admin1, city.country].filter(Boolean).join(" · ")}</Text>
+          </Pressable>
+        ))}
+      </View>
+    </BottomSheet>
   );
 }
 
 const styles = StyleSheet.create({
-  backdrop: { flex: 1, justifyContent: "flex-end", backgroundColor: "rgba(18,22,20,0.35)" },
-  card: { borderTopLeftRadius: 28, borderTopRightRadius: 28, paddingHorizontal: 20, paddingTop: 22, paddingBottom: 32, minHeight: 390 },
-  header: { flexDirection: "row", justifyContent: "space-between", alignItems: "flex-start" },
-  overline: { fontSize: 13, fontWeight: "600" },
-  title: { fontSize: 23, fontWeight: "800", marginTop: 4 },
-  closeButton: { padding: 2 },
-  closeText: { fontSize: 28, lineHeight: 28, fontWeight: "300" },
-  intro: { fontSize: 12, lineHeight: 18, marginTop: 9, maxWidth: 310 },
-  input: { borderWidth: 1, borderRadius: 14, paddingHorizontal: 14, paddingVertical: 12, fontSize: 14, marginTop: 18 },
-  searchButton: { alignSelf: "flex-start", borderRadius: 13, paddingHorizontal: 15, paddingVertical: 11, marginTop: 10 },
-  searchButtonText: { color: "#FFF", fontSize: 12, fontWeight: "800" },
-  error: { fontSize: 11, marginTop: 9 },
-  results: { marginTop: 10 },
-  resultRow: { borderBottomWidth: 1, paddingVertical: 10 },
-  resultName: { fontSize: 14, fontWeight: "800" },
-  resultMeta: { fontSize: 10, marginTop: 3 },
-  deviceLink: { alignSelf: "flex-start", marginTop: 16 },
-  deviceLinkText: { fontSize: 12, fontWeight: "800" },
+  deviceButton: { borderWidth: 1, borderRadius: 14, paddingVertical: 13, alignItems: "center", marginTop: 8 },
+  deviceButtonText: { fontSize: 15, fontWeight: "700" },
+  searchRow: { flexDirection: "row", gap: 8, marginTop: 12 },
+  input: { flex: 1, borderWidth: 1, borderRadius: 14, paddingHorizontal: 14, paddingVertical: 12, fontSize: 15 },
+  searchButton: { borderRadius: 14, paddingHorizontal: 15, justifyContent: "center" },
+  searchButtonText: { color: "#FFF", fontSize: 14, fontWeight: "700" },
+  error: { fontSize: 13, marginTop: 9 },
+  results: { marginTop: 6 },
+  resultRow: { borderBottomWidth: 1, paddingVertical: 12 },
+  resultName: { fontSize: 15, fontWeight: "700" },
+  resultMeta: { fontSize: 12, marginTop: 3 },
   pressed: { opacity: 0.78, transform: [{ scale: 0.98 }] },
 });
