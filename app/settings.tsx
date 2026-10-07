@@ -5,8 +5,8 @@
  * S'ouvre depuis la roue crantée de Moi.
  */
 import { useRouter } from "expo-router";
-import { useEffect, useState } from "react";
-import { Alert, Pressable, ScrollView, StyleSheet, View } from "react-native";
+import { useCallback, useEffect, useState } from "react";
+import { Alert, AppState, Linking, Platform, Pressable, ScrollView, StyleSheet, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { CityPicker } from "@/components/city-picker";
@@ -23,7 +23,8 @@ import { useColors } from "@/hooks/use-colors";
 import { useLocalWeather } from "@/hooks/use-local-weather";
 import { useWeatherSimulation } from "@/hooks/use-weather-simulation";
 import { useGarden } from "@/lib/garden/garden-context";
-import { plantDisplayName, relativeDay } from "@/lib/garden/garden-logic";
+import { dayKey, plantDisplayName, relativeDay } from "@/lib/garden/garden-logic";
+import { harvestEndStates, potIsFree } from "@/lib/garden/harvest-end";
 import { GOAL_OPTIONS, SPACE_OPTIONS, SUNLIGHT_UNKNOWN } from "@/lib/garden/onboarding";
 import { NORA_LEVELS } from "@/lib/ai/memory";
 import { cityValue, goalsValue, NOT_YET, spaceValue, springWishEntries, springWishesValue, SUNLIGHT_CHOICES, sunlightChoice, sunlightPatch, SUNLIGHT_TIP, sunlightValue } from "@/lib/garden/settings-summary";
@@ -34,13 +35,18 @@ import {
   clearAndDisableLocalReminders,
   defaultLocalReminderSettings,
   loadLocalReminderSettings,
+  loadReminderSnoozes,
+  notificationPermission,
   requestLocalNotificationPermission,
   saveLocalReminderSettings,
   scheduleDatedReminder,
   sendTestNotification,
   subscribeReminderSettings,
+  subscribeReminderSnoozes,
   type LocalReminderSettings,
 } from "@/lib/reminders/local-notifications";
+import type { ReminderSnooze } from "@/lib/reminders/reminder-actions";
+import { coversReminder, followedText, hourText, isFollowed, QUIET_END_HOURS, QUIET_START_HOURS, quietText, REMINDER_HOURS, reminderHourChoice, toggleFollowed, vacationText, withReminderHour } from "@/lib/reminders/settings-text";
 import { WEATHER_SCENARIOS } from "@/lib/weather/simulation";
 
 export default function SettingsScreen() {
@@ -95,7 +101,7 @@ export default function SettingsScreen() {
 
   const location = useLocalWeather();
   const [cityPickerOpen, setCityPickerOpen] = useState(false);
-  const [sheet, setSheet] = useState<"sun" | "space" | "goals" | "spring" | "name" | "level" | null>(null);
+  const [sheet, setSheet] = useState<"sun" | "space" | "goals" | "spring" | "name" | "level" | "hour" | "quiet" | "plants" | "check" | null>(null);
   const closeSheet = () => setSheet(null);
   // « Envies » : plusieurs choix, enregistrés d'un coup par « Enregistrer ».
   const [goalsDraft, setGoalsDraft] = useState<string[]>([]);
@@ -119,16 +125,68 @@ export default function SettingsScreen() {
       return;
     }
     const result = await activateReminders(reminderSettings, { requestPermission: requestLocalNotificationPermission, save: (next) => updateReminderSettings(next) });
+    refreshPermission();
     if (result.status === "denied") Alert.alert(NOTIFICATIONS_DENIED.title, NOTIFICATIONS_DENIED.message);
   };
 
-  const isPlantEnabled = (plantId: string) => reminderSettings.enabledPlantIds.length === 0 || reminderSettings.enabledPlantIds.includes(plantId);
+  // Les plantes qui peuvent avoir un rappel : ni « à planter » ni pot libre (lib/garden/harvest-end.ts).
+  const [snoozes, setSnoozes] = useState<ReminderSnooze[]>([]);
+  useEffect(() => {
+    void loadReminderSnoozes().then(setSnoozes);
+    return subscribeReminderSnoozes(setSnoozes);
+  }, []);
+  const harvestEnds = harvestEndStates(snoozes, new Date());
+  const eligiblePlants = resolvedPlants.filter((resolved) => !resolved.plant.toPlant && !potIsFree(resolved, harvestEnds.get(resolved.plant.id)));
 
-  const togglePlant = async (plantId: string) => {
-    const current = reminderSettings.enabledPlantIds.length === 0 ? resolvedPlants.map(({ plant }) => plant.id) : reminderSettings.enabledPlantIds;
-    const next = current.includes(plantId) ? current.filter((id) => id !== plantId) : [...current, plantId];
-    const allEnabled = resolvedPlants.every(({ plant }) => next.includes(plant.id));
-    await updateReminderSettings({ enabledPlantIds: allEnabled ? [] : next });
+  // L'autorisation du téléphone, relue au retour dans l'app (après un passage par ses réglages).
+  const [permission, setPermission] = useState<Awaited<ReturnType<typeof notificationPermission>>>("unavailable");
+  const refreshPermission = useCallback(() => void notificationPermission().then(setPermission).catch(() => undefined), []);
+  useEffect(() => {
+    refreshPermission();
+    const subscription = AppState.addEventListener("change", (state) => {
+      if (state === "active") refreshPermission();
+    });
+    return () => subscription.remove();
+  }, [refreshPermission]);
+  const blocked = notificationsSupported && reminderSettings.enabled && (permission === "denied" || permission === "blocked");
+  const remindersOn = notificationsSupported && reminderSettings.enabled;
+  const unsupportedShort = notificationsUnavailableReason === "expo-go-android" ? "Pas dans Expo Go : installe la version de test." : "Dans l’app Android seulement.";
+  const unsupportedLong = notificationsUnavailableReason === "expo-go-android" ? "Expo Go ne permet plus les notifications sur Android : pour tester les rappels, installe la version de test de Balco." : "Les rappels arrivent en notification sur ton téléphone : active-les depuis l’app Balco pour Android. La version web ne peut pas envoyer de notifications.";
+
+  const [hourNotice, setHourNotice] = useState<string | null>(null);
+  const openHour = () => {
+    setHourNotice(null);
+    setSheet("hour");
+  };
+  /** L'heure du conseil ne tombe jamais dans la plage calme : sinon la plage s'ajuste, et la feuille le dit. */
+  const pickHour = async (hour: number) => {
+    const { patch, notice } = withReminderHour(reminderSettings, hour);
+    await updateReminderSettings(patch);
+    if (notice) setHourNotice(notice);
+    else closeSheet();
+  };
+  const quietChip = (key: string, label: string, active: boolean, covers: boolean, onPress: () => void, accessibilityLabel: string) => (
+    <Pressable key={key} accessibilityRole="radio" accessibilityLabel={accessibilityLabel} accessibilityState={{ checked: active, disabled: covers }} aria-checked={active} disabled={covers} onPress={onPress} style={({ pressed }) => [styles.hourChip, { borderColor: active ? colors.primary : colors.border, backgroundColor: active ? colors.primary : "transparent", opacity: covers ? 0.35 : 1 }, pressed && styles.pressed]}>
+      <Text style={[styles.hourChipText, { color: active ? "#FFFFFF" : colors.foreground }]}>{label}</Text>
+    </Pressable>
+  );
+
+  const openCheck = () => {
+    setTestStatus("idle");
+    refreshPermission();
+    setSheet("check");
+  };
+  const allowNotifications = async () => {
+    if (permission === "blocked") return Linking.openSettings();
+    await requestLocalNotificationPermission();
+    refreshPermission();
+  };
+  const openBatterySettings = async () => {
+    try {
+      await Linking.sendIntent("android.settings.IGNORE_BATTERY_OPTIMIZATION_SETTINGS");
+    } catch {
+      await Linking.openSettings();
+    }
   };
 
   const openName = () => {
@@ -155,6 +213,80 @@ export default function SettingsScreen() {
   return (
     <LightScreen bottom>
       <CityPicker visible={cityPickerOpen} onClose={() => setCityPickerOpen(false)} searchCities={location.searchCities} selectCity={location.selectCity} requestDeviceLocation={location.requestDeviceLocation} />
+      <BottomSheet visible={sheet === "hour"} onClose={closeSheet}>
+        <SheetHeading title="À quelle heure ?" intro="Ton conseil du jour arrive à cette heure-là. Les alertes gel et orage arrivent quand il le faut, hors de ta plage calme." />
+        <ChoiceList choices={REMINDER_HOURS.map((hour) => ({ id: String(hour), title: reminderHourChoice(hour, reminderSettings.preferredMinute) }))} selected={(id) => reminderSettings.preferredHour === Number(id)} onPick={(id) => void pickHour(Number(id))} />
+        {hourNotice && <Text style={[styles.sheetNote, { color: colors.foreground }]}>{hourNotice}</Text>}
+      </BottomSheet>
+      <BottomSheet visible={sheet === "quiet"} onClose={closeSheet}>
+        <SheetHeading title="Ta plage calme" intro="Balco ne t’envoie rien pendant ces heures." />
+        <Text style={[styles.sheetLabel, { color: colors.foreground }]}>Début</Text>
+        <View style={styles.hourChips}>
+          {QUIET_START_HOURS.map((hour) => quietChip(`start-${hour}`, hourText(hour), reminderSettings.quietStartHour === hour, coversReminder(reminderSettings, { quietStartHour: hour }), () => void updateReminderSettings({ quietStartHour: hour }), `Début ${hourText(hour)}`))}
+        </View>
+        <Text style={[styles.sheetLabel, { color: colors.foreground }]}>Fin</Text>
+        <View style={styles.hourChips}>
+          {QUIET_END_HOURS.map((hour) => quietChip(`end-${hour}`, hourText(hour), reminderSettings.quietEndHour === hour, coversReminder(reminderSettings, { quietEndHour: hour }), () => void updateReminderSettings({ quietEndHour: hour }), `Fin ${hourText(hour)}`))}
+        </View>
+      </BottomSheet>
+      <BottomSheet visible={sheet === "plants"} onClose={closeSheet}>
+        <SheetHeading title="Plantes suivies" intro="Décoche une plante pour ne plus recevoir ses rappels. Ses gestes restent sur Aujourd’hui." />
+        {eligiblePlants.map((resolved) => {
+          const followed = isFollowed(reminderSettings.enabledPlantIds, resolved.plant.id);
+          const name = plantDisplayName(resolved);
+          return (
+            <Pressable key={resolved.plant.id} accessibilityRole="checkbox" accessibilityLabel={name} accessibilityState={{ checked: followed }} aria-checked={followed} onPress={() => void updateReminderSettings({ enabledPlantIds: toggleFollowed(eligiblePlants.map(({ plant }) => plant.id), reminderSettings.enabledPlantIds, resolved.plant.id) })} style={({ pressed }) => [styles.wishRow, { borderColor: colors.border }, pressed && styles.pressed]}>
+              <PlantPicture resolved={resolved} style={styles.wishPicture} />
+              <Text style={[styles.wishName, { color: colors.foreground }]}>{name}</Text>
+              <View style={[styles.box, { borderColor: followed ? colors.primary : colors.border, backgroundColor: followed ? colors.primary : "transparent" }]}>{followed && <Text style={styles.boxMark}>✓</Text>}</View>
+            </Pressable>
+          );
+        })}
+        <Text style={[styles.sheetHint, { color: colors.muted }]}>Les plantes à planter et les pots libres n’ont pas de rappel.</Text>
+      </BottomSheet>
+      <BottomSheet visible={sheet === "check"} onClose={closeSheet}>
+        <SheetHeading title="On vérifie ensemble" />
+        {!notificationsSupported ? (
+          <Text style={[styles.sheetNote, { color: colors.foreground }]}>{unsupportedLong}</Text>
+        ) : (
+          <>
+            <View style={[styles.checkRow, { borderColor: colors.border }]}>
+              <View style={styles.flex}>
+                <Text style={[styles.checkTitle, { color: colors.foreground }]}>Autorisation du téléphone</Text>
+              </View>
+              {permission === "granted" ? <Text style={[styles.checkOk, { color: colors.primary }]}>✓</Text> : (
+                <Pressable accessibilityRole="button" onPress={() => void allowNotifications()} style={({ pressed }) => [styles.checkButton, { backgroundColor: colors.primary }, pressed && styles.pressed]}>
+                  <Text style={styles.checkButtonText}>Autoriser</Text>
+                </Pressable>
+              )}
+            </View>
+            {Platform.OS === "android" && (
+              <View style={[styles.checkRow, { borderColor: colors.border }]}>
+                <View style={styles.flex}>
+                  <Text style={[styles.checkTitle, { color: colors.foreground }]}>Économie de batterie</Text>
+                  <Text style={[styles.checkText, { color: colors.muted }]}>Sur certains téléphones, elle bloque les rappels.</Text>
+                  <Text style={[styles.checkWatch, { color: "#D2642A" }]}>À vérifier</Text>
+                </View>
+                <Pressable accessibilityRole="button" onPress={() => void openBatterySettings()} style={({ pressed }) => [styles.checkButton, { backgroundColor: colors.primary }, pressed && styles.pressed]}>
+                  <Text style={styles.checkButtonText}>Ouvrir les réglages</Text>
+                </Pressable>
+              </View>
+            )}
+            <View style={[styles.checkRow, { borderColor: colors.border }]}>
+              <View style={styles.flex}>
+                <Text style={[styles.checkTitle, { color: colors.foreground }]}>Rappel test</Text>
+                {testStatus === "sent" && <Text style={[styles.checkText, { color: colors.muted }]}>Il arrive dans 5 secondes. Verrouille ton téléphone pour le voir comme un vrai rappel.</Text>}
+                {testStatus === "denied" && <Text style={[styles.checkText, { color: colors.error }]}>Les notifications sont bloquées : autorise-les d’abord.</Text>}
+              </View>
+              {testStatus === "sent" ? <Text style={[styles.checkOk, { color: colors.primary }]}>✓</Text> : (
+                <Pressable accessibilityRole="button" disabled={testStatus === "sending"} onPress={() => void sendTest()} style={({ pressed }) => [styles.checkButton, { backgroundColor: colors.primary }, pressed && styles.pressed]}>
+                  <Text style={styles.checkButtonText}>{testStatus === "sending" ? "Envoi…" : "M’envoyer un rappel test"}</Text>
+                </Pressable>
+              )}
+            </View>
+          </>
+        )}
+      </BottomSheet>
       <BottomSheet visible={sheet === "name"} onClose={closeSheet}>
         <SheetHeading title="Ton prénom" intro="Pour que Balco et Nora te disent bonjour." />
         <TextInput value={nameDraft} onChangeText={setNameDraft} onSubmitEditing={() => void saveName()} accessibilityLabel="Ton prénom" placeholder="Ton prénom" placeholderTextColor={colors.muted} maxLength={30} returnKeyType="done" autoFocus style={[styles.sheetInput, { borderColor: colors.border, color: colors.foreground }]} />
@@ -205,34 +337,27 @@ export default function SettingsScreen() {
           <SettingRow label="Envies du printemps" value={springWishesValue(onboarding?.springWishes)} onPress={() => setSheet("spring")} />
         </SettingsGroup>
 
-        <Text style={[styles.section, { color: colors.foreground }]}>Rappels</Text>
-        <Pressable accessibilityRole="button" onPress={() => router.push("/vacation")} style={({ pressed }) => [glass.card, styles.card, styles.vacationRow, pressed && styles.pressed]}>
-          <Text style={[styles.linkText, { color: colors.primary }]}>✈️  Mode vacances</Text>
-          <Text style={[styles.linkArrow, { color: colors.muted }]}>›</Text>
-        </Pressable>
-        <View style={[glass.card, styles.reminderCard]}>
-          <View style={styles.reminderCardHeader}>
-            <View style={styles.reminderCardCopy}><Text style={[styles.sectionEyebrow, { color: colors.muted }]}>Rappels contextuels</Text><Text style={[styles.reminderCardTitle, { color: colors.foreground }]}>Seulement quand c’est utile</Text><Text style={[styles.reminderCardText, { color: colors.muted }]}>Balco croise la météo et ton dernier geste.</Text></View>
-            <Pressable accessibilityRole="switch" accessibilityState={{ checked: reminderSettings.enabled, disabled: !notificationsSupported }} disabled={!settingsLoaded || !notificationsSupported} onPress={() => void toggleReminders()} style={({ pressed }) => [styles.toggle, { backgroundColor: reminderSettings.enabled ? colors.primary : colors.border, opacity: notificationsSupported ? 1 : 0.5 }, pressed && styles.pressed]}><View style={[styles.toggleKnob, reminderSettings.enabled && styles.toggleKnobOn]} /></Pressable>
-          </View>
-          {notificationsSupported && (
-            <View style={styles.testRow}>
-              <Pressable accessibilityRole="button" disabled={testStatus === "sending"} onPress={() => void sendTest()} style={({ pressed }) => [styles.testButton, { borderColor: colors.primary }, pressed && styles.pressed]}>
-                <Text style={[styles.testButtonText, { color: colors.primary }]}>{testStatus === "sending" ? "Envoi…" : "Envoyer une notification de test"}</Text>
+        <SettingsGroup title="Rappels">
+          <SettingRow label="Mode vacances" value={vacationText(reminderSettings.vacation, dayKey(new Date()))} onPress={() => router.push("/vacation")} />
+          <SettingRow
+            label="Rappels"
+            subtitle={!notificationsSupported ? unsupportedShort : blocked ? "Bloqués par ton téléphone" : "Un conseil par jour au plus, et les alertes météo."}
+            accessory={
+              <Pressable accessibilityRole="switch" accessibilityLabel="Rappels" accessibilityState={{ checked: reminderSettings.enabled, disabled: !notificationsSupported }} aria-checked={reminderSettings.enabled} disabled={!settingsLoaded || !notificationsSupported} onPress={() => void toggleReminders()} style={({ pressed }) => [styles.toggle, { backgroundColor: reminderSettings.enabled ? colors.primary : colors.border, opacity: notificationsSupported ? 1 : 0.5 }, pressed && styles.pressed]}>
+                <View style={[styles.toggleKnob, reminderSettings.enabled && styles.toggleKnobOn]} />
               </Pressable>
-              {testStatus === "sent" && <Text style={[styles.testHint, { color: colors.muted }]}>Elle arrive dans 5 secondes. Verrouille ton téléphone pour la voir comme un vrai rappel, puis essaie ses boutons.</Text>}
-              {testStatus === "denied" && <Text style={[styles.testHint, { color: colors.error }]}>Les notifications sont bloquées : autorise-les pour Balco dans les réglages du téléphone.</Text>}
-            </View>
+            }
+          />
+          {blocked && (
+            <Pressable accessibilityRole="button" onPress={() => void Linking.openSettings()} style={({ pressed }) => [styles.inlineButton, { borderColor: colors.primary }, pressed && styles.pressed]}>
+              <Text style={[styles.inlineButtonText, { color: colors.primary }]}>Ouvrir les réglages du téléphone</Text>
+            </Pressable>
           )}
-          {!notificationsSupported && <Text style={[styles.reminderWebNote, { backgroundColor: "rgba(255,255,255,0.7)", color: colors.foreground }]}>{notificationsUnavailableReason === "expo-go-android" ? "Expo Go ne permet plus les notifications sur Android : pour tester les rappels, installe la version de test de Balco." : "Les rappels arrivent en notification sur ton téléphone : active-les depuis l’app Balco pour iPhone ou Android. La version web ne peut pas envoyer de notifications."}</Text>}
-          <View style={styles.reminderOptionRow}><Text style={[styles.reminderOptionLabel, { color: colors.foreground }]}>Rappel préféré</Text><View style={styles.timeChoices}>{[17, 18, 19].map((hour) => <Pressable key={hour} disabled={!reminderSettings.enabled} onPress={() => void updateReminderSettings({ preferredHour: hour })} style={[styles.timeChoice, { backgroundColor: reminderSettings.preferredHour === hour ? colors.leaf : "rgba(255,255,255,0.7)", opacity: reminderSettings.enabled ? 1 : 0.5 }]}><Text style={[styles.timeChoiceText, { color: colors.primary }]}>{hour}h30</Text></Pressable>)}</View></View>
-          <View style={styles.quietBlock}><View><Text style={[styles.reminderOptionLabel, { color: colors.foreground }]}>Plage calme</Text><Text style={[styles.reminderOptionHint, { color: colors.muted }]}>Aucune notification pendant ces heures</Text></View><Text style={[styles.reminderQuietValue, { color: colors.primary }]}>{reminderSettings.quietStartHour} → {reminderSettings.quietEndHour} h</Text></View>
-          <View style={styles.quietChoices}><View style={styles.quietChoiceGroup}><Text style={[styles.quietChoiceLabel, { color: colors.muted }]}>Début</Text><View style={styles.timeChoices}>{[20, 21, 22].map((hour) => <Pressable key={`start-${hour}`} disabled={!reminderSettings.enabled} onPress={() => void updateReminderSettings({ quietStartHour: hour })} style={[styles.timeChoice, { backgroundColor: reminderSettings.quietStartHour === hour ? colors.leaf : "rgba(255,255,255,0.7)", opacity: reminderSettings.enabled ? 1 : 0.5 }]}><Text style={[styles.timeChoiceText, { color: colors.primary }]}>{hour} h</Text></Pressable>)}</View></View><View style={styles.quietChoiceGroup}><Text style={[styles.quietChoiceLabel, { color: colors.muted }]}>Fin</Text><View style={styles.timeChoices}>{[7, 8, 9].map((hour) => <Pressable key={`end-${hour}`} disabled={!reminderSettings.enabled} onPress={() => void updateReminderSettings({ quietEndHour: hour })} style={[styles.timeChoice, { backgroundColor: reminderSettings.quietEndHour === hour ? colors.leaf : "rgba(255,255,255,0.7)", opacity: reminderSettings.enabled ? 1 : 0.5 }]}><Text style={[styles.timeChoiceText, { color: colors.primary }]}>{hour} h</Text></Pressable>)}</View></View></View>
-          <Text style={[styles.reminderOptionLabel, { color: colors.foreground }]}>Plantes concernées</Text>
-          {resolvedPlants.length === 0 && <Text style={[styles.reminderOptionHint, { color: colors.muted, marginTop: -8 }]}>Ajoute des plantes à ton balcon pour choisir lesquelles suivre.</Text>}
-          <View style={styles.plantToggles}>{resolvedPlants.map((resolved) => { const enabled = isPlantEnabled(resolved.plant.id); return <Pressable key={resolved.plant.id} disabled={!reminderSettings.enabled} onPress={() => void togglePlant(resolved.plant.id)} style={[styles.plantToggle, { backgroundColor: enabled ? colors.leaf : "rgba(255,255,255,0.7)", opacity: reminderSettings.enabled ? 1 : 0.5 }]}><PlantPicture resolved={resolved} style={styles.plantTogglePicture} /><Text style={[styles.plantToggleText, { color: colors.foreground }]}>{plantDisplayName(resolved)}</Text><Text style={[styles.plantToggleCheck, { color: enabled ? colors.primary : colors.muted }]}>{enabled ? "✓" : "·"}</Text></Pressable>; })}</View>
-        </View>
-
+          <SettingRow label="Heure" value={hourText(reminderSettings.preferredHour, reminderSettings.preferredMinute)} disabled={!remindersOn} onPress={openHour} />
+          <SettingRow label="Plage calme" value={quietText(reminderSettings)} disabled={!remindersOn} onPress={() => setSheet("quiet")} />
+          <SettingRow label="Plantes suivies" value={followedText(eligiblePlants.map(({ plant }) => plant.id), reminderSettings.enabledPlantIds)} disabled={!remindersOn} onPress={() => setSheet("plants")} />
+          <SettingRow label="Je ne reçois pas les rappels" onPress={openCheck} />
+        </SettingsGroup>
 
         <SettingsGroup title="Toi">
           <SettingRow label="Prénom" value={profile.firstName || NOT_YET} onPress={openName} />
@@ -390,6 +515,23 @@ const styles = StyleSheet.create({
   sheetButton: { borderRadius: 14, paddingVertical: 15, alignItems: "center", marginTop: 14 },
   sheetButtonText: { fontSize: 16, fontWeight: "700" },
   sheetInput: { borderWidth: 1, borderRadius: 14, paddingHorizontal: 14, paddingVertical: 13, fontSize: 16, marginTop: 8 },
+  sheetLabel: { fontSize: 15, fontWeight: "700", marginTop: 12 },
+  sheetHint: { fontSize: 13, lineHeight: 18, marginTop: 12 },
+  hourChips: { flexDirection: "row", gap: 8, marginTop: 8 },
+  hourChip: { flex: 1, borderWidth: 1, borderRadius: 14, paddingVertical: 12, alignItems: "center" },
+  hourChipText: { fontSize: 15, fontWeight: "700" },
+  inlineButton: { alignSelf: "flex-start", borderWidth: 1, borderRadius: 12, paddingHorizontal: 12, paddingVertical: 8, marginBottom: 12 },
+  inlineButtonText: { fontSize: 14, fontWeight: "700" },
+  box: { width: 22, height: 22, borderRadius: 6, borderWidth: 2, alignItems: "center", justifyContent: "center" },
+  boxMark: { color: "#FFFFFF", fontSize: 14, fontWeight: "800", marginTop: -1 },
+  flex: { flex: 1 },
+  checkRow: { flexDirection: "row", alignItems: "center", gap: 12, borderBottomWidth: StyleSheet.hairlineWidth, paddingVertical: 14 },
+  checkTitle: { fontSize: 15, fontWeight: "700" },
+  checkText: { fontSize: 13, lineHeight: 18, marginTop: 2 },
+  checkWatch: { fontSize: 13, fontWeight: "700", marginTop: 4 },
+  checkOk: { fontSize: 20, fontWeight: "800" },
+  checkButton: { borderRadius: 12, paddingHorizontal: 12, paddingVertical: 9, maxWidth: 170 },
+  checkButtonText: { color: "#FFFFFF", fontSize: 13, fontWeight: "700", textAlign: "center" },
   sheetNote: { fontSize: 15, lineHeight: 21, marginTop: 6 },
   wishRow: { flexDirection: "row", alignItems: "center", gap: 12, borderBottomWidth: StyleSheet.hairlineWidth, paddingVertical: 10 },
   wishPicture: { width: 40, height: 40, borderRadius: 20, alignItems: "center", justifyContent: "center" },

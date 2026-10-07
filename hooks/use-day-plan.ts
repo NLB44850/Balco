@@ -17,6 +17,7 @@ import { climateZoneFor } from "@/lib/plants/climate";
 import { withoutSnoozed, type ReminderSnooze } from "@/lib/reminders/reminder-actions";
 import { decideReminders } from "@/lib/reminders/reminder-engine";
 import { groupReminders, selectGroups } from "@/lib/reminders/reminder-groups";
+import { isFollowed } from "@/lib/reminders/settings-text";
 import {
   defaultLocalReminderSettings,
   loadLocalReminderSettings,
@@ -63,8 +64,8 @@ export function useDayPlan() {
   const harvestEnds = useMemo(() => harvestEndStates(snoozes, now), [now, snoozes]);
   const reminderPlants = useMemo(
     // Une plante à planter n'est pas encore en terre, un pot libre est vide : ni soif ni alerte météo.
-    () => resolvedPlants.filter((resolved) => !resolved.plant.toPlant && !potIsFree(resolved, harvestEnds.get(resolved.plant.id)) && (reminderSettings.enabledPlantIds.length === 0 || reminderSettings.enabledPlantIds.includes(resolved.plant.id))),
-    [harvestEnds, reminderSettings.enabledPlantIds, resolvedPlants],
+    () => resolvedPlants.filter((resolved) => !resolved.plant.toPlant && !potIsFree(resolved, harvestEnds.get(resolved.plant.id))),
+    [harvestEnds, resolvedPlants],
   );
   // Tous les conseils météo du moment (« rappels activés » ne décide que des notifications).
   const allDecisions = useMemo(() => {
@@ -73,7 +74,11 @@ export function useDayPlan() {
     return decideReminders(reminderPlants.map((resolved) => ({ plant: careProfileFor(resolved), history: events, weather: weatherSnapshot, settings })));
   }, [events, reminderPlants, reminderSettings, reminderSettingsLoaded, weather.isFallback, weatherSnapshot]);
   // Pour les notifications : toutes les alertes importantes, puis au plus N conseils ordinaires.
-  const reminderDecisions = useMemo(() => selectGroups(groupReminders(allDecisions), reminderSettings.maxNormalRemindersPerDay).flatMap((group) => group.decisions), [allDecisions, reminderSettings.maxNormalRemindersPerDay]);
+  // « Plantes suivies » (Réglages) ne coupe que les notifications : gestes et alertes restent à l'écran.
+  const reminderDecisions = useMemo(
+    () => selectGroups(groupReminders(allDecisions.filter((decision) => isFollowed(reminderSettings.enabledPlantIds, decision.plantId))), reminderSettings.maxNormalRemindersPerDay).flatMap((group) => group.decisions),
+    [allDecisions, reminderSettings.enabledPlantIds, reminderSettings.maxNormalRemindersPerDay],
+  );
   const visibleDecisions = useMemo(() => withoutSnoozed(allDecisions, snoozes, new Date()), [allDecisions, snoozes]);
   const visibleGroups = useMemo(() => groupReminders(visibleDecisions), [visibleDecisions]);
   const postponed = useMemo(() => postponedStarts(snoozes, now), [now, snoozes]);

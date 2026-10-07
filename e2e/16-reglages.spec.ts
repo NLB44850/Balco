@@ -61,3 +61,22 @@ test("Toi : prénom et « Comment Nora te parle », une seule valeur", async ({ 
   expect(stored.experience).toBe("experienced");
   expect(errors).toEqual([]);
 });
+
+test("Rappels : une plante décochée garde ses alertes à l'écran, seules ses notifications se taisent", async ({ page }) => {
+  const errors = trackErrors(page);
+  await mockWeather(page);
+  const settings = { enabled: false, preferredHour: 18, preferredMinute: 30, quietStartHour: 21, quietEndHour: 9, maxNormalRemindersPerDay: 1, skipWateringWhenRainExpected: true, enabledPlantIds: ["mint-e2e"], vacation: null };
+  await seedBalcony(page, { plants: ["basil", "mint", "chives"], scenario: "wind", extra: { "balco.reminder.settings.v1": JSON.stringify(settings) } });
+  await open(page, "/", "Vent fort : mets 3 plantes à l’abri");
+
+  await open(page, "/settings", "Rappels");
+  await expect(page.getByRole("button", { name: "Mode vacances : Non" })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Plantes suivies : 1 sur 3" })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Heure : 18 h 30" })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Plage calme : 21 h → 9 h" })).toBeVisible();
+  // Sur le web, pas de notification : la feuille l'explique.
+  await page.getByRole("button", { name: "Je ne reçois pas les rappels" }).click();
+  await expect(page.getByRole("dialog").getByText("On vérifie ensemble")).toBeVisible();
+  await expect(page.getByRole("dialog").getByText("La version web ne peut pas envoyer de notifications.", { exact: false })).toBeVisible();
+  expect(errors).toEqual([]);
+});
