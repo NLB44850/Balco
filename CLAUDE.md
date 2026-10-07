@@ -432,7 +432,7 @@ et route réservée à `role = admin`. Balco+ sera payant (offre commerciale Ope
   craindre avant l'automne » l'été, sinon « gelées possibles jusqu'à début avril » ; `firstFrost`/`firstFrostMonth`
   par zone). Suggestions : quand tout ce qui convient est déjà sur le balcon (`allOwned`), « Tout ce qui se sème ou
   se plante ce mois-ci et convient à ton balcon y est déjà » ; le lien du catalogue reste sur le mois affiché.
-- **Saisons et Aujourd'hui, mêmes alertes** (corrigé le 08/10, vu sur son téléphone : « Coup de vent » resté dans Saisons
+- **Saisons et Aujourd'hui, mêmes alertes** (corrigé et validé le 08/10, vu sur son téléphone : « Coup de vent » resté dans Saisons
   après « C'est fait » sur Aujourd'hui) : Saisons recalculait ses alertes sur toutes les plantes, y compris « à planter »,
   pots libres et plantes aux rappels coupés ; il lit maintenant `visibleGroups` de `useDayPlan` (même source qu'Aujourd'hui).
   E2e « vent : traité sur Aujourd'hui… même avec une plante à planter » (`2-meteo`).
