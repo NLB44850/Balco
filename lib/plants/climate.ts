@@ -12,6 +12,11 @@ export type ClimateInfo = {
   label: string;
   /** Période habituelle des dernières gelées de printemps. */
   lastFrost: string;
+  /** Leur mois (repère pour dire « gelées possibles jusqu'à… » ou « plus de gel avant l'automne »). */
+  lastFrostMonth: number;
+  /** Période habituelle des premières gelées d'automne, et leur mois. */
+  firstFrost: string;
+  firstFrostMonth: number;
   /** Décalage des semis et plantations des plantes frileuses, en mois (négatif = plus tôt). */
   springShift: number;
   /** Position hors de France métropolitaine : le calendrier reste calé sur la France. */
@@ -19,11 +24,11 @@ export type ClimateInfo = {
 };
 
 const ZONES: Record<ClimateZone, Omit<ClimateInfo, "zone" | "outsideFrance">> = {
-  mediterranean: { label: "méditerranéen", lastFrost: "mi-mars", springShift: -1 },
-  oceanic: { label: "océanique", lastFrost: "début avril", springShift: 0 },
-  temperate: { label: "tempéré", lastFrost: "mi-avril", springShift: 0 },
-  continental: { label: "continental", lastFrost: "mi-mai (saints de glace)", springShift: 0 },
-  mountain: { label: "de montagne", lastFrost: "fin mai à début juin", springShift: 1 },
+  mediterranean: { label: "méditerranéen", lastFrost: "mi-mars", lastFrostMonth: 3, firstFrost: "décembre, et elles restent rares", firstFrostMonth: 12, springShift: -1 },
+  oceanic: { label: "océanique", lastFrost: "début avril", lastFrostMonth: 4, firstFrost: "fin novembre", firstFrostMonth: 11, springShift: 0 },
+  temperate: { label: "tempéré", lastFrost: "mi-avril", lastFrostMonth: 4, firstFrost: "mi-novembre", firstFrostMonth: 11, springShift: 0 },
+  continental: { label: "continental", lastFrost: "mi-mai (saints de glace)", lastFrostMonth: 5, firstFrost: "fin octobre", firstFrostMonth: 10, springShift: 0 },
+  mountain: { label: "de montagne", lastFrost: "fin mai à début juin", lastFrostMonth: 6, firstFrost: "début octobre", firstFrostMonth: 10, springShift: 1 },
 };
 
 const MOUNTAIN_ELEVATION_M = 800;
@@ -65,10 +70,20 @@ export function adaptToClimate(entry: CatalogPlant, climate: ClimateInfo | null 
   };
 }
 
-/** Phrase courte pour la carte climat du calendrier. */
-export function climateSummary(climate: ClimateInfo) {
+/**
+ * Le repère de gel qui compte maintenant : à l'automne les premières gelées, en hiver et au printemps jusqu'à
+ * quand il peut geler, l'été rien à craindre. Ex. en octobre à Nantes : « premières gelées vers fin novembre ».
+ */
+export function frostNote(climate: Pick<ClimateInfo, "lastFrost" | "lastFrostMonth" | "firstFrost" | "firstFrostMonth">, month: number) {
+  if (month >= 8 && month <= climate.firstFrostMonth) return `premières gelées vers ${climate.firstFrost}`;
+  if (month > climate.lastFrostMonth && month < 8) return "plus de gel à craindre avant l’automne";
+  return `gelées possibles jusqu’à ${climate.lastFrost}`;
+}
+
+/** Phrase courte pour la carte climat du calendrier, selon le mois. */
+export function climateSummary(climate: ClimateInfo, now = new Date()) {
   if (climate.outsideFrance) return "Hors de France : dates calées sur un climat tempéré français.";
   const shift =
     climate.springShift < 0 ? " Semis et plantations frileuses : un mois plus tôt." : climate.springShift > 0 ? " Semis et plantations frileuses : un mois plus tard." : "";
-  return `Climat ${climate.label} · dernières gelées vers ${climate.lastFrost}.${shift}`;
+  return `Climat ${climate.label} · ${frostNote(climate, now.getMonth() + 1)}.${shift}`;
 }

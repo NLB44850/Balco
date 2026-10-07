@@ -25,20 +25,26 @@ type Props = {
   suggestions: SeasonalSuggestion[];
   /** Prochain mois avec des semis ou plantations, quand celui-ci est calme. */
   nextMonth?: number | null;
+  /** Ce qui convient à ce balcon ce mois-là y est déjà : rien de nouveau, mais pas un mois calme. */
+  allOwned?: boolean;
   /** Le mois affiché est-il le mois en cours ? Sinon, on prépare. */
   current: boolean;
   onAdd: (suggestion: SeasonalSuggestion) => void;
   onOpen: (suggestion: SeasonalSuggestion) => void;
 };
 
-export function SeasonalSuggestions({ month, heading, periodName, showMonth, suggestions, nextMonth, current, onAdd, onOpen }: Props) {
+export function SeasonalSuggestions({ month, heading, periodName, showMonth, suggestions, nextMonth, allOwned, current, onAdd, onOpen }: Props) {
   const colors = useColors();
   const router = useRouter();
+  const when = periodName ?? (current ? "ce mois-ci" : `en ${MONTH_LONG[month - 1]}`);
   const intro = suggestions.length === 0
-    ? `Rien de nouveau à lancer ${periodName ?? (current ? "ce mois-ci" : `en ${MONTH_LONG[month - 1]}`)} pour ton balcon.${nextMonth ? ` Les prochains semis reprennent en ${MONTH_LONG[nextMonth - 1]}.` : ""}`
+    ? allOwned
+      ? `Tout ce qui se sème ou se plante ${when} et convient à ton balcon y est déjà. Bravo !`
+      : `Rien de nouveau à lancer ${when} pour ton balcon.${nextMonth ? ` Les prochains semis reprennent en ${MONTH_LONG[nextMonth - 1]}.` : ""}`
     : current ? "Choisies pour ton balcon et ton climat." : "Pour t’organiser : achète graines et plants à l’avance.";
-  // Le lien mène au mois où il y a quelque chose à faire ; « d’octobre », « de mars ».
-  const linkMonth = suggestions.length === 0 && nextMonth ? nextMonth : month;
+  // Le lien reste sur le mois affiché (« d’octobre ») : tout le catalogue de ce mois, même ce qui demande plus de
+  // soleil ou de place.
+  const linkMonth = month;
   const linkName = MONTH_LONG[linkMonth - 1];
   const linkLabel = `Voir toutes les plantes ${/^[aeiou]/u.test(linkName) ? "d’" : "de "}${linkName}`;
 

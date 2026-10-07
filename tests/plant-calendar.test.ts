@@ -140,7 +140,18 @@ describe("climat local", () => {
     const climate = climateZoneFor(43.3, 5.37, 20);
     expect(calendarActivities([subject("cherry-tomato")], 4, { climate }).map((activity) => activity.kind)).toContain("plant");
     expect(calendarActivities([subject("cherry-tomato")], 4).map((activity) => activity.kind)).not.toContain("plant");
-    expect(climateSummary(climate)).toBe("Climat méditerranéen · dernières gelées vers mi-mars. Semis et plantations frileuses : un mois plus tôt.");
+    expect(climateSummary(climate, new Date(2027, 1, 10))).toBe("Climat méditerranéen · gelées possibles jusqu’à mi-mars. Semis et plantations frileuses : un mois plus tôt.");
+  });
+
+  it("le repère de gel suit la saison : premières gelées à l'automne, plus de gel l'été, dernières au printemps", () => {
+    const nantes = climateZoneFor(47.22, -1.55, 20);
+    expect(climateSummary(nantes, new Date(2026, 9, 7))).toBe("Climat océanique · premières gelées vers fin novembre.");
+    expect(climateSummary(nantes, new Date(2026, 11, 7))).toBe("Climat océanique · gelées possibles jusqu’à début avril.");
+    expect(climateSummary(nantes, new Date(2027, 2, 7))).toBe("Climat océanique · gelées possibles jusqu’à début avril.");
+    expect(climateSummary(nantes, new Date(2027, 5, 7))).toBe("Climat océanique · plus de gel à craindre avant l’automne.");
+    // Strasbourg en octobre : les premières gelées arrivent ce mois-ci.
+    expect(climateSummary(climateZoneFor(48.57, 7.75, 140), new Date(2026, 9, 7))).toBe("Climat continental · premières gelées vers fin octobre.");
+    expect(climateSummary(climateZoneFor(48.57, 7.75, 140), new Date(2026, 10, 7))).toBe("Climat continental · gelées possibles jusqu’à mi-mai (saints de glace).");
   });
 });
 

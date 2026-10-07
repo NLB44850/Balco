@@ -136,6 +136,8 @@ export default function CalendarScreen() {
   // Elles changent chaque jour (même tirage que l'« Idée du mois » d'Aujourd'hui).
   const suggestionOptions = useMemo(() => ({ month: selectedMonth, climate, ownedCatalogIds: resolvedPlants.map((resolved) => resolved.entry.id), limit: 4, seed: dayKey(now) }), [climate, now, resolvedPlants, selectedMonth]);
   const suggestions = useMemo(() => (showingIdeas ? [] : seasonalSuggestions(onboarding, suggestionOptions)), [onboarding, showingIdeas, suggestionOptions]);
+  // Rien à proposer parce que tout ce qui convient est déjà sur le balcon (pas un mois calme).
+  const allOwned = useMemo(() => suggestions.length === 0 && !showingIdeas && seasonalSuggestions(onboarding, { ...suggestionOptions, ownedCatalogIds: [] }).length > 0, [onboarding, showingIdeas, suggestionOptions, suggestions.length]);
   const nextMonth = useMemo(() => (suggestions.length === 0 && !showingIdeas ? nextSuggestionMonth(onboarding, suggestionOptions) : null), [onboarding, showingIdeas, suggestionOptions, suggestions.length]);
   const seasonIdeas = useMemo(
     () => (view === "season" && !showingIdeas ? seasonSuggestions(onboarding, { months: seasonMonths, climate, ownedCatalogIds: suggestionOptions.ownedCatalogIds, limit: 4, seed: dayKey(now) }) : []),
@@ -284,7 +286,7 @@ export default function CalendarScreen() {
         {ordered.length === 0 && <Text style={[styles.text, styles.empty, { color: colors.muted }]}>Rien de prévu {periodLabel} : tes plantes se reposent.{view === "month" ? " Regarde les mois suivants." : ""}</Text>}
 
         {view === "month" && !showingIdeas && (
-          <SeasonalSuggestions month={selectedMonth} current={selectedMonth === currentMonth} suggestions={suggestions} nextMonth={nextMonth} onAdd={(suggestion) => void addSuggestion(suggestion)} onOpen={setSheetSuggestion} />
+          <SeasonalSuggestions month={selectedMonth} current={selectedMonth === currentMonth} suggestions={suggestions} nextMonth={nextMonth} allOwned={allOwned} onAdd={(suggestion) => void addSuggestion(suggestion)} onOpen={setSheetSuggestion} />
         )}
         {view === "season" && !showingIdeas && (
           <SeasonalSuggestions month={seasonMonths[0]} heading={`À semer ou planter ${SEASON_IN[season.id]}`} periodName={SEASON_IN[season.id]} showMonth current={season.id === seasons[0].id} suggestions={seasonIdeas} onAdd={(suggestion) => void addSuggestion(suggestion)} onOpen={setSheetSuggestion} />
