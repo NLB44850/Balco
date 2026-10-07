@@ -28,9 +28,9 @@ import { addSnooze, wakeSnoozeFor } from "@/lib/reminders/reminder-actions";
 import { saveReminderSnoozes } from "@/lib/reminders/local-notifications";
 import { usePlantPhotos } from "@/lib/garden/photos-context";
 import { CATEGORY_LABELS, formatMonthRange } from "@/lib/plants/catalog";
+import { guideLinkText } from "@/lib/plants/guide";
 import { REPOTTING } from "@/lib/plants/repotting";
 
-const FOLLOW_UP_LINKS = { thin: "Comment l’éclaircir, pas à pas ›", pinch: "Comment la pincer, pas à pas ›", outdoors: "Comment sortir les plants, pas à pas ›" } as const;
 
 const clock = (iso: string) => new Date(iso).toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" });
 
@@ -241,13 +241,13 @@ export default function PlantScreen() {
             {/* Éclaircir, pincer ou sortir les plants aujourd'hui : son pas-à-pas. */}
             {followUpTask && (
               <Pressable accessibilityRole="button" onPress={() => router.push({ pathname: "/guide/[catalogId]", params: { catalogId: entry.id, plantId: plant.id, task: followUpTask } })} style={({ pressed }) => [styles.guideLink, pressed && styles.pressed]}>
-                <Text style={[styles.link, { color: colors.primary }]}>{FOLLOW_UP_LINKS[followUpTask]}</Text>
+                <Text style={[styles.link, { color: colors.primary }]}>{guideLinkText(entry, followUpTask)}</Text>
               </Pressable>
             )}
             {/* Une vivace installée : le pas-à-pas du pot (celui du geste du jour s'il y en a un). */}
             {!plant.toPlant && REPOTTING[entry.id] && (
               <Pressable accessibilityRole="button" onPress={() => router.push({ pathname: "/guide/[catalogId]", params: { catalogId: entry.id, plantId: plant.id, task: potTask } })} style={({ pressed }) => [styles.guideLink, pressed && styles.pressed]}>
-                <Text style={[styles.link, { color: colors.primary }]}>{potTask === "topdress" ? "Changer la terre du dessus, pas à pas ›" : "Comment la rempoter ›"}</Text>
+                <Text style={[styles.link, { color: colors.primary }]}>{guideLinkText(entry, potTask)}</Text>
               </Pressable>
             )}
             {!gesture && (

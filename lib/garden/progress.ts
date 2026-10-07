@@ -4,6 +4,7 @@
  * Logique pure.
  */
 import { MONTH_LONG, type Month } from "../plants/catalog";
+import { capitalize, objectPronoun, stressedPronoun, subjectPronoun, verb } from "../plants/grammar";
 import type { MaintenanceEvent } from "../reminders/reminder-engine";
 import { computeBadges, computeProgress, computeStats, dayKey, daysBetween, followedDays, isAvoidedWatering, plantDisplayName, type ResolvedPlant } from "./garden-logic";
 import type { PlantPhoto } from "./photos";
@@ -90,15 +91,15 @@ export function plantStage(resolved: ResolvedPlant, daysOnBalcony: number, now =
   const { entry } = resolved;
   const month = (now.getMonth() + 1) as Month;
   const toHarvest = monthsToHarvest(entry.harvestMonths, month);
-  if (toHarvest === 0) return { label: "En récolte", detail: "C’est la saison : récolte au fur et à mesure, elle produira davantage." };
-  if (daysOnBalcony < 21) return { label: "Elle s’installe", detail: "Ses racines prennent leurs marques : garde la terre juste humide." };
-  if (entry.perennial && [12, 1, 2].includes(month)) return { label: "Au repos", detail: "Elle passe l’hiver au ralenti : peu d’eau, et elle repartira au printemps." };
+  if (toHarvest === 0) return { label: "En récolte", detail: `C’est la saison : récolte au fur et à mesure, ${subjectPronoun(entry)} ${verb(entry, "produira", "produiront")} davantage.` };
+  if (daysOnBalcony < 21) return { label: `${capitalize(subjectPronoun(entry))} ${verb(entry, "s’installe", "s’installent")}`, detail: `${verb(entry, "Ses", "Leurs")} racines prennent leurs marques : garde la terre juste humide.` };
+  if (entry.perennial && [12, 1, 2].includes(month)) return { label: "Au repos", detail: `${capitalize(subjectPronoun(entry))} ${verb(entry, "passe", "passent")} l’hiver au ralenti : peu d’eau, et ${subjectPronoun(entry)} ${verb(entry, "repartira", "repartiront")} au printemps.` };
   if (toHarvest !== null && toHarvest <= 2) {
     const start = MONTH_LONG[(((month - 1 + toHarvest) % 12) + 1) - 1];
     return { label: "Bientôt la récolte", detail: `Encore un peu de patience : premières récoltes en ${start}.` };
   }
-  if (!entry.perennial && month >= 10 && (toHarvest === null || toHarvest > 4)) return { label: "Fin de saison", detail: "Sa saison touche à sa fin : tu pourras la remplacer au printemps." };
-  return { label: "En croissance", detail: "Elle pousse : tes gestes réguliers font toute la différence." };
+  if (!entry.perennial && month >= 10 && (toHarvest === null || toHarvest > 4)) return { label: "Fin de saison", detail: `${verb(entry, "Sa", "Leur")} saison touche à sa fin : tu pourras ${objectPronoun(entry)} remplacer au printemps.` };
+  return { label: "En croissance", detail: `${capitalize(subjectPronoun(entry))} ${verb(entry, "pousse", "poussent")} : tes gestes réguliers font toute la différence.` };
 }
 
 export function plantProgress(resolved: ResolvedPlant, events: MaintenanceEvent[], photos: PlantPhoto[], now = new Date()): PlantProgress {
@@ -125,7 +126,7 @@ export function plantProgress(resolved: ResolvedPlant, events: MaintenanceEvent[
   if (firstFeed) milestones.push({ key: "feed", icon: "🌱", label: "Premier engrais", date: firstFeed.completedAt });
   const firstRepot = firstOf("repotting");
   if (firstRepot) milestones.push({ key: "repot", icon: "🪴", label: "Premier rempotage", date: firstRepot.completedAt });
-  if (own.length >= 10) milestones.push({ key: "ten", icon: "✨", label: "10 gestes pour elle", date: own[9].completedAt });
+  if (own.length >= 10) milestones.push({ key: "ten", icon: "✨", label: `10 gestes pour ${stressedPronoun(resolved.entry)}`, date: own[9].completedAt });
   const plantPhotos = photos.filter((photo) => photo.plantId === id);
   const firstPhoto = [...plantPhotos].sort((a, b) => a.takenAt.localeCompare(b.takenAt))[0];
   if (firstPhoto) milestones.push({ key: "photo", icon: "📷", label: "Première photo", date: firstPhoto.takenAt });

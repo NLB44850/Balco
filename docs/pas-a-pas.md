@@ -1,8 +1,11 @@
 # Tous les pas-à-pas de Balco
 
-Mis à jour le 6 octobre 2026. Ce document est tiré directement du code (`lib/plants/guide.ts`) : c'est
+Mis à jour le 7 octobre 2026. Ce document est tiré directement du code (`lib/plants/guide.ts`) : c'est
 exactement ce que l'app affiche. Les chiffres (taille du pot, profondeur, nombre de graines, délais) changent
 selon la plante ; chaque modèle est montré ici avec une plante d'exemple.
+
+Les phrases qui parlent de la plante s'accordent à son genre et à son nombre (`lib/plants/grammar.ts`) : « Garde-le » pour
+le thym, « Garde-la » pour la menthe, « Garde-les » pour les radis.
 
 ## Ce qui existe, et où le trouver
 
@@ -97,7 +100,7 @@ Exemple : **Semer le basilic**. Utilisé pour 33 plantes du catalogue (les chiff
 - Première récolte dans 6 à 10 semaines.
 - Une semaine après la levée, tu éclairciras : Balco te le dira.
 - Les plants iront sur le balcon en mai.
-- Plus tard, tu la pinceras pour qu’elle soit plus touffue.
+- Plus tard, tu le pinceras pour qu’il soit plus touffu.
 
 ## 3. Planter un plant acheté en godet
 
@@ -207,7 +210,7 @@ Exemple : **Rempoter le thym**. Pour les 37 vivaces qui restent plusieurs année
 
 **Les étapes** (une par écran, avec un dessin)
 
-1. **Regarde sous le pot si des racines sortent.** Ou si l’eau ressort tout de suite : elle manque de place.  
+1. **Regarde sous le pot si des racines sortent.** Ou si l’eau ressort tout de suite : il manque de place.  
    _Dessin : des racines sortent sous le pot._
 2. **Mets des billes d’argile au fond du nouveau pot.** Environ 4 L, 18 cm de large.  
    _Dessin : des billes d’argile au fond du pot._  
@@ -225,7 +228,7 @@ Exemple : **Rempoter le thym**. Pour les 37 vivaces qui restent plusieurs année
 
 **Et après ?**
 
-- Garde-la quelques jours à l’ombre légère : ses racines s’installent.
+- Garde-le quelques jours à l’ombre légère : ses racines s’installent.
 - Arrose un peu moins les deux premières semaines.
 - Prochain rempotage dans 2 à 4 ans : Balco te le dira.
 - Entre-temps, tu changeras la terre du dessus.
@@ -254,7 +257,7 @@ Exemple : **Changer la terre du thym**. Pour les 37 vivaces qui restent plusieur
 
 **Et après ?**
 
-- Le terreau neuf la nourrit pour toute la saison.
+- Le terreau neuf le nourrit pour toute la saison.
 - L’an prochain, Balco te dira s’il faut rempoter ou changer la terre.
 
 ## 8. Éclaircir (nouveau)
@@ -297,7 +300,7 @@ Exemple : **Pincer le basilic**. Pour les 24 plantes qu'on pince au bout des tig
 2. **Pince-le entre le pouce et l’index.** Ou coupe-le avec de petits ciseaux propres.  
    _Dessin : des doigts pincent le bout de la tige._  
    ⚠️ Erreur à éviter : couper sous les feuilles. La tige ne repartirait pas.
-3. **Laisse repartir : deux tiges pousseront à la place.** C’est ce qui la rend touffue.  
+3. **Laisse repartir : deux tiges pousseront à la place.** C’est ce qui le rend touffu.  
    _Dessin : deux tiges repartent sous la coupe._
 4. **Fais pareil sur les autres grandes tiges.**  
    _Dessin : des doigts pincent le bout de la tige._
@@ -318,19 +321,19 @@ Exemple : **Pincer le thym**. Pour les 9 plantes où l'on coupe autre chose (fle
 
 **Les étapes** (une par écran, avec un dessin)
 
-1. **Repère ce qu’il faut couper chez elle.** Après la floraison, coupe les tiges d’un tiers pour garder une touffe dense.  
+1. **Repère ce qu’il faut couper chez lui.** Après la floraison, coupe les tiges d’un tiers pour garder une touffe dense.  
    _Dessin : des doigts pincent le bout de la tige._
 2. **Coupe-le avec de petits ciseaux propres.**  
    _Dessin : des ciseaux coupent une pousse en trop._  
    ⚠️ Erreur à éviter : des ciseaux sales. Ils transmettent les maladies.
-3. **Laisse-la repartir : de nouvelles pousses vont venir.** Elle reste dense et produit plus longtemps.  
+3. **Laisse-le repartir : de nouvelles pousses vont venir.** Il reste dense et produit plus longtemps.  
    _Dessin : deux tiges repartent sous la coupe._
 4. **Fais pareil sur le reste de la plante.**  
    _Dessin : des doigts pincent le bout de la tige._
 
 **Et après ?**
 
-- En quelques semaines, elle repart plus dense.
+- En quelques semaines, il repart plus dense.
 - Tu peux recommencer à chaque fois qu’une tige s’allonge trop.
 
 ## 11. Sortir les plants semés au chaud (nouveau)
@@ -366,5 +369,5 @@ Exemple : **Sortir tes plants de basilic**. Pour les plantes semées au chaud, q
 
 - Les premiers jours, garde-les à l’abri du plein soleil de midi.
 - Première récolte dans 3 à 5 semaines.
-- Dans deux semaines, tu la pinceras pour qu’elle soit plus touffue.
+- Dans deux semaines, tu le pinceras pour qu’il soit plus touffu.
 

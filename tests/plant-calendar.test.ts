@@ -35,7 +35,7 @@ import { activityDone, activityEventId, describeMonths, eventForActivity, season
 import { adaptToClimate, climateSummary, climateZoneFor } from "../lib/plants/climate";
 import { potHistory, sessionEventId } from "../lib/garden/garden-logic";
 import { skippedRepots, skipRepotThisYear, unskipRepot } from "../lib/garden/repot-skip";
-import { GENERIC_REPOT_SIGN, potSizes } from "../lib/plants/calendar";
+import { genericRepotSign, potSizes } from "../lib/plants/calendar";
 
 /** Une plante sur le balcon, dans son pot depuis cette date. */
 const potted = (catalogId: string, since: Date, id = catalogId, extra: { lastTopdress?: string; repots?: number; repotSkippedUntil?: string } = {}) => ({ ...subject(catalogId, id), addedAt: since.toISOString(), inPotSince: since.toISOString(), ...extra });
@@ -83,7 +83,7 @@ describe("rempotage selon le besoin", () => {
     expect(sage.description).toContain(`Si son pot fait environ ${liters} L, prends-en un d’environ ${potSizes({ potLiters: liters }, 0).next} L`);
     // Sans signe propre à la plante : le signe commun.
     const [oregano] = calendarActivities([potted("oregano", old)], 3, { now: MARCH_2027 }).filter((activity) => activity.kind === "repot");
-    expect(oregano.description).toContain(GENERIC_REPOT_SIGN);
+    expect(oregano.description).toContain(genericRepotSign(oregano.entry));
     // Déjà rempotée deux fois : le pot a grandi.
     expect(potSizes({ potLiters: 10 }, 0)).toEqual({ now: 10, next: 13, nextWidthCm: 26 });
     expect(potSizes({ potLiters: 10 }, 2)).toEqual({ now: 18, next: 24, nextWidthCm: 32 });

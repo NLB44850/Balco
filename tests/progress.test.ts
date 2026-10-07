@@ -61,7 +61,7 @@ describe("progression d'une plante", () => {
   it("trouve le bon stade selon la saison et l'âge de la plante", () => {
     expect(plantStage(plants[2], 40, new Date(2026, 3, 10)).label).toBe("En croissance");
     expect(plantStage(plants[0], 40, new Date(2026, 5, 10))).toMatchObject({ label: "Bientôt la récolte", detail: expect.stringContaining("juillet") });
-    expect(plantStage(plants[0], 5, new Date(2026, 4, 10)).label).toBe("Elle s’installe");
+    expect(plantStage(plants[0], 5, new Date(2026, 4, 10)).label).toBe("Elles s’installent"); // les tomates cerises
     expect(plantStage(plants[0], 200, new Date(2026, 10, 10)).label).toBe("Fin de saison");
   });
 });
