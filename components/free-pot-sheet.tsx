@@ -1,6 +1,7 @@
 /**
- * Après la récolte d'une plante récoltée en une fois (lib/garden/harvest-end.ts) : la feuille du bas qui
- * demande « Tes radis sont-ils tous récoltés ? », puis « Ton pot est libre » et ses trois choix au plus.
+ * Après la récolte d'une plante récoltée en une fois, ou à la fin de saison d'une annuelle
+ * (lib/garden/harvest-end.ts) : la feuille du bas qui demande « Tes radis sont-ils tous récoltés ? » ou « Ta
+ * saison de basilic est finie ? », puis « Ton pot est libre » et ses trois choix au plus.
  * Partagée par Aujourd'hui et la fiche plante.
  */
 import { useState } from "react";
@@ -12,10 +13,21 @@ import { Text } from "@/components/ui/typography";
 import { useColors } from "@/hooks/use-colors";
 import { useGarden } from "@/lib/garden/garden-context";
 import { dayKey } from "@/lib/garden/garden-logic";
-import { answerAllHarvested, clearHarvestEnd, freePotChoices, HARVEST_QUESTION_DETAIL, harvestQuestion, type FreePotChoice } from "@/lib/garden/harvest-end";
+import {
+  answerAllHarvested,
+  clearHarvestEnd,
+  endsWithSeason,
+  freePotChoices,
+  HARVEST_QUESTION_DETAIL,
+  harvestQuestion,
+  potFreedBy,
+  SEASON_END_TIP,
+  seasonQuestion,
+  seasonQuestionDetail,
+  type FreePotChoice,
+} from "@/lib/garden/harvest-end";
 import { startActivity } from "@/lib/plants/calendar";
 import type { ClimateInfo } from "@/lib/plants/climate";
-import { agree, bareName } from "@/lib/plants/grammar";
 import { loadReminderSnoozes, saveReminderSnoozes } from "@/lib/reminders/local-notifications";
 
 type Stage = "question" | "free";
@@ -27,12 +39,14 @@ type Stage = "question" | "free";
 export function useFreePot({ climate, onDone, overlay }: { climate?: ClimateInfo | null; onDone: (text: string, kind: FreePotChoice["kind"]) => void; overlay?: React.ReactNode }) {
   const colors = useColors();
   const { resolvedPlants, onboarding, addPlant, removePlant, restartPlant } = useGarden();
-  const [open, setOpen] = useState<{ plantId: string; stage: Stage } | null>(null);
+  // `detail` : la ligne sous la question, telle que la liste du jour l'a écrite (relance de fin de saison).
+  const [open, setOpen] = useState<{ plantId: string; stage: Stage; detail?: string } | null>(null);
   const resolved = open ? resolvedPlants.find(({ plant }) => plant.id === open.plantId) ?? null : null;
   const now = new Date();
   const month = now.getMonth() + 1;
   const choices = resolved ? freePotChoices(resolved, onboarding, { month, climate, ownedCatalogIds: resolvedPlants.map(({ entry }) => entry.id), seed: dayKey(now) }) : [];
   const close = () => setOpen(null);
+  const seasonal = resolved ? endsWithSeason(resolved.entry) : false;
 
   const answerYes = async (plantId: string) => {
     await saveReminderSnoozes(answerAllHarvested(await loadReminderSnoozes(), plantId, new Date()));
@@ -61,11 +75,11 @@ export function useFreePot({ climate, onDone, overlay }: { climate?: ClimateInfo
     <BottomSheet visible={open !== null && resolved !== null} onClose={close} overlay={open ? overlay : undefined}>
       {resolved && open?.stage === "question" && (
         <View style={styles.sheet}>
-          <Text style={[styles.kind, { color: colors.primary }]}>🧺  Fin de la récolte</Text>
-          <Text style={[styles.title, { color: colors.foreground }]}>{harvestQuestion(resolved.entry)}</Text>
-          <Text style={[styles.body, { color: colors.muted }]}>{HARVEST_QUESTION_DETAIL}</Text>
+          <Text style={[styles.kind, { color: colors.primary }]}>{seasonal ? "🍂  Fin de saison" : "🧺  Fin de la récolte"}</Text>
+          <Text style={[styles.title, { color: colors.foreground }]}>{seasonal ? seasonQuestion(resolved.entry) : harvestQuestion(resolved.entry)}</Text>
+          <Text style={[styles.body, { color: colors.muted }]}>{open.detail ?? (seasonal ? seasonQuestionDetail(false) : HARVEST_QUESTION_DETAIL)}</Text>
           <Pressable accessibilityRole="button" onPress={() => void answerYes(resolved.plant.id)} style={({ pressed }) => [styles.cta, { backgroundColor: colors.foreground }, pressed && styles.pressed]}>
-            <Text style={[styles.ctaText, { color: colors.background }]}>Oui, tout est récolté</Text>
+            <Text style={[styles.ctaText, { color: colors.background }]}>{seasonal ? "Oui, la saison est finie" : "Oui, tout est récolté"}</Text>
           </Pressable>
           <Pressable accessibilityRole="button" onPress={close} style={({ pressed }) => [styles.choice, { borderColor: colors.border }, pressed && styles.pressed]}>
             <Text style={[styles.choiceText, { color: colors.foreground }]}>Pas encore</Text>
@@ -74,8 +88,9 @@ export function useFreePot({ climate, onDone, overlay }: { climate?: ClimateInfo
       )}
       {resolved && open?.stage === "free" && (
         <View style={styles.sheet}>
-          <Text style={[styles.kind, { color: colors.primary }]}>🧺  {bareName(resolved.entry)} {agree(resolved.entry, "récolté")}</Text>
+          <Text style={[styles.kind, { color: colors.primary }]}>{seasonal ? "🍂" : "🧺"}  {potFreedBy(resolved.entry)}</Text>
           <Text style={[styles.title, { color: colors.foreground }]}>Ton pot est libre</Text>
+          {seasonal && <Text style={[styles.tip, { backgroundColor: colors.surface, color: colors.foreground }]}>✂  {SEASON_END_TIP}</Text>}
           <Text style={[styles.body, { color: colors.muted }]}>Que veux-tu y mettre ?</Text>
           {choices.map((choice) => (
             <Pressable key={choice.key} accessibilityRole="button" accessibilityLabel={choice.label} onPress={() => void choose(choice)} style={({ pressed }) => [styles.choice, styles.choiceRow, { borderColor: choice.kind === "empty" ? colors.border : colors.primary }, pressed && styles.pressed]}>
@@ -91,7 +106,7 @@ export function useFreePot({ climate, onDone, overlay }: { climate?: ClimateInfo
     </BottomSheet>
   );
 
-  return { openQuestion: (plantId: string) => setOpen({ plantId, stage: "question" }), openFreePot: (plantId: string) => setOpen({ plantId, stage: "free" }), answerYes, sheet, isOpen: open !== null };
+  return { openQuestion: (plantId: string, detail?: string) => setOpen({ plantId, stage: "question", detail }), openFreePot: (plantId: string) => setOpen({ plantId, stage: "free" }), answerYes, sheet, isOpen: open !== null };
 }
 
 const styles = StyleSheet.create({
@@ -105,6 +120,7 @@ const styles = StyleSheet.create({
   choiceRow: { flexDirection: "row", gap: 12, alignItems: "center" },
   choiceText: { fontSize: 15, fontWeight: "700" },
   detail: { fontSize: 13, lineHeight: 18, marginTop: 2 },
+  tip: { fontSize: 14, lineHeight: 20, borderRadius: 12, padding: 12, overflow: "hidden" },
   picture: { width: 40, height: 40, borderRadius: 20, alignItems: "center", justifyContent: "center" },
   flex: { flex: 1 },
   pressed: { opacity: 0.7 },

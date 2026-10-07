@@ -1,6 +1,6 @@
 import { expect, test } from "@playwright/test";
 
-import { checkboxOf, denyGeolocation, mockWeather, open, seedBalcony, trackErrors, wateringGroup } from "./helpers";
+import { atDate, checkboxOf, denyGeolocation, mockWeather, open, seedBalcony, trackErrors, wateringGroup } from "./helpers";
 
 /** Le parcours de tous les jours : arriver, créer son balcon, cocher, annuler, ajouter une plante. */
 
@@ -115,8 +115,10 @@ test("les écrans principaux s'ouvrent sans erreur", async ({ page }) => {
 });
 
 test("cocher un geste, puis « Annuler »", async ({ page }) => {
+  // En juillet : en pleine saison du basilic et des tomates (en octobre, leur saison est finie).
+  const now = await atDate(page, new Date(2027, 6, 10, 10));
   await mockWeather(page);
-  await seedBalcony(page, { plants: ["basil", "cherry-tomato", "mint"], wateredDaysAgo: 1 });
+  await seedBalcony(page, { plants: ["basil", "cherry-tomato", "mint"], wateredDaysAgo: 1, now });
   await open(page, "/", "Tes plantes");
   const first = page.getByRole("checkbox", { name: /^Marquer comme fait : / }).first();
   const name = (await first.getAttribute("aria-label"))!.replace("Marquer comme fait : ", "");

@@ -54,7 +54,19 @@ type Seed = {
   pastGestureDays?: number[];
   scenario?: Scenario;
   extra?: Record<string, string>;
+  /** La date du balcon (par défaut maintenant) : la même que l'horloge de la page quand le test la fixe. */
+  now?: Date;
 };
+
+/**
+ * Fixe la date de la page (et du balcon, à passer à `seedBalcony`) pour un test qui dépend de la saison :
+ * un basilic en octobre pose « Ta saison de basilic est finie ? » au lieu de ses gestes habituels.
+ */
+export async function atDate(page: Page, date: Date) {
+  await page.clock.install({ time: date });
+  await page.clock.resume();
+  return date;
+}
 
 export const DAY_MS = 86_400_000;
 
@@ -63,7 +75,7 @@ export const DAY_MS = 86_400_000;
  * premier affichage. Une seule fois par test : un rechargement de page garde ce que le test a fait.
  */
 export async function seedBalcony(page: Page, seed: Seed) {
-  const now = Date.now();
+  const now = seed.now?.getTime() ?? Date.now();
   const plants = seed.plants.map((catalogId, index) => ({ id: `${catalogId}-e2e`, catalogId, addedAt: new Date(now - (30 - index) * DAY_MS).toISOString() }));
   const events = [
     ...(seed.wateredDaysAgo === undefined ? [] : plants.map((plant) => ({ id: `w-${plant.id}`, plantId: plant.id, type: "watering", completedAt: new Date(now - seed.wateredDaysAgo! * DAY_MS).toISOString(), source: "manual" }))),
