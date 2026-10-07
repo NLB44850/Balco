@@ -284,15 +284,24 @@ L'ordre suit la priorité fixée par le porteur du projet. Chaque étape est val
 9. ✅ Observer sans compte (une analyse offerte par téléphone).
 10. ✅ Textes de l'offre Balco+ écrits comme des bénéfices.
 
-**À faire ensuite, dans l'ordre** (6 octobre) :
+**Fait et validé sur téléphone (6 et 7 octobre)** :
 
-1. Revérifier sur le prochain APK : l'aperçu de la photo dans Observer, l'appareil photo depuis Aujourd'hui, les notifications.
-2. **Refaire l'accueil de première ouverture (onboarding)** : plan validé le 6 octobre (`docs/chantier-onboarding.md`), **codé le 6 octobre (8 étapes), à tester sur téléphone** : plantes de saison seulement dans le climat de la ville, « Activer les rappels » corrigé, bandeau « Météo de Paris par défaut », plantes « à planter » ou « installées », parcours « Tu as déjà des plantes ? » (Oui / Pas encore), ville avant les plantes, rappels, carte de bienvenue, « Passer » + « Quelques questions », prénom demandé par Nora, expérience dans Réglages seulement.
-3. **Pas-à-pas pour planter** (idée du porteur, 6 octobre) : **codé le 6 octobre, à tester** (`docs/chantier-pas-a-pas.md`) : « Ce qu'il te faut », étapes illustrées, erreur à éviter, « Et après ? », gestes de suite, accueil d'hiver, « Rappelle-moi samedi ».
-4. **Rempotage selon le besoin** (validé le 6 octobre, après la PR) — **codé le 6 octobre (R1, R2, R3), à tester** ; pas-à-pas aussi pour éclaircir, pincer et sortir les plants (11 en tout, `docs/pas-a-pas.md`) : jamais la première saison, rythme propre à chaque vivace (vérifié sur le web), « Change les 5 cm de terre du dessus » les autres années, signe à vérifier (« Des racines sortent par les trous ? ») avec « Pas besoin cette année », pot suivant proposé, pas-à-pas illustré.
-5. Décider de l'après-récolte des plantes qu'on arrache (radis, carottes, salades) : « Ressemer » ou « Libérer le pot ».
-6. Tester la mémoire de Nora sur plusieurs jours.
-7. Proposé : une version web toujours en ligne et l'APK construit automatiquement, pour tester sans Codespace.
+1. ✅ **Accueil de première ouverture refait** (`docs/chantier-onboarding.md`), fusionné dans la version principale le 6 octobre.
+2. ✅ **Pas-à-pas pour planter** (`docs/chantier-pas-a-pas.md`), fusionné le 6 octobre ; le glissement du doigt entre les étapes corrigé.
+3. ✅ **Rempotage selon le besoin** : jamais la première saison, rythme propre à chaque vivace (vérifié sur le web), « Change la terre du dessus » les autres années, signe à vérifier et pot suivant proposé (un tiers de plus, avec sa largeur), « Pas besoin cette année », pas-à-pas illustré du rempotage et de la terre du dessus.
+4. ✅ **Pas-à-pas des gestes de suite** : éclaircir, pincer (bout des tiges, ou couper fleurs / stolons / touffe), sortir les plants semés au chaud. 11 pas-à-pas en tout, listés dans `docs/pas-a-pas.md`.
+5. ✅ **Nora** : quand la réponse se perd entre le Codespace et le téléphone, l'app la récupère toute seule (comptée une seule fois) ; sinon un message clair et « Réessayer ».
+6. ✅ **Saisons** : le repère de gel suit la saison (« premières gelées vers fin novembre » en octobre) ; « Tout ce qui convient à ton balcon y est déjà » et le lien reste sur le mois affiché.
+
+Captures d'écran de ces nouveautés : `docs/captures/` (refaites par `bash scripts/captures.sh`).
+
+**À faire ensuite, dans l'ordre** (7 octobre) :
+
+1. Intégrer ce bloc dans la version principale (PR vers `main`).
+2. Revérifier sur le prochain APK : l'aperçu de la photo dans Observer, l'appareil photo depuis Aujourd'hui, les notifications, la position et les rappels de l'accueil.
+3. Décider de l'après-récolte des plantes qu'on arrache (radis, carottes, salades) : « Ressemer » ou « Libérer le pot ».
+4. Tester la mémoire de Nora sur plusieurs jours.
+5. Proposé : une version web toujours en ligne et l'APK construit automatiquement, pour tester sans Codespace.
 
 Choix notés : l'app ne copie pas les photos dans la galerie du téléphone (décidé le 6 octobre).
 

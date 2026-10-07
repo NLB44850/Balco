@@ -81,9 +81,13 @@ visuelle, retour immédiat.
 
 ## Où on en est
 
-**Nouvelle conversation ? L'onboarding et le pas-à-pas pour planter sont fusionnés dans `main` (PR https://github.com/NLB44850/Balco/pull/28, 06/10). Chantier en cours : rempotage selon le besoin (point 4 ci-dessous), R1, R2 et R3 codées le 06/10, à tester sur son téléphone, puis PR vers `main`. Tous les pas-à-pas listés dans `docs/pas-a-pas.md` (11, dont éclaircir, pincer, sortir les plants, codés le 06/10, à tester).**
+**Nouvelle conversation ? Tout est validé sur son téléphone le 07/10 : l'onboarding et le pas-à-pas pour planter
+(fusionnés dans `main`, PR https://github.com/NLB44850/Balco/pull/28), puis le rempotage (R1 à R3), les 11 pas-à-pas
+(`docs/pas-a-pas.md`), Nora qui récupère sa réponse perdue et Saisons corrigé (repère de gel, suggestions). Prochaine
+étape : PR de ce bloc vers `main`, puis l'APK. Récap pour claude.ai : `docs/recap-pour-claude.md` + captures
+`docs/captures/` (refaites par `bash scripts/captures.sh`, spec `e2e/captures.spec.ts` sautée sans `CAPTURES=1`).**
 
-**Récap pour reprendre (06/10)** : ce bloc fait foi ; les paragraphes plus bas sont l'historique (certains
+**Récap pour reprendre (07/10)** : ce bloc fait foi ; les paragraphes plus bas sont l'historique (certains
 décrivent un état ancien, par exemple Saisons « à cocher » ou une fête plein écran à chaque récolte).
 
 Fait et fusionné dans `main` (PR #27 le 06/10) : tout le MVP décrit plus bas (rappels, calendrier, Nora qui se
@@ -95,22 +99,21 @@ et les 10 étapes du test utilisateur du 04/10 (détail dans « Historique des l
    (`expo-image`), l'appareil photo depuis Aujourd'hui, les notifications, Balcon à deux cartes par ligne.
 2. **Refonte de l'onboarding : chantier en cours, plan validé le 06/10.** Tout est dans
    **`docs/chantier-onboarding.md`** (état des lieux vérifié, plan en 8 étapes A1, A2, A3, B1 à B4, C1, C2, et les
-   8 décisions prises). **A1 validée le 06/10 ; A2 à C2 codées d'affilée le 06/10 à sa demande (« enchaîne, je testerai
-   à la fin »)** : à tester (web pour tout le parcours, APK pour les rappels et la position) ; ensuite PR vers `main`.
+   8 décisions prises). **Validé et fusionné dans `main` (PR #28, 06/10)** ; reste à revoir sur l'APK (rappels et position).
    Ce qui en reste dans le code : `seasonalStarters` (plantes de saison), `lib/reminders/activate.ts`,
    `components/city-picker.tsx` + bandeau « Météo de Paris par défaut », `GardenPlant.toPlant` (« à planter »,
    migration 0015, `startActivity`, événement `<id>:start`), `app/welcome.tsx` (`onboardingSteps`, `arrivalCard`,
    relance `/welcome?again=1`), `lib/ai/greeting.ts` (prénom demandé par Nora). Plus aucune demande de position
    d'office (`use-local-weather.ts`). Ne pas reposer les questions déjà tranchées.
-3. **Pas-à-pas pour planter + fin de l'accueil : codé le 06/10 (P1 à P8, enchaîné à sa demande), à tester.**
+3. **Pas-à-pas pour planter + fin de l'accueil : validé et fusionné dans `main` (PR #28, 06/10).**
    Tout est dans **`docs/chantier-pas-a-pas.md`** (ses 12 choix, avancement étape par étape). Dans le code :
    catalogue « Déjà sur mon balcon / À planter » (`addChoices`), hiver (`lib/plants/indoor.ts`, `springWishes`,
    `lib/garden/spring.ts`, carte « C'est le moment » en mars), « Rappelle-moi samedi » (`lib/garden/postpone.ts`),
    données de plantation des 100 plantes (`lib/plants/planting.ts`, sources par plante), gestes de suite
    (`lib/garden/follow-ups.ts` : éclaircir, sortir les plants, pincer), 22 illustrations
    (`components/guide/illustrations.tsx`, revue dans Réglages → Version de test), guide `app/guide/[catalogId].tsx`
-   (logique `lib/plants/guide.ts`). Après son test : PR vers `main` (onboarding + pas-à-pas).
-4. **Rempotage selon le besoin** (validé le 06/10 ; **R1, R2, R3 codées le 06/10, à valider**), 3 étapes :
+   (logique `lib/plants/guide.ts`).
+4. **Rempotage selon le besoin** (**R1, R2, R3 et les pas-à-pas des gestes de suite validés le 07/10**), 3 étapes :
    1) rythme par vivace vérifié sur le web (menthe chaque année, lavande tous les 2 ans, agrumes et petits fruits 2-3
    ans…) et jamais la première saison (≈ un an dans son pot, compté depuis la plantation notée) ; les autres années,
    geste « Change les 5 cm de terre du dessus » (surfaçage, validé) ; 2) signe à vérifier (« Des racines sortent par
