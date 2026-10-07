@@ -7,7 +7,7 @@
  * geste le marque « fait » sans faire changer la liste sous le doigt. Logique pure.
  */
 import { followUpsFor } from "./follow-ups";
-import { FREE_POT_TITLE, freePotSubtitle, HARVEST_QUESTION_DETAIL, harvestQuestion, harvestQuestionDue, potIsFree, type HarvestEndState } from "./harvest-end";
+import { FREE_POT_TITLE, freePotIsQuiet, freePotSubtitle, HARVEST_QUESTION_DETAIL, harvestQuestion, harvestQuestionDue, potIsFree, type HarvestEndState } from "./harvest-end";
 import { activityDone, calendarActivities, eventForActivity, startActivity, type CalendarActivity, type CalendarSubject } from "../plants/calendar";
 import { tasksForMonth, type CareTask } from "../plants/catalog";
 import type { ClimateInfo } from "../plants/climate";
@@ -38,7 +38,7 @@ export type GestureSource =
   | { type: "task"; task: SessionTask }
   | { type: "season"; activity: CalendarActivity }
   /** Après la récolte d'une plante récoltée en une fois : la question « Tout récolté ? », puis le pot libre. */
-  | { type: "harvest-end"; stage: "question" | "free"; resolved: ResolvedPlant };
+  | { type: "harvest-end"; stage: "question" | "free"; resolved: ResolvedPlant; quiet?: boolean };
 
 export type PlanGesture = {
   key: string;
@@ -179,7 +179,7 @@ export function planDay({ plants, events, now, decisions = [], allDecisions = de
     // Récoltée en une fois : le pot libre attend un choix, ou la question « Tout récolté ? » remplace sa ligne.
     const harvestEnd = harvestEnds?.get(plantId);
     if (potIsFree(resolved, harvestEnd)) {
-      const first: PlanGesture = { key: `harvest-end:${plantId}:free`, kind: "harvest", plantId, title: FREE_POT_TITLE, instruction: freePotSubtitle(resolved.entry), minutes: 2, done: false, source: { type: "harvest-end", stage: "free", resolved } };
+      const first: PlanGesture = { key: `harvest-end:${plantId}:free`, kind: "harvest", plantId, title: FREE_POT_TITLE, instruction: freePotSubtitle(resolved.entry), minutes: 2, done: false, source: { type: "harvest-end", stage: "free", resolved, quiet: freePotIsQuiet(harvestEnd, now) } };
       return { resolved, gestures: [first], first, status: { tone: "new" as const, label: "Pot libre" } };
     }
     if (harvestQuestionDue(resolved, events, now, harvestEnd, climate)) {

@@ -70,11 +70,6 @@ export const HARVEST_ONCE: Record<string, HarvestOnce> = {
     note: "Tubercules arrachés quand le feuillage gèle, de la Toussaint à janvier.",
     sources: ["https://www.jardiner-malin.fr/fiche/oca-du-perou.html", "https://www.futura-sciences.com/"],
   },
-  crosne: {
-    harvestDays: 90,
-    note: "Ils se gardent en terre et se récoltent au fur et à mesure, de novembre à mars.",
-    sources: ["https://www.jardiner-malin.fr/fiche/crosne-du-japon.html", "https://www.futura-sciences.com/"],
-  },
   "pak-choi": {
     harvestDays: 7,
     note: "45 à 60 jours après le semis ; il monte vite en graine avec la chaleur.",

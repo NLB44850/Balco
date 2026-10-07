@@ -52,7 +52,11 @@ const ASKED = "harvest-asked:";
 const DONE = "harvest-done:";
 const keep = (now: Date) => new Date(now.getTime() + KEEP_DAYS * DAY_MS).toISOString();
 
-export type HarvestEndState = { askedOn?: string; answered: boolean };
+/** `answeredOn` : le jour du « Oui » (absent pour une réponse notée avant qu'on garde le jour). */
+/** `harvest-done:<plante>:<jour>` (ou l'ancienne forme, sans le jour). */
+const isDoneKey = (key: string, plantId: string) => key === `${DONE}${plantId}` || key.startsWith(`${DONE}${plantId}:`);
+
+export type HarvestEndState = { askedOn?: string; answered: boolean; answeredOn?: string };
 
 /** Plante → jour où la question a été posée, et « Oui » répondu. */
 export function harvestEndStates(snoozes: ReminderSnooze[], now: Date) {
@@ -60,11 +64,13 @@ export function harvestEndStates(snoozes: ReminderSnooze[], now: Date) {
   for (const snooze of snoozes) {
     if (new Date(snooze.until).getTime() <= now.getTime()) continue;
     if (snooze.key.startsWith(DONE)) {
-      const plantId = snooze.key.slice(DONE.length);
-      states.set(plantId, { ...states.get(plantId), answered: true });
+      const rest = snooze.key.slice(DONE.length);
+      const split = rest.lastIndexOf(":");
+      const plantId = split > 0 ? rest.slice(0, split) : rest;
+      states.set(plantId, { ...states.get(plantId), answered: true, answeredOn: split > 0 ? rest.slice(split + 1) : undefined });
     } else if (snooze.key.startsWith(ASKED)) {
       const [plantId, day] = [snooze.key.slice(ASKED.length, snooze.key.lastIndexOf(":")), snooze.key.slice(snooze.key.lastIndexOf(":") + 1)];
-      states.set(plantId, { answered: states.get(plantId)?.answered ?? false, askedOn: day });
+      states.set(plantId, { ...states.get(plantId), answered: states.get(plantId)?.answered ?? false, askedOn: day });
     }
   }
   return states;
@@ -78,12 +84,12 @@ export function markHarvestAsked(snoozes: ReminderSnooze[], plantId: string, now
 
 /** « Oui, tout est récolté. » */
 export function answerAllHarvested(snoozes: ReminderSnooze[], plantId: string, now: Date): ReminderSnooze[] {
-  return [...snoozes.filter((snooze) => snooze.key !== `${DONE}${plantId}`), { key: `${DONE}${plantId}`, kind: "skip", until: keep(now) }];
+  return [...snoozes.filter((snooze) => !isDoneKey(snooze.key, plantId)), { key: `${DONE}${plantId}:${dayKey(now)}`, kind: "skip", until: keep(now) }];
 }
 
 /** Ressemée : une nouvelle saison commence, la question pourra revenir. */
 export function clearHarvestEnd(snoozes: ReminderSnooze[], plantId: string): ReminderSnooze[] {
-  return snoozes.filter((snooze) => snooze.key !== `${DONE}${plantId}` && !snooze.key.startsWith(`${ASKED}${plantId}:`));
+  return snoozes.filter((snooze) => !isDoneKey(snooze.key, plantId) && !snooze.key.startsWith(`${ASKED}${plantId}:`));
 }
 
 // --- Quand poser la question ---------------------------------------------------------------------------
@@ -131,6 +137,12 @@ export function harvestQuestionDue(resolved: ResolvedPlant, events: MaintenanceE
 }
 
 /** Après « Oui », tant qu'aucun choix n'est fait : le pot est libre (plus d'arrosage ni de récolte). */
+/**
+ * Feuille fermée sans choisir : la ligne « Ton pot est libre » reste le jour du « Oui » dans la liste, puis passe
+ * dans les gestes pas urgents repliés jusqu'au choix.
+ */
+export const freePotIsQuiet = (state: HarvestEndState | undefined, now: Date) => state?.answeredOn !== dayKey(now);
+
 export const potIsFree = (resolved: ResolvedPlant, state: HarvestEndState | undefined) => isHarvestedOnce(resolved.entry) && !resolved.plant.toPlant && state?.answered === true;
 
 // --- « Ton pot est libre » -----------------------------------------------------------------------------

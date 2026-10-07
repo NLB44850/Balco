@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { planDay } from "../lib/garden/day-plan";
+import { balconyStatus, buildTodayList, layoutTodayList } from "../lib/garden/today";
 import { computeStats, inGroundSince, resolvePlants, startEventId, type GardenPlant } from "../lib/garden/garden-logic";
 import {
   answerAllHarvested,
@@ -25,7 +26,7 @@ const harvest = (at: Date, id = `p:harvest:${at.getTime()}`): MaintenanceEvent =
 describe("le catalogue : plantes récoltées en une fois", () => {
   it("marque les radis, carottes, betteraves, navets, ail, pommes de terre… avec leur durée de récolte", () => {
     const once = PLANT_CATALOG.filter((entry) => entry.harvestOnceDays !== undefined).map((entry) => entry.id).sort();
-    expect(once).toEqual(["beetroot", "crosne", "garlic", "head-lettuce", "kohlrabi", "oca", "pak-choi", "potato", "radish", "round-carrot", "spring-onion", "turnip"]);
+    expect(once).toEqual(["beetroot", "garlic", "head-lettuce", "kohlrabi", "oca", "pak-choi", "potato", "radish", "round-carrot", "spring-onion", "turnip"]);
     expect(PLANT_CATALOG.find((entry) => entry.id === "radish")?.harvestOnceDays).toBe(7);
     expect(PLANT_CATALOG.find((entry) => entry.id === "round-carrot")?.harvestOnceDays).toBe(21);
     expect(PLANT_CATALOG.find((entry) => entry.id === "basil")?.harvestOnceDays).toBeUndefined();
@@ -102,6 +103,23 @@ describe("« Oui » : ton pot est libre", () => {
     expect(day.gestures.map((gesture) => [gesture.title, gesture.instruction])).toEqual([["Ton pot est libre", "Radis récoltés · que veux-tu y mettre ?"]]);
   });
 
+  it("feuille fermée sans choisir : la ligne reste le jour du « Oui », puis se replie avec les gestes pas urgents", () => {
+    const radish = plant("radish");
+    const events = [started(new Date(2026, 3, 1)), harvest(new Date(2026, 4, 10))];
+    const answeredOn = new Date(2026, 4, 12, 9);
+    const states = harvestEndStates(answerAllHarvested([], "p", answeredOn), answeredOn);
+    const sameDay = buildTodayList({ groups: [], plan: planDay({ plants: [radish], events, now: new Date(2026, 4, 12, 18), harvestEnds: states }) });
+    expect(layoutTodayList(sameDay).map((line) => line.type)).toEqual(["item"]);
+    expect(balconyStatus(sameDay, events, new Date(2026, 4, 12, 18)).remaining).toBe(1);
+
+    const nextDay = buildTodayList({ groups: [], plan: planDay({ plants: [radish], events, now: new Date(2026, 4, 13, 9), harvestEnds: states }) });
+    const lines = layoutTodayList(nextDay);
+    expect(lines.map((line) => [line.type, line.type === "item" ? line.item.title : line.title])).toEqual([["more", "1 autre geste, pas urgent"]]);
+    expect(lines[0].type === "more" && lines[0].items.map((item) => item.title)).toEqual(["Ton pot est libre"]);
+    // Plus compté dans ce qui reste à faire : « Rien à faire aujourd'hui » peut s'afficher.
+    expect(balconyStatus(nextDay, events, new Date(2026, 4, 13, 9)).remaining).toBe(0);
+  });
+
   it("en mai : ressemer des radis, une plante de saison qui tient dans ce pot, laisser le pot vide", () => {
     const choices = freePotChoices(plant("radish"), null, { month: 5 });
     expect(choices.map((choice) => choice.kind)).toEqual(["restart", "plant", "empty"]);
@@ -157,7 +175,9 @@ describe("ressemer : une nouvelle saison pour la même plante", () => {
   it("la réponse et la question s'effacent pour la nouvelle saison", () => {
     const now = new Date(2026, 4, 17);
     const snoozes = answerAllHarvested(markHarvestAsked([{ key: "repot:x", kind: "skip", until: new Date(2027, 0, 1).toISOString() }], "p", now), "p", now);
-    expect(harvestEndStates(snoozes, now).get("p")).toEqual({ answered: true, askedOn: "2026-05-17" });
+    expect(harvestEndStates(snoozes, now).get("p")).toEqual({ answered: true, askedOn: "2026-05-17", answeredOn: "2026-05-17" });
+    // Une réponse notée avant qu'on garde le jour reste lue (et sa ligne est déjà repliée).
+    expect(harvestEndStates([{ key: "harvest-done:p", kind: "skip", until: new Date(2027, 0, 1).toISOString() }], now).get("p")).toEqual({ answered: true, answeredOn: undefined });
     expect(clearHarvestEnd(snoozes, "p").map((snooze) => snooze.key)).toEqual(["repot:x"]);
   });
 });

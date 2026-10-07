@@ -39,7 +39,7 @@ Tout se passe dans son GitHub Codespace (pas de Docker sur son PC).
 
 - `pnpm -s check`, `pnpm -s lint`, puis `TEST_DATABASE_URL=mysql://balco:balco@localhost:3306/balco_cal npx vitest run`
   (MariaDB locale : `service mariadb start` si elle s'est arrêtée, `apt-get install -y mariadb-server` si elle manque,
-  puis `DATABASE_URL=… npx drizzle-kit migrate` ; 521 tests à ce jour). Dans un conteneur
+  puis `DATABASE_URL=… npx drizzle-kit migrate` ; 524 tests à ce jour). Dans un conteneur
   neuf : `apt-get install -y mariadb-server`, `service mariadb start`, créer la base `balco_cal` et l'utilisateur
   `balco`/`balco`, puis `pnpm -s build && DATABASE_URL=mysql://balco:balco@localhost:3306/balco_cal node dist/migrate.mjs`.
 - `npx expo export --platform android` pour s'assurer que le bundle Android se construit.
@@ -147,7 +147,7 @@ et les 10 étapes du test utilisateur du 04/10 (détail dans « Historique des l
      pas-à-pas, gestes de suite, « Installe-le », signe de rempotage, étapes de « Sa progression », liens de la fiche
      (`guideLinkText`). Test `tests/grammar.test.ts` : chaque modèle aux 4 formes (`PHRASES`). Tout nouveau texte qui
      parle de la plante passe par cet outil.
-   - Après-récolte : `lib/plants/harvest-once.ts` (11 plantes, `harvestOnceDays` du catalogue, 21 j par défaut ; durées
+   - Après-récolte : `lib/plants/harvest-once.ts` (11 plantes avec la laitue, crosnes retirés le 08/10, `harvestOnceDays` du catalogue, 21 j par défaut ; durées
      prudentes tirées de tailles limites, les sources ne donnent pas de durée) ; logique `lib/garden/harvest-end.ts`
      (question due à min(1ʳᵉ récolte de la saison + durée, fin des mois de récolte), une seule fois : jour gardé
      `harvest-asked:<id>:<jour>` ; « Oui » = `harvest-done:<id>`, dans les `ReminderSnooze` du téléphone) ; `planDay` :
@@ -156,7 +156,12 @@ et les 10 étapes du test utilisateur du 04/10 (détail dans « Historique des l
      place de « Annuler » (`actionLabel` de `ToastMessage`). Ressemer = même plante (`restartPlant` : `archiveSeason`
      renomme `<id>:start`, `:thin`, `:outdoors`, `:pinch` en `…:<date>`, puis « à planter »). Pot vide ou autre plante :
      `removePlant` ; les plantes retirées (`pastPlants` du contexte) comptent dans `computeStats`, `weekSummary` et
-     `celebrationFor`. E2e `14-apres-recolte`.
+     `celebrationFor`. E2e `14-apres-recolte`. Décidé le 08/10 : feuille fermée sans choisir = la ligne « Ton pot est
+     libre » reste le jour du « Oui », puis passe dans les gestes pas urgents repliés (`freePotIsQuiet`, `quiet` de
+     `TodayItem`, pas comptée dans ce qui reste à faire) ; réponses gardées sur le téléphone pour l'instant (à
+     synchroniser avant publication, `docs/avant-publication.md` § 4).
+   - Mois de semis revus le 08/10 avec 2 semenciers au moins (sa règle) : navet + juillet, chou-rave mars–juin,
+     oignons botte mars et août–sept., pak choï juil.–sept. (récolte sept.–nov.) ; détail dans `docs/sources-calendrier.md`.
    - Laitue pommée ajoutée (`head-lettuce`, 101 plantes, calendrier vérifié dans `docs/sources-calendrier.md`, récoltée
      en une fois, 14 j) ; **sa photo reste à télécharger dans le Codespace** (`AWAITING_PHOTO` de
      `tests/stock-photos.test.ts`, emoji en attendant).
