@@ -92,7 +92,6 @@ Balco dit chaque jour quoi faire pour chaque plante du balcon, selon la saison e
      (ressemer ou replanter, une ou deux plantes de saison qui tiennent dans ce pot, laisser le pot vide ou au repos
      l'hiver). Les récoltes d'un pot vidé restent dans ma progression.
    - La laitue pommée est au catalogue (101 plantes), avec sa photo, récoltée en une fois.
-   - Ensuite : la même chose pour la fin de saison des annuelles (basilic en octobre).
 3. **Fin de saison des annuelles : livrée le 8 octobre, à valider sur mon téléphone.** « Ta saison de basilic est
    finie ? » à la fin de ses mois de récolte (une relance deux semaines plus tard, puis plus jamais). Pour les
    plantes frileuses, le soir où le gel est annoncé : « Récolte tout ton basilic avant cette nuit », et la question
