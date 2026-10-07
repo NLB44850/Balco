@@ -84,7 +84,7 @@ visuelle, retour immédiat.
 **Nouvelle conversation ? Tout est validé sur son téléphone et fusionné dans `main` : l'onboarding et le pas-à-pas
 pour planter (PR https://github.com/NLB44850/Balco/pull/28, 06/10), puis le rempotage (R1 à R3), les 11 pas-à-pas
 (`docs/pas-a-pas.md`), Nora qui récupère sa réponse perdue et Saisons corrigé (PR https://github.com/NLB44850/Balco/pull/29,
-07/10). Livré le 07/10, à valider sur son téléphone : accords des textes, après-récolte et laitue pommée (point 5).
+07/10). Validé sur son téléphone le 08/10 : accords des textes, après-récolte et laitue pommée (point 5), PR vers `main` ouverte le 08/10.
 Ensuite : fin de saison des annuelles (quand il le dira), l'APK (point 1). Récap pour claude.ai :
 `docs/recap-pour-claude.md` + captures `docs/captures/` (refaites par `bash scripts/captures.sh`, spec
 `e2e/captures.spec.ts` sautée sans `CAPTURES=1`).**
@@ -141,7 +141,7 @@ et les 10 étapes du test utilisateur du 04/10 (détail dans « Historique des l
    puis rempoter chaque plant) ; `guideTaskOf(activity)` donne la tâche du guide d'un geste ; route `task=thin|pinch|
    outdoors` (le geste vient de `followUpsFor`, « C'est éclairci / pincé », « Plants installés ») ; entrées : feuille du
    bas d'Aujourd'hui et lien de la fiche ; dessin `two-shoots` (26 en tout).
-5. **Accords et après-récolte (livrés le 07/10, à valider)**, plan validé avec lui :
+5. **Accords et après-récolte (validés le 08/10)**, plan validé avec lui :
    - Accords : `gender` / `plural` de chaque plante (valent pour `label`), outil `lib/plants/grammar.ts` (`byForm`,
      `subjectPronoun`, `objectPronoun`, `objectBefore`, `agree`, `bareName`, `possessive`, `partitive`), utilisé par les
      pas-à-pas, gestes de suite, « Installe-le », signe de rempotage, étapes de « Sa progression », liens de la fiche

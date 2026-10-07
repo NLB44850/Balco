@@ -1,6 +1,6 @@
 # Balco : récapitulatif à coller au début d'une conversation avec Claude
 
-*À jour au 7 octobre 2026 (rempotage, 11 pas-à-pas, Nora et Saisons corrigés, tout validé et intégré à la version principale ; accords des textes et après-récolte livrés, à valider sur mon téléphone). Copier tout le texte sous
+*À jour au 7 octobre 2026 (rempotage, 11 pas-à-pas, Nora et Saisons corrigés, tout validé et intégré à la version principale ; accords des textes, après-récolte et laitue pommée validés le 8 octobre). Copier tout le texte sous
 la ligne ci-dessous dans une nouvelle conversation sur claude.ai, puis y joindre les captures de `docs/captures/`
 (liste et légendes dans `docs/captures/LISEZ-MOI.md`).*
 
@@ -82,7 +82,7 @@ Balco dit chaque jour quoi faire pour chaque plante du balcon, selon la saison e
 
 1. **Revérifier sur le prochain APK** (la vraie app Android) : l'aperçu de la photo dans Observer, l'appareil photo
    depuis Aujourd'hui, les notifications, la position et les rappels de l'accueil.
-2. **Accords et après-récolte : livrés, à valider sur mon téléphone.**
+2. **Accords et après-récolte : validés sur mon téléphone le 8 octobre.**
    - Les textes s'accordent à chaque plante (« Garde-le » pour le thym, « Garde-la » pour la menthe, « Garde-les »
      pour les radis) : le catalogue connaît le genre et le nombre de chaque plante.
    - Plantes récoltées en une fois (radis, carottes, betteraves, navets, chou-rave, oignons botte, ail, pommes de
