@@ -11,6 +11,7 @@ import { PLANTING, type Planting } from "./planting";
 import { ofLabel, potSizes, startActivity } from "./calendar";
 import { REPOTTING } from "./repotting";
 import type { ClimateInfo } from "./climate";
+import { agree, byForm, capitalize, objectBefore, objectPronoun, stressedPronoun, subjectPronoun, verb } from "./grammar";
 
 export type GuideModel = "sow-pot" | "sow-indoor" | "plant-seedling" | "plant-bulb" | "perennial-pot" | GuideTask;
 
@@ -163,11 +164,11 @@ export function delayText([min, max]: [number, number], unit: "days" | "weeks") 
  * Ex. « Les pousses sortent dans 7 à 10 jours. Garde la terre humide. »
  */
 export function whatsNext(entry: CatalogPlant, model: GuideModel): string[] {
-  if (model === "repot") return ["Garde-la quelques jours à l’ombre légère : ses racines s’installent.", "Arrose un peu moins les deux premières semaines."];
-  if (model === "topdress") return ["Le terreau neuf la nourrit pour toute la saison."];
+  if (model === "repot") return [`Garde-${objectPronoun(entry)} quelques jours à l’ombre légère : ${verb(entry, "ses", "leurs")} racines s’installent.`, "Arrose un peu moins les deux premières semaines."];
+  if (model === "topdress") return [`Le terreau neuf ${objectBefore(entry, "nourrit")} pour toute la saison.`];
   if (model === "thin") return ["Celles qui restent ont maintenant la place de grandir."];
   if (model === "pinch") {
-    if (!pinchesTip(plantingOf(entry))) return ["En quelques semaines, elle repart plus dense."];
+    if (!pinchesTip(plantingOf(entry))) return [`En quelques semaines, ${subjectPronoun(entry)} ${verb(entry, "repart", "repartent")} plus ${agree(entry, "dense")}.`];
     return ["En une ou deux semaines, deux pousses repartent sous chaque coupe.", ...(entry.category === "aromatic" ? ["Les bouts pincés se mangent : ne les jette pas."] : [])];
   }
   if (model === "outdoors") {
@@ -264,7 +265,7 @@ function plantingSteps(entry: CatalogPlant, planting: Planting, model: GuideMode
 function repotSteps(entry: CatalogPlant, { repots = 0 }: GuideOptions): GuideStep[] {
   const pot = potSizes(entry, repots);
   return [
-    { illustration: "roots-out", text: "Regarde sous le pot si des racines sortent.", why: "Ou si l’eau ressort tout de suite : elle manque de place." },
+    { illustration: "roots-out", text: "Regarde sous le pot si des racines sortent.", why: `Ou si l’eau ressort tout de suite : ${subjectPronoun(entry)} ${verb(entry, "manque", "manquent")} de place.` },
     { illustration: "clay-balls", text: "Mets des billes d’argile au fond du nouveau pot.", why: `Environ ${pot.next} L, ${pot.nextWidthCm} cm de large.`, mistake: "Erreur à éviter : un pot bien plus grand. La terre resterait trempée." },
     { illustration: "unpot", text: "Sors la plante en tapotant le pot retourné.", why: "Arrosée la veille, la motte sort plus facilement." },
     { illustration: "loosen-roots", text: "Démêle du bout des doigts les racines qui tournent.", why: "Elles partiront dans la terre neuve." },
@@ -305,20 +306,20 @@ export function pinchesTip(planting: Pick<Planting, "pinching">) {
   return /(pince|coupe) (la |le )?(tête|pointe|bout|tige |au-dessus)/iu.test(planting.pinching ?? "");
 }
 
-function pinchSteps(planting: Planting): GuideStep[] {
+function pinchSteps(entry: CatalogPlant, planting: Planting): GuideStep[] {
   const how = planting.pinching?.replace(/'/gu, "’") ?? undefined;
   if (!pinchesTip(planting)) {
     return [
-      { illustration: "pinch", text: "Repère ce qu’il faut couper chez elle.", why: how },
+      { illustration: "pinch", text: `Repère ce qu’il faut couper chez ${stressedPronoun(entry)}.`, why: how },
       { illustration: "thin", text: "Coupe-le avec de petits ciseaux propres.", mistake: "Erreur à éviter : des ciseaux sales. Ils transmettent les maladies." },
-      { illustration: "two-shoots", text: "Laisse-la repartir : de nouvelles pousses vont venir.", why: "Elle reste dense et produit plus longtemps." },
+      { illustration: "two-shoots", text: `Laisse-${objectPronoun(entry)} repartir : de nouvelles pousses vont venir.`, why: `${capitalize(subjectPronoun(entry))} ${verb(entry, "reste", "restent")} ${agree(entry, "dense")} et ${verb(entry, "produit", "produisent")} plus longtemps.` },
       { illustration: "pinch", text: "Fais pareil sur le reste de la plante." },
     ];
   }
   return [
     { illustration: "pinch", text: "Repère le bout d’une tige, au-dessus d’une paire de feuilles.", why: how },
     { illustration: "pinch", text: "Pince-le entre le pouce et l’index.", why: "Ou coupe-le avec de petits ciseaux propres.", mistake: "Erreur à éviter : couper sous les feuilles. La tige ne repartirait pas." },
-    { illustration: "two-shoots", text: "Laisse repartir : deux tiges pousseront à la place.", why: "C’est ce qui la rend touffue." },
+    { illustration: "two-shoots", text: "Laisse repartir : deux tiges pousseront à la place.", why: `C’est ce qui ${objectPronoun(entry)} rend ${agree(entry, "touffu")}.` },
     { illustration: "pinch", text: "Fais pareil sur les autres grandes tiges." },
   ];
 }
@@ -341,7 +342,7 @@ export function guideSteps(entry: CatalogPlant, model: GuideModel, options: Guid
   if (model === "repot") return repotSteps(entry, options);
   if (model === "topdress") return topdressSteps();
   if (model === "thin") return thinSteps(plantingOf(entry));
-  if (model === "pinch") return pinchSteps(plantingOf(entry));
+  if (model === "pinch") return pinchSteps(entry, plantingOf(entry));
   if (model === "outdoors") return outdoorsSteps(plantingOf(entry));
   const planting = plantingOf(entry);
   return isSowing(model) ? sowingSteps(entry, planting, model === "sow-indoor") : plantingSteps(entry, planting, model);
@@ -357,11 +358,26 @@ export function guideTitle(entry: CatalogPlant, model: GuideModel) {
   return `${isSowing(model) ? "Semer" : "Planter"} ${entry.label}`;
 }
 
+/** Les liens vers un pas-à-pas (fiche de la plante, catalogue) : « Comment le pincer, pas à pas › », « Comment les rempoter › ». */
+export function guideLinkText(entry: CatalogPlant, task: GuideTask | "need") {
+  if (task === "thin") return `Comment ${objectBefore(entry, "éclaircir")}, pas à pas ›`;
+  if (task === "pinch") return `Comment ${objectBefore(entry, "pincer")}, pas à pas ›`;
+  if (task === "outdoors") return "Comment sortir les plants, pas à pas ›";
+  if (task === "repot") return `Comment ${objectBefore(entry, "rempoter")} ›`;
+  if (task === "topdress") return "Changer la terre du dessus, pas à pas ›";
+  return `Ce qu’il te faut pour ${objectBefore(entry, "planter")} ›`;
+}
+
+/** « tu le pinceras pour qu’il soit plus touffu. », « tu les pinceras pour qu’elles soient plus touffues. » */
+function laterPinch(entry: CatalogPlant) {
+  return `tu ${objectPronoun(entry)} pinceras pour qu’${byForm(entry, "il soit", "elle soit", "ils soient", "elles soient")} plus ${agree(entry, "touffu")}.`;
+}
+
 /** « Et après ? », en plus de la levée et de la récolte : les gestes de suite que Balco rappellera. */
 export function nextGestures(entry: CatalogPlant, model: GuideModel): string[] {
   if (model === "thin") return [];
   if (model === "pinch") return ["Tu peux recommencer à chaque fois qu’une tige s’allonge trop."];
-  if (model === "outdoors") return plantingOf(entry).pinching ? ["Dans deux semaines, tu la pinceras pour qu’elle soit plus touffue."] : [];
+  if (model === "outdoors") return plantingOf(entry).pinching ? [`Dans deux semaines, ${laterPinch(entry)}`] : [];
   if (model === "repot" || model === "topdress") {
     const data = REPOTTING[entry.id];
     if (model === "topdress" || !data) return ["L’an prochain, Balco te dira s’il faut rempoter ou changer la terre."];
@@ -373,7 +389,7 @@ export function nextGestures(entry: CatalogPlant, model: GuideModel): string[] {
   const lines: string[] = [];
   if (isSowing(model) && planting.thinning) lines.push("Une semaine après la levée, tu éclairciras : Balco te le dira.");
   if (model === "sow-indoor" && entry.plantMonths.length > 0) lines.push(`Les plants iront sur le balcon en ${MONTH_LONG[entry.plantMonths[0] - 1]}.`);
-  if (planting.pinching) lines.push("Plus tard, tu la pinceras pour qu’elle soit plus touffue.");
+  if (planting.pinching) lines.push(`Plus tard, ${laterPinch(entry)}`);
   return lines;
 }
 

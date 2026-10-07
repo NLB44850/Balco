@@ -28,10 +28,10 @@ export default function WeekScreen() {
   const colors = useColors();
   const router = useRouter();
   const insets = useSafeAreaInsets();
-  const { resolvedPlants, events } = useGarden();
+  const { resolvedPlants, pastPlants, events } = useGarden();
   const { photos } = usePlantPhotos();
   const now = useMemo(() => new Date(), []);
-  const summary = useMemo(() => weekSummary(resolvedPlants, events, photos, now), [events, now, photos, resolvedPlants]);
+  const summary = useMemo(() => weekSummary(resolvedPlants, events, photos, now, pastPlants), [events, now, pastPlants, photos, resolvedPlants]);
   const monday = startOfWeek(now);
   const sunday = new Date(monday.getFullYear(), monday.getMonth(), monday.getDate() + 6);
   const compared = comparedToLastWeek(summary);

@@ -2,6 +2,7 @@ import { dayKey, sessionEventId, startEventId } from "../garden/garden-logic";
 import type { MaintenanceEvent, MaintenanceTaskType } from "../reminders/reminder-engine";
 import { describeSowing, formatMonthRange, MONTH_LONG, sowsIndoors, type CatalogPlant, type Month } from "./catalog";
 import { adaptToClimate, type ClimateInfo } from "./climate";
+import { capitalize, objectPronoun, subjectPronoun, verb, type Agreeable } from "./grammar";
 import { sowsOnWindowsill } from "./indoor";
 import { REPOTTING } from "./repotting";
 
@@ -137,7 +138,7 @@ export function startActivity(subject: CalendarSubject, month: number, options: 
   const period = kind === "plant" ? formatMonthRange(entry.plantMonths) : describeSowing(entry);
   const how =
     kind === "plant"
-      ? `Installe-la dans un pot percé d’au moins ${entry.potLiters} L, avec un terreau frais, puis arrose bien.`
+      ? `Installe-${objectPronoun(entry)} dans un pot percé d’au moins ${entry.potLiters} L, avec un terreau frais, puis arrose bien.`
       : indoors
         ? `Sème en godets à l’intérieur, au chaud (18 à 22 °C), près d’une fenêtre lumineuse.${entry.plantMonths.length > 0 ? ` Installe les plants dehors en ${formatMonthRange(entry.plantMonths)}.` : ""}`
         : `Sème dans un pot d’au moins ${entry.potLiters} L de terreau fin, recouvre à peine et arrose en pluie fine.`;
@@ -201,7 +202,7 @@ export function potCareFor(subject: Pick<CalendarSubject, "id" | "addedAt" | "to
 }
 
 /** Le signe qu'une plante manque de place, quand ses sources n'en donnent pas un à elle. */
-export const GENERIC_REPOT_SIGN = "Des racines sortent par les trous du pot ? L’eau ressort tout de suite ? Elle manque de place.";
+export const genericRepotSign = (entry: Agreeable) => `Des racines sortent par les trous du pot ? L’eau ressort tout de suite ? ${capitalize(subjectPronoun(entry))} ${verb(entry, "manque", "manquent")} de place.`;
 
 /** Le pot qu'elle a (celui conseillé, un tiers de plus à chaque rempotage) et celui à prendre. */
 export function potSizes(entry: Pick<CatalogPlant, "potLiters">, repots: number) {
@@ -217,7 +218,7 @@ export function potWidthCm(liters: number) {
 
 /** « Le signe… Si son pot fait environ 10 L, prends-en un d'environ 13 L (27 cm de large)… » */
 export function repotDescription(entry: CatalogPlant, repots: number) {
-  const sign = REPOTTING[entry.id]?.sign?.replace(/'/gu, "’") ?? GENERIC_REPOT_SIGN;
+  const sign = REPOTTING[entry.id]?.sign?.replace(/'/gu, "’") ?? genericRepotSign(entry);
   const pot = potSizes(entry, repots);
   return `${sign} Si son pot fait environ ${pot.now} L, prends-en un d’environ ${pot.next} L (${pot.nextWidthCm} cm de large), avec du terreau neuf. À faire en ${formatMonthRange(entry.repotMonths)}.`;
 }

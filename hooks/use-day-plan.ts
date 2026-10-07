@@ -9,6 +9,7 @@ import { useLocalWeather } from "@/hooks/use-local-weather";
 import { planDay } from "@/lib/garden/day-plan";
 import { postponedStarts } from "@/lib/garden/postpone";
 import { skippedRepots } from "@/lib/garden/repot-skip";
+import { harvestEndStates, markHarvestAsked, potIsFree } from "@/lib/garden/harvest-end";
 import { useGarden } from "@/lib/garden/garden-context";
 import { careProfileFor } from "@/lib/garden/garden-logic";
 import { climateZoneFor } from "@/lib/plants/climate";
@@ -19,6 +20,7 @@ import {
   defaultLocalReminderSettings,
   loadLocalReminderSettings,
   loadReminderSnoozes,
+  saveReminderSnoozes,
   subscribeReminderSettings,
   subscribeReminderSnoozes,
   type LocalReminderSettings,
@@ -57,10 +59,11 @@ export function useDayPlan() {
   }, []);
 
   const climate = useMemo(() => (weather.isFallback ? null : climateZoneFor(weather.latitude, weather.longitude, weatherSnapshot.elevationM)), [weather.isFallback, weather.latitude, weather.longitude, weatherSnapshot.elevationM]);
+  const harvestEnds = useMemo(() => harvestEndStates(snoozes, now), [now, snoozes]);
   const reminderPlants = useMemo(
-    // Une plante à planter n'est pas encore en terre : ni soif ni alerte météo.
-    () => resolvedPlants.filter(({ plant }) => !plant.toPlant && (reminderSettings.enabledPlantIds.length === 0 || reminderSettings.enabledPlantIds.includes(plant.id))),
-    [reminderSettings.enabledPlantIds, resolvedPlants],
+    // Une plante à planter n'est pas encore en terre, un pot libre est vide : ni soif ni alerte météo.
+    () => resolvedPlants.filter((resolved) => !resolved.plant.toPlant && !potIsFree(resolved, harvestEnds.get(resolved.plant.id)) && (reminderSettings.enabledPlantIds.length === 0 || reminderSettings.enabledPlantIds.includes(resolved.plant.id))),
+    [harvestEnds, reminderSettings.enabledPlantIds, resolvedPlants],
   );
   // Tous les conseils météo du moment (« rappels activés » ne décide que des notifications).
   const allDecisions = useMemo(() => {
@@ -74,7 +77,15 @@ export function useDayPlan() {
   const visibleGroups = useMemo(() => groupReminders(visibleDecisions), [visibleDecisions]);
   const postponed = useMemo(() => postponedStarts(snoozes, now), [now, snoozes]);
   const repotSkips = useMemo(() => skippedRepots(snoozes, now), [now, snoozes]);
-  const plan = useMemo(() => planDay({ plants: resolvedPlants, events, now, decisions: visibleDecisions, allDecisions, climate, postponed, repotSkips }), [allDecisions, climate, events, now, postponed, repotSkips, resolvedPlants, visibleDecisions]);
+  const plan = useMemo(() => planDay({ plants: resolvedPlants, events, now, decisions: visibleDecisions, allDecisions, climate, postponed, repotSkips, harvestEnds }), [allDecisions, climate, events, harvestEnds, now, postponed, repotSkips, resolvedPlants, visibleDecisions]);
+
+  // « Tes radis sont-ils tous récoltés ? » ne se pose qu'un jour : on note le jour où elle s'affiche.
+  useEffect(() => {
+    if (!snoozesLoaded) return;
+    const asked = plan.filter((day) => day.first?.source.type === "harvest-end" && day.first.source.stage === "question" && !harvestEnds.get(day.resolved.plant.id)?.askedOn);
+    if (asked.length === 0) return;
+    void loadReminderSnoozes().then((stored) => saveReminderSnoozes(asked.reduce((current, day) => markHarvestAsked(current, day.resolved.plant.id, now), stored)));
+  }, [harvestEnds, now, plan, snoozesLoaded]);
 
   // Prêt quand la météo (ou son repli) et les réglages sont là : avant, l'état d'une plante changerait
   // sous les yeux (« En forme », puis « À surveiller » une fois la soif connue).

@@ -5,6 +5,7 @@
  */
 import type { CalendarActivity } from "../plants/calendar";
 import { adaptToClimate, type ClimateInfo } from "../plants/climate";
+import { agree, capitalize, subjectPronoun, verb } from "../plants/grammar";
 import { ofName } from "../plants/guide";
 import { PLANTING } from "../plants/planting";
 import type { MaintenanceEvent } from "../reminders/reminder-engine";
@@ -68,7 +69,7 @@ export function followUpsFor(resolved: ResolvedPlant, events: MaintenanceEvent[]
 
   // Pincer, une fois la plante bien partie.
   if (data.pinching && !done("pinch") && due(sown(start.note) ? germinationMax + PINCH_AFTER_GERMINATION_DAYS : PINCH_AFTER_PLANTING_DAYS)) {
-    activities.push({ ...base, key: `${plant.id}:pinch`, kind: "care", typeLabel: "PINCER", title: `Pince ${entry.label}`, description: `${data.pinching} Elle devient plus touffue et produit plus.`, eventType: "pruning", followUp: "pinch" });
+    activities.push({ ...base, key: `${plant.id}:pinch`, kind: "care", typeLabel: "PINCER", title: `Pince ${entry.label}`, description: `${data.pinching} ${capitalize(subjectPronoun(entry))} ${verb(entry, "devient", "deviennent")} plus ${agree(entry, "touffu")} et ${verb(entry, "produit", "produisent")} plus.`, eventType: "pruning", followUp: "pinch" });
   }
   return activities;
 }

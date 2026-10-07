@@ -9,18 +9,21 @@ import { eventForReminder } from "../reminders/reminder-actions";
 import type { MaintenanceEvent } from "../reminders/reminder-engine";
 import type { ReminderGroup } from "../reminders/reminder-groups";
 import { GESTURE_ORDER, type GestureKind, type PlantDay } from "./day-plan";
-import { dayKey, plantDisplayName, type SessionTask } from "./garden-logic";
+import { dayKey, plantDisplayName, type ResolvedPlant, type SessionTask } from "./garden-logic";
 import { isAvoidedWatering } from "./progress";
 
 export type TodayTone = "frost" | "heat" | "rain" | "storm" | "wind" | "water" | "care" | "season";
 
 /** Ce que toutes les lignes ont en commun : le type de geste (pour l'ordre et le regroupement) et la plante. */
-type TodayBase = { key: string; tone: TodayTone; icon: string; title: string; subtitle: string; gesture: GestureKind; plantName?: string };
+/** `quiet` : toujours replié avec les gestes pas urgents, et pas compté dans ce qui reste à faire (pot libre de la veille). */
+type TodayBase = { key: string; tone: TodayTone; icon: string; title: string; subtitle: string; gesture: GestureKind; plantName?: string; quiet?: boolean };
 
 export type TodayItem =
   | (TodayBase & { kind: "alert"; done: false; group: ReminderGroup })
   | (TodayBase & { kind: "task"; done: boolean; task: SessionTask })
-  | (TodayBase & { kind: "season"; done: boolean; activity: CalendarActivity });
+  | (TodayBase & { kind: "season"; done: boolean; activity: CalendarActivity })
+  /** « Tes radis sont-ils tous récoltés ? » ou « Ton pot est libre » : la ligne ouvre la feuille du pot libre. */
+  | (TodayBase & { kind: "harvest-end"; done: false; stage: "question" | "free"; resolved: ResolvedPlant });
 
 /**
  * Une ligne de l'écran : un geste seul, les arrosages regroupés (« Vérifie la terre de 3 plantes », qui
@@ -132,6 +135,9 @@ function rowFor(day: PlantDay, gesture: PlantDay["gestures"][number], groups: Re
       task: { ...item, done: gesture.done, eventId: gesture.doneEventId ?? item.eventId },
     };
   }
+  if (source.type === "harvest-end") {
+    return { kind: "harvest-end", key: gesture.key, ...common, tone: "care", icon: "🧺", title: gesture.title, subtitle: gesture.instruction, done: false, stage: source.stage, resolved: source.resolved, ...(source.quiet ? { quiet: true } : {}) };
+  }
   return { kind: "season", key: `season:${source.activity.key}`, ...common, tone: "season", icon: source.activity.entry.emoji, title: gesture.title, subtitle: "De saison · à faire ce mois-ci", done: gesture.done, activity: source.activity };
 }
 
@@ -200,9 +206,12 @@ export function layoutTodayList(items: TodayItem[]): TodayLine[] {
 
   const alerts = pending.filter((item) => item.gesture === "alert").map(single);
   const others = pending.filter((item) => item.gesture !== "alert");
+  const quiet = others.filter((item) => item.quiet);
   const lines: TodayLine[] = [...alerts, ...(group && !group.done ? [group] : []), ...others.map(single)];
-  const folded = others.filter((item) => NOT_URGENT.includes(item.gesture));
-  if (lines.length > MAX_TODAY_LINES && folded.length > 0) {
+  // Au-delà de 5 lignes (sans compter les lignes discrètes), l'engrais et l'entretien se replient aussi.
+  const crowded = lines.length - quiet.length > MAX_TODAY_LINES;
+  const folded = others.filter((item) => item.quiet || (crowded && NOT_URGENT.includes(item.gesture)));
+  if (folded.length > 0) {
     const kept = lines.filter((line) => line.type !== "item" || !folded.includes(line.item));
     kept.push({
       type: "more",
@@ -228,7 +237,7 @@ export function balconyStatus(items: TodayItem[], events: MaintenanceEvent[], no
   const today = dayKey(now);
   // L'arrosage évité grâce à la pluie est compté tout seul : ce n'est pas un geste de la journée.
   const doneToday = new Set(events.filter((event) => dayKey(new Date(event.completedAt)) === today && !isAvoidedWatering(event)).map((event) => event.id)).size;
-  const remaining = items.filter((item) => !item.done && !isInfoBanner(item)).length;
+  const remaining = items.filter((item) => !item.done && !item.quiet && !isInfoBanner(item)).length;
   const evening = now.getHours() >= 17;
   const total = remaining + doneToday;
   const progress = total === 0 ? 0 : doneToday / total;

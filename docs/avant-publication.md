@@ -11,6 +11,7 @@ ce document liste ce qu'ils impliquent et l'ordre conseillé.
 |---|---|---|---|
 | Expo SDK 54 → 57 | SDK 54 a un an ; la dernière version est la 57.0.26. Google Play exigera Android 16 (API 36) pour toute mise à jour à partir du 31 août 2026 : SDK 54 le cible déjà, mais l'exigence monte chaque année. | 3 montées successives, 1 à 2 jours chacune avec les tests | Non aujourd'hui, oui d'ici un an |
 | Achats intégrés Balco+ | Sans eux, `users.plan` ne passe jamais à `plus` : l'offre payante n'existe pas. | 4 à 6 jours (produits dans les stores, écran d'abonnement, webhook, tests) | Oui, pour vendre Balco+ |
+| Après-récolte synchronisé | « Tout récolté ? » (« Oui », question déjà posée) n'est gardé que sur le téléphone, et les rappels du serveur (Balco+) ignorent qu'un pot est libre : ils pourraient encore envoyer « Arrose les radis ». | 1 jour (réponses dans la synchro, filtre dans `recalculateUserReminders`, tests) | Oui, pour les rappels serveur de Balco+ |
 | Notifications Android (FCM) | Sans clé Firebase, le serveur ne peut pas envoyer de push sur Android ; les rappels locaux du téléphone marchent déjà. | Une demi-journée, surtout de la configuration | Oui, pour les rappels serveur de Balco+ |
 
 Ordre conseillé : **FCM d'abord** (court, et nécessaire pour tester les rappels Balco+ de l'étape 6),
@@ -125,3 +126,17 @@ locaux, programmés par le téléphone, marchent déjà sans Firebase.
 
 Sources : [clé de compte de service FCM v1 (Expo)](https://docs.expo.dev/push-notifications/fcm-credentials/),
 [envoyer avec Expo Push](https://docs.expo.dev/push-notifications/sending-notifications/).
+
+## 4. Après-récolte : synchroniser les réponses (décidé le 08/10)
+
+Aujourd'hui, « Oui, tout est récolté » (`harvest-done:<plante>:<jour>`) et le jour où la question a été posée
+(`harvest-asked:<plante>:<jour>`) sont des mises en sommeil du téléphone (`ReminderSnooze`, `lib/garden/harvest-end.ts`),
+comme « Pas besoin cette année ». Avant de publier :
+
+1. **Synchroniser ces réponses** avec le compte (par exemple une colonne `harvestEndJson` sur la plante, ou des
+   événements dédiés exclus des statistiques), pour qu'un deuxième téléphone ne repose pas la question.
+2. **Rappels serveur (Balco+)** : `recalculateUserReminders` doit ignorer une plante dont le pot est libre
+   (réponse « Oui » sans choix), comme le fait déjà le téléphone (`potIsFree` dans `hooks/use-day-plan.ts`).
+3. Tests : une plante au pot libre ne reçoit plus de rappel serveur ; la réponse donnée sur un téléphone est
+   lue par l'autre.
+

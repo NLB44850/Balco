@@ -38,7 +38,8 @@ import {
 } from "@/lib/sync/sync-logic";
 import { trpc } from "@/lib/trpc";
 import { TRPCClientError } from "@trpc/client";
-import { activePlants, appendEvent, createGardenPlant, resolvePlants, startedPlantId, type GardenPlant, type ResolvedPlant } from "./garden-logic";
+import { activePlants, appendEvent, createGardenPlant, MAX_STORED_EVENTS, resolvePlants, startedPlantId, type GardenPlant, type ResolvedPlant } from "./garden-logic";
+import { archiveSeason } from "./harvest-end";
 
 export const GARDEN_PLANTS_STORAGE_KEY = "balco.garden.plants.v1";
 export const GARDEN_EVENTS_STORAGE_KEY = "balco.garden.events.v1";
@@ -75,6 +76,8 @@ type GardenContextValue = {
   loaded: boolean;
   plants: GardenPlant[];
   resolvedPlants: ResolvedPlant[];
+  /** Les plantes qui ont quitté le balcon : leurs gestes et leurs récoltes restent dans la progression. */
+  pastPlants: ResolvedPlant[];
   events: MaintenanceEvent[];
   profile: UserProfile;
   onboarding: OnboardingAnswers | null;
@@ -82,6 +85,8 @@ type GardenContextValue = {
   /** `toPlant` : choisie mais pas encore en terre (son premier geste sera « Sème… » ou « Plante… »). */
   addPlant: (catalogId: string, options?: { toPlant?: boolean }) => Promise<GardenPlant>;
   removePlant: (plantId: string) => Promise<void>;
+  /** Ressemer ou replanter la même plante (pot libre) : une nouvelle saison, elle repasse « à planter ». */
+  restartPlant: (plantId: string) => Promise<void>;
   renamePlant: (plantId: string, nickname: string) => Promise<void>;
   setPlantVariety: (plantId: string, varietyId: string | undefined) => Promise<void>;
   logEvent: (event: MaintenanceEvent) => Promise<void>;
@@ -367,6 +372,13 @@ export function GardenProvider({ children }: { children: ReactNode }) {
 
   // L'historique d'une plante retirée est conservé : il reste utile si elle revient.
   const removePlant = useCallback((plantId: string) => updatePlant(plantId, (plant) => ({ ...plant, removedAt: new Date().toISOString() })), [updatePlant]);
+  // Les gestes « une fois par saison » sont rangés sous leur date : la nouvelle saison les redemandera.
+  const restartPlant = useCallback(async (plantId: string) => {
+    const { remove, add } = archiveSeason(eventsRef.current, plantId);
+    await saveEvents([...add, ...eventsRef.current.filter((event) => !remove.includes(event.id))].slice(0, MAX_STORED_EVENTS));
+    queue((outbox) => add.reduce(recordEvent, remove.reduce(recordEventDeletion, outbox)));
+    await updatePlant(plantId, (plant) => ({ ...plant, toPlant: true }));
+  }, [queue, saveEvents, updatePlant]);
   const renamePlant = useCallback((plantId: string, nickname: string) => updatePlant(plantId, (plant) => ({ ...plant, nickname: nickname.trim() || undefined })), [updatePlant]);
   const setPlantVariety = useCallback((plantId: string, varietyId: string | undefined) => updatePlant(plantId, (plant) => ({ ...plant, varietyId })), [updatePlant]);
 
@@ -468,6 +480,7 @@ export function GardenProvider({ children }: { children: ReactNode }) {
 
   const plants = useMemo(() => activePlants(allPlants), [allPlants]);
   const resolvedPlants = useMemo(() => resolvePlants(plants), [plants]);
+  const pastPlants = useMemo(() => resolvePlants(allPlants.filter((plant) => plant.removedAt)), [allPlants]);
   const account = useMemo<AccountState>(() => ({
     loginAvailable: true,
     signedIn: auth.isAuthenticated,
@@ -482,8 +495,8 @@ export function GardenProvider({ children }: { children: ReactNode }) {
   }), [auth.isAuthenticated, auth.loading, auth.user?.email, auth.user?.name, founder, lastSyncedAt, plan, serverPush, syncStatus]);
 
   const value = useMemo<GardenContextValue>(
-    () => ({ loaded, plants, resolvedPlants, events, profile, onboarding, account, addPlant, removePlant, renamePlant, setPlantVariety, logEvent, removeEvent, updateProfile, reloadOnboarding, updateOnboarding, reportLocation, signIn, signOut, syncNow, claimThisDevice, refreshAccount, completeSignIn, deleteAccount }),
-    [loaded, plants, resolvedPlants, events, profile, onboarding, account, addPlant, removePlant, renamePlant, setPlantVariety, logEvent, removeEvent, updateProfile, reloadOnboarding, updateOnboarding, reportLocation, signIn, signOut, syncNow, claimThisDevice, refreshAccount, completeSignIn, deleteAccount],
+    () => ({ loaded, plants, resolvedPlants, pastPlants, events, profile, onboarding, account, addPlant, removePlant, restartPlant, renamePlant, setPlantVariety, logEvent, removeEvent, updateProfile, reloadOnboarding, updateOnboarding, reportLocation, signIn, signOut, syncNow, claimThisDevice, refreshAccount, completeSignIn, deleteAccount }),
+    [loaded, plants, resolvedPlants, pastPlants, events, profile, onboarding, account, addPlant, removePlant, restartPlant, renamePlant, setPlantVariety, logEvent, removeEvent, updateProfile, reloadOnboarding, updateOnboarding, reportLocation, signIn, signOut, syncNow, claimThisDevice, refreshAccount, completeSignIn, deleteAccount],
   );
 
   return <GardenContext.Provider value={value}>{children}</GardenContext.Provider>;

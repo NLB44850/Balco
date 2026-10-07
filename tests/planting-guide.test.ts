@@ -61,7 +61,7 @@ describe("modèles de guide et « Ce qu'il te faut »", () => {
 });
 
 describe("les étapes du pas-à-pas (P7) : règles d'écriture", () => {
-  const VERBS = ["Mets", "Remplis", "Fais", "Pose", "Sème", "Recouvre", "Rebouche", "Laisse", "Arrose", "Couvre", "Pose-les", "Sors", "Ajoute", "Enfonce-les", "Regarde", "Démêle", "Gratte", "Remets", "Tasse", "Repère", "Coupe", "Coupe-le", "Pince-le", "Sors-les", "Laisse-la"];
+  const VERBS = ["Mets", "Remplis", "Fais", "Pose", "Sème", "Recouvre", "Rebouche", "Laisse", "Arrose", "Couvre", "Pose-les", "Sors", "Ajoute", "Enfonce-les", "Regarde", "Démêle", "Gratte", "Remets", "Tasse", "Repère", "Coupe", "Coupe-le", "Pince-le", "Sors-les", "Laisse-la", "Laisse-le", "Laisse-les"];
   const words = (text: string) => text.split(/\s+/u).filter(Boolean).length;
   const models = ["sow-pot", "sow-indoor", "plant-seedling", "plant-bulb", "perennial-pot", "repot", "topdress", "thin", "pinch", "outdoors"] as const;
 
@@ -130,10 +130,10 @@ describe("les étapes du pas-à-pas (P7) : règles d'écriture", () => {
     // Une plante qui ne se pince pas au bout des tiges (fraisier : les stolons) : la variante aux ciseaux.
     const cutters = Object.entries(PLANTING).filter(([, data]) => data.pinching && !pinchesTip(data));
     expect(cutters.length).toBeGreaterThan(3);
-    expect(guideSteps(plant(cutters[0][0]), "pinch")[0].text).toBe("Repère ce qu’il faut couper chez elle.");
+    expect(guideSteps(plant(cutters[0][0]), "pinch")[0].text).toBe("Repère ce qu’il faut couper chez lui."); // le thym
     expect(guideTitle(basil, "outdoors")).toBe("Sortir tes plants de basilic");
     expect(guideSteps(basil, "outdoors")[0].mistake).toBe("Erreur à éviter : les sortir d’un coup en plein soleil. Ils brûleraient.");
-    expect(nextGestures(basil, "outdoors")).toEqual(["Dans deux semaines, tu la pinceras pour qu’elle soit plus touffue."]);
+    expect(nextGestures(basil, "outdoors")).toEqual(["Dans deux semaines, tu le pinceras pour qu’il soit plus touffu."]);
     expect(guideTaskOf({ kind: "care", followUp: "pinch" })).toBe("pinch");
     expect(guideTaskOf({ kind: "repot", topdress: true })).toBe("topdress");
     expect(guideTaskOf({ kind: "harvest" })).toBeNull();

@@ -59,7 +59,7 @@ function plantName(row: PlantRow) {
   const variety = entry?.varieties.find((item) => item.id === row.varietyId);
   const name = row.nickname?.trim() || entry?.name || row.displayName;
   const named = variety ? `${name} (variété ${variety.name})` : name;
-  return row.toPlant === 1 ? `${named} (choisie, pas encore semée ni plantée)` : named;
+  return row.toPlant === 1 ? `${named} (à semer ou planter : pas encore en terre)` : named;
 }
 
 /** Gestes que le catalogue prévoit pour une plante : ceux jamais faits sont signalés à Nora. */

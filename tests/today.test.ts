@@ -96,7 +96,7 @@ describe("liste « Aujourd'hui »", () => {
 
   it("une ligne par plante au plus, hors alertes météo", () => {
     const { items } = list(12);
-    const plantIds = items.flatMap((item) => (item.kind === "task" ? [item.task.resolved.plant.id] : item.kind === "season" ? [item.activity.subjectId] : item.group.cause === "thirst" ? item.group.decisions.map((decision) => decision.plantId) : []));
+    const plantIds = items.flatMap((item) => (item.kind === "task" ? [item.task.resolved.plant.id] : item.kind === "season" ? [item.activity.subjectId] : item.kind === "harvest-end" ? [item.resolved.plant.id] : item.group.cause === "thirst" ? item.group.decisions.map((decision) => decision.plantId) : []));
     expect(new Set(plantIds).size).toBe(plantIds.length);
   });
 

@@ -53,8 +53,9 @@ function inRange(iso: string, from: Date, to: Date) {
   return time >= from.getTime() && time < to.getTime();
 }
 
-export function weekSummary(plants: ResolvedPlant[], events: MaintenanceEvent[], photos: PlantPhoto[], now = new Date()): WeekSummary {
-  const plantIds = new Set(plants.map(({ plant }) => plant.id));
+/** `past` : les plantes qui ont quitté le balcon ; leurs gestes de la semaine comptent toujours. */
+export function weekSummary(plants: ResolvedPlant[], events: MaintenanceEvent[], photos: PlantPhoto[], now = new Date(), past: ResolvedPlant[] = []): WeekSummary {
+  const plantIds = new Set([...plants, ...past].map(({ plant }) => plant.id));
   const own = events.filter((event) => plantIds.has(event.plantId));
   const monday = startOfWeek(now);
   const nextMonday = addDays(monday, 7);
@@ -87,7 +88,7 @@ export function weekSummary(plants: ResolvedPlant[], events: MaintenanceEvent[],
   const gestures = thisWeek.length;
   const previousGestures = gesturesOnly.filter((event) => inRange(event.completedAt, previousMonday, monday)).length;
   const activeDays = days.filter((day) => day.gestures > 0).length;
-  const water = waterSaved(plants, own, monday, nextMonday);
+  const water = waterSaved([...plants, ...past], own, monday, nextMonday);
   const { title, message } = weekWords({ gestures, previousGestures, activeDays, top: weekPlants[0], plantCount: plants.length });
 
   return {

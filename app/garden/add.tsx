@@ -36,6 +36,7 @@ import {
   type Sunlight,
 } from "@/lib/plants/catalog";
 import { ADD_CHOICE_LABELS, addChoices, suggestionActionLabel, suggestionFor, type AddChoice } from "@/lib/plants/suggestions";
+import { guideLinkText } from "@/lib/plants/guide";
 
 const categories = Object.keys(CATEGORY_LABELS) as PlantCategory[];
 
@@ -201,7 +202,7 @@ export default function AddPlantScreen() {
               </View>
             )}
             <Pressable accessibilityRole="button" onPress={() => { const id = sheetEntry.id; setSheetId(null); router.push({ pathname: "/guide/[catalogId]", params: { catalogId: id, mode: "need" } }); }} style={({ pressed }) => [styles.needLink, pressed && styles.pressed]}>
-              <Text style={[styles.factText, { color: colors.primary }]}>🧺  Ce qu’il te faut pour la planter ›</Text>
+              <Text style={[styles.factText, { color: colors.primary }]}>🧺  {guideLinkText(sheetEntry, "need")}</Text>
             </Pressable>
             {countByCatalogId.get(sheetEntry.id) ? <Text style={[styles.meta, { color: colors.primary }]}>✓ Déjà sur ton balcon : tu peux en ajouter une autre.</Text> : null}
             {addChoices(sheetEntry, currentMonth).map((choice, position) => (

@@ -39,18 +39,18 @@ Tout se passe dans son GitHub Codespace (pas de Docker sur son PC).
 
 - `pnpm -s check`, `pnpm -s lint`, puis `TEST_DATABASE_URL=mysql://balco:balco@localhost:3306/balco_cal npx vitest run`
   (MariaDB locale : `service mariadb start` si elle s'est arrêtée, `apt-get install -y mariadb-server` si elle manque,
-  puis `DATABASE_URL=… npx drizzle-kit migrate` ; 490 tests à ce jour). Dans un conteneur
+  puis `DATABASE_URL=… npx drizzle-kit migrate` ; 524 tests à ce jour). Dans un conteneur
   neuf : `apt-get install -y mariadb-server`, `service mariadb start`, créer la base `balco_cal` et l'utilisateur
   `balco`/`balco`, puis `pnpm -s build && DATABASE_URL=mysql://balco:balco@localhost:3306/balco_cal node dist/migrate.mjs`.
 - `npx expo export --platform android` pour s'assurer que le bundle Android se construit.
 - **Tests de bout en bout** (à lancer quand le porteur le demande, et avant chaque grosse évolution) :
   `bash scripts/e2e.sh` (≈ 4 min : construit l'app web avec la simulation météo, migre la base, démarre
   le vrai serveur sur le port 3100, lance Playwright). `bash scripts/e2e.sh meteo` pour un seul fichier,
-  `E2E_SKIP_BUILD=1` pour ne pas reconstruire. Scénarios dans `e2e/` (42 aujourd'hui, avec un faux service d'IA pour Observer et Nora) : parcours
+  `E2E_SKIP_BUILD=1` pour ne pas reconstruire. Scénarios dans `e2e/` (44 aujourd'hui, avec un faux service d'IA pour Observer et Nora) : parcours
   (onboarding, écrans, cocher/Annuler, fête, catalogue, fiche d'une nouvelle plante, feuille du bas qui se ferme,
   suggestions de saison, Saisons rangé par type), météo (pluie + eau économisée, gel + Saisons,
   orage, vent, canicule, « Pas aujourd'hui », retour météo réelle), compte (code de connexion lu dans
-  `dist/e2e-server.log`, balcon retrouvé sur un 2ᵉ téléphone, le 1ᵉʳ prévenu « sauvegardé depuis un autre téléphone ») et vacances, rempotage (`10-rempotage`), gestes de suite (`11-gestes-de-suite`), Nora quand la connexion se coupe (`12-nora-erreur`), Saisons en octobre (`13-saisons-octobre`). Open-Meteo est simulé
+  `dist/e2e-server.log`, balcon retrouvé sur un 2ᵉ téléphone, le 1ᵉʳ prévenu « sauvegardé depuis un autre téléphone ») et vacances, rempotage (`10-rempotage`), gestes de suite (`11-gestes-de-suite`), Nora quand la connexion se coupe (`12-nora-erreur`), Saisons en octobre (`13-saisons-octobre`), après-récolte (`14-apres-recolte`). Open-Meteo est simulé
   (`e2e/helpers.ts`, `mockWeather`), le balcon est posé dans le stockage (`seedBalcony`). Les cases à
   cocher s'appellent « Marquer comme fait : <titre> ». Échecs : captures dans `dist/e2e-results/`.
 - Rendu web : `npx expo export --platform web`, serveur `node dist/standalone/index.mjs` avec
@@ -81,11 +81,13 @@ visuelle, retour immédiat.
 
 ## Où on en est
 
-**Nouvelle conversation ? Tout est validé sur son téléphone le 07/10 : l'onboarding et le pas-à-pas pour planter
-(fusionnés dans `main`, PR https://github.com/NLB44850/Balco/pull/28), puis le rempotage (R1 à R3), les 11 pas-à-pas
-(`docs/pas-a-pas.md`), Nora qui récupère sa réponse perdue et Saisons corrigé (repère de gel, suggestions). Prochaine
-étape : PR de ce bloc vers `main`, puis l'APK. Récap pour claude.ai : `docs/recap-pour-claude.md` + captures
-`docs/captures/` (refaites par `bash scripts/captures.sh`, spec `e2e/captures.spec.ts` sautée sans `CAPTURES=1`).**
+**Nouvelle conversation ? Tout est validé sur son téléphone et fusionné dans `main` : l'onboarding et le pas-à-pas
+pour planter (PR https://github.com/NLB44850/Balco/pull/28, 06/10), puis le rempotage (R1 à R3), les 11 pas-à-pas
+(`docs/pas-a-pas.md`), Nora qui récupère sa réponse perdue et Saisons corrigé (PR https://github.com/NLB44850/Balco/pull/29,
+07/10). Validé sur son téléphone le 08/10 : accords des textes, après-récolte et laitue pommée (point 5), PR https://github.com/NLB44850/Balco/pull/30 vers `main` ouverte le 08/10.
+Ensuite : fin de saison des annuelles (quand il le dira), l'APK (point 1). Récap pour claude.ai :
+`docs/recap-pour-claude.md` + captures `docs/captures/` (refaites par `bash scripts/captures.sh`, spec
+`e2e/captures.spec.ts` sautée sans `CAPTURES=1`).**
 
 **Récap pour reprendre (07/10)** : ce bloc fait foi ; les paragraphes plus bas sont l'historique (certains
 décrivent un état ancien, par exemple Saisons « à cocher » ou une fête plein écran à chaque récolte).
@@ -139,8 +141,32 @@ et les 10 étapes du test utilisateur du 04/10 (détail dans « Historique des l
    puis rempoter chaque plant) ; `guideTaskOf(activity)` donne la tâche du guide d'un geste ; route `task=thin|pinch|
    outdoors` (le geste vient de `followUpsFor`, « C'est éclairci / pincé », « Plants installés ») ; entrées : feuille du
    bas d'Aujourd'hui et lien de la fiche ; dessin `two-shoots` (26 en tout).
-5. **Après-récolte** des plantes récoltées en une fois (radis, carottes, salades pommées) : « Tout récolté ? » →
-   « Ressemer » ou « Libérer le pot ». À décider avec lui.
+5. **Accords et après-récolte (validés le 08/10)**, plan validé avec lui :
+   - Accords : `gender` / `plural` de chaque plante (valent pour `label`), outil `lib/plants/grammar.ts` (`byForm`,
+     `subjectPronoun`, `objectPronoun`, `objectBefore`, `agree`, `bareName`, `possessive`, `partitive`), utilisé par les
+     pas-à-pas, gestes de suite, « Installe-le », signe de rempotage, étapes de « Sa progression », liens de la fiche
+     (`guideLinkText`). Test `tests/grammar.test.ts` : chaque modèle aux 4 formes (`PHRASES`). Tout nouveau texte qui
+     parle de la plante passe par cet outil.
+   - Après-récolte : `lib/plants/harvest-once.ts` (11 plantes avec la laitue, crosnes retirés le 08/10, `harvestOnceDays` du catalogue, 21 j par défaut ; durées
+     prudentes tirées de tailles limites, les sources ne donnent pas de durée) ; logique `lib/garden/harvest-end.ts`
+     (question due à min(1ʳᵉ récolte de la saison + durée, fin des mois de récolte), une seule fois : jour gardé
+     `harvest-asked:<id>:<jour>` ; « Oui » = `harvest-done:<id>`, dans les `ReminderSnooze` du téléphone) ; `planDay` :
+     source `harvest-end` (question ou « Ton pot est libre », seule ligne de la plante, plus d'arrosage ni de rappel) ;
+     feuille `components/free-pot-sheet.tsx` (`useFreePot`, Aujourd'hui et fiche) ; message du bas avec « Oui » à la
+     place de « Annuler » (`actionLabel` de `ToastMessage`). Ressemer = même plante (`restartPlant` : `archiveSeason`
+     renomme `<id>:start`, `:thin`, `:outdoors`, `:pinch` en `…:<date>`, puis « à planter »). Pot vide ou autre plante :
+     `removePlant` ; les plantes retirées (`pastPlants` du contexte) comptent dans `computeStats`, `weekSummary` et
+     `celebrationFor`. E2e `14-apres-recolte`. Décidé le 08/10 : feuille fermée sans choisir = la ligne « Ton pot est
+     libre » reste le jour du « Oui », puis passe dans les gestes pas urgents repliés (`freePotIsQuiet`, `quiet` de
+     `TodayItem`, pas comptée dans ce qui reste à faire) ; réponses gardées sur le téléphone pour l'instant (à
+     synchroniser avant publication, `docs/avant-publication.md` § 4).
+   - Mois de semis revus le 08/10 avec 2 semenciers au moins (sa règle) : navet + juillet, chou-rave mars–juin,
+     oignons botte mars et août–sept., pak choï juil.–sept. (récolte sept.–nov.) ; détail dans `docs/sources-calendrier.md`.
+   - Laitue pommée ajoutée (`head-lettuce`, 101 plantes, calendrier vérifié dans `docs/sources-calendrier.md`, récoltée
+     en une fois, 14 j), photo ajoutée le 08/10 (Wikimedia, CC BY 2.0, vue sur son téléphone). Pour une prochaine plante : candidates dans le
+     Codespace, choix dans `choix.json`, puis `bash scripts/photos/ajouter-photo.sh <id>` (télécharge, allège si
+     `convert` existe, refait l'index, pousse ; sinon alléger dans la session : `convert … -resize '800x800>' -strip -quality 74`).
+   - Étape suivante, après sa validation : fin de saison des annuelles (« Ta saison de basilic est finie ? »).
 6. **Mémoire de Nora sur plusieurs jours** : il doit encore faire le test sur 2-3 jours (retour à recueillir).
 7. **Tester sans Codespace** (proposé, pas encore demandé) : version web hébergée qui se met à jour seule et APK
    construit par une action GitHub (EXPO_TOKEN qu'il enregistre lui-même dans les secrets du dépôt).
@@ -397,7 +423,7 @@ Points à ne pas oublier (à proposer au porteur au bon moment, noté le 30/09) 
 - Encore à valider sur son téléphone : la mémoire de Nora sur plusieurs jours (« Sa progression » et les
   petites victoires sont validées).
 - **Branche fusionnée dans `main`** : PR #1 (02/10, jusqu'à l'étape 6 de l'audit), #14 (04/10, étapes 7
-  à 11), #15 (04/10, mises à jour Dependabot), #22 (04/10, Saisons rangé par type, progression, Nora datée) et #27 (06/10, les 10 étapes du test utilisateur). Le travail continue
+  à 11), #15 (04/10, mises à jour Dependabot), #22 (04/10, Saisons rangé par type, progression, Nora datée), #27 (06/10, les 10 étapes du test utilisateur), #28 (06/10, accueil refait et pas-à-pas pour planter) et #29 (07/10, rempotage, 11 pas-à-pas, Nora, Saisons). Le travail continue
   sur `claude/eloquent-gates-g7xc6x` ; proposer une nouvelle PR vers `main` à la fin de chaque bloc validé. (La session clone le dépôt en partiel : `git fetch --unshallow` avant
   toute comparaison d'historique avec `main`.)
 - **Maintenance** (02/10, fusionné dans `main` par https://github.com/NLB44850/Balco/pull/2 et copié sur

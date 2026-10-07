@@ -137,10 +137,11 @@ Confiance : haute (sources concordantes), moyenne (nuances entre sources), faibl
 
 ## Chou-rave
 
-- Semis : mars–août (au chaud : mars) · Plantation : avr.–sept. · Récolte : juin–nov.
+- Semis : mars–juin (au chaud : mars) · Plantation : avr.–sept. · Récolte : juin–nov.
+- Corrigé le 08/10 (semenciers) : semis mars–août → mars–juin (Vilmorin Blanc hâtif de Vienne et Caillard : mars à juin ; seul Azur Star va jusqu'en juillet) ; plantation non vérifiée chez un semencier, inchangée
 - Corrigé le 02/10 : semis mars–avr., juil.–août → mars–août ; plantation avr.–mai, août–sept. → avr.–sept. ; récolte juin–juil., oct.–nov. → juin–nov. · confiance moyenne
 - Note : semis continus de mars à août (l'app saute mai-juin), donc plantation et récolte aussi en été ; semis de mars à l'abri
-- Sources : [jardiner-malin.fr](https://www.jardiner-malin.fr/fiche/chou-rave.html), [gerbeaud.com](https://www.gerbeaud.com/jardin/fiches/chou-rave.php), [gammvert.fr](https://www.gammvert.fr/conseils/conseils-de-jardinage/semer-et-planter-les-choux-raves)
+- Sources : [jardiner-malin.fr](https://www.jardiner-malin.fr/fiche/chou-rave.html), [gerbeaud.com](https://www.gerbeaud.com/jardin/fiches/chou-rave.php), [gammvert.fr](https://www.gammvert.fr/conseils/conseils-de-jardinage/semer-et-planter-les-choux-raves), [Vilmorin (castorama.fr)](https://www.castorama.fr/graines-de-chou-rave-variete-blanc-hatif-de-vienne-vilmorin-semis-de-mars-a-juin/3211500007421_CAFR.prd), [Caillard (bricomarche.com)](https://www.bricomarche.com/p/chou-rave-di-vienna-blanco/3539829804577)
 
 ## Ciboulette
 
@@ -333,6 +334,13 @@ Confiance : haute (sources concordantes), moyenne (nuances entre sources), faibl
 - Note : aucun (premiers fruits 2 à 3 ans après la plantation)
 - Sources : [jardiner-malin.fr](https://www.jardiner-malin.fr/fiche/kiwai.html), [promessedefleurs.com](https://www.promessedefleurs.com/fruitiers/petits-fruits/kiwi/kiwi-arguta-issai-autofertile.html), [homejardin.com](http://www.homejardin.com/kiwai/actinidia_arguta.html)
 
+## Laitue pommée
+
+- Semis : févr.–août (au chaud : févr.–mars) · Plantation : avr.–sept. · Récolte : mai–oct.
+- Ajoutée le 07/10 · confiance moyenne
+- Note : plantation en octobre écartée (la pomme n'a pas le temps de se former en pot) ; à couper dès que la pomme est ferme, elle monte vite en graine l'été
+- Sources : [truffaut.com](https://www.truffaut.com/salade-varietes-plantation-culture.html), [jardiner-malin.fr](https://www.jardiner-malin.fr/fiche/cultiver-laitue-en-pot-balcon-terrasse.html), [bricomarche.com (Batavia blonde de Paris)](https://www.bricomarche.com/p/laitue-batavia-blonde-de-paris/3211500007599), [bricomarche.com (Reine de mai)](https://www.bricomarche.com/p/laitue-pommee-reine-de-mai/3211500007650)
+
 ## Lavande
 
 - Semis : — · Plantation : mars–mai, sept.–oct. · Floraison : juin–août
@@ -414,10 +422,11 @@ Confiance : haute (sources concordantes), moyenne (nuances entre sources), faibl
 
 ## Navets
 
-- Semis : mars–mai, août–sept. · Plantation : — · Récolte : mai–juil., oct.–nov.
+- Semis : mars–mai, juil.–sept. · Plantation : — · Récolte : mai–juil., sept.–nov.
+- Corrigé le 08/10 (semenciers) : semis + juillet (Ferme de Sainte Marthe, Navet Marteau : mi-juillet à septembre ; Agrosemens, Navet des Vertus : fin mars à fin août ; Vilmorin, Boule d'or : juillet-août) ; récolte + septembre (6 à 12 semaines après un semis de juillet). Juillet convient aux navets ronds ou tardifs, pas au Milan rouge
 - Corrigé le 02/10 : semis mars–avr., août–sept. → mars–mai, août–sept. ; récolte mai–juin, oct.–nov. → mai–juil., oct.–nov. · confiance moyenne
 - Note : les navets de printemps se sèment jusqu'en mai-juin (récolte jusqu'en juillet-août) ; ajout de mai seulement, juin reste risqué au chaud sur un balcon (montée en graines, racines fibreuses)
-- Sources : [terrevivante.org](https://www.terrevivante.org/contenu/culture-navet-semer-entretenir-recolter/), [jardiner-malin.fr](https://www.jardiner-malin.fr/fiche/navet-primeur-printemps.html), [jardiner-malin.fr](https://www.jardiner-malin.fr/fiche/navet.html)
+- Sources : [terrevivante.org](https://www.terrevivante.org/contenu/culture-navet-semer-entretenir-recolter/), [jardiner-malin.fr](https://www.jardiner-malin.fr/fiche/navet-primeur-printemps.html), [jardiner-malin.fr](https://www.jardiner-malin.fr/fiche/navet.html), [Ferme de Sainte Marthe](https://www.fermedesaintemarthe.com/products/navet-marteau-ab), [Agrosemens](https://www.agrosemens.com/jardin-graine-bio-navet/107-semences-graines-semence-bio-navet.html), [Vilmorin (bricomarche.com)](https://www.bricomarche.com/p/navet-jaune-boule-d-or/3211500008008)
 
 ## Oca du Pérou
 
@@ -427,10 +436,11 @@ Confiance : haute (sources concordantes), moyenne (nuances entre sources), faibl
 
 ## Oignons botte
 
-- Semis : mars–sept. · Plantation : mars–sept. · Récolte : mai–oct.
+- Semis : mars, août–sept. · Plantation : mars–sept. · Récolte : mai–oct.
+- Corrigé le 08/10 (semenciers) : semis mars–sept. → mars, août–sept. (Vilmorin, Blanc hâtif de Paris : août-septembre ; Graines Baumaux, Blanc de Paris : août-septembre en pépinière, ou février-mars en place ; aucun semencier ne sème d'avril à juillet) ; février (Baumaux seul) non ajouté ; plantation non vérifiée chez un semencier, inchangée
 - Corrigé le 02/10 : semis mars–mai, août–sept. → mars–sept. · confiance moyenne
 - Note : semis possibles en continu de mars à août (l'app saute juin-juillet) ; le reste est conforme
-- Sources : [lepotiron.fr](https://www.lepotiron.fr/potiblog/nos-fiches/plantes-aromatiques/la-cebette-ou-ciboule/), [horticulteur.net](https://www.horticulteur.net/cebettes/), [jardiner-malin.fr](https://www.jardiner-malin.fr/fiche/oignon.html)
+- Sources : [lepotiron.fr](https://www.lepotiron.fr/potiblog/nos-fiches/plantes-aromatiques/la-cebette-ou-ciboule/), [horticulteur.net](https://www.horticulteur.net/cebettes/), [jardiner-malin.fr](https://www.jardiner-malin.fr/fiche/oignon.html), [Vilmorin (mr-bricolage.fr)](https://www.mr-bricolage.fr/graines-oignon-blanc-hatif-de-paris-vilmorin.html), [Graines Baumaux](https://www.graines-baumaux.fr/169815-oignon-blanc-de-paris.html)
 
 ## Origan
 
@@ -448,10 +458,11 @@ Confiance : haute (sources concordantes), moyenne (nuances entre sources), faibl
 
 ## Pak choï
 
-- Semis : avr.–mai, août–sept. · Plantation : — · Récolte : mai–juin, sept.–nov.
+- Semis : juil.–sept. · Plantation : — · Récolte : sept.–nov.
+- Corrigé le 08/10 (semenciers) : semis avr.–mai, août–sept. → juil.–sept. (Kokopelli : juillet à septembre, le printemps fait monter en graine ; Ferme de Sainte Marthe : mi-juillet à début septembre ; juillet-août aussi chez Graines Baumaux) ; récolte mai–juin retirée (45 à 60 jours après un semis d'été : septembre à novembre)
 - Corrigé le 02/10 : rien · confiance haute
 - Note : aucun (certaines sources ajoutent un semis de mars sous abri et de juillet ; non retenu, montée en graines rapide l'été)
-- Sources : [tomlejardinier.com](https://www.tomlejardinier.com/cultiver-son-potager/pak-choi), [monbalconpotager.com](https://monbalconpotager.com/cultiver-pak-choi/), [gensdujardin.fr](https://www.gensdujardin.fr/cultiver-le-bok-choi-semis-entretien-recolte/)
+- Sources : [tomlejardinier.com](https://www.tomlejardinier.com/cultiver-son-potager/pak-choi), [monbalconpotager.com](https://monbalconpotager.com/cultiver-pak-choi/), [gensdujardin.fr](https://www.gensdujardin.fr/cultiver-le-bok-choi-semis-entretien-recolte/), [Kokopelli](https://kokopelli-semences.fr/fr/p/L0579-Vibrant-Joy), [Ferme de Sainte Marthe](https://www.fermedesaintemarthe.com/en/blogs/comment-reussir-la-culture-de/reussir-la-culture-du-chou-asiatique), [Graines Baumaux](https://www.graines-baumaux.fr/193238-pak-choi-f1-misty.html)
 
 ## Persil
 
