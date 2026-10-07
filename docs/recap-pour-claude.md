@@ -98,7 +98,7 @@ Balco dit chaque jour quoi faire pour chaque plante du balcon, selon la saison e
 5. **Avant la publication** (pas encore décidée) : notifications envoyées par le serveur (Firebase), paiement Balco+
    (RevenueCat), mise à jour d'Expo (54 → 57), politique de confidentialité, fiche et compte Google Play.
 6. **Version suivante** : suivi d'une plante en photos dans le temps, balcon visuel (plan, emplacement, exposition),
-   récoltes et recettes, défis entre jardiniers.
+   récoltes et recettes, défis entre jardiniers, rentrer une plante pour l'hiver (piment, poivron, physalis).
 
 ## Décisions déjà prises (à ne pas remettre en question sans moi)
 

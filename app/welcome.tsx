@@ -35,7 +35,7 @@ import {
 } from "@/lib/garden/onboarding";
 import { getCatalogPlant, searchCatalog, type CatalogPlant, type OnboardingAnswers } from "@/lib/plants/catalog";
 import { seasonalStarters } from "@/lib/plants/suggestions";
-import { nextSpringReminder, SPRING_REMINDER_SOURCE, wishNames } from "@/lib/garden/spring";
+import { nextSpringReminder, SPRING_REMINDER_SOURCE, springReminderContent } from "@/lib/garden/spring";
 import { climateZoneFor } from "@/lib/plants/climate";
 import { notificationsUnavailableReason } from "@/lib/notifications/module";
 import { activateReminders, NOTIFICATIONS_DENIED } from "@/lib/reminders/activate";
@@ -194,7 +194,7 @@ export default function OnboardingScreen() {
     // Les envies du printemps : une notification le 1er mars à 9 h, si les rappels sont activés.
     if (springWishes.length > 0) {
       const entries = springWishes.map((id) => getCatalogPlant(id)).filter((entry): entry is CatalogPlant => Boolean(entry));
-      void scheduleDatedReminder(SPRING_REMINDER_SOURCE, { title: "C’est le printemps sur ton balcon 🌱", body: `C’est le moment : ${wishNames(entries)}.` }, nextSpringReminder(new Date())).catch(() => undefined);
+      void scheduleDatedReminder(SPRING_REMINDER_SOURCE, springReminderContent(entries), nextSpringReminder(new Date())).catch(() => undefined);
     }
     await garden.reloadOnboarding();
     leave();

@@ -13,6 +13,7 @@ import {
   seasonQuestionDate,
   seasonQuestionDue,
 } from "../lib/garden/harvest-end";
+import { addSpringWish } from "../lib/garden/spring";
 import { PLANT_CATALOG } from "../lib/plants/catalog";
 import { decideReminder, type MaintenanceEvent, type WeatherSnapshot } from "../lib/reminders/reminder-engine";
 import { groupReminders } from "../lib/reminders/reminder-groups";
@@ -151,3 +152,13 @@ describe("après « Oui » : ton pot est libre", () => {
     expect(clearHarvestEnd(snoozes, "p")).toEqual([]);
   });
 });
+
+describe("me le reproposer au printemps", () => {
+  it("la plante rejoint les envies du printemps, une seule fois", () => {
+    expect(addSpringWish(undefined, "basil")).toEqual(["basil"]);
+    expect(addSpringWish(["tomato"], "basil")).toEqual(["tomato", "basil"]);
+    const wishes = ["basil"];
+    expect(addSpringWish(wishes, "basil")).toBe(wishes);
+  });
+});
+

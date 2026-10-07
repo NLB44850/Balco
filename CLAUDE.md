@@ -175,7 +175,8 @@ et les 10 étapes du test utilisateur du 04/10 (détail dans « Historique des l
    disent « Bientôt »), Expo 54 → 57, politique de confidentialité, fiche et compte Play Store
    (`docs/avant-publication.md`).
 9. **Version suivante** (feuille de route) : suivi photo d'une plante dans le temps, balcon visuel (plan,
-   emplacement, exposition), récoltes et recettes, défis communautaires.
+   emplacement, exposition), récoltes et recettes, défis communautaires, rentrer une plante pour l'hiver (piment,
+   poivron, physalis ; décidé le 08/10).
 
 Fait (validé sur son téléphone) :
 - Rappels intelligents (priorité 1) : messages clairs, Fait / Dans 3 h / Pas aujourd'hui, alertes

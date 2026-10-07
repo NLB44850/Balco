@@ -6,6 +6,12 @@ import { mockWeather, open, seedBalcony, trackErrors } from "./helpers";
 
 const basil = { id: "basil-e2e", catalogId: "basil", addedAt: new Date(2027, 3, 1).toISOString() };
 const sown = { id: "basil-e2e:start", plantId: "basil-e2e", type: "observation", completedAt: new Date(2027, 3, 10, 9).toISOString(), source: "manual", note: "Sème le basilic au chaud" };
+/** Les envies du printemps gardées dans les réponses de l'accueil. */
+async function springWishes(page: Parameters<typeof seedBalcony>[0]) {
+  const stored = await page.evaluate(() => localStorage.getItem("balco.onboarding.preferences.v1"));
+  return (JSON.parse(stored ?? "{}") as { springWishes?: string[] }).springWishes ?? [];
+}
+
 const seed = (page: Parameters<typeof seedBalcony>[0]) => seedBalcony(page, { plants: [], extra: { "balco.garden.plants.v1": JSON.stringify([basil]), "balco.garden.events.v1": JSON.stringify([sown]) } });
 
 test("basilic en octobre : « Ta saison de basilic est finie ? » → Oui → pot au repos, avec le conseil", async ({ page }) => {
@@ -28,9 +34,12 @@ test("basilic en octobre : « Ta saison de basilic est finie ? » → Oui → po
   await expect(sheet.getByText("Coupe les tiges au ras de la terre et laisse les racines : elles nourrissent le pot.", { exact: false })).toBeVisible();
   // En octobre, trop tard pour ressemer : le pot passe l'hiver au repos.
   await expect(sheet.getByRole("button", { name: /^Ressemer/ })).toHaveCount(0);
+  // « Me le reproposer au printemps », cochée d'office : le basilic rejoint les envies du printemps.
+  await expect(sheet.getByRole("checkbox", { name: "Me le reproposer au printemps" })).toBeChecked();
   await sheet.getByRole("button", { name: "Laisser le pot au repos jusqu’au printemps" }).click();
   await expect(page.getByText("Pot au repos : tes récoltes restent dans ta progression")).toBeVisible();
   await expect(page.getByText("Ta saison de basilic est finie ?")).toHaveCount(0);
+  expect(await springWishes(page)).toEqual(["basil"]);
   expect(errors).toEqual([]);
 });
 
@@ -52,5 +61,15 @@ test("soir de gel en septembre : « Récolte tout ton basilic avant cette nuit �
   await page.reload();
   await expect(page.getByText("Ta saison de basilic est finie ?")).toBeVisible({ timeout: 15_000 });
   await expect(page.getByText("Récolte tout ton basilic avant cette nuit")).toHaveCount(0);
+
+  // Oui, puis « Laisser le pot vide » en décochant « Me le reproposer au printemps » : pas d'envie ajoutée.
+  await page.getByRole("button", { name: "Ta saison de basilic est finie ?, détail" }).click();
+  const sheet = page.getByRole("dialog");
+  await sheet.getByRole("button", { name: "Oui, la saison est finie" }).click();
+  await sheet.getByRole("checkbox", { name: "Me le reproposer au printemps" }).click();
+  await expect(sheet.getByRole("checkbox", { name: "Me le reproposer au printemps" })).not.toBeChecked();
+  await sheet.getByRole("button", { name: "Laisser le pot vide" }).click();
+  await expect(page.getByText("Pot libéré : tes récoltes restent dans ta progression")).toBeVisible();
+  expect(await springWishes(page)).toEqual([]);
   expect(errors).toEqual([]);
 });
