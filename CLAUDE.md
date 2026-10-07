@@ -85,7 +85,7 @@ visuelle, retour immédiat.
 pour planter (PR https://github.com/NLB44850/Balco/pull/28, 06/10), puis le rempotage (R1 à R3), les 11 pas-à-pas
 (`docs/pas-a-pas.md`), Nora qui récupère sa réponse perdue et Saisons corrigé (PR https://github.com/NLB44850/Balco/pull/29,
 07/10). Validé sur son téléphone le 08/10 : accords des textes, après-récolte et laitue pommée (point 5), fusionnés dans `main` (PR https://github.com/NLB44850/Balco/pull/30, 08/10).
-Livré le 08/10, à valider sur son téléphone : fin de saison des annuelles (point 5 bis). Ensuite : l'APK (point 1). Récap pour claude.ai :
+Validé sur son téléphone le 08/10 : fin de saison des annuelles (point 5 bis), PR vers `main` à proposer. Ensuite : l'APK (point 1). Récap pour claude.ai :
 `docs/recap-pour-claude.md` + captures `docs/captures/` (refaites par `bash scripts/captures.sh`, spec
 `e2e/captures.spec.ts` sautée sans `CAPTURES=1`).**
 
@@ -166,7 +166,7 @@ et les 10 étapes du test utilisateur du 04/10 (détail dans « Historique des l
      en une fois, 14 j), photo ajoutée le 08/10 (Wikimedia, CC BY 2.0, vue sur son téléphone). Pour une prochaine plante : candidates dans le
      Codespace, choix dans `choix.json`, puis `bash scripts/photos/ajouter-photo.sh <id>` (télécharge, allège si
      `convert` existe, refait l'index, pousse ; sinon alléger dans la session : `convert … -resize '800x800>' -strip -quality 74`).
-5 bis. **Fin de saison des annuelles (livrée le 08/10, à valider)**, plan et décisions validés avec lui le 08/10 :
+5 bis. **Fin de saison des annuelles (validée le 08/10)**, plan et décisions validés avec lui le 08/10 :
    - 52 annuelles (toutes sauf micro-pousses et plantes récoltées en une fois) : `endsWithSeason` dans
      `lib/plants/season-end.ts`. « Ta saison de basilic est finie ? » (même phrase pour toutes, `seasonQuestion`, `ofBare`)
      remplace la ligne à la fin de la période de récolte ou de floraison en cours (`seasonQuestionDate`,
