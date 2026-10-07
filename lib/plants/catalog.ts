@@ -1,5 +1,6 @@
 import type { MaintenanceTaskType } from "../reminders/reminder-engine";
 import { fertilizeTask } from "./fertilizing";
+import { REPOTTING } from "./repotting";
 import { SOWING } from "./sowing";
 import { PLANT_VARIETIES } from "./varieties";
 
@@ -157,7 +158,8 @@ function plant({ extraTasks = [], wateringMonths, wateringInstruction, varieties
   return {
     ...data,
     // Une vivace se rempote à la reprise de végétation, avant la pousse de printemps.
-    repotMonths: repotMonths ?? (data.perennial ? [3, 4] : []),
+    // Les mois vérifiés (lib/plants/repotting.ts) ; à défaut, la reprise de printemps.
+    repotMonths: (REPOTTING[data.id]?.months as Month[] | undefined) ?? repotMonths ?? (data.perennial ? [3, 4] : []),
     varieties: varieties ?? PLANT_VARIETIES[data.id] ?? [],
     indoorSowMonths: (SOWING[data.id]?.indoor ?? []).filter((month) => data.sowMonths.includes(month)),
     sources: SOWING[data.id]?.sources ?? [],

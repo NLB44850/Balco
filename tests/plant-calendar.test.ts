@@ -33,18 +33,75 @@ describe("calendar activities", () => {
 
 import { activityDone, activityEventId, describeMonths, eventForActivity, seasonActivities, seasonalToDo, SEASONS, upcomingSeasons } from "../lib/plants/calendar";
 import { adaptToClimate, climateSummary, climateZoneFor } from "../lib/plants/climate";
-import { sessionEventId } from "../lib/garden/garden-logic";
+import { potHistory, sessionEventId } from "../lib/garden/garden-logic";
+import { skippedRepots, skipRepotThisYear, unskipRepot } from "../lib/garden/repot-skip";
+import { GENERIC_REPOT_SIGN, potSizes } from "../lib/plants/calendar";
 
-describe("rempotage", () => {
-  it("propose de rempoter les vivaces au printemps, pas les annuelles", () => {
-    const march = calendarActivities([subject("thyme"), subject("basil")], 3);
-    expect(march.filter((activity) => activity.kind === "repot").map((activity) => activity.title)).toEqual(["Rempote le thym"]);
-    expect(march.find((activity) => activity.kind === "repot")?.eventType).toBe("repotting");
+/** Une plante sur le balcon, dans son pot depuis cette date. */
+const potted = (catalogId: string, since: Date, id = catalogId, extra: { lastTopdress?: string; repots?: number; repotSkippedUntil?: string } = {}) => ({ ...subject(catalogId, id), addedAt: since.toISOString(), inPotSince: since.toISOString(), ...extra });
+const MARCH_2027 = new Date(2027, 2, 10);
+const repots = (activities: ReturnType<typeof calendarActivities>) => activities.filter((activity) => activity.kind === "repot").map((activity) => activity.title);
+
+describe("rempotage selon le besoin", () => {
+  it("jamais la première saison, ni pour une idée de plante, ni pour une annuelle", () => {
+    // Le thym arrivé en octobre : rien en mars (5 mois dans son pot).
+    expect(repots(calendarActivities([potted("thyme", new Date(2026, 9, 1))], 3, { now: MARCH_2027 }))).toEqual([]);
+    expect(repots(calendarActivities([subject("thyme"), potted("basil", new Date(2025, 3, 1))], 3, { now: MARCH_2027 }))).toEqual([]);
   });
 
-  it("suit les exceptions du catalogue (ail des ours à l'automne)", () => {
-    expect(calendarActivities([subject("wild-garlic")], 9).some((activity) => activity.kind === "repot")).toBe(true);
-    expect(calendarActivities([subject("wild-garlic")], 3).some((activity) => activity.kind === "repot")).toBe(false);
+  it("à son rythme : la menthe chaque année, le thym tous les 2 à 4 ans, la terre du dessus entre-temps", () => {
+    const spring2026 = new Date(2026, 2, 15);
+    expect(repots(calendarActivities([potted("mint", spring2026)], 3, { now: MARCH_2027 }))).toEqual(["Rempote la menthe"]);
+    expect(repots(calendarActivities([potted("thyme", spring2026)], 3, { now: MARCH_2027 }))).toEqual(["Change la terre du dessus du thym"]);
+    expect(repots(calendarActivities([potted("thyme", new Date(2025, 2, 15))], 3, { now: MARCH_2027 }))).toEqual(["Rempote le thym"]);
+    // Terre changée il y a moins de 10 mois : rien de plus.
+    expect(repots(calendarActivities([potted("thyme", spring2026, "thyme", { lastTopdress: new Date(2026, 9, 1).toISOString() })], 3, { now: MARCH_2027 }))).toEqual([]);
+  });
+
+  it("suit les mois vérifiés de chaque plante (ail des ours à l'automne)", () => {
+    const old = new Date(2023, 8, 1);
+    expect(repots(calendarActivities([potted("wild-garlic", old)], 9, { now: new Date(2026, 8, 10) }))).toEqual(["Rempote l’ail des ours"]);
+    expect(repots(calendarActivities([potted("wild-garlic", old)], 1, { now: new Date(2027, 0, 10) }))).toEqual([]);
+  });
+
+  it("un rempotage noté remet le compteur à zéro, la terre du dessus non", () => {
+    const thyme = { id: "t", catalogId: "thyme", addedAt: new Date(2024, 2, 1).toISOString() };
+    const repot = { id: "t:calendar-repot:2026-03", plantId: "t", type: "repotting" as const, completedAt: new Date(2026, 2, 10).toISOString(), source: "manual" as const };
+    const topdress = { id: "t:calendar-topdress:2026-09", plantId: "t", type: "repotting" as const, completedAt: new Date(2026, 8, 10).toISOString(), source: "manual" as const };
+    expect(potHistory(thyme, [repot, topdress])).toEqual({ inPotSince: repot.completedAt, lastTopdress: topdress.completedAt, lastRepot: repot.completedAt, repots: 1 });
+    // Noté ce mois-ci : le geste reste (coché), il ne disparaît pas.
+    const now = new Date(2026, 2, 20);
+    expect(repots(calendarActivities([{ ...potted("thyme", new Date(2024, 2, 1), "t"), ...potHistory(thyme, [repot]) }], 3, { now }))).toEqual(["Rempote le thym"]);
+    expect(repots(calendarActivities([{ ...potted("thyme", new Date(2025, 2, 1), "t"), lastTopdress: new Date(2026, 2, 12).toISOString() }], 3, { now }))).toEqual(["Change la terre du dessus du thym"]);
+  });
+
+  it("donne le signe à vérifier et le pot suivant, un tiers plus grand à chaque rempotage", () => {
+    const old = new Date(2025, 2, 15);
+    const [sage] = calendarActivities([potted("sage", old)], 3, { now: MARCH_2027 }).filter((activity) => activity.kind === "repot");
+    const liters = getCatalogPlant("sage")!.potLiters;
+    expect(sage.description).toContain("racines sortent par les trous du pot, ta sauge");
+    expect(sage.description).toContain(`Si son pot fait environ ${liters} L, prends-en un d’environ ${potSizes({ potLiters: liters }, 0).next} L`);
+    // Sans signe propre à la plante : le signe commun.
+    const [oregano] = calendarActivities([potted("oregano", old)], 3, { now: MARCH_2027 }).filter((activity) => activity.kind === "repot");
+    expect(oregano.description).toContain(GENERIC_REPOT_SIGN);
+    // Déjà rempotée deux fois : le pot a grandi.
+    expect(potSizes({ potLiters: 10 }, 0)).toEqual({ now: 10, next: 13, nextWidthCm: 26 });
+    expect(potSizes({ potLiters: 10 }, 2)).toEqual({ now: 18, next: 24, nextWidthCm: 32 });
+    expect(potSizes({ potLiters: 1 }, 0).next).toBe(2);
+  });
+
+  it("« Pas besoin cette année » : la terre du dessus à la place, le rempotage revient l'an prochain", () => {
+    const old = new Date(2025, 2, 15);
+    const snoozes = skipRepotThisYear([], "thyme", MARCH_2027);
+    const until = skippedRepots(snoozes, MARCH_2027).get("thyme");
+    expect(until).toBe(new Date(2028, 0, 1).toISOString());
+    expect(repots(calendarActivities([potted("thyme", old, "thyme", { repotSkippedUntil: until })], 3, { now: MARCH_2027 }))).toEqual(["Change la terre du dessus du thym"]);
+    // La menthe ne change pas que la terre du dessus : rien cette année.
+    expect(repots(calendarActivities([potted("mint", old, "mint", { repotSkippedUntil: until })], 3, { now: MARCH_2027 }))).toEqual([]);
+    // L'an prochain (Saisons regarde mars 2028) : le rempotage revient.
+    expect(repots(calendarActivities([potted("thyme", old, "thyme", { repotSkippedUntil: until })], 3, { now: new Date(2027, 11, 10) }))).toEqual(["Rempote le thym"]);
+    expect(skippedRepots(unskipRepot(snoozes, "thyme"), MARCH_2027).size).toBe(0);
+    expect(skippedRepots(snoozes, new Date(2028, 0, 2)).size).toBe(0);
   });
 });
 
@@ -83,7 +140,18 @@ describe("climat local", () => {
     const climate = climateZoneFor(43.3, 5.37, 20);
     expect(calendarActivities([subject("cherry-tomato")], 4, { climate }).map((activity) => activity.kind)).toContain("plant");
     expect(calendarActivities([subject("cherry-tomato")], 4).map((activity) => activity.kind)).not.toContain("plant");
-    expect(climateSummary(climate)).toBe("Climat méditerranéen · dernières gelées vers mi-mars. Semis et plantations frileuses : un mois plus tôt.");
+    expect(climateSummary(climate, new Date(2027, 1, 10))).toBe("Climat méditerranéen · gelées possibles jusqu’à mi-mars. Semis et plantations frileuses : un mois plus tôt.");
+  });
+
+  it("le repère de gel suit la saison : premières gelées à l'automne, plus de gel l'été, dernières au printemps", () => {
+    const nantes = climateZoneFor(47.22, -1.55, 20);
+    expect(climateSummary(nantes, new Date(2026, 9, 7))).toBe("Climat océanique · premières gelées vers fin novembre.");
+    expect(climateSummary(nantes, new Date(2026, 11, 7))).toBe("Climat océanique · gelées possibles jusqu’à début avril.");
+    expect(climateSummary(nantes, new Date(2027, 2, 7))).toBe("Climat océanique · gelées possibles jusqu’à début avril.");
+    expect(climateSummary(nantes, new Date(2027, 5, 7))).toBe("Climat océanique · plus de gel à craindre avant l’automne.");
+    // Strasbourg en octobre : les premières gelées arrivent ce mois-ci.
+    expect(climateSummary(climateZoneFor(48.57, 7.75, 140), new Date(2026, 9, 7))).toBe("Climat continental · premières gelées vers fin octobre.");
+    expect(climateSummary(climateZoneFor(48.57, 7.75, 140), new Date(2026, 10, 7))).toBe("Climat continental · gelées possibles jusqu’à mi-mai (saints de glace).");
   });
 });
 
@@ -97,7 +165,7 @@ describe("lien avec l'accueil", () => {
 
   it("un rempotage noté reste fait tout le mois", () => {
     const march = new Date(2026, 2, 3);
-    const repot = calendarActivities([subject("thyme", "thyme-1")], 3).find((activity) => activity.kind === "repot")!;
+    const repot = calendarActivities([potted("mint", new Date(2025, 2, 1), "thyme-1")], 3, { now: new Date(2026, 2, 3) }).find((activity) => activity.kind === "repot")!;
     const event = eventForActivity(repot, march);
     expect(activityDone(repot, [event], new Date(2026, 2, 28))).toBe(true);
     expect(activityDone(repot, [event], new Date(2027, 2, 3))).toBe(false);
@@ -105,11 +173,11 @@ describe("lien avec l'accueil", () => {
 
   it("liste pour l'accueil les gestes de saison pas encore faits", () => {
     const march = new Date(2026, 2, 10);
-    const subjects = [subject("thyme", "thyme-1"), subject("cherry-tomato", "tomato-1")];
+    const subjects = [potted("thyme", new Date(2024, 2, 1), "thyme-1"), subject("cherry-tomato", "tomato-1")];
     const todo = seasonalToDo(subjects, [], march);
-    expect(todo.map((activity) => activity.title)).toEqual(["Rempote le thym", "Sème le thym au chaud", "Sème les tomates cerises au chaud"]);
+    expect(todo.map((activity) => activity.title)).toEqual(["Rempote le thym", "Sème les tomates cerises au chaud"]);
     const done = eventForActivity(todo[0], march);
-    expect(seasonalToDo(subjects, [done], march).map((activity) => activity.title)).toEqual(["Sème le thym au chaud", "Sème les tomates cerises au chaud"]);
+    expect(seasonalToDo(subjects, [done], march).map((activity) => activity.title)).toEqual(["Sème les tomates cerises au chaud"]);
   });
 });
 

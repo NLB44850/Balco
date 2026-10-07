@@ -23,7 +23,8 @@ import { Text } from "@/components/ui/typography";
 import { useLocalWeather } from "@/hooks/use-local-weather";
 import { useColors } from "@/hooks/use-colors";
 import { useGarden } from "@/lib/garden/garden-context";
-import { careProfileFor, dayKey, plantDisplayName, type ResolvedPlant } from "@/lib/garden/garden-logic";
+import { skippedRepots } from "@/lib/garden/repot-skip";
+import { careProfileFor, dayKey, plantDisplayName, potHistory, type ResolvedPlant } from "@/lib/garden/garden-logic";
 import {
   ACTIVITY_KIND_LABELS,
   activityDoneLabel,
@@ -92,11 +93,20 @@ export default function CalendarScreen() {
   const showingIdeas = resolvedPlants.length === 0;
   // Les idées : seulement ce qui se sème ou se plante ce mois-ci, dans le climat de la ville.
   const starters = useMemo(() => (showingIdeas ? seasonalStarters(onboarding, { month: currentMonth, climate, limit: 4 }) : null), [climate, currentMonth, onboarding, showingIdeas]);
+  // Les alertes déjà traitées sur Aujourd'hui (« Fait », « Pas aujourd'hui », « Dans 3 h ») ne s'affichent plus ici.
+  const [snoozes, setSnoozes] = useState<ReminderSnooze[]>([]);
+  useEffect(() => {
+    void loadReminderSnoozes().then(setSnoozes);
+    return subscribeReminderSnoozes(setSnoozes);
+  }, []);
+
+  // « Pas besoin cette année » (Aujourd'hui) : le rempotage laisse la place à la terre du dessus.
+  const repotSkips = useMemo(() => skippedRepots(snoozes, now), [now, snoozes]);
   const subjects = useMemo<CalendarSubject[]>(
     () => starters
       ? starters.plants.map((entry) => ({ id: entry.id, entry, displayName: entry.name }))
-      : resolvedPlants.map((resolved) => ({ id: resolved.plant.id, entry: resolved.entry, displayName: plantDisplayName(resolved), addedAt: resolved.plant.addedAt })),
-    [resolvedPlants, starters],
+      : resolvedPlants.map((resolved) => ({ id: resolved.plant.id, entry: resolved.entry, displayName: plantDisplayName(resolved), addedAt: resolved.plant.addedAt, toPlant: resolved.plant.toPlant, ...potHistory(resolved.plant, events), repotSkippedUntil: repotSkips.get(resolved.plant.id) })),
+    [events, repotSkips, resolvedPlants, starters],
   );
   const resolvedById = useMemo(() => new Map<string, ResolvedPlant>(resolvedPlants.map((resolved) => [resolved.plant.id, resolved])), [resolvedPlants]);
   const activeFilter = selectedPlant === "all" || subjects.some((subject) => subject.id === selectedPlant) ? selectedPlant : "all";
@@ -122,17 +132,12 @@ export default function CalendarScreen() {
   const groups = grouped ? groupActivities(ordered) : [];
   const sheetGroup = useMemo(() => (groupKey ? groupActivities(currentActivities).find((group) => group.key === groupKey) ?? null : null), [currentActivities, groupKey]);
 
-  // Les alertes déjà traitées sur Aujourd'hui (« Fait », « Pas aujourd'hui », « Dans 3 h ») ne s'affichent plus ici.
-  const [snoozes, setSnoozes] = useState<ReminderSnooze[]>([]);
-  useEffect(() => {
-    void loadReminderSnoozes().then(setSnoozes);
-    return subscribeReminderSnoozes(setSnoozes);
-  }, []);
-
   // Quoi semer ou planter le mois choisi, parmi ce qui convient au balcon et qu'on n'a pas encore.
   // Elles changent chaque jour (même tirage que l'« Idée du mois » d'Aujourd'hui).
   const suggestionOptions = useMemo(() => ({ month: selectedMonth, climate, ownedCatalogIds: resolvedPlants.map((resolved) => resolved.entry.id), limit: 4, seed: dayKey(now) }), [climate, now, resolvedPlants, selectedMonth]);
   const suggestions = useMemo(() => (showingIdeas ? [] : seasonalSuggestions(onboarding, suggestionOptions)), [onboarding, showingIdeas, suggestionOptions]);
+  // Rien à proposer parce que tout ce qui convient est déjà sur le balcon (pas un mois calme).
+  const allOwned = useMemo(() => suggestions.length === 0 && !showingIdeas && seasonalSuggestions(onboarding, { ...suggestionOptions, ownedCatalogIds: [] }).length > 0, [onboarding, showingIdeas, suggestionOptions, suggestions.length]);
   const nextMonth = useMemo(() => (suggestions.length === 0 && !showingIdeas ? nextSuggestionMonth(onboarding, suggestionOptions) : null), [onboarding, showingIdeas, suggestionOptions, suggestions.length]);
   const seasonIdeas = useMemo(
     () => (view === "season" && !showingIdeas ? seasonSuggestions(onboarding, { months: seasonMonths, climate, ownedCatalogIds: suggestionOptions.ownedCatalogIds, limit: 4, seed: dayKey(now) }) : []),
@@ -281,7 +286,7 @@ export default function CalendarScreen() {
         {ordered.length === 0 && <Text style={[styles.text, styles.empty, { color: colors.muted }]}>Rien de prévu {periodLabel} : tes plantes se reposent.{view === "month" ? " Regarde les mois suivants." : ""}</Text>}
 
         {view === "month" && !showingIdeas && (
-          <SeasonalSuggestions month={selectedMonth} current={selectedMonth === currentMonth} suggestions={suggestions} nextMonth={nextMonth} onAdd={(suggestion) => void addSuggestion(suggestion)} onOpen={setSheetSuggestion} />
+          <SeasonalSuggestions month={selectedMonth} current={selectedMonth === currentMonth} suggestions={suggestions} nextMonth={nextMonth} allOwned={allOwned} onAdd={(suggestion) => void addSuggestion(suggestion)} onOpen={setSheetSuggestion} />
         )}
         {view === "season" && !showingIdeas && (
           <SeasonalSuggestions month={seasonMonths[0]} heading={`À semer ou planter ${SEASON_IN[season.id]}`} periodName={SEASON_IN[season.id]} showMonth current={season.id === seasons[0].id} suggestions={seasonIdeas} onAdd={(suggestion) => void addSuggestion(suggestion)} onOpen={setSheetSuggestion} />

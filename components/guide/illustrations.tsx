@@ -319,6 +319,59 @@ const DRAWINGS: Record<IllustrationId, () => ReactNode> = {
       <Path d="M100 1 L 100 -2 M 113 14 L 116 14 M 109 5 L 111 3" fill="none" {...thin} />
     </>
   ),
+  "roots-out": () => (
+    <>
+      <G transform="translate(0 -8)">
+        <Pot soilTop={68} />
+        <Plant x={60} y={68} size={0.8} />
+        {/* Les racines passent par les trous du fond. */}
+        <Path d="M46 104 C 44 110 50 112 46 118 M 56 104 C 58 110 52 114 56 120 M 66 104 C 64 109 70 112 66 118 M 74 104 C 78 108 74 112 80 116" fill="none" {...thin} />
+      </G>
+      <Arrow d="M104 84 C 100 96 94 104 86 108" head="M88 101 L 86 108 L 93 108" />
+    </>
+  ),
+  "loosen-roots": () => (
+    <>
+      {/* La motte sortie du pot : les racines tournent autour, on en écarte quelques-unes. */}
+      <Path d="M38 62 L 82 62 L 78 100 L 42 100 Z" fill={SOIL} {...stroke} />
+      <Path d="M42 74 C 54 80 66 80 80 74 M 41 86 C 54 92 66 92 79 86 M 42 97 C 54 100 66 100 78 97" fill="none" {...thin} />
+      <Plant x={60} y={62} size={0.8} />
+      <Path d="M41 90 C 32 94 26 100 20 106 M 79 90 C 88 94 94 100 100 106 M 52 100 C 50 106 46 110 44 116 M 68 100 C 70 106 74 110 76 116" fill="none" {...thin} />
+      <Arrow d="M30 80 L 14 88" head="M16 81 L 14 88 L 21 90" />
+      <Arrow d="M90 80 L 106 88" head="M104 81 L 106 88 L 99 90" />
+    </>
+  ),
+  "scrape-top": () => (
+    <>
+      <Pot soilTop={68} />
+      <Plant x={60} y={68} size={0.8} />
+      {/* Les 5 cm du dessus : la vieille terre qu'on retire. */}
+      <Line x1={36} y1={78} x2={84} y2={78} {...thin} strokeDasharray="4 4" />
+      <Line x1={98} y1={68} x2={98} y2={78} {...thin} />
+      <Line x1={95} y1={68} x2={101} y2={68} {...thin} />
+      <Line x1={95} y1={78} x2={101} y2={78} {...thin} />
+      <G transform="rotate(35 86 48)">
+        <Line x1={86} y1={20} x2={86} y2={52} {...stroke} />
+        <Path d="M80 52 L 92 52 M 80 52 L 80 64 M 84 52 L 84 64 M 88 52 L 88 64 M 92 52 L 92 64" fill="none" {...thin} />
+      </G>
+      {[[30, 54], [24, 60], [34, 48]].map(([cx, cy]) => <Circle key={`${cx}-${cy}`} cx={cx} cy={cy} r={2.4} fill={SOIL} {...thin} />)}
+      <Arrow d="M50 44 C 42 42 38 46 36 50" head="M35 43 L 36 50 L 42 48" />
+    </>
+  ),
+  "two-shoots": () => (
+    <>
+      <Pot soilTop={70} />
+      {/* La tige pincée (coupe plate) et, sous la coupe, deux nouvelles pousses de part et d'autre. */}
+      <Line x1={60} y1={70} x2={60} y2={28} {...stroke} />
+      <Line x1={55} y1={28} x2={65} y2={28} {...stroke} />
+      <Path d="M60 56 C 48 56 42 48 44 42 C 52 43 58 50 60 56 Z" fill={LEAF} {...thin} />
+      <Path d="M60 56 C 72 56 78 48 76 42 C 68 43 62 50 60 56 Z" fill={LEAF} {...thin} />
+      <Path d="M60 36 C 52 30 44 30 38 22" fill="none" {...thin} />
+      <Path d="M60 36 C 68 30 76 30 82 22" fill="none" {...thin} />
+      <Path d="M38 22 C 30 22 28 14 32 10 C 38 12 40 18 38 22 Z" fill={LEAF} {...thin} />
+      <Path d="M82 22 C 90 22 92 14 88 10 C 82 12 80 18 82 22 Z" fill={LEAF} {...thin} />
+    </>
+  ),
 };
 
 export function GuideIllustration({ id, size = 120 }: { id: IllustrationId; size?: number }) {

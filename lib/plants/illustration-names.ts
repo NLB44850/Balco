@@ -21,7 +21,11 @@ export type IllustrationId =
   | "big-pot"
   | "thin"
   | "pinch"
-  | "harden-off";
+  | "harden-off"
+  | "roots-out"
+  | "loosen-roots"
+  | "scrape-top"
+  | "two-shoots";
 
 /** Le nom de chaque dessin, pour l'écran de revue et l'accessibilité. */
 export const ILLUSTRATION_LABELS: Record<IllustrationId, string> = {
@@ -47,6 +51,10 @@ export const ILLUSTRATION_LABELS: Record<IllustrationId, string> = {
   thin: "Des ciseaux coupent une pousse en trop",
   pinch: "Des doigts pincent le bout de la tige",
   "harden-off": "Le plant à l’ombre légère, dehors",
+  "roots-out": "Des racines sortent sous le pot",
+  "loosen-roots": "Des doigts démêlent les racines de la motte",
+  "scrape-top": "Une fourchette gratte la terre du dessus",
+  "two-shoots": "Deux tiges repartent sous la coupe",
 };
 
 export const ILLUSTRATION_IDS = Object.keys(ILLUSTRATION_LABELS) as IllustrationId[];

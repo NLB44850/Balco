@@ -39,18 +39,18 @@ Tout se passe dans son GitHub Codespace (pas de Docker sur son PC).
 
 - `pnpm -s check`, `pnpm -s lint`, puis `TEST_DATABASE_URL=mysql://balco:balco@localhost:3306/balco_cal npx vitest run`
   (MariaDB locale : `service mariadb start` si elle s'est arrêtée, `apt-get install -y mariadb-server` si elle manque,
-  puis `DATABASE_URL=… npx drizzle-kit migrate` ; 480 tests à ce jour). Dans un conteneur
+  puis `DATABASE_URL=… npx drizzle-kit migrate` ; 490 tests à ce jour). Dans un conteneur
   neuf : `apt-get install -y mariadb-server`, `service mariadb start`, créer la base `balco_cal` et l'utilisateur
   `balco`/`balco`, puis `pnpm -s build && DATABASE_URL=mysql://balco:balco@localhost:3306/balco_cal node dist/migrate.mjs`.
 - `npx expo export --platform android` pour s'assurer que le bundle Android se construit.
 - **Tests de bout en bout** (à lancer quand le porteur le demande, et avant chaque grosse évolution) :
   `bash scripts/e2e.sh` (≈ 4 min : construit l'app web avec la simulation météo, migre la base, démarre
   le vrai serveur sur le port 3100, lance Playwright). `bash scripts/e2e.sh meteo` pour un seul fichier,
-  `E2E_SKIP_BUILD=1` pour ne pas reconstruire. Scénarios dans `e2e/` (36 aujourd'hui, avec un faux service d'IA pour Observer) : parcours
+  `E2E_SKIP_BUILD=1` pour ne pas reconstruire. Scénarios dans `e2e/` (42 aujourd'hui, avec un faux service d'IA pour Observer et Nora) : parcours
   (onboarding, écrans, cocher/Annuler, fête, catalogue, fiche d'une nouvelle plante, feuille du bas qui se ferme,
   suggestions de saison, Saisons rangé par type), météo (pluie + eau économisée, gel + Saisons,
   orage, vent, canicule, « Pas aujourd'hui », retour météo réelle), compte (code de connexion lu dans
-  `dist/e2e-server.log`, balcon retrouvé sur un 2ᵉ téléphone, le 1ᵉʳ prévenu « sauvegardé depuis un autre téléphone ») et vacances. Open-Meteo est simulé
+  `dist/e2e-server.log`, balcon retrouvé sur un 2ᵉ téléphone, le 1ᵉʳ prévenu « sauvegardé depuis un autre téléphone ») et vacances, rempotage (`10-rempotage`), gestes de suite (`11-gestes-de-suite`), Nora quand la connexion se coupe (`12-nora-erreur`), Saisons en octobre (`13-saisons-octobre`). Open-Meteo est simulé
   (`e2e/helpers.ts`, `mockWeather`), le balcon est posé dans le stockage (`seedBalcony`). Les cases à
   cocher s'appellent « Marquer comme fait : <titre> ». Échecs : captures dans `dist/e2e-results/`.
 - Rendu web : `npx expo export --platform web`, serveur `node dist/standalone/index.mjs` avec
@@ -81,9 +81,13 @@ visuelle, retour immédiat.
 
 ## Où on en est
 
-**Nouvelle conversation ? L'onboarding (`docs/chantier-onboarding.md`) et le pas-à-pas pour planter (`docs/chantier-pas-a-pas.md`) sont testés par le porteur et en PR vers `main` : https://github.com/NLB44850/Balco/pull/28 (ouverte le 06/10, à fusionner par lui). Chantier suivant, validé : rempotage selon le besoin (point 4 ci-dessous).**
+**Nouvelle conversation ? Tout est validé sur son téléphone le 07/10 : l'onboarding et le pas-à-pas pour planter
+(fusionnés dans `main`, PR https://github.com/NLB44850/Balco/pull/28), puis le rempotage (R1 à R3), les 11 pas-à-pas
+(`docs/pas-a-pas.md`), Nora qui récupère sa réponse perdue et Saisons corrigé (repère de gel, suggestions). Prochaine
+étape : PR de ce bloc vers `main`, puis l'APK. Récap pour claude.ai : `docs/recap-pour-claude.md` + captures
+`docs/captures/` (refaites par `bash scripts/captures.sh`, spec `e2e/captures.spec.ts` sautée sans `CAPTURES=1`).**
 
-**Récap pour reprendre (06/10)** : ce bloc fait foi ; les paragraphes plus bas sont l'historique (certains
+**Récap pour reprendre (07/10)** : ce bloc fait foi ; les paragraphes plus bas sont l'historique (certains
 décrivent un état ancien, par exemple Saisons « à cocher » ou une fête plein écran à chaque récolte).
 
 Fait et fusionné dans `main` (PR #27 le 06/10) : tout le MVP décrit plus bas (rappels, calendrier, Nora qui se
@@ -95,29 +99,46 @@ et les 10 étapes du test utilisateur du 04/10 (détail dans « Historique des l
    (`expo-image`), l'appareil photo depuis Aujourd'hui, les notifications, Balcon à deux cartes par ligne.
 2. **Refonte de l'onboarding : chantier en cours, plan validé le 06/10.** Tout est dans
    **`docs/chantier-onboarding.md`** (état des lieux vérifié, plan en 8 étapes A1, A2, A3, B1 à B4, C1, C2, et les
-   8 décisions prises). **A1 validée le 06/10 ; A2 à C2 codées d'affilée le 06/10 à sa demande (« enchaîne, je testerai
-   à la fin »)** : à tester (web pour tout le parcours, APK pour les rappels et la position) ; ensuite PR vers `main`.
+   8 décisions prises). **Validé et fusionné dans `main` (PR #28, 06/10)** ; reste à revoir sur l'APK (rappels et position).
    Ce qui en reste dans le code : `seasonalStarters` (plantes de saison), `lib/reminders/activate.ts`,
    `components/city-picker.tsx` + bandeau « Météo de Paris par défaut », `GardenPlant.toPlant` (« à planter »,
    migration 0015, `startActivity`, événement `<id>:start`), `app/welcome.tsx` (`onboardingSteps`, `arrivalCard`,
    relance `/welcome?again=1`), `lib/ai/greeting.ts` (prénom demandé par Nora). Plus aucune demande de position
    d'office (`use-local-weather.ts`). Ne pas reposer les questions déjà tranchées.
-3. **Pas-à-pas pour planter + fin de l'accueil : codé le 06/10 (P1 à P8, enchaîné à sa demande), à tester.**
+3. **Pas-à-pas pour planter + fin de l'accueil : validé et fusionné dans `main` (PR #28, 06/10).**
    Tout est dans **`docs/chantier-pas-a-pas.md`** (ses 12 choix, avancement étape par étape). Dans le code :
    catalogue « Déjà sur mon balcon / À planter » (`addChoices`), hiver (`lib/plants/indoor.ts`, `springWishes`,
    `lib/garden/spring.ts`, carte « C'est le moment » en mars), « Rappelle-moi samedi » (`lib/garden/postpone.ts`),
    données de plantation des 100 plantes (`lib/plants/planting.ts`, sources par plante), gestes de suite
    (`lib/garden/follow-ups.ts` : éclaircir, sortir les plants, pincer), 22 illustrations
    (`components/guide/illustrations.tsx`, revue dans Réglages → Version de test), guide `app/guide/[catalogId].tsx`
-   (logique `lib/plants/guide.ts`). Après son test : PR vers `main` (onboarding + pas-à-pas).
-4. **Rempotage selon le besoin** (validé le 06/10, **à faire après la PR** onboarding + pas-à-pas), 3 étapes :
+   (logique `lib/plants/guide.ts`).
+4. **Rempotage selon le besoin** (**R1, R2, R3 et les pas-à-pas des gestes de suite validés le 07/10**), 3 étapes :
    1) rythme par vivace vérifié sur le web (menthe chaque année, lavande tous les 2 ans, agrumes et petits fruits 2-3
    ans…) et jamais la première saison (≈ un an dans son pot, compté depuis la plantation notée) ; les autres années,
    geste « Change les 5 cm de terre du dessus » (surfaçage, validé) ; 2) signe à vérifier (« Des racines sortent par
    les trous ? L'eau ressort tout de suite ? Rempote… ») + « Pas besoin cette année », volume du pot retenu et pot
    suivant proposé (≈ +1/3) ; 3) pas-à-pas illustré du rempotage (« Ce qu'il te faut », démêler les racines…).
-   Aujourd'hui : `repotMonths` par défaut [3, 4] pour toute vivace (`plant()` dans `lib/plants/catalog.ts`), sans
-   regarder l'âge (une vivace plantée la veille peut avoir « Rempote… »).
+   R1 fait : `lib/plants/repotting.ts` (37 vivaces, sources) donne `repotMonths` ; `potCareFor` (`lib/plants/calendar.ts`) :
+   rien avant 10 mois dans le pot, « Rempote… » quand le rythme est atteint, sinon « Change la terre du dessus du
+   thym » (`topdress`, événement `<id>:calendar-topdress:<mois>`, ne remet pas le compteur à zéro) ; `potHistory`
+   (garden-logic) : dans son pot depuis le dernier rempotage, sinon la plantation notée, sinon l'arrivée. Corrigé au
+   passage : Saisons ne transmettait pas l'état « à planter » (`calendar.tsx`).
+   R2 fait : description de « Rempote… » = signe de la plante (`REPOTTING[id].sign`, sinon `GENERIC_REPOT_SIGN`) + pot
+   suivant (`potSizes` : pot conseillé × 4/3 par rempotage noté, `potHistory().repots`, largeur en cm `potWidthCm`) ;
+   « Pas besoin cette année » dans la feuille du bas d'Aujourd'hui = mise en sommeil locale `repot:<id>` jusqu'au
+   1ᵉʳ janvier (`lib/garden/repot-skip.ts`, `repotSkippedUntil` du `CalendarSubject`, lu par `use-day-plan` et Saisons) :
+   la terre du dessus prend le relais. Corrigé : un rempotage ou une terre neuve noté ce mois-ci reste affiché coché
+   (`lastRepot` / `lastTopdress` dans `potCareFor`), au lieu de disparaître.
+   R3 fait : modèles de guide `repot` et `topdress` (`lib/plants/guide.ts`, `potCareActivity` dans calendar.ts), route
+   `/guide/<id>?plantId=…&task=repot|topdress` (« C'est rempoté » / « Terre changée » cochent le geste du mois) ; entrées :
+   « Pas à pas » dans la feuille du bas d'Aujourd'hui et « Comment la rempoter › » dans la fiche ; 3 dessins
+   (`roots-out`, `loosen-roots`, `scrape-top`, 25 en tout). Document lisible de tous les pas-à-pas : `docs/pas-a-pas.md`
+   Puis (06/10, à sa demande) pas-à-pas des gestes de suite : modèles `thin`, `pinch` (deux variantes : bout des tiges,
+   ou « couper » pour fleurs / stolons / touffe rabattue, `pinchesTip`), `outdoors` (s'habituer au dehors une semaine,
+   puis rempoter chaque plant) ; `guideTaskOf(activity)` donne la tâche du guide d'un geste ; route `task=thin|pinch|
+   outdoors` (le geste vient de `followUpsFor`, « C'est éclairci / pincé », « Plants installés ») ; entrées : feuille du
+   bas d'Aujourd'hui et lien de la fiche ; dessin `two-shoots` (26 en tout).
 5. **Après-récolte** des plantes récoltées en une fois (radis, carottes, salades pommées) : « Tout récolté ? » →
    « Ressemer » ou « Libérer le pot ». À décider avec lui.
 6. **Mémoire de Nora sur plusieurs jours** : il doit encore faire le test sur 2-3 jours (retour à recueillir).
@@ -354,6 +375,21 @@ et route réservée à `role = admin`. Balco+ sera payant (offre commerciale Ope
       et les messages de quota ; bouton « Créer mon compte ou me connecter ».
   Après la fusion : Observer affiche la photo avec `expo-image` (zone vide sur Android avec l'Image de React
   Native, vu dans l'APK du 06/10) ; **à revérifier dans le prochain APK**.
+- **Erreur de Nora « Failed to execute 'json' on 'Response' »** (vue le 07/10, question du 05/10) : réponse vide du
+  transfert de port du Codespace (serveur qui redémarre ou délai dépassé), pas une erreur du serveur. Corrigé :
+  `lib/ai/error-text.ts` (`aiErrorText` garde les messages du serveur, remplace ceux du navigateur ; `noticeText`
+  réécrit les anciennes notices), bouton « Réessayer » sur la dernière notice de Nora, Observer idem ; question à
+  Nora limitée à 40 s par essai et un seul nouvel essai (`CHAT_TIMEOUT_MS`, `server/ai/claude.ts`).
+  Puis (07/10, « c'est trompeur, la requête fonctionne quand même ») : le serveur répondait bien, seule la réponse se
+  perdait. Chaque question porte un `requestId` ; `server/ai/answer-cache.ts` (`answerOnce`, 15 min, en mémoire)
+  rend la même réponse à la même question (en cours ou faite) sans la décompter ni la facturer deux fois ; l'app
+  redemande en silence après 2, 4 et 8 s (`askRecovering`, `isConnectionLost`) avant d'afficher « La réponse de Nora
+  s'est perdue en route… Réessayer ». E2e `12-nora-erreur` (réponse vidée après passage au serveur).
+- **Saisons, retours du 07/10** : la carte climat dit le repère de gel du moment (`frostNote` dans
+  `lib/plants/climate.ts` : « premières gelées vers fin novembre » d'août aux premières gelées, « plus de gel à
+  craindre avant l'automne » l'été, sinon « gelées possibles jusqu'à début avril » ; `firstFrost`/`firstFrostMonth`
+  par zone). Suggestions : quand tout ce qui convient est déjà sur le balcon (`allOwned`), « Tout ce qui se sème ou
+  se plante ce mois-ci et convient à ton balcon y est déjà » ; le lien du catalogue reste sur le mois affiché.
 - Réponses données au porteur, à ne pas reproposer : l'app ne copie pas les photos dans la galerie du téléphone
   (« on laisse comme ça », 06/10) ; IDE sur mobile = ouvrir le Codespace dans Chrome (« Open in browser »).
 

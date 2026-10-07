@@ -1,5 +1,7 @@
 # Chantier : refonte de l'onboarding (plan validé le 6 octobre 2026)
 
+> **État au 7 octobre 2026 : terminé, validé sur téléphone et fusionné dans `main` (PR #28).** La suite (rempotage, pas-à-pas des gestes de suite) est décrite dans `docs/pas-a-pas.md` et `docs/feuille-de-route.md`.
+
 Document de reprise : tout ce qui a été établi dans la conversation du 6 octobre. **Le plan est validé par
 le porteur, avec toutes les propositions de Claude (« OK pour tes propositions »).**
 

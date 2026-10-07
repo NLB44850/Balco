@@ -1,5 +1,7 @@
 # Chantier : pas-à-pas pour planter, et fin de l'accueil (plan proposé le 6 octobre 2026)
 
+> **État au 7 octobre 2026 : terminé, validé sur téléphone et fusionné dans `main` (PR #28).** La suite (rempotage, pas-à-pas des gestes de suite) est décrite dans `docs/pas-a-pas.md` et `docs/feuille-de-route.md`.
+
 Statut : **P1 à P8 codées le 6 octobre (enchaînées à sa demande), à tester sur son téléphone**, puis PR vers
 `main`. Plan validé le 6 octobre (« OK pour les 3, enchaîne toutes les étapes »)** : ordre accueil d'abord,
 « J'ai déjà » commun pour terreau / billes / arrosoir et par plante pour le reste, rappel du samedi à 9 h.

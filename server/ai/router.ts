@@ -3,6 +3,7 @@ import { TRPCError } from "@trpc/server";
 import { z } from "zod";
 
 import { adminProcedure, protectedProcedure, publicProcedure, router } from "../_core/trpc";
+import { answerOnce } from "./answer-cache";
 import { budgetState, costReport, formatCostReport, pauseMessage } from "./budget";
 import { AiBadResponseError, AiRefusedError, AiUnavailableError, aiAvailable, askNora, diagnosePlant, type ChatTurn, type ImageMediaType } from "./claude";
 import { NORA_PREFERENCES } from "../../lib/ai/memory";
@@ -93,6 +94,8 @@ function readImage(imageBase64: string) {
 
 const chatInput = z.object({
   messages: z.array(z.object({ role: z.enum(["user", "assistant"]), content: z.string().trim().min(1).max(2000) })).min(1).max(40),
+  /** Tiré par l'app pour chaque question : la renvoyer avec le même identifiant redonne la même réponse. */
+  requestId: z.string().min(8).max(64).optional(),
 });
 
 /** Garde les derniers échanges, en commençant par une question et en finissant par la nouvelle question. */
@@ -165,7 +168,7 @@ export const aiRouter = router({
       }
     }),
 
-  ask: protectedProcedure.input(chatInput).mutation(async ({ ctx, input }) => {
+  ask: protectedProcedure.input(chatInput).mutation(({ ctx, input }) => answerOnce(ctx.user.id, input.requestId, async () => {
     const history = trimHistory(input.messages);
     if (history.length === 0 || history[history.length - 1].role !== "user") throw new TRPCError({ code: "BAD_REQUEST", message: "La conversation doit se terminer par une question." });
     const garden = describeGarden(await loadGardenFacts(ctx.user.id));
@@ -176,7 +179,7 @@ export const aiRouter = router({
       return { added: [], forgotten: [] };
     });
     return { ...result, remembered: learned.added, forgotten: learned.forgotten };
-  }),
+  })),
 
   /** Ce que Nora sait de la personne : affiché, modifiable et effaçable dans l'écran Nora. */
   memory: protectedProcedure.query(({ ctx }) => loadMemory(ctx.user.id)),

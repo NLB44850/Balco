@@ -92,12 +92,13 @@ describe("Saisons et Aujourd'hui disent la même chose d'une plante à planter",
     expect(calendarActivities([{ id: "ail", entry, displayName: "Ail des ours", addedAt: OCTOBER.toISOString(), toPlant: true }], 4, { now: OCTOBER })).toEqual([]);
   });
 
-  it("installé, il se rempote en octobre mais ne se ressème pas", async () => {
+  it("installé, il ne se ressème pas ; son pot n'est soigné qu'après une saison", async () => {
     const { calendarActivities } = await import("../lib/plants/calendar");
     const entry = getCatalogPlant("wild-garlic")!;
-    const kinds = calendarActivities([{ id: "ail", entry, displayName: "Ail des ours", addedAt: new Date(2026, 3, 1).toISOString() }], 10, { now: OCTOBER }).map((activity) => activity.kind);
-    expect(kinds).toContain("repot");
-    expect(kinds).not.toContain("sow");
-    expect(kinds).not.toContain("plant");
+    const titles = (addedAt: Date) => calendarActivities([{ id: "ail", entry, displayName: "Ail des ours", addedAt: addedAt.toISOString() }], 10, { now: OCTOBER }).map((activity) => activity.title);
+    // Arrivé en avril : première saison, ni semis, ni plantation, ni rempotage.
+    expect(titles(new Date(2026, 3, 1))).toEqual([]);
+    // Depuis un an et demi : la terre du dessus (il se rempote tous les 3 à 5 ans).
+    expect(titles(new Date(2025, 3, 1))).toEqual(["Change la terre du dessus de l’ail des ours"]);
   });
 });

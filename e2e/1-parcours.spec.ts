@@ -348,3 +348,17 @@ test("« Pas encore acheté ? Rappelle-moi samedi » : le geste disparaît, « A
   await expect(checkboxOf(page, "Marquer comme fait : Plante la lavande")).toBeVisible();
   expect(errors).toEqual([]);
 });
+
+test("Saisons : l'ail des ours « à planter » n'a qu'un geste, le même qu'Aujourd'hui (ni semis ni rempotage)", async ({ page }) => {
+  const errors = trackErrors(page);
+  await page.clock.install({ time: new Date(2026, 9, 6, 10) });
+  await page.clock.resume();
+  await mockWeather(page);
+  await seedBalcony(page, { plants: ["mint"], wateredDaysAgo: 0, extra: { "balco.garden.plants.v1": JSON.stringify([{ id: "ail-e2e", catalogId: "wild-garlic", addedAt: new Date(2026, 9, 6).toISOString(), toPlant: true }]) } });
+  await open(page, "/", "Plante l’ail des ours");
+  await page.getByRole("tab", { name: /Saisons/ }).click();
+  await expect(page.getByText("Plante l’ail des ours").first()).toBeVisible();
+  await expect(page.getByText("Rempote l’ail des ours")).toHaveCount(0);
+  await expect(page.getByText("Sème l’ail des ours")).toHaveCount(0);
+  expect(errors).toEqual([]);
+});
