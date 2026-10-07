@@ -37,5 +37,7 @@ choix que l'accueil. Les phrases longues restent dans les feuilles.
    l'ouverture » (table `plus_interest`, migration 0016, `server/plus-router.ts` : `plus.interest`,
    `plus.notifyMe`, 10 adresses par heure et par réseau), suppression du compte qui garde le balcon
    (`deleteAccount` de garden-context : plus de retour à l'accueil).
-5. À propos (Donner mon avis, Confidentialité « Bientôt », version) et Version de test.
-6. Vérifications complètes, test sur le téléphone.
+5. **Fait** : À propos (Donner mon avis : `lib/feedback.ts`, e-mail prérempli avec la version ; Confidentialité
+   « Bientôt » ; Crédits photos ; « Version 1.0.0 · test ») et Version de test en lignes (Simulation météo dans une
+   feuille, notification de test, Refaire l'accueil, Illustrations).
+6. Vérifications complètes faites (557 tests, 53 scénarios e2e, bundle Android) ; reste le test sur le téléphone.

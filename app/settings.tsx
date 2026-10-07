@@ -5,6 +5,7 @@
  * S'ouvre depuis la roue crantée de Moi.
  */
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import Constants from "expo-constants";
 import { TRPCClientError } from "@trpc/client";
 import { useRouter } from "expo-router";
 import { useCallback, useEffect, useState } from "react";
@@ -18,9 +19,9 @@ import { BottomSheet } from "@/components/today/bottom-sheet";
 import { LightScreen } from "@/components/light-screen";
 import { CatalogPicture, PlantPicture } from "@/components/plant-picture";
 import { ScreenHeader } from "@/components/screen-header";
-import { glass } from "@/components/ui/glass";
 import { Text, TextInput } from "@/components/ui/typography";
 import { freeForAllText, plusSheetBenefits } from "@/lib/plans";
+import { FEEDBACK_EMAIL, feedbackMailto, versionText } from "@/lib/feedback";
 import { trpc } from "@/lib/trpc";
 import { useColors } from "@/hooks/use-colors";
 import { useLocalWeather } from "@/hooks/use-local-weather";
@@ -54,6 +55,7 @@ import { WEATHER_SCENARIOS } from "@/lib/weather/simulation";
 
 /** « Me prévenir à l'ouverture » déjà demandé depuis ce téléphone (sans compte, l'adresse n'est gardée que sur le serveur). */
 const PLUS_NOTIFY_STORAGE_KEY = "balco.plus.notify.v1";
+const appVersion = Constants.expoConfig?.version ?? "1.0.0";
 
 export default function SettingsScreen() {
   const insets = useSafeAreaInsets();
@@ -141,7 +143,7 @@ export default function SettingsScreen() {
 
   const location = useLocalWeather();
   const [cityPickerOpen, setCityPickerOpen] = useState(false);
-  const [sheet, setSheet] = useState<"sun" | "space" | "goals" | "spring" | "name" | "level" | "hour" | "quiet" | "plants" | "check" | "plus" | "delete" | null>(null);
+  const [sheet, setSheet] = useState<"sun" | "space" | "goals" | "spring" | "name" | "level" | "hour" | "quiet" | "plants" | "check" | "plus" | "delete" | "simulation" | null>(null);
   const closeSheet = () => setSheet(null);
   // « Envies » : plusieurs choix, enregistrés d'un coup par « Enregistrer ».
   const [goalsDraft, setGoalsDraft] = useState<string[]>([]);
@@ -321,9 +323,10 @@ export default function SettingsScreen() {
         <SheetHeading title="Balco+" intro="Pour ne rien laisser au hasard." />
         <View style={styles.benefits}>
           {plusSheetBenefits().map((benefit) => (
-            <Text key={benefit} style={[styles.benefit, { color: colors.foreground }]}>
-              <Text style={{ color: colors.primary }}>✓</Text>  {benefit}
-            </Text>
+            <View key={benefit} style={styles.benefitRow}>
+              <Text style={[styles.benefitMark, { color: colors.primary }]}>✓</Text>
+              <Text style={[styles.benefit, { color: colors.foreground }]}>{benefit}</Text>
+            </View>
           ))}
         </View>
         <Text style={[styles.sheetHint, { color: colors.muted }]}>{freeForAllText()}</Text>
@@ -357,6 +360,20 @@ export default function SettingsScreen() {
           <Text style={[styles.sheetButtonText, { color: colors.foreground }]}>Garder mon compte</Text>
         </Pressable>
         {deleteError && <Text style={[styles.accountHint, { color: colors.error }]}>{deleteError}</Text>}
+      </BottomSheet>
+      <BottomSheet visible={sheet === "simulation"} onClose={closeSheet}>
+        <SheetHeading title="Simulation météo" intro="Fais comme si cette météo arrivait, pour voir les alertes sur l’accueil. N’existe pas dans l’app publiée." />
+        <View style={styles.simulationChips}>
+          {WEATHER_SCENARIOS.map((item) => {
+            const active = simulation.scenario === item.id;
+            return (
+              <Pressable key={item.id} accessibilityRole="button" accessibilityState={{ selected: active }} onPress={() => void simulation.setScenario(item.id)} style={({ pressed }) => [styles.simulationChip, { backgroundColor: active ? colors.primary : colors.surface, borderColor: active ? colors.primary : colors.border }, pressed && styles.pressed]}>
+                <Text style={[styles.simulationChipText, { color: active ? "#FFFFFF" : colors.foreground }]}>{item.label}</Text>
+              </Pressable>
+            );
+          })}
+        </View>
+        <Text style={[styles.sheetHint, { color: colors.muted }]}>{WEATHER_SCENARIOS.find((item) => item.id === simulation.scenario)?.hint}</Text>
       </BottomSheet>
       <BottomSheet visible={sheet === "name"} onClose={closeSheet}>
         <SheetHeading title="Ton prénom" intro="Pour que Balco et Nora te disent bonjour." />
@@ -470,41 +487,21 @@ export default function SettingsScreen() {
         </SettingsGroup>
 
         <SettingsGroup title="À propos">
+          <SettingRow label="Donner mon avis" onPress={() => void Linking.openURL(feedbackMailto(appVersion, Platform.OS)).catch(() => Alert.alert("Donner mon avis", `Écris-nous à ${FEEDBACK_EMAIL}`))} />
+          <SettingRow label="Confidentialité" value="Bientôt" />
           <SettingRow label="Crédits photos" onPress={() => router.push("/credits")} />
         </SettingsGroup>
+        <Text style={[styles.version, { color: colors.muted }]}>{versionText(appVersion, simulation.available)}</Text>
+
         {simulation.available && (
-          <View style={[glass.card, styles.reminderCard]}>
-            <Text style={[styles.sectionEyebrow, { color: colors.muted }]}>Version de test</Text>
-            <Text style={[styles.reminderCardTitle, { color: colors.foreground }]}>Simulation météo</Text>
-            <Text style={[styles.reminderCardText, { color: colors.muted }]}>Fais comme si cette météo arrivait, pour voir les alertes sur l’accueil. N’existe pas dans l’app publiée.</Text>
-            <View style={styles.simulationChips}>
-              {WEATHER_SCENARIOS.map((item) => {
-                const active = simulation.scenario === item.id;
-                return (
-                  <Pressable key={item.id} accessibilityRole="button" accessibilityState={{ selected: active }} onPress={() => void simulation.setScenario(item.id)} style={({ pressed }) => [styles.simulationChip, { backgroundColor: active ? colors.primary : colors.surface, borderColor: active ? colors.primary : colors.border }, pressed && styles.pressed]}>
-                    <Text style={[styles.simulationChipText, { color: active ? "#FFFFFF" : colors.foreground }]}>{item.label}</Text>
-                  </Pressable>
-                );
-              })}
-            </View>
-            <Text style={[styles.testHint, { color: colors.muted }]}>{WEATHER_SCENARIOS.find((item) => item.id === simulation.scenario)?.hint}</Text>
+          <SettingsGroup title="Version de test">
+            <SettingRow label="Simulation météo" value={WEATHER_SCENARIOS.find((item) => item.id === simulation.scenario)?.label} onPress={() => setSheet("simulation")} />
             {notificationsSupported && (
-              <>
-                <Pressable accessibilityRole="button" disabled={testStatus === "sending"} onPress={() => void sendTest()} style={({ pressed }) => [styles.testButton, { borderColor: colors.primary, marginTop: 12 }, pressed && styles.pressed]}>
-                  <Text style={[styles.testButtonText, { color: colors.primary }]}>{testStatus === "sending" ? "Envoi…" : "Envoyer une notification de test"}</Text>
-                </Pressable>
-                {testStatus === "sent" && <Text style={[styles.testHint, { color: colors.muted }]}>Elle arrive dans 5 secondes. Verrouille ton téléphone pour la voir comme un vrai rappel, puis essaie ses boutons.</Text>}
-                {testStatus === "denied" && <Text style={[styles.testHint, { color: colors.error }]}>Les notifications sont bloquées : autorise-les pour Balco dans les réglages du téléphone.</Text>}
-              </>
+              <SettingRow label="Envoyer une notification de test" subtitle={testStatus === "sent" ? "Elle arrive dans 5 secondes. Verrouille ton téléphone pour la voir comme un vrai rappel, puis essaie ses boutons." : testStatus === "denied" ? "Les notifications sont bloquées : autorise-les pour Balco dans les réglages du téléphone." : undefined} disabled={testStatus === "sending"} onPress={() => void sendTest()} />
             )}
-            <Pressable accessibilityRole="button" onPress={() => router.push({ pathname: "/welcome", params: { again: "1" } })} style={({ pressed }) => [styles.testButton, { borderColor: colors.primary, marginTop: 12 }, pressed && styles.pressed]}>
-              <Text style={[styles.testButtonText, { color: colors.primary }]}>Refaire l’accueil</Text>
-            </Pressable>
-            <Text style={[styles.testHint, { color: colors.muted }]}>Repasse les questions du début, sans toucher à tes plantes.</Text>
-            <Pressable accessibilityRole="button" onPress={() => router.push("/illustrations")} style={({ pressed }) => [styles.testButton, { borderColor: colors.primary, marginTop: 12 }, pressed && styles.pressed]}>
-              <Text style={[styles.testButtonText, { color: colors.primary }]}>Illustrations du pas-à-pas</Text>
-            </Pressable>
-          </View>
+            <SettingRow label="Refaire l’accueil" subtitle="Repasse les questions du début, sans toucher à tes plantes." onPress={() => router.push({ pathname: "/welcome", params: { again: "1" } })} />
+            <SettingRow label="Illustrations du pas-à-pas" onPress={() => router.push("/illustrations")} />
+          </SettingsGroup>
         )}
       </ScrollView>
     </LightScreen>
@@ -514,63 +511,18 @@ export default function SettingsScreen() {
 const styles = StyleSheet.create({
   content: { paddingHorizontal: 20, paddingBottom: 40 },
   header: { marginBottom: 8 },
-  section: { fontSize: 19, fontWeight: "800", letterSpacing: -0.3, marginTop: 18, marginBottom: 10 },
-  card: { padding: 15, gap: 14 },
-  vacationRow: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginBottom: 12 },
-  choiceGroup: { gap: 8 },
-  choiceRow: { flexDirection: "row", flexWrap: "wrap", gap: 8 },
-  choice: { borderRadius: 999, borderWidth: 1, paddingHorizontal: 12, paddingVertical: 8 },
-  choiceText: { fontSize: 13, fontWeight: "600" },
-  linkRow: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", paddingTop: 4 },
-  linkText: { fontSize: 15, fontWeight: "700" },
-  linkArrow: { fontSize: 24, fontWeight: "300" },
-  editRow: { flexDirection: "row", gap: 8 },
-  nameInput: { flex: 1, borderWidth: 1, borderRadius: 12, paddingHorizontal: 11, paddingVertical: 9, fontSize: 14 },
-  editButton: { borderRadius: 12, paddingHorizontal: 15, justifyContent: "center" },
-  editButtonText: { color: "#FFFFFF", fontSize: 12, fontWeight: "800" },
-  accountCard: { padding: 15, marginBottom: 16, gap: 2 },
-  benefits: { gap: 2, marginTop: 6 },
-  benefitsTitle: { fontSize: 14, fontWeight: "700", marginTop: 8 },
+  benefits: { gap: 8, marginTop: 8 },
   accountActions: { flexDirection: "row", alignItems: "center", gap: 10, marginTop: 10 },
   accountButton: { borderRadius: 12, paddingHorizontal: 14, paddingVertical: 9 },
   accountButtonText: { color: "#FFFFFF", fontSize: 14, fontWeight: "700" },
   accountButtonGhost: { borderWidth: 1, borderRadius: 12, paddingHorizontal: 14, paddingVertical: 9 },
   accountGhostText: { fontSize: 14, fontWeight: "600" },
-  deleteBlock: { marginTop: 12, gap: 4 },
-  deleteLink: { fontSize: 13, fontWeight: "600" },
-  reminderCard: { padding: 15, marginBottom: 20, gap: 14 },
-  reminderCardHeader: { flexDirection: "row", alignItems: "center", gap: 12 },
-  reminderCardCopy: { flex: 1 },
   simulationChips: { flexDirection: "row", flexWrap: "wrap", gap: 8, marginTop: 12 },
   simulationChip: { borderRadius: 999, borderWidth: 1, paddingHorizontal: 13, paddingVertical: 8 },
   simulationChipText: { fontSize: 13, fontWeight: "600" },
-  testRow: { marginTop: 12, gap: 6 },
-  testButton: { alignSelf: "flex-start", borderWidth: 1, borderRadius: 12, paddingHorizontal: 12, paddingVertical: 8 },
-  testButtonText: { fontSize: 13, fontWeight: "700" },
-  testHint: { fontSize: 12, lineHeight: 17 },
-  reminderWebNote: { fontSize: 12, lineHeight: 18, borderRadius: 14, padding: 12, marginTop: 12 },
-  reminderCardTitle: { fontSize: 18, fontWeight: "800", marginTop: 2 },
-  reminderCardText: { fontSize: 13, lineHeight: 18, marginTop: 4 },
   toggle: { width: 47, height: 28, borderRadius: 15, padding: 3, justifyContent: "center" },
   toggleKnob: { width: 22, height: 22, borderRadius: 11, backgroundColor: "#FFFFFF" },
   toggleKnobOn: { alignSelf: "flex-end" },
-  reminderOptionRow: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: 12 },
-  reminderOptionLabel: { fontSize: 14, fontWeight: "700" },
-  reminderOptionHint: { fontSize: 12, marginTop: 3 },
-  reminderQuietValue: { fontSize: 14, fontWeight: "700" },
-  quietBlock: { gap: 9 },
-  quietChoices: { flexDirection: "row", gap: 12 },
-  quietChoiceGroup: { flex: 1, gap: 5 },
-  quietChoiceLabel: { fontSize: 12, fontWeight: "600" },
-  timeChoices: { flexDirection: "row", gap: 6 },
-  timeChoice: { borderRadius: 999, paddingHorizontal: 10, paddingVertical: 7 },
-  timeChoiceText: { fontSize: 12, fontWeight: "700" },
-  plantToggles: { gap: 7, marginTop: -6 },
-  plantToggle: { borderRadius: 12, flexDirection: "row", alignItems: "center", gap: 8, paddingHorizontal: 10, paddingVertical: 8 },
-  plantTogglePicture: { width: 26, height: 26, borderRadius: 13 },
-  plantToggleText: { flex: 1, fontSize: 13, fontWeight: "600" },
-  plantToggleCheck: { fontSize: 16, fontWeight: "900" },
-  sectionEyebrow: { fontSize: 13, fontWeight: "600" },
   sheetButton: { borderRadius: 14, paddingVertical: 15, alignItems: "center", marginTop: 14 },
   sheetButtonText: { fontSize: 16, fontWeight: "700" },
   sheetInput: { borderWidth: 1, borderRadius: 14, paddingHorizontal: 14, paddingVertical: 13, fontSize: 16, marginTop: 8 },
@@ -595,9 +547,12 @@ const styles = StyleSheet.create({
   accountBlock: { paddingBottom: 12 },
   accountButtonWide: { alignSelf: "stretch", alignItems: "center", paddingVertical: 13 },
   accountHint: { fontSize: 13, lineHeight: 18, marginTop: 8 },
-  benefit: { fontSize: 15, lineHeight: 21 },
+  benefitRow: { flexDirection: "row", gap: 10 },
+  benefitMark: { fontSize: 15, lineHeight: 21, fontWeight: "800" },
+  benefit: { flex: 1, fontSize: 15, lineHeight: 21 },
   notified: { borderRadius: 14, paddingVertical: 14, alignItems: "center", marginTop: 14 },
   notifiedText: { fontSize: 15, fontWeight: "700" },
+  version: { fontSize: 13, textAlign: "center", marginTop: 14 },
   sheetNote: { fontSize: 15, lineHeight: 21, marginTop: 6 },
   wishRow: { flexDirection: "row", alignItems: "center", gap: 12, borderBottomWidth: StyleSheet.hairlineWidth, paddingVertical: 10 },
   wishPicture: { width: 40, height: 40, borderRadius: 20, alignItems: "center", justifyContent: "center" },

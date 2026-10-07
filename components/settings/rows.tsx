@@ -52,7 +52,7 @@ export function SettingRow({ label, value, subtitle, onPress, disabled, danger, 
       </View>
       {accessory ?? (
         <>
-          {value ? <Text numberOfLines={1} style={[styles.value, { color: colors.muted }]}>{value}</Text> : null}
+          {value ? <Text numberOfLines={2} style={[styles.value, { color: colors.muted }]}>{value}</Text> : null}
           {onPress && !danger ? <Text style={[styles.arrow, { color: colors.muted }]}>›</Text> : null}
         </>
       )}
@@ -86,7 +86,7 @@ const styles = StyleSheet.create({
   copy: { flex: 1, gap: 2 },
   label: { fontSize: 15, fontWeight: "600" },
   subtitle: { fontSize: 13, lineHeight: 18 },
-  value: { fontSize: 15, maxWidth: "55%" },
+  value: { fontSize: 15, maxWidth: "62%", textAlign: "right" },
   arrow: { fontSize: 22, fontWeight: "300", marginTop: -2 },
   disabled: { opacity: 0.45 },
   pressed: { opacity: 0.7 },

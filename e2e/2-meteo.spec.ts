@@ -12,7 +12,8 @@ const HINTS: Record<Scenario, RegExp> = { none: /vraie météo de ta ville/, rai
 
 async function simulate(page: Page, scenario: Scenario) {
   await open(page, "/settings", "Simulation météo");
-  await page.getByRole("button", { name: LABELS[scenario], exact: true }).click();
+  await page.getByRole("button", { name: /^Simulation météo/ }).click();
+  await page.getByRole("dialog").getByRole("button", { name: LABELS[scenario], exact: true }).click();
   // L'explication du scénario choisi s'affiche sous les pastilles.
   await expect(page.getByText(HINTS[scenario])).toBeVisible();
   await page.goto("/");
