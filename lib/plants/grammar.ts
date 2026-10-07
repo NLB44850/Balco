@@ -7,6 +7,12 @@ import type { CatalogPlant } from "./catalog";
 
 export type Agreeable = Pick<CatalogPlant, "label" | "gender" | "plural">;
 
+/** Mots en h aspiré du catalogue : pas d'élision (« de haricots », pas « d'haricots »). */
+const ASPIRATED_H = /^haricot/iu;
+
+/** Le mot commence-t-il par un son de voyelle (élision : « l'ail », « d'aneth ») ? */
+export const elides = (word: string) => /^[aeéèêiouyhœ]/iu.test(word) && !ASPIRATED_H.test(word);
+
 /** La forme qui convient parmi quatre : masculin, féminin, masculin pluriel, féminin pluriel. */
 export function byForm<T>(plant: Agreeable, masculine: T, feminine: T, masculinePlural: T, femininePlural: T): T {
   if (plant.plural) return plant.gender === "f" ? femininePlural : masculinePlural;
@@ -25,7 +31,7 @@ export const stressedPronoun = (plant: Agreeable) => byForm(plant, "lui", "elle"
 
 /** Complément devant un verbe, élidé devant une voyelle : « tu le pinceras », « l’arrose », « les nourrit ». */
 export function objectBefore(plant: Agreeable, verbForm: string) {
-  if (!plant.plural && /^[aeéèêiouyh]/iu.test(verbForm)) return `l’${verbForm}`;
+  if (!plant.plural && elides(verbForm)) return `l’${verbForm}`;
   return `${objectPronoun(plant)} ${verbForm}`;
 }
 
@@ -49,7 +55,7 @@ export const bareName = (plant: Pick<CatalogPlant, "label">) => capitalize(witho
 export function possessive(plant: Agreeable) {
   if (plant.plural) return `tes ${withoutArticle(plant)}`;
   const bare = withoutArticle(plant);
-  return `${plant.gender === "f" && !/^[aeéèêiouyh]/iu.test(bare) ? "ta" : "ton"} ${bare}`;
+  return `${plant.gender === "f" && !elides(bare) ? "ta" : "ton"} ${bare}`;
 }
 
 export const capitalize = (text: string) => text.charAt(0).toUpperCase() + text.slice(1);
@@ -58,6 +64,12 @@ export const capitalize = (text: string) => text.charAt(0).toUpperCase() + text.
 export function partitive(plant: Agreeable) {
   const bare = withoutArticle(plant);
   if (plant.plural) return `des ${bare}`;
-  if (/^[aeéèêiouyhœ]/iu.test(bare)) return `de l’${bare}`;
+  if (elides(bare)) return `de l’${bare}`;
   return plant.gender === "f" ? `de la ${bare}` : `du ${bare}`;
+}
+
+/** « de basilic », « d’aneth », « de tomates cerises », « de haricots » : la plante sans article, après « de ». */
+export function ofBare(plant: Pick<CatalogPlant, "label">) {
+  const bare = withoutArticle(plant);
+  return elides(bare) ? `d’${bare}` : `de ${bare}`;
 }

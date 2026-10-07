@@ -17,7 +17,7 @@ import { useCelebration } from "@/components/today/celebration";
 import { useFreePot } from "@/components/free-pot-sheet";
 import { UndoToast, type ToastMessage } from "@/components/today/undo-toast";
 import { careWeeksLabel, celebrationFor, milestoneDate, plantProgress, sinceLabel, withCheer } from "@/lib/garden/progress";
-import { harvestedToastText, isHarvestedOnce } from "@/lib/garden/harvest-end";
+import { endsWithSeason, harvestedToastText, isHarvestedOnce } from "@/lib/garden/harvest-end";
 import { IconSymbol } from "@/components/ui/icon-symbol";
 import { Text, TextInput } from "@/components/ui/typography";
 import { useColors } from "@/hooks/use-colors";
@@ -228,7 +228,7 @@ export default function PlantScreen() {
                 <Text style={[styles.nextTitle, { color: colors.foreground }]}>{gesture.title}</Text>
                 <Text style={[styles.text, { color: colors.muted }]}>{gesture.instruction}</Text>
                 <Pressable accessibilityRole="button" onPress={() => void doGesture()} style={({ pressed }) => [styles.cta, { backgroundColor: colors.primary }, pressed && styles.pressed]}>
-                  <Text style={styles.ctaText}>{gesture.source.type === "harvest-end" ? (gesture.source.stage === "question" ? "Oui, tout est récolté" : "Choisir quoi y mettre") : "C’est fait"}</Text>
+                  <Text style={styles.ctaText}>{gesture.source.type === "harvest-end" ? (gesture.source.stage === "question" ? (endsWithSeason(entry) ? "Oui, la saison est finie" : "Oui, tout est récolté") : "Choisir quoi y mettre") : "C’est fait"}</Text>
                 </Pressable>
               </>
             )}

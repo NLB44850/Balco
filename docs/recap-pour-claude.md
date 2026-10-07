@@ -92,13 +92,16 @@ Balco dit chaque jour quoi faire pour chaque plante du balcon, selon la saison e
      (ressemer ou replanter, une ou deux plantes de saison qui tiennent dans ce pot, laisser le pot vide ou au repos
      l'hiver). Les récoltes d'un pot vidé restent dans ma progression.
    - La laitue pommée est au catalogue (101 plantes), avec sa photo, récoltée en une fois.
-   - Ensuite : la même chose pour la fin de saison des annuelles (basilic en octobre).
-3. **Mémoire de Nora sur plusieurs jours** : test à faire sur 2 ou 3 jours.
-4. **Tester sans Codespace** (idée) : une version web toujours en ligne et l'APK construit automatiquement.
-5. **Avant la publication** (pas encore décidée) : notifications envoyées par le serveur (Firebase), paiement Balco+
+3. **Fin de saison des annuelles : validée sur mon téléphone le 8 octobre.** « Ta saison de basilic est
+   finie ? » à la fin de ses mois de récolte (une relance deux semaines plus tard, puis plus jamais). Pour les
+   plantes frileuses, le soir où le gel est annoncé : « Récolte tout ton basilic avant cette nuit », et la question
+   le lendemain. Puis « Ton pot est libre », avec un conseil et « Me le reproposer au printemps ».
+4. **Mémoire de Nora sur plusieurs jours** : test à faire sur 2 ou 3 jours.
+5. **Tester sans Codespace** (idée) : une version web toujours en ligne et l'APK construit automatiquement.
+6. **Avant la publication** (pas encore décidée) : notifications envoyées par le serveur (Firebase), paiement Balco+
    (RevenueCat), mise à jour d'Expo (54 → 57), politique de confidentialité, fiche et compte Google Play.
-6. **Version suivante** : suivi d'une plante en photos dans le temps, balcon visuel (plan, emplacement, exposition),
-   récoltes et recettes, défis entre jardiniers.
+7. **Version suivante** : suivi d'une plante en photos dans le temps, balcon visuel (plan, emplacement, exposition),
+   récoltes et recettes, défis entre jardiniers, rentrer une plante pour l'hiver (piment, poivron, physalis).
 
 ## Décisions déjà prises (à ne pas remettre en question sans moi)
 

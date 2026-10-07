@@ -11,6 +11,7 @@ import type { ReminderGroup } from "../reminders/reminder-groups";
 import { GESTURE_ORDER, type GestureKind, type PlantDay } from "./day-plan";
 import { dayKey, plantDisplayName, type ResolvedPlant, type SessionTask } from "./garden-logic";
 import { isAvoidedWatering } from "./progress";
+import { endsWithSeason } from "../plants/season-end";
 
 export type TodayTone = "frost" | "heat" | "rain" | "storm" | "wind" | "water" | "care" | "season";
 
@@ -136,7 +137,7 @@ function rowFor(day: PlantDay, gesture: PlantDay["gestures"][number], groups: Re
     };
   }
   if (source.type === "harvest-end") {
-    return { kind: "harvest-end", key: gesture.key, ...common, tone: "care", icon: "🧺", title: gesture.title, subtitle: gesture.instruction, done: false, stage: source.stage, resolved: source.resolved, ...(source.quiet ? { quiet: true } : {}) };
+    return { kind: "harvest-end", key: gesture.key, ...common, tone: "care", icon: endsWithSeason(source.resolved.entry) ? "🍂" : "🧺", title: gesture.title, subtitle: gesture.instruction, done: false, stage: source.stage, resolved: source.resolved, ...(source.quiet ? { quiet: true } : {}) };
   }
   return { kind: "season", key: `season:${source.activity.key}`, ...common, tone: "season", icon: source.activity.entry.emoji, title: gesture.title, subtitle: "De saison · à faire ce mois-ci", done: gesture.done, activity: source.activity };
 }

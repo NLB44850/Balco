@@ -8,6 +8,7 @@
  *   3. suppression d'un geste inutile (pluie prévue)
  *   4. urgence depuis le dernier entretien (arrosage, chaleur)
  */
+import { SEASON_FROST_MONTHS } from "../plants/season-end";
 
 export type MaintenanceTaskType = "watering" | "observation" | "pruning" | "protection" | "harvest" | "repotting" | "fertilizing";
 
@@ -35,6 +36,11 @@ export type PlantCareProfile = {
   allowedTaskTypes?: MaintenanceTaskType[];
   /** Profondeur à laquelle tâter la terre avant d'arroser (2 cm par défaut). */
   soilCheckCm?: number;
+  /**
+   * Annuelle frileuse : en automne, un soir de gel finit sa saison. L'alerte dit alors de tout récolter
+   * (« Récolte tout ton basilic avant cette nuit ») au lieu de protéger ; `{min}` reçoit la température.
+   */
+  seasonFrost?: { title: string; body: string };
 };
 
 export type WeatherSnapshot = {
@@ -187,6 +193,18 @@ function safetyDecision(plant: PlantCareProfile, weather: WeatherSnapshot): Draf
 
   if (plant.frostSensitive !== false && minTemp <= plant.frostThresholdC) {
     const hardFrost = minTemp < 0;
+    if (plant.seasonFrost && allows(plant, "harvest") && SEASON_FROST_MONTHS.includes(new Date(weather.fetchedAt).getMonth() + 1)) {
+      return {
+        taskType: "harvest",
+        priority: hardFrost ? "urgent" : "important",
+        action: "do",
+        cause: "frost",
+        value: round(minTemp),
+        title: plant.seasonFrost.title,
+        body: plant.seasonFrost.body.replace("{min}", String(round(minTemp))),
+        reason: `Minimum prévu ${round(minTemp)} °C, seuil de la plante ${plant.frostThresholdC} °C : sa saison se termine.`,
+      };
+    }
     return {
       taskType: "protection",
       priority: hardFrost ? "urgent" : "important",

@@ -6,6 +6,7 @@ import { describe, expect, it } from "vitest";
 
 import { dayOf, GESTURE_ORDER, gestureLine, planDay } from "../lib/garden/day-plan";
 import { careProfileFor, resolvePlants } from "../lib/garden/garden-logic";
+import { harvestEndStates, markSeasonAsked } from "../lib/garden/harvest-end";
 import { buildTodayList } from "../lib/garden/today";
 import { getCatalogPlant, PLANT_CATALOG, soilCheckDepthCm } from "../lib/plants/catalog";
 import { decideReminders, type MaintenanceEvent, type WeatherSnapshot } from "../lib/reminders/reminder-engine";
@@ -27,9 +28,13 @@ function weather({ min = 10, rainMm = 0 } = {}): WeatherSnapshot {
   };
 }
 
+// Début octobre, la saison du basilic est finie : la question « Ta saison de basilic est finie ? » a été posée
+// le 1ᵉʳ et laissée sans réponse ; ses gestes habituels reviennent jusqu'à la relance (lib/garden/harvest-end.ts).
+const seasonAsked = harvestEndStates(plants.reduce((snoozes, { plant }) => markSeasonAsked(snoozes, plant.id, new Date(2026, 9, 1, 9)), [] as ReturnType<typeof markSeasonAsked>), NOW);
+
 function scene(events = watered, options: { min?: number; rainMm?: number } = {}) {
   const decisions = decideReminders(plants.map((resolved) => ({ plant: careProfileFor(resolved), history: events, weather: weather(options), settings: { enabled: true }, now: NOW })));
-  const plan = planDay({ plants, events, now: NOW, decisions });
+  const plan = planDay({ plants, events, now: NOW, decisions, harvestEnds: seasonAsked });
   return { decisions, plan, items: buildTodayList({ groups: groupReminders(decisions), plan }) };
 }
 

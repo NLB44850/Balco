@@ -1,6 +1,6 @@
 import { expect, type Page, test } from "@playwright/test";
 
-import { mockWeather, open, seedBalcony, type Scenario } from "./helpers";
+import { atDate, mockWeather, open, seedBalcony, type Scenario } from "./helpers";
 
 /**
  * Les alertes météo, comme sur le téléphone : Réglages → Simulation météo, puis Aujourd'hui et Saisons.
@@ -57,8 +57,10 @@ test.describe("alertes météo", () => {
   });
 
   test("gel : seul le basilic est à protéger, l'alerte se voit aussi dans Saisons", async ({ page }) => {
+    // Un gel de printemps : la jeune plante se protège (à l'automne, on récolterait tout, voir 15-fin-de-saison).
+    const now = await atDate(page, new Date(2027, 4, 5, 10));
     await mockWeather(page);
-    await seedBalcony(page, { plants: PLANTS });
+    await seedBalcony(page, { plants: PLANTS, now });
     await simulate(page, "frost");
     await expect(page.getByText("Gel cette nuit : protège le basilic")).toBeVisible();
     await expect(page.getByText("Avant la nuit · jusqu’à -3 °C")).toBeVisible();
@@ -96,8 +98,9 @@ test.describe("alertes météo", () => {
   });
 
   test("canicule : alerte même sans arrosage noté, sans doublon d'arrosage", async ({ page }) => {
+    const now = await atDate(page, new Date(2027, 6, 10, 10));
     await mockWeather(page);
-    await seedBalcony(page, { plants: PLANTS });
+    await seedBalcony(page, { plants: PLANTS, now });
     await simulate(page, "heat");
     await expect(page.getByText("35 °C aujourd’hui : pense à tes plantes")).toBeVisible();
     await expect(wateringRows(page)).toHaveCount(0);

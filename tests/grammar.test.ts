@@ -7,7 +7,7 @@ import { getCatalogPlant, PLANT_CATALOG, type CatalogPlant } from "../lib/plants
 import { agree, bareName, objectBefore, possessive } from "../lib/plants/grammar";
 import { guideLinkText, guideSteps, guideTitle, nextGestures, whatsNext, type GuideModel } from "../lib/plants/guide";
 import type { MaintenanceEvent } from "../lib/reminders/reminder-engine";
-import { freePotSubtitle, harvestedToastText, harvestQuestion, restartLabel } from "../lib/garden/harvest-end";
+import { freePotSubtitle, harvestedToastText, harvestQuestion, restartLabel, seasonFrostText, seasonQuestion } from "../lib/garden/harvest-end";
 
 const DAY = 86_400_000;
 const catalog = (id: string) => getCatalogPlant(id)!;
@@ -174,3 +174,27 @@ describe("après la récolte : les phrases accordées", () => {
     expect(restartLabel({ ...catalog("pak-choi"), label: "la laitue", gender: "f" }, 8)).toBe("Ressemer de la laitue");
   });
 });
+
+describe("fin de saison : les phrases accordées", () => {
+  it("la question, la même pour toutes les plantes : « Ta saison de … est finie ? »", () => {
+    expect(seasonQuestion(catalog("basil"))).toBe("Ta saison de basilic est finie ?");
+    expect(seasonQuestion(catalog("cherry-tomato"))).toBe("Ta saison de tomates cerises est finie ?");
+    expect(seasonQuestion(catalog("dill"))).toBe("Ta saison d’aneth est finie ?");
+    expect(seasonQuestion(catalog("dwarf-bean"))).toBe("Ta saison de haricots est finie ?");
+    expect(seasonQuestion(catalog("cosmos"))).toBe("Ta saison de cosmos est finie ?");
+    expect(freePotSubtitle(catalog("basil"))).toBe("Saison de basilic finie · que veux-tu y mettre ?");
+  });
+
+  it("le soir de gel : masculin, féminin, pluriels, et les fleurs", () => {
+    expect(seasonFrostText(catalog("basil")).title).toBe("Récolte tout ton basilic avant cette nuit");
+    expect(seasonFrostText(catalog("zucchini")).title).toBe("Récolte toute ta courgette avant cette nuit");
+    expect(seasonFrostText(catalog("eggplant")).title).toBe("Récolte toute ton aubergine avant cette nuit");
+    expect(seasonFrostText(catalog("dwarf-bean")).title).toBe("Récolte tous tes haricots avant cette nuit");
+    expect(seasonFrostText(catalog("cherry-tomato")).title).toBe("Récolte toutes tes tomates cerises avant cette nuit");
+    expect(seasonFrostText(catalog("nasturtium")).title).toBe("Cueille tes dernières capucines avant cette nuit");
+    expect(seasonFrostText(catalog("dwarf-sunflower")).title).toBe("Cueille ton dernier tournesol avant cette nuit");
+    expect(seasonFrostText(catalog("zucchini")).body).toBe("Jusqu’à {min} °C cette nuit : elle n’y résistera pas. Cueille tout ce qui peut l’être avant ce soir.");
+    expect(seasonFrostText(catalog("nasturtium")).body).toBe("Jusqu’à {min} °C cette nuit : elles n’y résisteront pas. Coupe les plus belles fleurs pour un bouquet avant ce soir.");
+  });
+});
+

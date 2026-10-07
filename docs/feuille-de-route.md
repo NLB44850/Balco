@@ -312,6 +312,9 @@ Choix notés : l'app ne copie pas les photos dans la galerie du téléphone (dé
 2. Balcon visuel : emplacement, exposition et pot par plante, photo, stade de culture, plan du balcon.
 3. Récoltes et recettes.
 4. Premiers défis communautaires.
+5. Rentrer une plante pour l'hiver (décidé le 8 octobre) : piment, poivron, physalis… passent l'hiver à l'intérieur
+   au lieu de finir leur saison (choix dans « Ton pot est libre », plantes et gestes à vérifier dans des sources,
+   « mode hiver » de la plante).
 
 **En parallèle, pour la rentabilité** : achats intégrés Balco+ quand l'usage est validé (voir le point 10).
 

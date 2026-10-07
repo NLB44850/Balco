@@ -12,9 +12,10 @@
  */
 import { MONTH_LONG, type CatalogPlant, type Month, type OnboardingAnswers } from "../plants/catalog";
 import { adaptToClimate, type ClimateInfo } from "../plants/climate";
-import { agree, bareName, byForm, capitalize, partitive, possessive } from "../plants/grammar";
+import { agree, bareName, byForm, capitalize, ofBare, partitive, possessive } from "../plants/grammar";
 import { guideModelFor, isSowing } from "../plants/guide";
 import { DEFAULT_HARVEST_DAYS } from "../plants/harvest-once";
+import { endsWithSeason, freesItsPot, isHarvestedOnce } from "../plants/season-end";
 import { seasonalSuggestions } from "../plants/suggestions";
 import type { ReminderSnooze } from "../reminders/reminder-actions";
 import type { MaintenanceEvent } from "../reminders/reminder-engine";
@@ -24,7 +25,7 @@ const DAY_MS = 86_400_000;
 /** La réponse et la question restent en mémoire un an : bien plus qu'une saison de récolte. */
 const KEEP_DAYS = 400;
 
-export const isHarvestedOnce = (entry: Pick<CatalogPlant, "harvestOnceDays">) => entry.harvestOnceDays !== undefined;
+export { endsWithSeason, freesItsPot, isHarvestedOnce, seasonFrostText } from "../plants/season-end";
 
 // --- Les phrases ---------------------------------------------------------------------------------------
 
@@ -42,13 +43,28 @@ export function harvestQuestion(entry: CatalogPlant) {
 /** Sous la question : ce qui se passe si on répond oui. */
 export const HARVEST_QUESTION_DETAIL = "Si oui, Balco te propose quoi mettre dans le pot. Sinon, rien ne change.";
 
-/** La ligne d'Aujourd'hui d'une plante récoltée dont le pot attend un choix. */
+/** « Ta saison de basilic est finie ? », « Ta saison de tomates cerises est finie ? » : la même phrase pour toutes. */
+export const seasonQuestion = (entry: Pick<CatalogPlant, "label">) => `Ta saison ${ofBare(entry)} est finie ?`;
+
+/** Sous la question de fin de saison : la relance, une seule fois, deux semaines plus tard. */
+export const seasonQuestionDetail = (again: boolean) =>
+  again ? "Si oui, Balco te propose quoi mettre dans le pot. Sinon, Balco ne te le redemandera plus." : "Si oui, Balco te propose quoi mettre dans le pot. Pas encore ? Balco te le redemandera dans deux semaines.";
+
+/** Le conseil de la feuille « Ton pot est libre » en fin de saison. */
+export const SEASON_END_TIP = "Coupe les tiges au ras de la terre et laisse les racines : elles nourrissent le pot.";
+
+/** « Radis récoltés », « Saison de basilic finie » : ce qui libère le pot. */
+export const potFreedBy = (entry: CatalogPlant) => (isHarvestedOnce(entry) ? `${bareName(entry)} ${agree(entry, "récolté")}` : `Saison ${ofBare(entry)} finie`);
+
+/** La ligne d'Aujourd'hui d'une plante dont le pot attend un choix. */
 export const FREE_POT_TITLE = "Ton pot est libre";
-export const freePotSubtitle = (entry: CatalogPlant) => `${bareName(entry)} ${agree(entry, "récolté")} · que veux-tu y mettre ?`;
+export const freePotSubtitle = (entry: CatalogPlant) => `${potFreedBy(entry)} · que veux-tu y mettre ?`;
 
 // --- La mémoire du téléphone ---------------------------------------------------------------------------
 
 const ASKED = "harvest-asked:";
+const SEASON_ASKED = "season-asked:";
+const SEASON_FROST = "season-frost:";
 const DONE = "harvest-done:";
 const keep = (now: Date) => new Date(now.getTime() + KEEP_DAYS * DAY_MS).toISOString();
 
@@ -56,7 +72,14 @@ const keep = (now: Date) => new Date(now.getTime() + KEEP_DAYS * DAY_MS).toISOSt
 /** `harvest-done:<plante>:<jour>` (ou l'ancienne forme, sans le jour). */
 const isDoneKey = (key: string, plantId: string) => key === `${DONE}${plantId}` || key.startsWith(`${DONE}${plantId}:`);
 
-export type HarvestEndState = { askedOn?: string; answered: boolean; answeredOn?: string };
+/**
+ * `askedOn` : jour de la question « Tout récolté ? » ; `seasonAsked` : jours de « Ta saison … est finie ? » (la
+ * question et sa relance) ; `frostOn` : soir de gel annoncé qui finit la saison d'une frileuse.
+ */
+export type HarvestEndState = { askedOn?: string; answered: boolean; answeredOn?: string; seasonAsked?: string[]; frostOn?: string };
+
+/** `<prefixe><plante>:<jour>` → [plante, jour]. */
+const keyParts = (key: string, prefix: string) => [key.slice(prefix.length, key.lastIndexOf(":")), key.slice(key.lastIndexOf(":") + 1)] as const;
 
 /** Plante → jour où la question a été posée, et « Oui » répondu. */
 export function harvestEndStates(snoozes: ReminderSnooze[], now: Date) {
@@ -68,6 +91,15 @@ export function harvestEndStates(snoozes: ReminderSnooze[], now: Date) {
       const split = rest.lastIndexOf(":");
       const plantId = split > 0 ? rest.slice(0, split) : rest;
       states.set(plantId, { ...states.get(plantId), answered: true, answeredOn: split > 0 ? rest.slice(split + 1) : undefined });
+    } else if (snooze.key.startsWith(SEASON_ASKED)) {
+      const [plantId, day] = keyParts(snooze.key, SEASON_ASKED);
+      const state = states.get(plantId);
+      states.set(plantId, { ...state, answered: state?.answered ?? false, seasonAsked: [...(state?.seasonAsked ?? []), day].sort() });
+    } else if (snooze.key.startsWith(SEASON_FROST)) {
+      const [plantId, day] = keyParts(snooze.key, SEASON_FROST);
+      const state = states.get(plantId);
+      // Le premier soir de gel compte : c'est lui qui a fini la saison.
+      states.set(plantId, { ...state, answered: state?.answered ?? false, frostOn: state?.frostOn && state.frostOn < day ? state.frostOn : day });
     } else if (snooze.key.startsWith(ASKED)) {
       const [plantId, day] = [snooze.key.slice(ASKED.length, snooze.key.lastIndexOf(":")), snooze.key.slice(snooze.key.lastIndexOf(":") + 1)];
       states.set(plantId, { ...states.get(plantId), answered: states.get(plantId)?.answered ?? false, askedOn: day });
@@ -82,6 +114,18 @@ export function markHarvestAsked(snoozes: ReminderSnooze[], plantId: string, now
   return [...snoozes, { key: `${ASKED}${plantId}:${dayKey(now)}`, kind: "skip", until: keep(now) }];
 }
 
+/** « Ta saison … est finie ? » posée aujourd'hui (la première fois, ou sa relance). */
+export function markSeasonAsked(snoozes: ReminderSnooze[], plantId: string, now: Date): ReminderSnooze[] {
+  const key = `${SEASON_ASKED}${plantId}:${dayKey(now)}`;
+  return snoozes.some((snooze) => snooze.key === key) ? snoozes : [...snoozes, { key, kind: "skip", until: keep(now) }];
+}
+
+/** Un soir de gel annoncé sous le seuil d'une annuelle frileuse : sa saison finit cette nuit. */
+export function markSeasonFrost(snoozes: ReminderSnooze[], plantId: string, now: Date): ReminderSnooze[] {
+  if (snoozes.some((snooze) => snooze.key.startsWith(`${SEASON_FROST}${plantId}:`))) return snoozes;
+  return [...snoozes, { key: `${SEASON_FROST}${plantId}:${dayKey(now)}`, kind: "skip", until: keep(now) }];
+}
+
 /** « Oui, tout est récolté. » */
 export function answerAllHarvested(snoozes: ReminderSnooze[], plantId: string, now: Date): ReminderSnooze[] {
   return [...snoozes.filter((snooze) => !isDoneKey(snooze.key, plantId)), { key: `${DONE}${plantId}:${dayKey(now)}`, kind: "skip", until: keep(now) }];
@@ -89,7 +133,7 @@ export function answerAllHarvested(snoozes: ReminderSnooze[], plantId: string, n
 
 /** Ressemée : une nouvelle saison commence, la question pourra revenir. */
 export function clearHarvestEnd(snoozes: ReminderSnooze[], plantId: string): ReminderSnooze[] {
-  return snoozes.filter((snooze) => !isDoneKey(snooze.key, plantId) && !snooze.key.startsWith(`${ASKED}${plantId}:`));
+  return snoozes.filter((snooze) => !isDoneKey(snooze.key, plantId) && ![ASKED, SEASON_ASKED, SEASON_FROST].some((prefix) => snooze.key.startsWith(`${prefix}${plantId}:`)));
 }
 
 // --- Quand poser la question ---------------------------------------------------------------------------
@@ -136,6 +180,51 @@ export function harvestQuestionDue(resolved: ResolvedPlant, events: MaintenanceE
   return date !== null && now.getTime() >= date.getTime();
 }
 
+/** La relance de « Ta saison … est finie ? » : une seule, deux semaines après la première question. */
+const SEASON_RETRY_DAYS = 14;
+
+/** Une plante ajoutée jusqu'à 3 mois après la fin de sa période de récolte a fini sa saison. */
+const LATE_ARRIVAL_DAYS = 92;
+
+/** Le jour où « Ta saison … est finie ? » devient due : le lendemain du soir de gel, sinon la fin de ses mois de récolte ou de floraison. */
+export function seasonQuestionDate(resolved: ResolvedPlant, events: MaintenanceEvent[], state: HarvestEndState | undefined, climate?: ClimateInfo | null): Date | null {
+  const { entry, plant } = resolved;
+  if (!endsWithSeason(entry) || plant.toPlant) return null;
+  const since = inGroundSince(plant, events);
+  if (since === null) return null;
+  const months = adaptToClimate(entry, climate).harvestMonths;
+  // Déjà sur le balcon quand on l'a ajoutée (pas de semis ni de plantation notés), juste après la fin de sa
+  // période de récolte (un basilic ajouté en octobre) : sa saison est déjà finie, la question vient tout de suite.
+  if (!events.some((event) => event.id === startEventId(plant.id))) {
+    const previousEnd = harvestRunEnd(months, new Date(since - LATE_ARRIVAL_DAYS * DAY_MS));
+    if (previousEnd && previousEnd.getTime() <= since) return new Date(since);
+  }
+  const runEnd = harvestRunEnd(months, new Date(since));
+  if (state?.frostOn) {
+    const [year, month, day] = state.frostOn.split("-").map(Number);
+    const morningAfter = new Date(year, month - 1, day + 1);
+    // Un gel noté avant la plantation de cette saison ne compte pas.
+    if (morningAfter.getTime() > since) return runEnd && runEnd < morningAfter ? runEnd : morningAfter;
+  }
+  return runEnd;
+}
+
+/** Due aujourd'hui : jamais répondue, puis une seule relance deux semaines après la première question. */
+export function seasonQuestionDue(resolved: ResolvedPlant, events: MaintenanceEvent[], now: Date, state: HarvestEndState | undefined, climate?: ClimateInfo | null) {
+  if (state?.answered) return false;
+  const date = seasonQuestionDate(resolved, events, state, climate);
+  if (date === null || now.getTime() < date.getTime()) return false;
+  const asked = state?.seasonAsked ?? [];
+  const today = dayKey(now);
+  if (asked.length === 0 || asked.includes(today)) return true;
+  if (asked.length >= 2) return false;
+  const [year, month, day] = asked[0].split("-").map(Number);
+  return now.getTime() >= new Date(year, month - 1, day + SEASON_RETRY_DAYS).getTime();
+}
+
+/** La question d'aujourd'hui est-elle la relance ? */
+export const isSeasonRetry = (state: HarvestEndState | undefined, now: Date) => (state?.seasonAsked ?? []).some((day) => day !== dayKey(now));
+
 /** Après « Oui », tant qu'aucun choix n'est fait : le pot est libre (plus d'arrosage ni de récolte). */
 /**
  * Feuille fermée sans choisir : la ligne « Ton pot est libre » reste le jour du « Oui » dans la liste, puis passe
@@ -143,7 +232,7 @@ export function harvestQuestionDue(resolved: ResolvedPlant, events: MaintenanceE
  */
 export const freePotIsQuiet = (state: HarvestEndState | undefined, now: Date) => state?.answeredOn !== dayKey(now);
 
-export const potIsFree = (resolved: ResolvedPlant, state: HarvestEndState | undefined) => isHarvestedOnce(resolved.entry) && !resolved.plant.toPlant && state?.answered === true;
+export const potIsFree = (resolved: ResolvedPlant, state: HarvestEndState | undefined) => freesItsPot(resolved.entry) && !resolved.plant.toPlant && state?.answered === true;
 
 // --- « Ton pot est libre » -----------------------------------------------------------------------------
 

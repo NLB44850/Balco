@@ -3,6 +3,7 @@
  * statistiques, badges et points. Aucune dépendance React Native, pour rester testable.
  */
 import { getCatalogPlant, soilCheckDepthCm, tasksForMonth, type CareTask, type CatalogPlant } from "../plants/catalog";
+import { endsWithSeason, seasonFrostText } from "../plants/season-end";
 import type { MaintenanceEvent, MaintenanceTaskType, PlantCareProfile } from "../reminders/reminder-engine";
 
 export type GardenPlant = {
@@ -103,6 +104,7 @@ export function careProfileFor(resolved: ResolvedPlant): PlantCareProfile {
     ...entry.care,
     allowedTaskTypes: Array.from(new Set<MaintenanceTaskType>([...entry.tasks.map((task) => task.type), "observation", "protection"])),
     soilCheckCm: soilCheckDepthCm(entry),
+    ...(endsWithSeason(entry) && entry.care.frostSensitive ? { seasonFrost: seasonFrostText(entry) } : {}),
   };
 }
 

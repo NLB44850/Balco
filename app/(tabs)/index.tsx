@@ -346,7 +346,7 @@ export default function HomeScreen() {
       done={item.done}
       picture={seasonPicture(item)}
       onToggle={() => void toggleItem(item)}
-      onOpen={() => (item.kind === "harvest-end" ? (item.stage === "question" ? freePot.openQuestion(item.resolved.plant.id) : freePot.openFreePot(item.resolved.plant.id)) : setSheetKey(item.key))}
+      onOpen={() => (item.kind === "harvest-end" ? (item.stage === "question" ? freePot.openQuestion(item.resolved.plant.id, item.subtitle) : freePot.openFreePot(item.resolved.plant.id)) : setSheetKey(item.key))}
     />
   );
   const evening = now.getHours() >= 17;

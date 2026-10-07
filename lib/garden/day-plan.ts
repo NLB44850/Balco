@@ -7,7 +7,20 @@
  * geste le marque « fait » sans faire changer la liste sous le doigt. Logique pure.
  */
 import { followUpsFor } from "./follow-ups";
-import { FREE_POT_TITLE, freePotIsQuiet, freePotSubtitle, HARVEST_QUESTION_DETAIL, harvestQuestion, harvestQuestionDue, potIsFree, type HarvestEndState } from "./harvest-end";
+import {
+  FREE_POT_TITLE,
+  freePotIsQuiet,
+  freePotSubtitle,
+  HARVEST_QUESTION_DETAIL,
+  harvestQuestion,
+  harvestQuestionDue,
+  isSeasonRetry,
+  potIsFree,
+  seasonQuestion,
+  seasonQuestionDetail,
+  seasonQuestionDue,
+  type HarvestEndState,
+} from "./harvest-end";
 import { activityDone, calendarActivities, eventForActivity, startActivity, type CalendarActivity, type CalendarSubject } from "../plants/calendar";
 import { tasksForMonth, type CareTask } from "../plants/catalog";
 import type { ClimateInfo } from "../plants/climate";
@@ -176,7 +189,8 @@ export function planDay({ plants, events, now, decisions = [], allDecisions = de
       const first = startGesture(false);
       return { resolved, gestures: [first], first, status: { tone: "new" as const, label: TO_PLANT_LABEL } };
     }
-    // Récoltée en une fois : le pot libre attend un choix, ou la question « Tout récolté ? » remplace sa ligne.
+    // Récoltée en une fois ou annuelle en fin de saison : le pot libre attend un choix, ou la question
+    // (« Tout récolté ? », « Ta saison de basilic est finie ? ») remplace sa ligne.
     const harvestEnd = harvestEnds?.get(plantId);
     if (potIsFree(resolved, harvestEnd)) {
       const first: PlanGesture = { key: `harvest-end:${plantId}:free`, kind: "harvest", plantId, title: FREE_POT_TITLE, instruction: freePotSubtitle(resolved.entry), minutes: 2, done: false, source: { type: "harvest-end", stage: "free", resolved, quiet: freePotIsQuiet(harvestEnd, now) } };
@@ -184,6 +198,10 @@ export function planDay({ plants, events, now, decisions = [], allDecisions = de
     }
     if (harvestQuestionDue(resolved, events, now, harvestEnd, climate)) {
       const first: PlanGesture = { key: `harvest-end:${plantId}:question`, kind: "harvest", plantId, title: harvestQuestion(resolved.entry), instruction: HARVEST_QUESTION_DETAIL, minutes: 1, done: false, source: { type: "harvest-end", stage: "question", resolved } };
+      return { resolved, gestures: [first], first, status: { tone: "good" as const, label: STATUS_LABEL.good } };
+    }
+    if (seasonQuestionDue(resolved, events, now, harvestEnd, climate)) {
+      const first: PlanGesture = { key: `harvest-end:${plantId}:question`, kind: "harvest", plantId, title: seasonQuestion(resolved.entry), instruction: seasonQuestionDetail(isSeasonRetry(harvestEnd, now)), minutes: 1, done: false, source: { type: "harvest-end", stage: "question", resolved } };
       return { resolved, gestures: [first], first, status: { tone: "good" as const, label: STATUS_LABEL.good } };
     }
     const own = decisions.filter((decision) => decision.plantId === plantId);

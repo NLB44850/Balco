@@ -64,6 +64,13 @@ function groupedText(decisions: ReminderDecision[], priority: ReminderPriority):
         body: `${value ?? "De la"}${value === undefined ? " pluie est prévue" : " mm de pluie sont prévus"} dans les 12 prochaines heures pour ${names}.`,
       };
     case "frost":
+      // Annuelles frileuses en automne : le gel finit leur saison, on récolte tout avant la nuit.
+      if (first.action === "do") {
+        return {
+          title: `${priority === "urgent" ? "Gel cette nuit" : "Nuit fraîche"} : récolte tout avant ce soir`,
+          body: `${value === undefined ? "Froid prévu cette nuit" : `Jusqu’à ${value} °C cette nuit`} : leur saison se termine. Cueille tout ce qui peut l’être sur ${names}.`,
+        };
+      }
       return {
         title: `${priority === "urgent" ? "Gel cette nuit" : "Nuit fraîche"} : protège ${count} plantes`,
         body: `${value === undefined ? "Froid prévu cette nuit" : `Jusqu’à ${value} °C cette nuit`}. Rapproche du mur ou couvre d’un voile ${names}.`,

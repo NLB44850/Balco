@@ -27,3 +27,14 @@ export function wishNames(entries: CatalogPlant[]) {
 
 /** Source de la notification du 1er mars (une seule à la fois). */
 export const SPRING_REMINDER_SOURCE = "balco-spring-wishes";
+
+/**
+ * « Me le reproposer au printemps » (feuille « Ton pot est libre ») : la plante rejoint les envies du printemps,
+ * une seule fois. La carte de mars et la notification du 1er mars la proposeront.
+ */
+export function addSpringWish(wishes: string[] | undefined, catalogId: string) {
+  return wishes?.includes(catalogId) ? wishes : [...(wishes ?? []), catalogId];
+}
+
+/** Le texte de la notification du 1er mars. */
+export const springReminderContent = (entries: CatalogPlant[]) => ({ title: "C’est le printemps sur ton balcon 🌱", body: `C’est le moment : ${wishNames(entries)}.` });
