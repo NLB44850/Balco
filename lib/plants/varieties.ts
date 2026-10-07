@@ -118,6 +118,12 @@ export const PLANT_VARIETIES: Record<string, PlantVariety[]> = {
     { id: "salad-bowl", name: "Salad Bowl", note: "Rosette de feuilles tendres à cueillir une à une pendant des semaines." },
     { id: "feuille-de-chene-rouge", name: "Feuille de chêne rouge", note: "Version bronze, plus résistante à la chaleur pour les semis d’été." },
   ],
+  "head-lettuce": [
+    { id: "sucrine", name: "Sucrine", note: "Petite et croquante, 10 à 20 cm : idéale en pot, elle supporte la chaleur." },
+    { id: "batavia-blonde-de-paris", name: "Batavia blonde de Paris", note: "Pomme ferme et croquante qui tient bien au printemps et en été." },
+    { id: "merveille-des-quatre-saisons", name: "Merveille des quatre saisons", note: "Pomme rouge et verte, à semer presque toute l’année." },
+    { id: "reine-de-mai", name: "Reine de mai", note: "Précoce : les premières salades du printemps, semée tôt à l’abri." },
+  ],
   arugula: [
     { id: "cultivee", name: "Cultivée", note: "Levée en quelques jours, feuilles tendres prêtes en trois semaines en jardinière." },
     { id: "sauvage", name: "Sauvage", note: "Plus piquante et vivace, elle repousse des mois après chaque coupe dans son pot." },

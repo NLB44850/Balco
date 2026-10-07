@@ -84,8 +84,8 @@ visuelle, retour immédiat.
 **Nouvelle conversation ? Tout est validé sur son téléphone et fusionné dans `main` : l'onboarding et le pas-à-pas
 pour planter (PR https://github.com/NLB44850/Balco/pull/28, 06/10), puis le rempotage (R1 à R3), les 11 pas-à-pas
 (`docs/pas-a-pas.md`), Nora qui récupère sa réponse perdue et Saisons corrigé (PR https://github.com/NLB44850/Balco/pull/29,
-07/10). Livré le 07/10, à valider sur son téléphone : accords des textes et après-récolte (point 5). Ensuite : laitue
-pommée, fin de saison des annuelles, l'APK (point 1). Récap pour claude.ai :
+07/10). Livré le 07/10, à valider sur son téléphone : accords des textes, après-récolte et laitue pommée (point 5).
+Ensuite : photo de la laitue, fin de saison des annuelles, l'APK (point 1). Récap pour claude.ai :
 `docs/recap-pour-claude.md` + captures `docs/captures/` (refaites par `bash scripts/captures.sh`, spec
 `e2e/captures.spec.ts` sautée sans `CAPTURES=1`).**
 
@@ -157,7 +157,10 @@ et les 10 étapes du test utilisateur du 04/10 (détail dans « Historique des l
      renomme `<id>:start`, `:thin`, `:outdoors`, `:pinch` en `…:<date>`, puis « à planter »). Pot vide ou autre plante :
      `removePlant` ; les plantes retirées (`pastPlants` du contexte) comptent dans `computeStats`, `weekSummary` et
      `celebrationFor`. E2e `14-apres-recolte`.
-   - Étapes suivantes : laitue pommée au catalogue (photo, calendrier vérifié), puis fin de saison des annuelles.
+   - Laitue pommée ajoutée (`head-lettuce`, 101 plantes, calendrier vérifié dans `docs/sources-calendrier.md`, récoltée
+     en une fois, 14 j) ; **sa photo reste à télécharger dans le Codespace** (`AWAITING_PHOTO` de
+     `tests/stock-photos.test.ts`, emoji en attendant).
+   - Étape suivante, après sa validation : fin de saison des annuelles (« Ta saison de basilic est finie ? »).
 6. **Mémoire de Nora sur plusieurs jours** : il doit encore faire le test sur 2-3 jours (retour à recueillir).
 7. **Tester sans Codespace** (proposé, pas encore demandé) : version web hébergée qui se met à jour seule et APK
    construit par une action GitHub (EXPO_TOKEN qu'il enregistre lui-même dans les secrets du dépôt).

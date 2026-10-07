@@ -684,6 +684,15 @@ export const PLANT_CATALOG: CatalogPlant[] = [
     wateringMonths: [3, 4, 5, 6, 7, 8, 9, 10, 11],
   }),
   plant({
+    id: "head-lettuce", name: "Laitue pommée", label: "la laitue", gender: "f", emoji: "🥬", category: "leafy-vegetable",
+    sunlight: ["partial", "sunny"], minSpace: "planter", difficulty: "easy", perennial: false, melliferous: false, goals: ["salads"], potLiters: 5,
+    pitch: "Une belle pomme croquante par pot, à couper d’un coup quand elle est ferme.",
+    sowMonths: [2, 3, 4, 5, 6, 7, 8], plantMonths: [4, 5, 6, 7, 8, 9], harvestMonths: [5, 6, 7, 8, 9, 10],
+    harvestTip: "Coupe la pomme au ras de la terre dès qu’elle est ferme : n’attends pas, elle monterait en graine.",
+    care: { ...THIRSTY, heatThresholdC: 25, frostThresholdC: -3, frostSensitive: false },
+    wateringMonths: [3, 4, 5, 6, 7, 8, 9, 10],
+  }),
+  plant({
     id: "arugula", name: "Roquette", label: "la roquette", gender: "f", emoji: "🥬", category: "leafy-vegetable",
     sunlight: ["partial", "sunny"], minSpace: "windowsill", difficulty: "easy", perennial: false, melliferous: false, goals: ["salads"], potLiters: 3,
     pitch: "Prête à croquer trois semaines après le semis, avec un petit goût poivré.",
@@ -1487,6 +1496,7 @@ const SEARCH_ALIASES: Record<string, string[]> = {
   pea: ["pois"],
   "mini-cucumber": ["concombre", "cornichon"],
   "cut-lettuce": ["laitue", "salade"],
+  "head-lettuce": ["laitue", "salade", "batavia", "sucrine"],
   chard: ["bette", "blette"],
   kale: ["chou", "kale"],
   "spring-onion": ["oignon", "cebette", "ciboule"],

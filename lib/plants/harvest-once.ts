@@ -35,6 +35,11 @@ export const HARVEST_ONCE: Record<string, HarvestOnce> = {
     note: "À récolter à 6-8 cm (une balle de tennis) ; plus grosse, elle devient fibreuse.",
     sources: ["https://www.jardiner-malin.fr/actu/betterave-recolte-taille.html", "https://www.castorama.fr/"],
   },
+  "head-lettuce": {
+    harvestDays: 14,
+    note: "À couper dès que la pomme est ferme : chaque jour de plus la rapproche de la montée en graine (plus vite l'été).",
+    sources: ["https://www.jardiner-malin.fr/fiche/laitue-monte-graine.html", "https://www.truffaut.com/salade-varietes-plantation-culture.html"],
+  },
   turnip: {
     harvestDays: 14,
     note: "À récolter avant 8 cm ; plus gros, il devient creux.",

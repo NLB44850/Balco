@@ -289,6 +289,12 @@ export const PLANTING: Record<string, Planting> = {
     thinning: true, pinching: null,
     sources: ["https://www.jardipartage.fr/laitue-a-couper/", "https://www.lovethegarden.com/fr-fr/guides-de-culture/planter-salade", "https://www.toutvert.fr/salade-en-jardiniere-semer-cultiver-recolter/"],
   },
+  "head-lettuce": {
+    sowDepthCm: 0.5, seedsPerHole: 3, perPot: 1, spacingCm: 25,
+    germinationDays: [6, 12], harvestWeeksFromSowing: [8, 12], harvestWeeksFromPlanting: [5, 8],
+    thinning: true, pinching: null,
+    sources: ["https://www.jardiner-malin.fr/fiche/laitue.html", "https://www.truffaut.com/salade-varietes-plantation-culture.html", "https://www.futura-sciences.com/maison/questions-reponses/jardinage-semer-laitues-printemps-16624/"],
+  },
   "arugula": {
     sowDepthCm: 1, seedsPerHole: 0, perPot: 6, spacingCm: 8,
     germinationDays: [5, 10], harvestWeeksFromSowing: [4, 8], harvestWeeksFromPlanting: null,

@@ -181,7 +181,7 @@ test("catalogue : la fiche d'une nouvelle plante et ses variétés", async ({ pa
   const errors = trackErrors(page);
   await mockWeather(page);
   await seedBalcony(page, { plants: ["basil"], wateredDaysAgo: 1 });
-  await open(page, "/garden/add", "100 plantes pour le balcon");
+  await open(page, "/garden/add", "101 plantes pour le balcon");
   await page.getByPlaceholder("Basilic, fraisier, lavande…").fill("cassis");
   await page.getByRole("button", { name: /^Cassissier, voir le détail/ }).click();
   await expect(page.getByText("Variétés conseillées")).toBeVisible();
@@ -194,7 +194,7 @@ test("fiche du bas : jamais plus haute que l'écran, se ferme par « × » ou en
   await page.setViewportSize({ width: 360, height: 640 });
   await mockWeather(page);
   await seedBalcony(page, { plants: ["basil"], wateredDaysAgo: 1 });
-  await open(page, "/garden/add", "100 plantes pour le balcon");
+  await open(page, "/garden/add", "101 plantes pour le balcon");
   await page.getByPlaceholder("Basilic, fraisier, lavande…").fill("piment");
   const openSheet = () => page.getByRole("button", { name: /^Piment, voir le détail/ }).click();
 

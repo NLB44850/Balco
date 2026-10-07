@@ -25,7 +25,7 @@ const harvest = (at: Date, id = `p:harvest:${at.getTime()}`): MaintenanceEvent =
 describe("le catalogue : plantes récoltées en une fois", () => {
   it("marque les radis, carottes, betteraves, navets, ail, pommes de terre… avec leur durée de récolte", () => {
     const once = PLANT_CATALOG.filter((entry) => entry.harvestOnceDays !== undefined).map((entry) => entry.id).sort();
-    expect(once).toEqual(["beetroot", "crosne", "garlic", "kohlrabi", "oca", "pak-choi", "potato", "radish", "round-carrot", "spring-onion", "turnip"]);
+    expect(once).toEqual(["beetroot", "crosne", "garlic", "head-lettuce", "kohlrabi", "oca", "pak-choi", "potato", "radish", "round-carrot", "spring-onion", "turnip"]);
     expect(PLANT_CATALOG.find((entry) => entry.id === "radish")?.harvestOnceDays).toBe(7);
     expect(PLANT_CATALOG.find((entry) => entry.id === "round-carrot")?.harvestOnceDays).toBe(21);
     expect(PLANT_CATALOG.find((entry) => entry.id === "basil")?.harvestOnceDays).toBeUndefined();
@@ -171,5 +171,16 @@ describe("laisser le pot vide : les récoltes restent dans la progression", () =
     expect([without.harvests, without.gestures]).toEqual([0, 0]);
     expect([withPast.harvests, withPast.gestures, withPast.plants]).toEqual([1, 2, 0]);
     expect(weekSummary([], events, [], new Date(2026, 4, 12), [gone]).harvests).toBe(1);
+  });
+});
+
+describe("la laitue pommée", () => {
+  it("se récolte en une fois ; « Ta laitue est-elle toute récoltée ? », puis ressemer en mars, replanter en été (comme son premier geste)", () => {
+    const lettuce = plant("head-lettuce");
+    expect(lettuce.entry.harvestOnceDays).toBe(14);
+    expect(freePotChoices(lettuce, null, { month: 3 })[0].label).toBe("Ressemer de la laitue");
+    expect(freePotChoices(lettuce, null, { month: 6 })[0].label).toBe("Replanter de la laitue");
+    expect(freePotChoices(lettuce, null, { month: 9 })[0].label).toBe("Replanter de la laitue");
+    expect(freePotChoices(lettuce, null, { month: 11 }).some((choice) => choice.kind === "restart")).toBe(false);
   });
 });

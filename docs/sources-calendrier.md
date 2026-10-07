@@ -333,6 +333,13 @@ Confiance : haute (sources concordantes), moyenne (nuances entre sources), faibl
 - Note : aucun (premiers fruits 2 à 3 ans après la plantation)
 - Sources : [jardiner-malin.fr](https://www.jardiner-malin.fr/fiche/kiwai.html), [promessedefleurs.com](https://www.promessedefleurs.com/fruitiers/petits-fruits/kiwi/kiwi-arguta-issai-autofertile.html), [homejardin.com](http://www.homejardin.com/kiwai/actinidia_arguta.html)
 
+## Laitue pommée
+
+- Semis : févr.–août (au chaud : févr.–mars) · Plantation : avr.–sept. · Récolte : mai–oct.
+- Ajoutée le 07/10 · confiance moyenne
+- Note : plantation en octobre écartée (la pomme n'a pas le temps de se former en pot) ; à couper dès que la pomme est ferme, elle monte vite en graine l'été
+- Sources : [truffaut.com](https://www.truffaut.com/salade-varietes-plantation-culture.html), [jardiner-malin.fr](https://www.jardiner-malin.fr/fiche/cultiver-laitue-en-pot-balcon-terrasse.html), [bricomarche.com (Batavia blonde de Paris)](https://www.bricomarche.com/p/laitue-batavia-blonde-de-paris/3211500007599), [bricomarche.com (Reine de mai)](https://www.bricomarche.com/p/laitue-pommee-reine-de-mai/3211500007650)
+
 ## Lavande
 
 - Semis : — · Plantation : mars–mai, sept.–oct. · Floraison : juin–août
