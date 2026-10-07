@@ -39,18 +39,18 @@ Tout se passe dans son GitHub Codespace (pas de Docker sur son PC).
 
 - `pnpm -s check`, `pnpm -s lint`, puis `TEST_DATABASE_URL=mysql://balco:balco@localhost:3306/balco_cal npx vitest run`
   (MariaDB locale : `service mariadb start` si elle s'est arrêtée, `apt-get install -y mariadb-server` si elle manque,
-  puis `DATABASE_URL=… npx drizzle-kit migrate` ; 524 tests à ce jour). Dans un conteneur
+  puis `DATABASE_URL=… npx drizzle-kit migrate` ; 539 tests à ce jour). Dans un conteneur
   neuf : `apt-get install -y mariadb-server`, `service mariadb start`, créer la base `balco_cal` et l'utilisateur
   `balco`/`balco`, puis `pnpm -s build && DATABASE_URL=mysql://balco:balco@localhost:3306/balco_cal node dist/migrate.mjs`.
 - `npx expo export --platform android` pour s'assurer que le bundle Android se construit.
 - **Tests de bout en bout** (à lancer quand le porteur le demande, et avant chaque grosse évolution) :
   `bash scripts/e2e.sh` (≈ 4 min : construit l'app web avec la simulation météo, migre la base, démarre
   le vrai serveur sur le port 3100, lance Playwright). `bash scripts/e2e.sh meteo` pour un seul fichier,
-  `E2E_SKIP_BUILD=1` pour ne pas reconstruire. Scénarios dans `e2e/` (44 aujourd'hui, avec un faux service d'IA pour Observer et Nora) : parcours
+  `E2E_SKIP_BUILD=1` pour ne pas reconstruire. Scénarios dans `e2e/` (46 aujourd'hui, avec un faux service d'IA pour Observer et Nora) : parcours
   (onboarding, écrans, cocher/Annuler, fête, catalogue, fiche d'une nouvelle plante, feuille du bas qui se ferme,
   suggestions de saison, Saisons rangé par type), météo (pluie + eau économisée, gel + Saisons,
   orage, vent, canicule, « Pas aujourd'hui », retour météo réelle), compte (code de connexion lu dans
-  `dist/e2e-server.log`, balcon retrouvé sur un 2ᵉ téléphone, le 1ᵉʳ prévenu « sauvegardé depuis un autre téléphone ») et vacances, rempotage (`10-rempotage`), gestes de suite (`11-gestes-de-suite`), Nora quand la connexion se coupe (`12-nora-erreur`), Saisons en octobre (`13-saisons-octobre`), après-récolte (`14-apres-recolte`). Open-Meteo est simulé
+  `dist/e2e-server.log`, balcon retrouvé sur un 2ᵉ téléphone, le 1ᵉʳ prévenu « sauvegardé depuis un autre téléphone ») et vacances, rempotage (`10-rempotage`), gestes de suite (`11-gestes-de-suite`), Nora quand la connexion se coupe (`12-nora-erreur`), Saisons en octobre (`13-saisons-octobre`), après-récolte (`14-apres-recolte`), fin de saison (`15-fin-de-saison`). Un test qui dépend de la saison fixe sa date avec `atDate(page, date)` et passe `now` à `seedBalcony`. Open-Meteo est simulé
   (`e2e/helpers.ts`, `mockWeather`), le balcon est posé dans le stockage (`seedBalcony`). Les cases à
   cocher s'appellent « Marquer comme fait : <titre> ». Échecs : captures dans `dist/e2e-results/`.
 - Rendu web : `npx expo export --platform web`, serveur `node dist/standalone/index.mjs` avec
@@ -85,7 +85,7 @@ visuelle, retour immédiat.
 pour planter (PR https://github.com/NLB44850/Balco/pull/28, 06/10), puis le rempotage (R1 à R3), les 11 pas-à-pas
 (`docs/pas-a-pas.md`), Nora qui récupère sa réponse perdue et Saisons corrigé (PR https://github.com/NLB44850/Balco/pull/29,
 07/10). Validé sur son téléphone le 08/10 : accords des textes, après-récolte et laitue pommée (point 5), fusionnés dans `main` (PR https://github.com/NLB44850/Balco/pull/30, 08/10).
-Ensuite : fin de saison des annuelles (quand il le dira), l'APK (point 1). Récap pour claude.ai :
+Livré le 08/10, à valider sur son téléphone : fin de saison des annuelles (point 5 bis). Ensuite : l'APK (point 1). Récap pour claude.ai :
 `docs/recap-pour-claude.md` + captures `docs/captures/` (refaites par `bash scripts/captures.sh`, spec
 `e2e/captures.spec.ts` sautée sans `CAPTURES=1`).**
 
@@ -166,7 +166,21 @@ et les 10 étapes du test utilisateur du 04/10 (détail dans « Historique des l
      en une fois, 14 j), photo ajoutée le 08/10 (Wikimedia, CC BY 2.0, vue sur son téléphone). Pour une prochaine plante : candidates dans le
      Codespace, choix dans `choix.json`, puis `bash scripts/photos/ajouter-photo.sh <id>` (télécharge, allège si
      `convert` existe, refait l'index, pousse ; sinon alléger dans la session : `convert … -resize '800x800>' -strip -quality 74`).
-   - Étape suivante, après sa validation : fin de saison des annuelles (« Ta saison de basilic est finie ? »).
+5 bis. **Fin de saison des annuelles (livrée le 08/10, à valider)**, plan et décisions validés avec lui le 08/10 :
+   - 52 annuelles (toutes sauf micro-pousses et plantes récoltées en une fois) : `endsWithSeason` dans
+     `lib/plants/season-end.ts`. « Ta saison de basilic est finie ? » (même phrase pour toutes, `seasonQuestion`, `ofBare`)
+     remplace la ligne à la fin de la période de récolte ou de floraison en cours (`seasonQuestionDate`,
+     `harvestRunEnd` depuis la mise en terre) ; une seule relance 14 jours après (`season-asked:<id>:<jour>`, deux au
+     plus, `isSeasonRetry`, texte « Balco te le redemandera dans deux semaines » puis « ne te le redemandera plus »).
+   - Gel en deux temps pour les frileuses d'août à décembre (`SEASON_FROST_MONTHS`) : profil `seasonFrost`
+     (`careProfileFor`) → décision `cause: "frost"`, `action: "do"`, `taskType: "harvest"` : « Récolte tout ton basilic
+     avant cette nuit » (« Cueille tes derniers cosmos » pour les fleurs ; groupée : « récolte tout avant ce soir »),
+     aussi pour le serveur ; soir noté `season-frost:<id>:<jour>` (`use-day-plan`), question le lendemain matin.
+     Au printemps, la jeune plante se protège toujours.
+   - Après « Oui » : même « Ton pot est libre » (« Saison de basilic finie », conseil `SEASON_END_TIP`), case « Me le
+     reproposer au printemps » cochée d'office quand on ne peut plus ressemer (`addSpringWish`, envies du printemps,
+     notification du 1er mars). E2e `15-fin-de-saison`.
+   - Corrigé au passage : « de haricots » (h aspiré, `elides` dans grammar.ts) au lieu de « d'haricots ».
 6. **Mémoire de Nora sur plusieurs jours** : il doit encore faire le test sur 2-3 jours (retour à recueillir).
 7. **Tester sans Codespace** (proposé, pas encore demandé) : version web hébergée qui se met à jour seule et APK
    construit par une action GitHub (EXPO_TOKEN qu'il enregistre lui-même dans les secrets du dépôt).
