@@ -27,9 +27,15 @@ choix que l'accueil. Les phrases longues restent dans les feuilles.
    devenu feuille du bas, partagé avec Aujourd'hui et Saisons), Soleil avec « Je ne sais pas » gardé
    (`sunlightUnknown`, vaut « partial ») et son astuce, Espace, Envies (« Enregistrer »), Envies du printemps
    (« Retirer », notification du 1er mars recalculée). « Crédits photos » passe dans À propos. E2e `16-reglages`.
-2. Toi : Prénom › et « Comment Nora te parle » ›, libellés de la carte de Nora.
-3. Rappels : ordre, 8 h 30, plage calme ajustée, état « Bloqués par ton téléphone », lignes grisées, Plantes suivies,
-   feuille « On vérifie ensemble ».
-4. Compte et Balco+ (table d'intérêt, migration), nouvelle suppression du compte.
+2. **Fait** : Toi, Prénom › et « Comment Nora te parle » › (`NORA_LEVELS` : `title` long, `short` pour la ligne), mêmes
+   libellés dans la carte de Nora ; `EXPERIENCE_OPTIONS` retiré.
+3. **Fait** : Rappels (`lib/reminders/settings-text.ts` : `withReminderHour` ajuste la plage calme et le dit,
+   `coversReminder` grise un choix de plage qui couvrirait le conseil, `followedText`, `vacationText`) ;
+   `notificationPermission` (local-notifications) pour « Bloqués par ton téléphone » ; Plantes suivies sans les
+   plantes à planter ni les pots libres, et `useDayPlan` ne filtre plus que `reminderDecisions` (notifications).
+4. **Fait** : Compte (`backupStatus`), feuille Balco+ (`plusSheetBenefits`, `freeForAllText`), « Me prévenir à
+   l'ouverture » (table `plus_interest`, migration 0016, `server/plus-router.ts` : `plus.interest`,
+   `plus.notifyMe`, 10 adresses par heure et par réseau), suppression du compte qui garde le balcon
+   (`deleteAccount` de garden-context : plus de retour à l'accueil).
 5. À propos (Donner mon avis, Confidentialité « Bientôt », version) et Version de test.
 6. Vérifications complètes, test sur le téléphone.

@@ -4,6 +4,8 @@
  * Ton balcon, tes rappels, toi, ta sauvegarde et ton compte. Chaque changement s'enregistre tout de suite, sans bouton « Valider ».
  * S'ouvre depuis la roue crantée de Moi.
  */
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import { TRPCClientError } from "@trpc/client";
 import { useRouter } from "expo-router";
 import { useCallback, useEffect, useState } from "react";
 import { Alert, AppState, Linking, Platform, Pressable, ScrollView, StyleSheet, View } from "react-native";
@@ -18,16 +20,17 @@ import { CatalogPicture, PlantPicture } from "@/components/plant-picture";
 import { ScreenHeader } from "@/components/screen-header";
 import { glass } from "@/components/ui/glass";
 import { Text, TextInput } from "@/components/ui/typography";
-import { freeBenefits, plusBenefits } from "@/lib/plans";
+import { freeForAllText, plusSheetBenefits } from "@/lib/plans";
+import { trpc } from "@/lib/trpc";
 import { useColors } from "@/hooks/use-colors";
 import { useLocalWeather } from "@/hooks/use-local-weather";
 import { useWeatherSimulation } from "@/hooks/use-weather-simulation";
 import { useGarden } from "@/lib/garden/garden-context";
-import { dayKey, plantDisplayName, relativeDay } from "@/lib/garden/garden-logic";
+import { dayKey, plantDisplayName } from "@/lib/garden/garden-logic";
 import { harvestEndStates, potIsFree } from "@/lib/garden/harvest-end";
 import { GOAL_OPTIONS, SPACE_OPTIONS, SUNLIGHT_UNKNOWN } from "@/lib/garden/onboarding";
 import { NORA_LEVELS } from "@/lib/ai/memory";
-import { cityValue, goalsValue, NOT_YET, spaceValue, springWishEntries, springWishesValue, SUNLIGHT_CHOICES, sunlightChoice, sunlightPatch, SUNLIGHT_TIP, sunlightValue } from "@/lib/garden/settings-summary";
+import { backupStatus, cityValue, goalsValue, NOT_YET, spaceValue, springWishEntries, springWishesValue, SUNLIGHT_CHOICES, sunlightChoice, sunlightPatch, SUNLIGHT_TIP, sunlightValue } from "@/lib/garden/settings-summary";
 import { nextSpringReminder, SPRING_REMINDER_SOURCE, springReminderContent } from "@/lib/garden/spring";
 import { notificationsUnavailableReason } from "@/lib/notifications/module";
 import { activateReminders, NOTIFICATIONS_DENIED } from "@/lib/reminders/activate";
@@ -49,6 +52,9 @@ import type { ReminderSnooze } from "@/lib/reminders/reminder-actions";
 import { coversReminder, followedText, hourText, isFollowed, QUIET_END_HOURS, QUIET_START_HOURS, quietText, REMINDER_HOURS, reminderHourChoice, toggleFollowed, vacationText, withReminderHour } from "@/lib/reminders/settings-text";
 import { WEATHER_SCENARIOS } from "@/lib/weather/simulation";
 
+/** « Me prévenir à l'ouverture » déjà demandé depuis ce téléphone (sans compte, l'adresse n'est gardée que sur le serveur). */
+const PLUS_NOTIFY_STORAGE_KEY = "balco.plus.notify.v1";
+
 export default function SettingsScreen() {
   const insets = useSafeAreaInsets();
   const colors = useColors();
@@ -58,18 +64,52 @@ export default function SettingsScreen() {
   const [reminderSettings, setReminderSettings] = useState<LocalReminderSettings>(defaultLocalReminderSettings);
   const [settingsLoaded, setSettingsLoaded] = useState(false);
   const [nameDraft, setNameDraft] = useState("");
-  const [confirmDelete, setConfirmDelete] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [deleteError, setDeleteError] = useState<string | null>(null);
-
+  const openDelete = () => {
+    setDeleteError(null);
+    setSheet("delete");
+  };
+  /** Le compte part, le balcon reste : l'écran repasse tout seul en « Sur ce téléphone seulement ». */
   const removeAccount = async () => {
     setDeleting(true);
     setDeleteError(null);
     try {
       await deleteAccount();
+      setSheet(null);
     } catch {
       setDeleteError("La suppression n’a pas abouti. Vérifie ta connexion et réessaie.");
+    } finally {
       setDeleting(false);
+    }
+  };
+
+  // « Me prévenir à l'ouverture » de Balco+ : le compte, ou sans compte une adresse e-mail.
+  const interest = trpc.plus.interest.useQuery(undefined, { enabled: account.signedIn, retry: false });
+  const [notifiedHere, setNotifiedHere] = useState(false);
+  const notified = notifiedHere || (account.signedIn && interest.data?.interested === true);
+  useEffect(() => {
+    void AsyncStorage.getItem(PLUS_NOTIFY_STORAGE_KEY).then((value) => setNotifiedHere(value === "1")).catch(() => undefined);
+  }, []);
+  const [notifyEmail, setNotifyEmail] = useState("");
+  const [notifying, setNotifying] = useState(false);
+  const [notifyError, setNotifyError] = useState<string | null>(null);
+  const notifyMutation = trpc.plus.notifyMe.useMutation();
+  const notifyMe = async () => {
+    if (!account.signedIn && !/^\S+@\S+\.\S+$/.test(notifyEmail.trim())) {
+      setNotifyError("Vérifie ton adresse e-mail.");
+      return;
+    }
+    setNotifying(true);
+    setNotifyError(null);
+    try {
+      await notifyMutation.mutateAsync(account.signedIn ? {} : { email: notifyEmail.trim() });
+      setNotifiedHere(true);
+      await AsyncStorage.setItem(PLUS_NOTIFY_STORAGE_KEY, "1").catch(() => undefined);
+    } catch (error) {
+      setNotifyError(error instanceof TRPCClientError && error.data?.code === "TOO_MANY_REQUESTS" ? error.message : "Pas de connexion pour l’instant : réessaie plus tard.");
+    } finally {
+      setNotifying(false);
     }
   };
 
@@ -101,7 +141,7 @@ export default function SettingsScreen() {
 
   const location = useLocalWeather();
   const [cityPickerOpen, setCityPickerOpen] = useState(false);
-  const [sheet, setSheet] = useState<"sun" | "space" | "goals" | "spring" | "name" | "level" | "hour" | "quiet" | "plants" | "check" | null>(null);
+  const [sheet, setSheet] = useState<"sun" | "space" | "goals" | "spring" | "name" | "level" | "hour" | "quiet" | "plants" | "check" | "plus" | "delete" | null>(null);
   const closeSheet = () => setSheet(null);
   // « Envies » : plusieurs choix, enregistrés d'un coup par « Enregistrer ».
   const [goalsDraft, setGoalsDraft] = useState<string[]>([]);
@@ -198,17 +238,7 @@ export default function SettingsScreen() {
     closeSheet();
   };
 
-  const syncLabel = !account.signedIn
-    ? null
-    : account.status === "syncing"
-      ? "Synchronisation…"
-      : account.status === "offline"
-        ? "Hors ligne : tes changements partiront dès que possible."
-        : account.status === "other-device"
-          ? "Ton jardin est sauvegardé depuis un autre téléphone : les changements faits ici restent sur ce téléphone."
-        : account.lastSyncedAt
-          ? `Sauvegardé ${relativeDay(new Date(account.lastSyncedAt))} à ${new Date(account.lastSyncedAt).toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" })}`
-          : "Première sauvegarde en cours…";
+  const backup = backupStatus(account);
 
   return (
     <LightScreen bottom>
@@ -287,6 +317,47 @@ export default function SettingsScreen() {
           </>
         )}
       </BottomSheet>
+      <BottomSheet visible={sheet === "plus"} onClose={closeSheet}>
+        <SheetHeading title="Balco+" intro="Pour ne rien laisser au hasard." />
+        <View style={styles.benefits}>
+          {plusSheetBenefits().map((benefit) => (
+            <Text key={benefit} style={[styles.benefit, { color: colors.foreground }]}>
+              <Text style={{ color: colors.primary }}>✓</Text>  {benefit}
+            </Text>
+          ))}
+        </View>
+        <Text style={[styles.sheetHint, { color: colors.muted }]}>{freeForAllText()}</Text>
+        {account.signedIn && account.plan === "plus" ? (
+          <Text style={[styles.sheetNote, { color: colors.primary }]}>{account.founder ? "Tu as Balco+ au prix fondateur : merci d’être là depuis le début." : "Tu as Balco+ : merci !"}</Text>
+        ) : notified ? (
+          <View style={[styles.notified, { backgroundColor: colors.leaf }]}>
+            <Text style={[styles.notifiedText, { color: colors.primary }]}>C’est noté, on te prévient</Text>
+          </View>
+        ) : (
+          <>
+            {!account.signedIn && (
+              <>
+                <TextInput value={notifyEmail} onChangeText={setNotifyEmail} accessibilityLabel="Ton adresse e-mail" placeholder="Ton adresse e-mail" placeholderTextColor={colors.muted} autoCapitalize="none" autoComplete="email" keyboardType="email-address" returnKeyType="send" onSubmitEditing={() => void notifyMe()} style={[styles.sheetInput, { borderColor: colors.border, color: colors.foreground }]} />
+                <Text style={[styles.accountHint, { color: colors.muted }]}>On t’écrira une seule fois, à l’ouverture de Balco+.</Text>
+              </>
+            )}
+            <Pressable accessibilityRole="button" disabled={notifying} onPress={() => void notifyMe()} style={({ pressed }) => [styles.sheetButton, { backgroundColor: colors.foreground }, pressed && styles.pressed]}>
+              <Text style={[styles.sheetButtonText, { color: colors.background }]}>{notifying ? "Envoi…" : "Me prévenir à l’ouverture"}</Text>
+            </Pressable>
+            {notifyError && <Text style={[styles.accountHint, { color: colors.error }]}>{notifyError}</Text>}
+          </>
+        )}
+      </BottomSheet>
+      <BottomSheet visible={sheet === "delete"} onClose={closeSheet}>
+        <SheetHeading title="Supprimer ton compte ?" intro="Ton compte, ta sauvegarde et tes échanges avec Nora seront effacés. Ton balcon reste sur ce téléphone." />
+        <Pressable accessibilityRole="button" disabled={deleting} onPress={() => void removeAccount()} style={({ pressed }) => [styles.sheetButton, { backgroundColor: colors.error }, pressed && styles.pressed]}>
+          <Text style={[styles.sheetButtonText, { color: "#FFFFFF" }]}>{deleting ? "Suppression…" : "Supprimer définitivement"}</Text>
+        </Pressable>
+        <Pressable accessibilityRole="button" disabled={deleting} onPress={closeSheet} style={({ pressed }) => [styles.sheetButtonGhost, { borderColor: colors.border }, pressed && styles.pressed]}>
+          <Text style={[styles.sheetButtonText, { color: colors.foreground }]}>Garder mon compte</Text>
+        </Pressable>
+        {deleteError && <Text style={[styles.accountHint, { color: colors.error }]}>{deleteError}</Text>}
+      </BottomSheet>
       <BottomSheet visible={sheet === "name"} onClose={closeSheet}>
         <SheetHeading title="Ton prénom" intro="Pour que Balco et Nora te disent bonjour." />
         <TextInput value={nameDraft} onChangeText={setNameDraft} onSubmitEditing={() => void saveName()} accessibilityLabel="Ton prénom" placeholder="Ton prénom" placeholderTextColor={colors.muted} maxLength={30} returnKeyType="done" autoFocus style={[styles.sheetInput, { borderColor: colors.border, color: colors.foreground }]} />
@@ -364,61 +435,40 @@ export default function SettingsScreen() {
           <SettingRow label="Comment Nora te parle" value={NORA_LEVELS.find((level) => level.id === answers.experience)?.short ?? NOT_YET} onPress={() => setSheet("level")} />
         </SettingsGroup>
 
-        <Text style={[styles.section, { color: colors.foreground }]}>Sauvegarde et compte</Text>
-        <View style={[glass.card, styles.accountCard]}>
-          <Text style={[styles.sectionEyebrow, { color: colors.muted }]}>Sauvegarde</Text>
-          <Text style={[styles.reminderCardTitle, { color: colors.foreground }]}>{!account.signedIn ? "Ne perds jamais ton balcon" : account.status === "other-device" ? "Sauvegardé depuis un autre téléphone" : "Ton balcon est sauvegardé"}</Text>
-          <Text style={[styles.reminderCardText, { color: colors.muted }]}>
-            {account.signedIn ? `${account.email ? `Connecté avec ${account.email}. ` : ""}${syncLabel}` : "Crée ton compte gratuit en une minute :"}
-          </Text>
-          {/* L'offre dite en bénéfices (lib/plans.ts) : ce que tu as, puis ce que Balco+ ajoute. */}
-          {account.signedIn && account.plan === "plus" ? (
-            <View style={styles.benefits}>
-              <Text style={[styles.benefitsTitle, { color: colors.foreground }]}>Avec Balco+, tu profites de :</Text>
-              {plusBenefits().map((benefit) => <Text key={benefit} style={[styles.reminderCardText, { color: colors.foreground }]}>✓  {benefit}</Text>)}
-              {account.founder && <Text style={[styles.reminderCardText, { color: colors.primary }]}>Tu as le prix fondateur : merci d’être là depuis le début.</Text>}
+        <SettingsGroup title="Compte">
+          {account.signedIn ? (
+            <View key="backup" style={styles.accountBlock}>
+              <SettingRow label={backup.label} subtitle={account.email ?? undefined} />
+              <View style={styles.accountActions}>
+                {backup.action && (
+                  <Pressable accessibilityRole="button" onPress={() => void (backup.action === "claim" ? claimThisDevice() : syncNow())} style={({ pressed }) => [styles.accountButton, { backgroundColor: colors.primary }, pressed && styles.pressed]}>
+                    <Text style={styles.accountButtonText}>{backup.action === "claim" ? "Sauvegarder depuis ce téléphone" : "Réessayer"}</Text>
+                  </Pressable>
+                )}
+                <Pressable accessibilityRole="button" onPress={() => void signOut()} style={({ pressed }) => [styles.accountButtonGhost, { borderColor: colors.border }, pressed && styles.pressed]}>
+                  <Text style={[styles.accountGhostText, { color: colors.foreground }]}>Se déconnecter</Text>
+                </Pressable>
+              </View>
             </View>
           ) : (
-            <View style={styles.benefits}>
-              {freeBenefits().map((benefit) => <Text key={benefit} style={[styles.reminderCardText, { color: colors.foreground }]}>✓  {benefit}</Text>)}
-              {account.signedIn && (
+            <View key="backup" style={styles.accountBlock}>
+              <SettingRow label="Sauvegarde" value="Sur ce téléphone seulement" />
+              {account.loginAvailable ? (
                 <>
-                  <Text style={[styles.benefitsTitle, { color: colors.foreground }]}>Bientôt, avec Balco+ :</Text>
-                  {plusBenefits().map((benefit) => <Text key={benefit} style={[styles.reminderCardText, { color: colors.muted }]}>＋  {benefit}</Text>)}
-                  {account.founder && <Text style={[styles.reminderCardText, { color: colors.primary }]}>Ton prix fondateur reste à toi si tu reprends Balco+.</Text>}
-                </>
-              )}
-            </View>
-          )}
-          <View style={styles.accountActions}>
-            {account.signedIn ? (
-              <>
-                <Pressable accessibilityRole="button" disabled={account.status === "syncing"} onPress={() => void (account.status === "other-device" ? claimThisDevice() : syncNow())} style={({ pressed }) => [styles.accountButton, { backgroundColor: colors.primary }, pressed && styles.pressed]}><Text style={styles.accountButtonText}>{account.status === "other-device" ? "Sauvegarder depuis ce téléphone" : "Synchroniser"}</Text></Pressable>
-                <Pressable accessibilityRole="button" onPress={() => void signOut()} style={({ pressed }) => [styles.accountButtonGhost, pressed && styles.pressed]}><Text style={[styles.accountGhostText, { color: colors.primary }]}>Se déconnecter</Text></Pressable>
-              </>
-            ) : account.loginAvailable ? (
-              <Pressable disabled={account.checking} onPress={() => void signIn()} style={({ pressed }) => [styles.accountButton, { backgroundColor: colors.foreground }, pressed && styles.pressed]}><Text style={styles.accountButtonText}>{account.checking ? "Vérification…" : "Créer mon compte ou me connecter"}</Text></Pressable>
-            ) : (
-              <Text style={[styles.reminderOptionHint, { color: colors.muted }]}>Connexion non configurée sur cette version de l’app.</Text>
-            )}
-          </View>
-          {account.signedIn && (
-            <View style={styles.deleteBlock}>
-              {confirmDelete ? (
-                <>
-                  <Text style={[styles.reminderOptionHint, { color: colors.foreground }]}>Ton compte, tes plantes et tout ton historique seront effacés définitivement, sur ce téléphone et sur nos serveurs.</Text>
-                  <View style={styles.accountActions}>
-                    <Pressable disabled={deleting} onPress={() => void removeAccount()} style={({ pressed }) => [styles.accountButton, { backgroundColor: colors.error }, pressed && styles.pressed]}><Text style={styles.accountButtonText}>{deleting ? "Suppression…" : "Oui, tout supprimer"}</Text></Pressable>
-                    <Pressable disabled={deleting} onPress={() => setConfirmDelete(false)} style={({ pressed }) => [styles.accountButtonGhost, pressed && styles.pressed]}><Text style={[styles.accountGhostText, { color: colors.primary }]}>Annuler</Text></Pressable>
-                  </View>
-                  {deleteError && <Text style={[styles.reminderOptionHint, { color: colors.error }]}>{deleteError}</Text>}
+                  <Pressable accessibilityRole="button" disabled={account.checking} onPress={() => void signIn()} style={({ pressed }) => [styles.accountButton, styles.accountButtonWide, { backgroundColor: colors.foreground }, pressed && styles.pressed]}>
+                    <Text style={[styles.accountButtonText, { color: colors.background }]}>{account.checking ? "Vérification…" : "Créer mon compte gratuit"}</Text>
+                  </Pressable>
+                  <Text style={[styles.accountHint, { color: colors.muted }]}>Pour retrouver ton balcon si tu changes de téléphone.</Text>
                 </>
               ) : (
-                <Pressable onPress={() => setConfirmDelete(true)}><Text style={[styles.deleteLink, { color: colors.error }]}>Supprimer mon compte</Text></Pressable>
+                <Text style={[styles.accountHint, { color: colors.muted }]}>Connexion non configurée sur cette version de l’app.</Text>
               )}
             </View>
           )}
-        </View>
+          <SettingRow label="Balco+" value={account.signedIn && account.plan === "plus" ? "Actif" : "Bientôt"} onPress={() => setSheet("plus")} />
+          {account.signedIn && <SettingRow label="Supprimer mon compte" danger onPress={openDelete} />}
+        </SettingsGroup>
+
         <SettingsGroup title="À propos">
           <SettingRow label="Crédits photos" onPress={() => router.push("/credits")} />
         </SettingsGroup>
@@ -484,7 +534,7 @@ const styles = StyleSheet.create({
   accountActions: { flexDirection: "row", alignItems: "center", gap: 10, marginTop: 10 },
   accountButton: { borderRadius: 12, paddingHorizontal: 14, paddingVertical: 9 },
   accountButtonText: { color: "#FFFFFF", fontSize: 14, fontWeight: "700" },
-  accountButtonGhost: { paddingHorizontal: 6, paddingVertical: 9 },
+  accountButtonGhost: { borderWidth: 1, borderRadius: 12, paddingHorizontal: 14, paddingVertical: 9 },
   accountGhostText: { fontSize: 14, fontWeight: "600" },
   deleteBlock: { marginTop: 12, gap: 4 },
   deleteLink: { fontSize: 13, fontWeight: "600" },
@@ -541,6 +591,13 @@ const styles = StyleSheet.create({
   checkOk: { fontSize: 20, fontWeight: "800" },
   checkButton: { borderRadius: 12, paddingHorizontal: 12, paddingVertical: 9, maxWidth: 170 },
   checkButtonText: { color: "#FFFFFF", fontSize: 13, fontWeight: "700", textAlign: "center" },
+  sheetButtonGhost: { borderWidth: 1, borderRadius: 14, paddingVertical: 14, alignItems: "center", marginTop: 10 },
+  accountBlock: { paddingBottom: 12 },
+  accountButtonWide: { alignSelf: "stretch", alignItems: "center", paddingVertical: 13 },
+  accountHint: { fontSize: 13, lineHeight: 18, marginTop: 8 },
+  benefit: { fontSize: 15, lineHeight: 21 },
+  notified: { borderRadius: 14, paddingVertical: 14, alignItems: "center", marginTop: 14 },
+  notifiedText: { fontSize: 15, fontWeight: "700" },
   sheetNote: { fontSize: 15, lineHeight: 21, marginTop: 6 },
   wishRow: { flexDirection: "row", alignItems: "center", gap: 12, borderBottomWidth: StyleSheet.hairlineWidth, paddingVertical: 10 },
   wishPicture: { width: 40, height: 40, borderRadius: 20, alignItems: "center", justifyContent: "center" },

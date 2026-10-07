@@ -3,6 +3,7 @@
  * 2 autres »). Les phrases longues restent dans les feuilles du bas (mêmes choix que l'accueil). Logique pure.
  */
 import { getCatalogPlant, type CatalogPlant, type OnboardingAnswers } from "../plants/catalog";
+import { relativeDay } from "./garden-logic";
 import { GOAL_OPTIONS, SPACE_OPTIONS, SUNLIGHT_OPTIONS, SUNLIGHT_UNKNOWN, type OnboardingOption } from "./onboarding";
 
 /** Ligne « Soleil » : la réponse de l'accueil en quelques mots. */
@@ -62,4 +63,20 @@ export function springWishesValue(wishes: string[] | undefined) {
 /** Ligne « Ville » : « Lyon », ou « Paris, par défaut » tant qu'aucune ville n'est choisie. */
 export function cityValue(weather: { city: string; isFallback?: boolean }) {
   return weather.isFallback ? "Paris, par défaut" : weather.city;
+}
+
+/** « 14 h 05 » */
+const clock = (date: Date) => `${date.getHours()} h ${String(date.getMinutes()).padStart(2, "0")}`;
+
+/**
+ * Réglages → Compte : l'état de la sauvegarde en une ligne. `action` : le bouton à proposer dessous
+ * (« Réessayer » après un échec, « Sauvegarder depuis ce téléphone » quand un autre téléphone l'a prise).
+ */
+export function backupStatus(account: { status: "idle" | "syncing" | "offline" | "other-device"; lastSyncedAt?: string }, now = new Date()): { label: string; action: "retry" | "claim" | null } {
+  if (account.status === "syncing") return { label: "Sauvegarde en cours…", action: null };
+  if (account.status === "offline") return { label: "Pas encore sauvegardé", action: "retry" };
+  if (account.status === "other-device") return { label: "Sauvegardé depuis un autre téléphone", action: "claim" };
+  if (!account.lastSyncedAt) return { label: "Première sauvegarde en cours…", action: null };
+  const at = new Date(account.lastSyncedAt);
+  return { label: `Sauvegardé ${relativeDay(at, now)} à ${clock(at)}`, action: null };
 }

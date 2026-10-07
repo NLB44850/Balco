@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { cityValue, goalsValue, shortList, spaceValue, springWishesValue, sunlightChoice, sunlightPatch, sunlightValue } from "../lib/garden/settings-summary";
+import { backupStatus, cityValue, goalsValue, shortList, spaceValue, springWishesValue, sunlightChoice, sunlightPatch, sunlightValue } from "../lib/garden/settings-summary";
 
 describe("Réglages : valeurs courtes", () => {
   it("soleil : quelques mots, et « Je ne sais pas » gardé à part", () => {
@@ -41,5 +41,13 @@ describe("Réglages : valeurs courtes", () => {
   it("ville : « Paris, par défaut » tant qu'aucune n'est choisie", () => {
     expect(cityValue({ city: "Lyon" })).toBe("Lyon");
     expect(cityValue({ city: "Paris", isFallback: true })).toBe("Paris, par défaut");
+  });
+
+  it("sauvegarde : l'heure de la dernière, ou ce qu'il faut faire", () => {
+    const now = new Date(2026, 9, 8, 16, 0);
+    expect(backupStatus({ status: "idle", lastSyncedAt: new Date(2026, 9, 8, 14, 5).toISOString() }, now)).toEqual({ label: "Sauvegardé aujourd’hui à 14 h 05", action: null });
+    expect(backupStatus({ status: "offline" }, now)).toEqual({ label: "Pas encore sauvegardé", action: "retry" });
+    expect(backupStatus({ status: "other-device" }, now).action).toBe("claim");
+    expect(backupStatus({ status: "syncing" }, now).label).toBe("Sauvegarde en cours…");
   });
 });

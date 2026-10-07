@@ -140,3 +140,15 @@ comme « Pas besoin cette année ». Avant de publier :
 3. Tests : une plante au pot libre ne reçoit plus de rappel serveur ; la réponse donnée sur un téléphone est
    lue par l'autre.
 
+
+## 5. Réglages : ce qui reste à faire avant la publication (décidé le 08/10)
+
+- **Page Confidentialité** (Réglages → À propos, « Bientôt » pour l'instant). Elle doit dire, au moins :
+  données du compte (adresse e-mail), position ou ville du balcon, photos (gardées sur le téléphone, envoyées à
+  l'IA d'Anthropic seulement pour une analyse), questions posées à Nora, et **l'adresse e-mail laissée pour
+  « Me prévenir à l'ouverture » de Balco+** (adresse et date seulement, effacées après l'envoi).
+- **« Me prévenir à l'ouverture »** : table `plus_interest` (le compte, ou l'adresse e-mail et la date). À
+  l'ouverture de Balco+, écrire une fois à cette liste, puis l'effacer (`clearPlusInterest` dans
+  `server/plus-interest.ts`). Un compte supprimé quitte la liste tout seul.
+- **Donner mon avis** : l'adresse `contact_balco@gmail.com` est dans `lib/feedback.ts` (une seule ligne à changer
+  pour l'adresse sur le nom de domaine).

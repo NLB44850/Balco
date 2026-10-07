@@ -80,3 +80,24 @@ test("Rappels : une plante décochée garde ses alertes à l'écran, seules ses 
   await expect(page.getByRole("dialog").getByText("La version web ne peut pas envoyer de notifications.", { exact: false })).toBeVisible();
   expect(errors).toEqual([]);
 });
+
+test("Balco+ sans compte : « Me prévenir à l'ouverture » avec une adresse e-mail", async ({ page }) => {
+  const errors = trackErrors(page);
+  await mockWeather(page);
+  await seedBalcony(page, { plants: ["basil"] });
+  await open(page, "/settings", "Compte");
+  await expect(page.getByRole("button", { name: "Sauvegarde : Sur ce téléphone seulement" }).or(page.getByText("Sur ce téléphone seulement"))).toBeVisible();
+  await expect(page.getByText("Pour retrouver ton balcon si tu changes de téléphone.")).toBeVisible();
+  await expect(page.getByText("Supprimer mon compte")).toHaveCount(0);
+  await page.getByRole("button", { name: "Balco+ : Bientôt" }).click();
+  const sheet = page.getByRole("dialog");
+  await expect(sheet.getByText("Prix fondateur pour les 500 premiers", { exact: false })).toBeVisible();
+  await expect(sheet.getByText("Gratuit pour tous : tes rappels, le calendrier, la sauvegarde, 1 photo et 5 questions par mois.")).toBeVisible();
+  await expect(sheet.getByText("On t’écrira une seule fois, à l’ouverture de Balco+.")).toBeVisible();
+  await sheet.getByRole("button", { name: "Me prévenir à l’ouverture" }).click();
+  await expect(sheet.getByText("Vérifie ton adresse e-mail.")).toBeVisible();
+  await sheet.getByLabel("Ton adresse e-mail").fill(`plus-${Date.now()}@balco.test`);
+  await sheet.getByRole("button", { name: "Me prévenir à l’ouverture" }).click();
+  await expect(sheet.getByText("C’est noté, on te prévient")).toBeVisible();
+  expect(errors).toEqual([]);
+});

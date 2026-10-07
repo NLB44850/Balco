@@ -203,3 +203,14 @@ export type DevicePushToken = typeof devicePushTokens.$inferSelect;
 export type AuthIdentity = typeof authIdentities.$inferSelect;
 export type AiRequest = typeof aiRequests.$inferSelect;
 export type NoraMemory = typeof noraMemories.$inferSelect;
+
+/**
+ * « Me prévenir à l'ouverture » de Balco+ (Réglages) : le compte, ou sans compte une adresse e-mail et la date,
+ * rien d'autre. À effacer après l'envoi qui annonce l'ouverture (docs/avant-publication.md).
+ */
+export const plusInterest = mysqlTable("plus_interest", {
+  id: int("id").autoincrement().primaryKey(),
+  userId: int("userId"),
+  email: varchar("email", { length: 320 }),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+}, (table) => ({ userUnique: uniqueIndex("plus_interest_user_unique").on(table.userId), emailUnique: uniqueIndex("plus_interest_email_unique").on(table.email) }));
