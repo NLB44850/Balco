@@ -84,7 +84,7 @@ visuelle, retour immédiat.
 **Nouvelle conversation ? Tout est validé sur son téléphone et fusionné dans `main` : l'onboarding et le pas-à-pas
 pour planter (PR https://github.com/NLB44850/Balco/pull/28, 06/10), puis le rempotage (R1 à R3), les 11 pas-à-pas
 (`docs/pas-a-pas.md`), Nora qui récupère sa réponse perdue et Saisons corrigé (PR https://github.com/NLB44850/Balco/pull/29,
-07/10). Validé sur son téléphone le 08/10 : accords des textes, après-récolte et laitue pommée (point 5), PR https://github.com/NLB44850/Balco/pull/30 vers `main` ouverte le 08/10.
+07/10). Validé sur son téléphone le 08/10 : accords des textes, après-récolte et laitue pommée (point 5), fusionnés dans `main` (PR https://github.com/NLB44850/Balco/pull/30, 08/10).
 Ensuite : fin de saison des annuelles (quand il le dira), l'APK (point 1). Récap pour claude.ai :
 `docs/recap-pour-claude.md` + captures `docs/captures/` (refaites par `bash scripts/captures.sh`, spec
 `e2e/captures.spec.ts` sautée sans `CAPTURES=1`).**
@@ -423,7 +423,7 @@ Points à ne pas oublier (à proposer au porteur au bon moment, noté le 30/09) 
 - Encore à valider sur son téléphone : la mémoire de Nora sur plusieurs jours (« Sa progression » et les
   petites victoires sont validées).
 - **Branche fusionnée dans `main`** : PR #1 (02/10, jusqu'à l'étape 6 de l'audit), #14 (04/10, étapes 7
-  à 11), #15 (04/10, mises à jour Dependabot), #22 (04/10, Saisons rangé par type, progression, Nora datée), #27 (06/10, les 10 étapes du test utilisateur), #28 (06/10, accueil refait et pas-à-pas pour planter) et #29 (07/10, rempotage, 11 pas-à-pas, Nora, Saisons). Le travail continue
+  à 11), #15 (04/10, mises à jour Dependabot), #22 (04/10, Saisons rangé par type, progression, Nora datée), #27 (06/10, les 10 étapes du test utilisateur), #28 (06/10, accueil refait et pas-à-pas pour planter), #29 (07/10, rempotage, 11 pas-à-pas, Nora, Saisons) et #30 (08/10, accords, après-récolte, laitue pommée). Le travail continue
   sur `claude/eloquent-gates-g7xc6x` ; proposer une nouvelle PR vers `main` à la fin de chaque bloc validé. (La session clone le dépôt en partiel : `git fetch --unshallow` avant
   toute comparaison d'historique avec `main`.)
 - **Maintenance** (02/10, fusionné dans `main` par https://github.com/NLB44850/Balco/pull/2 et copié sur
