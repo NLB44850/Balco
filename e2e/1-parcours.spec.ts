@@ -333,7 +333,7 @@ test("Nora demande le prénom, sans compte ni IA, et le garde pour Réglages", a
   await expect(page.getByText("Enchantée, Camille ! Tu pourras changer ton prénom dans Réglages.")).toBeVisible();
   await expect(page.getByText("Comment je t’appelle ?")).toHaveCount(0);
   await page.goto("/settings");
-  await expect(page.getByPlaceholder("Pour que Balco te dise bonjour")).toHaveValue("Camille");
+  await expect(page.getByRole("button", { name: "Prénom : Camille" })).toBeVisible();
   expect(errors).toEqual([]);
 });
 

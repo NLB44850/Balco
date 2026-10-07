@@ -42,3 +42,22 @@ test("Mon balcon : soleil « Je ne sais pas », espace, envies, envies du printe
   expect(stored).toMatchObject({ sunlight: "partial", sunlightUnknown: true, space: "terrace", goals: ["tomatoes", "aromatics", "salads"], springWishes: [] });
   expect(errors).toEqual([]);
 });
+
+test("Toi : prénom et « Comment Nora te parle », une seule valeur", async ({ page }) => {
+  const errors = trackErrors(page);
+  await mockWeather(page);
+  await seedBalcony(page, { plants: ["basil"] });
+  await open(page, "/settings", "Toi");
+  await page.getByRole("button", { name: "Prénom : Pas encore" }).click();
+  await page.getByRole("dialog").getByLabel("Ton prénom").fill("Nicolas");
+  await page.getByRole("dialog").getByRole("button", { name: "Enregistrer" }).click();
+  await expect(page.getByRole("button", { name: "Prénom : Nicolas" })).toBeVisible();
+
+  await page.getByRole("button", { name: "Comment Nora te parle : Simplement" }).click();
+  await expect(page.getByRole("dialog").getByText("Tu peux aussi le changer depuis Nora.")).toBeVisible();
+  await page.getByRole("dialog").getByRole("radio", { name: "En jardinier, droit au but" }).click();
+  await expect(page.getByRole("button", { name: "Comment Nora te parle : En jardinier" })).toBeVisible();
+  const stored = JSON.parse((await page.evaluate(() => localStorage.getItem("balco.onboarding.preferences.v1"))) ?? "{}");
+  expect(stored.experience).toBe("experienced");
+  expect(errors).toEqual([]);
+});

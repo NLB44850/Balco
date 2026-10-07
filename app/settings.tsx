@@ -24,8 +24,9 @@ import { useLocalWeather } from "@/hooks/use-local-weather";
 import { useWeatherSimulation } from "@/hooks/use-weather-simulation";
 import { useGarden } from "@/lib/garden/garden-context";
 import { plantDisplayName, relativeDay } from "@/lib/garden/garden-logic";
-import { EXPERIENCE_OPTIONS, GOAL_OPTIONS, SPACE_OPTIONS, SUNLIGHT_UNKNOWN, type OnboardingOption } from "@/lib/garden/onboarding";
-import { cityValue, goalsValue, spaceValue, springWishEntries, springWishesValue, SUNLIGHT_CHOICES, sunlightChoice, sunlightPatch, SUNLIGHT_TIP, sunlightValue } from "@/lib/garden/settings-summary";
+import { GOAL_OPTIONS, SPACE_OPTIONS, SUNLIGHT_UNKNOWN } from "@/lib/garden/onboarding";
+import { NORA_LEVELS } from "@/lib/ai/memory";
+import { cityValue, goalsValue, NOT_YET, spaceValue, springWishEntries, springWishesValue, SUNLIGHT_CHOICES, sunlightChoice, sunlightPatch, SUNLIGHT_TIP, sunlightValue } from "@/lib/garden/settings-summary";
 import { nextSpringReminder, SPRING_REMINDER_SOURCE, springReminderContent } from "@/lib/garden/spring";
 import { notificationsUnavailableReason } from "@/lib/notifications/module";
 import { activateReminders, NOTIFICATIONS_DENIED } from "@/lib/reminders/activate";
@@ -50,13 +51,7 @@ export default function SettingsScreen() {
   const answers = onboarding?.skipped ? {} : onboarding ?? {};
   const [reminderSettings, setReminderSettings] = useState<LocalReminderSettings>(defaultLocalReminderSettings);
   const [settingsLoaded, setSettingsLoaded] = useState(false);
-  const [nameDraft, setNameDraft] = useState(profile.firstName ?? "");
-  const [nameSaved, setNameSaved] = useState(false);
-  const [nameTouched, setNameTouched] = useState(false);
-  // Le profil peut finir de charger après l'ouverture de l'écran : on reprend le prénom tant qu'il n'est pas modifié.
-  useEffect(() => {
-    if (!nameTouched) setNameDraft(profile.firstName ?? "");
-  }, [nameTouched, profile.firstName]);
+  const [nameDraft, setNameDraft] = useState("");
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [deleteError, setDeleteError] = useState<string | null>(null);
@@ -100,7 +95,7 @@ export default function SettingsScreen() {
 
   const location = useLocalWeather();
   const [cityPickerOpen, setCityPickerOpen] = useState(false);
-  const [sheet, setSheet] = useState<"sun" | "space" | "goals" | "spring" | null>(null);
+  const [sheet, setSheet] = useState<"sun" | "space" | "goals" | "spring" | "name" | "level" | null>(null);
   const closeSheet = () => setSheet(null);
   // « Envies » : plusieurs choix, enregistrés d'un coup par « Enregistrer ».
   const [goalsDraft, setGoalsDraft] = useState<string[]>([]);
@@ -136,9 +131,13 @@ export default function SettingsScreen() {
     await updateReminderSettings({ enabledPlantIds: allEnabled ? [] : next });
   };
 
+  const openName = () => {
+    setNameDraft(profile.firstName ?? "");
+    setSheet("name");
+  };
   const saveName = async () => {
     await updateProfile({ firstName: nameDraft.trim() || undefined });
-    setNameSaved(true);
+    closeSheet();
   };
 
   const syncLabel = !account.signedIn
@@ -153,26 +152,20 @@ export default function SettingsScreen() {
           ? `Sauvegardé ${relativeDay(new Date(account.lastSyncedAt))} à ${new Date(account.lastSyncedAt).toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" })}`
           : "Première sauvegarde en cours…";
 
-  /** « Ton expérience » en pastilles (devient « Comment Nora te parle » à l'étape suivante). */
-  const choices = (label: string, options: OnboardingOption[], selected: (id: string) => boolean, onPick: (id: string) => void) => (
-    <View style={styles.choiceGroup}>
-      <Text style={[styles.reminderOptionLabel, { color: colors.foreground }]}>{label}</Text>
-      <View style={styles.choiceRow}>
-        {options.map((option) => {
-          const active = selected(option.id);
-          return (
-            <Pressable key={option.id} accessibilityRole="button" accessibilityState={{ selected: active }} onPress={() => onPick(option.id)} style={({ pressed }) => [styles.choice, { backgroundColor: active ? colors.primary : "rgba(255,255,255,0.8)", borderColor: active ? colors.primary : colors.border }, pressed && styles.pressed]}>
-              <Text style={[styles.choiceText, { color: active ? "#FFFFFF" : colors.foreground }]}>{option.icon} {option.title}</Text>
-            </Pressable>
-          );
-        })}
-      </View>
-    </View>
-  );
-
   return (
     <LightScreen bottom>
       <CityPicker visible={cityPickerOpen} onClose={() => setCityPickerOpen(false)} searchCities={location.searchCities} selectCity={location.selectCity} requestDeviceLocation={location.requestDeviceLocation} />
+      <BottomSheet visible={sheet === "name"} onClose={closeSheet}>
+        <SheetHeading title="Ton prénom" intro="Pour que Balco et Nora te disent bonjour." />
+        <TextInput value={nameDraft} onChangeText={setNameDraft} onSubmitEditing={() => void saveName()} accessibilityLabel="Ton prénom" placeholder="Ton prénom" placeholderTextColor={colors.muted} maxLength={30} returnKeyType="done" autoFocus style={[styles.sheetInput, { borderColor: colors.border, color: colors.foreground }]} />
+        <Pressable accessibilityRole="button" onPress={() => void saveName()} style={({ pressed }) => [styles.sheetButton, { backgroundColor: colors.foreground }, pressed && styles.pressed]}>
+          <Text style={[styles.sheetButtonText, { color: colors.background }]}>Enregistrer</Text>
+        </Pressable>
+      </BottomSheet>
+      <BottomSheet visible={sheet === "level"} onClose={closeSheet}>
+        <SheetHeading title="Comment Nora te parle ?" intro="Tu peux aussi le changer depuis Nora." />
+        <ChoiceList choices={NORA_LEVELS} selected={(id) => answers.experience === id} onPick={(id) => { void updateOnboarding({ experience: id }); closeSheet(); }} />
+      </BottomSheet>
       <BottomSheet visible={sheet === "sun"} onClose={closeSheet}>
         <SheetHeading title="Combien de soleil reçoit ton balcon ?" intro="Une estimation suffit : les plantes proposées seront plus justes." />
         <ChoiceList choices={SUNLIGHT_CHOICES} selected={(id) => sunlightChoice(answers) === id} onPick={(id) => { void updateOnboarding(sunlightPatch(id)); closeSheet(); }} hints={{ [SUNLIGHT_UNKNOWN.id]: SUNLIGHT_TIP }} />
@@ -212,16 +205,6 @@ export default function SettingsScreen() {
           <SettingRow label="Envies du printemps" value={springWishesValue(onboarding?.springWishes)} onPress={() => setSheet("spring")} />
         </SettingsGroup>
 
-        <Text style={[styles.section, { color: colors.foreground }]}>Toi</Text>
-        <View style={[glass.card, styles.card]}>
-          <Text style={[styles.reminderOptionLabel, { color: colors.foreground }]}>Ton prénom</Text>
-          <View style={styles.editRow}>
-            <TextInput value={nameDraft} onChangeText={(value) => { setNameDraft(value); setNameTouched(true); setNameSaved(false); }} onSubmitEditing={() => void saveName()} onBlur={() => void saveName()} placeholder="Pour que Balco te dise bonjour" placeholderTextColor={colors.muted} maxLength={30} returnKeyType="done" style={[styles.nameInput, { borderColor: colors.border, color: colors.foreground }]} />
-            <Pressable accessibilityRole="button" onPress={() => void saveName()} style={({ pressed }) => [styles.editButton, { backgroundColor: nameSaved ? colors.leaf : colors.primary }, pressed && styles.pressed]}><Text style={[styles.editButtonText, nameSaved && { color: colors.primary }]}>{nameSaved ? "✓" : "OK"}</Text></Pressable>
-          </View>
-          {choices("Ton expérience", EXPERIENCE_OPTIONS, (id) => answers.experience === id, (id) => void updateOnboarding({ experience: id }))}
-        </View>
-
         <Text style={[styles.section, { color: colors.foreground }]}>Rappels</Text>
         <Pressable accessibilityRole="button" onPress={() => router.push("/vacation")} style={({ pressed }) => [glass.card, styles.card, styles.vacationRow, pressed && styles.pressed]}>
           <Text style={[styles.linkText, { color: colors.primary }]}>✈️  Mode vacances</Text>
@@ -250,6 +233,11 @@ export default function SettingsScreen() {
           <View style={styles.plantToggles}>{resolvedPlants.map((resolved) => { const enabled = isPlantEnabled(resolved.plant.id); return <Pressable key={resolved.plant.id} disabled={!reminderSettings.enabled} onPress={() => void togglePlant(resolved.plant.id)} style={[styles.plantToggle, { backgroundColor: enabled ? colors.leaf : "rgba(255,255,255,0.7)", opacity: reminderSettings.enabled ? 1 : 0.5 }]}><PlantPicture resolved={resolved} style={styles.plantTogglePicture} /><Text style={[styles.plantToggleText, { color: colors.foreground }]}>{plantDisplayName(resolved)}</Text><Text style={[styles.plantToggleCheck, { color: enabled ? colors.primary : colors.muted }]}>{enabled ? "✓" : "·"}</Text></Pressable>; })}</View>
         </View>
 
+
+        <SettingsGroup title="Toi">
+          <SettingRow label="Prénom" value={profile.firstName || NOT_YET} onPress={openName} />
+          <SettingRow label="Comment Nora te parle" value={NORA_LEVELS.find((level) => level.id === answers.experience)?.short ?? NOT_YET} onPress={() => setSheet("level")} />
+        </SettingsGroup>
 
         <Text style={[styles.section, { color: colors.foreground }]}>Sauvegarde et compte</Text>
         <View style={[glass.card, styles.accountCard]}>
@@ -401,6 +389,7 @@ const styles = StyleSheet.create({
   sectionEyebrow: { fontSize: 13, fontWeight: "600" },
   sheetButton: { borderRadius: 14, paddingVertical: 15, alignItems: "center", marginTop: 14 },
   sheetButtonText: { fontSize: 16, fontWeight: "700" },
+  sheetInput: { borderWidth: 1, borderRadius: 14, paddingHorizontal: 14, paddingVertical: 13, fontSize: 16, marginTop: 8 },
   sheetNote: { fontSize: 15, lineHeight: 21, marginTop: 6 },
   wishRow: { flexDirection: "row", alignItems: "center", gap: 12, borderBottomWidth: StyleSheet.hairlineWidth, paddingVertical: 10 },
   wishPicture: { width: 40, height: 40, borderRadius: 20, alignItems: "center", justifyContent: "center" },
