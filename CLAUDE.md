@@ -163,7 +163,7 @@ et les 10 étapes du test utilisateur du 04/10 (détail dans « Historique des l
    - Mois de semis revus le 08/10 avec 2 semenciers au moins (sa règle) : navet + juillet, chou-rave mars–juin,
      oignons botte mars et août–sept., pak choï juil.–sept. (récolte sept.–nov.) ; détail dans `docs/sources-calendrier.md`.
    - Laitue pommée ajoutée (`head-lettuce`, 101 plantes, calendrier vérifié dans `docs/sources-calendrier.md`, récoltée
-     en une fois, 14 j), photo ajoutée le 08/10 (Wikimedia, CC BY 2.0). Pour une prochaine plante : candidates dans le
+     en une fois, 14 j), photo ajoutée le 08/10 (Wikimedia, CC BY 2.0, vue sur son téléphone). Pour une prochaine plante : candidates dans le
      Codespace, choix dans `choix.json`, puis `bash scripts/photos/ajouter-photo.sh <id>` (télécharge, allège si
      `convert` existe, refait l'index, pousse ; sinon alléger dans la session : `convert … -resize '800x800>' -strip -quality 74`).
    - Étape suivante, après sa validation : fin de saison des annuelles (« Ta saison de basilic est finie ? »).

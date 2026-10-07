@@ -91,7 +91,7 @@ Balco dit chaque jour quoi faire pour chaque plante du balcon, selon la saison e
      la ligne devient une seule fois « Tes radis sont-ils tous récoltés ? ». Après « Oui » : « Ton pot est libre »
      (ressemer ou replanter, une ou deux plantes de saison qui tiennent dans ce pot, laisser le pot vide ou au repos
      l'hiver). Les récoltes d'un pot vidé restent dans ma progression.
-   - La laitue pommée est au catalogue (101 plantes), récoltée en une fois ; sa photo arrive bientôt.
+   - La laitue pommée est au catalogue (101 plantes), avec sa photo, récoltée en une fois.
    - Ensuite : la même chose pour la fin de saison des annuelles (basilic en octobre).
 3. **Mémoire de Nora sur plusieurs jours** : test à faire sur 2 ou 3 jours.
 4. **Tester sans Codespace** (idée) : une version web toujours en ligne et l'APK construit automatiquement.
