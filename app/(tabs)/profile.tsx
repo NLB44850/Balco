@@ -16,6 +16,7 @@ import { usePlantPhotos } from "@/lib/garden/photos-context";
 import { vacationRange, vacationState } from "@/lib/garden/vacation";
 import { weekSummary } from "@/lib/garden/week";
 import { SPACE_LABELS, SUNLIGHT_LABELS, type SpaceSize, type Sunlight } from "@/lib/plants/catalog";
+import { useNow } from "@/hooks/use-date-simulation";
 
 function capitalize(value: string) {
   return value.charAt(0).toUpperCase() + value.slice(1);
@@ -28,12 +29,13 @@ export default function ProfileScreen() {
   const { resolvedPlants, pastPlants, events, profile, onboarding } = useGarden();
   const [openBadge, setOpenBadge] = useState<string | null>(null);
   const { photos } = usePlantPhotos();
-  const week = useMemo(() => weekSummary(resolvedPlants, events, photos, new Date(), pastPlants), [events, pastPlants, photos, resolvedPlants]);
+  const now = useNow();
+  const week = useMemo(() => weekSummary(resolvedPlants, events, photos, now, pastPlants), [events, now, pastPlants, photos, resolvedPlants]);
   const { vacation } = useVacation();
   const trip = vacationState(vacation);
   const vacationLine = trip.phase === "none" || !vacation ? "Tu pars ? Balco prépare ton balcon et se tait pendant ton absence." : trip.phase === "back" ? "Bon retour ! Ta liste de retour t’attend." : `Absence ${vacationRange(vacation)}`;
 
-  const stats = useMemo(() => computeStats(resolvedPlants, events, new Date(), pastPlants), [events, pastPlants, resolvedPlants]);
+  const stats = useMemo(() => computeStats(resolvedPlants, events, now, pastPlants), [events, now, pastPlants, resolvedPlants]);
   const badges = useMemo(() => computeBadges(stats), [stats]);
   const progress = useMemo(() => computeProgress(stats, badges), [badges, stats]);
   const unlockedCount = badges.filter((badge) => badge.unlocked).length;

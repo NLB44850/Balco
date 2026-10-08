@@ -39,6 +39,7 @@ import { trpc } from "@/lib/trpc";
 import { TRPCClientError } from "@trpc/client";
 import { activePlants, appendEvent, createGardenPlant, MAX_STORED_EVENTS, resolvePlants, startedPlantId, type GardenPlant, type ResolvedPlant } from "./garden-logic";
 import { archiveSeason } from "./harvest-end";
+import { now as clockNow } from "@/lib/clock";
 
 export const GARDEN_PLANTS_STORAGE_KEY = "balco.garden.plants.v1";
 export const GARDEN_EVENTS_STORAGE_KEY = "balco.garden.events.v1";
@@ -355,7 +356,7 @@ export function GardenProvider({ children }: { children: ReactNode }) {
   // --- Actions -----------------------------------------------------------------------
 
   const addPlant = useCallback(async (catalogId: string, options: { toPlant?: boolean } = {}) => {
-    const created = createGardenPlant(catalogId, new Date(), options);
+    const created = createGardenPlant(catalogId, clockNow(), options);
     await savePlants([...plantsRef.current, created]);
     queue((outbox) => recordPlant(outbox, created));
     return created;
@@ -370,7 +371,7 @@ export function GardenProvider({ children }: { children: ReactNode }) {
   }, [queue, savePlants]);
 
   // L'historique d'une plante retirée est conservé : il reste utile si elle revient.
-  const removePlant = useCallback((plantId: string) => updatePlant(plantId, (plant) => ({ ...plant, removedAt: new Date().toISOString() })), [updatePlant]);
+  const removePlant = useCallback((plantId: string) => updatePlant(plantId, (plant) => ({ ...plant, removedAt: clockNow().toISOString() })), [updatePlant]);
   // Les gestes « une fois par saison » sont rangés sous leur date : la nouvelle saison les redemandera.
   const restartPlant = useCallback(async (plantId: string) => {
     const { remove, add } = archiveSeason(eventsRef.current, plantId);

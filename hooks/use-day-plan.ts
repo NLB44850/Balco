@@ -14,6 +14,7 @@ import { dayKey } from "@/lib/garden/garden-logic";
 import { useGarden } from "@/lib/garden/garden-context";
 import { careProfileFor } from "@/lib/garden/garden-logic";
 import { climateZoneFor } from "@/lib/plants/climate";
+import { now as clockNow, subscribeClock } from "@/lib/clock";
 import { withoutSnoozed, type ReminderSnooze } from "@/lib/reminders/reminder-actions";
 import { decideReminders } from "@/lib/reminders/reminder-engine";
 import { groupReminders, selectGroups } from "@/lib/reminders/reminder-groups";
@@ -32,7 +33,7 @@ export function useDayPlan() {
   const { resolvedPlants, events } = useGarden();
   const local = useLocalWeather();
   const { weather, weatherSnapshot } = local;
-  const [now, setNow] = useState(() => new Date());
+  const [now, setNow] = useState(clockNow);
   const [snoozes, setSnoozes] = useState<ReminderSnooze[]>([]);
   const [snoozesLoaded, setSnoozesLoaded] = useState(false);
   const [reminderSettings, setReminderSettings] = useState<LocalReminderSettings>(defaultLocalReminderSettings);
@@ -40,7 +41,7 @@ export function useDayPlan() {
 
   // L'heure et les réglages se relisent à chaque retour sur l'écran.
   useFocusEffect(useCallback(() => {
-    setNow(new Date());
+    setNow(clockNow());
     let active = true;
     loadLocalReminderSettings().then((settings) => {
       if (!active) return;
@@ -52,6 +53,8 @@ export function useDayPlan() {
     };
   }, []));
   useEffect(() => subscribeReminderSettings((settings) => setReminderSettings(settings)), []);
+  // Version de test : un autre jour simulé se voit tout de suite.
+  useEffect(() => subscribeClock(() => setNow(clockNow())), []);
   useEffect(() => {
     void loadReminderSnoozes().then((stored) => {
       setSnoozes(stored);
@@ -79,7 +82,7 @@ export function useDayPlan() {
     () => selectGroups(groupReminders(allDecisions.filter((decision) => isFollowed(reminderSettings.enabledPlantIds, decision.plantId))), reminderSettings.maxNormalRemindersPerDay).flatMap((group) => group.decisions),
     [allDecisions, reminderSettings.enabledPlantIds, reminderSettings.maxNormalRemindersPerDay],
   );
-  const visibleDecisions = useMemo(() => withoutSnoozed(allDecisions, snoozes, new Date()), [allDecisions, snoozes]);
+  const visibleDecisions = useMemo(() => withoutSnoozed(allDecisions, snoozes, clockNow()), [allDecisions, snoozes]);
   const visibleGroups = useMemo(() => groupReminders(visibleDecisions), [visibleDecisions]);
   const postponed = useMemo(() => postponedStarts(snoozes, now), [now, snoozes]);
   const repotSkips = useMemo(() => skippedRepots(snoozes, now), [now, snoozes]);

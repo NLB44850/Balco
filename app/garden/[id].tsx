@@ -32,6 +32,7 @@ import { usePlantPhotos } from "@/lib/garden/photos-context";
 import { CATEGORY_LABELS, formatMonthRange } from "@/lib/plants/catalog";
 import { guideLinkText } from "@/lib/plants/guide";
 import { REPOTTING } from "@/lib/plants/repotting";
+import { now as clockNow } from "@/lib/clock";
 
 
 const clock = (iso: string) => new Date(iso).toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" });
@@ -63,7 +64,7 @@ export default function PlantScreen() {
   // Après la récolte d'une plante récoltée en une fois. Pot vidé ou donné à une autre plante : la fiche se ferme.
   const freePot = useFreePot({ climate, onDone: (text, kind) => (kind === "restart" ? showToast(text) : back()), overlay: <><UndoToast message={toast} onDone={hideToast} />{celebration}</> });
   const capture = usePlantPhotoCapture(showToast);
-  const now = new Date();
+  const now = clockNow();
   const resolved = resolvedPlants.find((item) => item.plant.id === id);
   const back = () => (router.canGoBack() ? router.back() : router.replace("/(tabs)/balcony"));
 
@@ -117,7 +118,7 @@ export default function PlantScreen() {
   const doGesture = async () => {
     if (!gesture || gesture.done) return;
     if (gesture.source.type === "harvest-end") return gesture.source.stage === "question" ? freePot.answerYes(plant.id) : freePot.openFreePot(plant.id);
-    const moment = new Date();
+    const moment = clockNow();
     const event = eventForGesture(gesture, moment);
     await logEvent(event);
     // Un conseil météo suivi se tait jusqu'à demain, ici comme sur Aujourd'hui.

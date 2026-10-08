@@ -115,6 +115,37 @@ l'échéance du 15 novembre sans dépendre de la vérification des 100 astuces.
 12. **Moi refait** : « Presque là », saison en cours, herbier, collection.
 13. **Vérifications complètes** (tests, e2e, accords), mise à jour de `CLAUDE.md` et du récapitulatif.
 
-## 3. Questions à valider
+## 3. Décisions du porteur (8 octobre)
 
-Voir la discussion du 8 octobre ; les réponses seront reportées ici.
+1. Au plus 2 cartes en plus sous la liste d'Aujourd'hui, priorité événement > à anticiper > astuce > Idée du mois ;
+   la carte « C'est le moment » des envies du printemps compte comme « à anticiper ».
+2. Une nouvelle astuce par semaine, toute l'année.
+3. Nouveau palier ou nouvelle carte d'herbier : petite animation, pas de plein écran.
+4. Sainte-Catherine visible du 18 au 30 novembre.
+5. Actions de la Sainte-Catherine : framboisier, groseillier, cassissier, myrtillier, mûres sans épines, ail, kiwaï
+   (terrasse), violas et ail des ours, selon soleil et place ; pas de fraisiers. La liste s'intitule
+   **« Ce qui se plante maintenant »** (pas seulement du bois).
+6. Paliers : Ami des abeilles 3 / 6 / 10, récoltes 1 / 10 / 50, alertes suivies 1 / 5 / 15, jours suivis 7 / 30 / 100,
+   **plantes accueillies 1 / 5 / 15 (les plantes retirées comptent)**.
+7. Les badges obtenus sont figés dès l'étape 2, avec **un recalcul unique** à partir de l'historique disponible pour
+   rendre les badges déjà mérités.
+8. Bio-Défenseur ne compte que les vraies observations (analyses Observer, gestes « Observe »).
+9. Herbier des fleurs : bouton « Elle a fleuri » sur la fiche, **seulement pour les plantes à fleurs pendant leurs
+   mois de floraison**.
+10. Paillage : conseil avec « C'est fait » sur la page de l'événement, compté pour « Paré pour l'hiver ».
+11. Saisons des badges aux dates fixes (1ᵉʳ décembre, 1ᵉʳ mars, 1ᵉʳ juin, 1ᵉʳ septembre) ; en hiver, « un semis
+    au chaud » (piment, poivron, micro-pousses…) au lieu d'une aromatique.
+12. Sainte-Catherine avant les astuces.
+
+Ajouts du porteur :
+- **A.** Simulation de date : une seule horloge commune, d'abord pour ce lot seulement (calendrier, événements,
+  badges, astuces, À anticiper). Impossible à activer dans l'app publiée.
+- **B.** Plan B : si l'étape 1 prend du retard, faire les étapes 5 et 6 avant les étapes 3 et 4. L'échéance du
+  15 novembre passe en premier.
+- **C.** Les badges acquis (et leur date) sont inclus dans la sauvegarde du compte.
+- **D.** Champ « climats » dans les astuces (réservée à certains climats, ou date adaptée au climat) ; toutes les
+  corrections d'astuces relevées plus haut sont appliquées.
+
+Le porteur autorise à enchaîner les étapes.
+
+## 4. Avancement

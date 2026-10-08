@@ -26,6 +26,8 @@ import { trpc } from "@/lib/trpc";
 import { useColors } from "@/hooks/use-colors";
 import { useLocalWeather } from "@/hooks/use-local-weather";
 import { useWeatherSimulation } from "@/hooks/use-weather-simulation";
+import { useDateSimulation } from "@/hooks/use-date-simulation";
+import { addDays, clockPresets, longDayText } from "@/lib/clock";
 import { useGarden } from "@/lib/garden/garden-context";
 import { dayKey, plantDisplayName } from "@/lib/garden/garden-logic";
 import { harvestEndStates, potIsFree } from "@/lib/garden/harvest-end";
@@ -127,6 +129,9 @@ export default function SettingsScreen() {
   // Les notifications n'existent que dans l'app mobile, et pas dans Expo Go sur Android.
   const notificationsSupported = notificationsUnavailableReason === null;
   const simulation = useWeatherSimulation();
+  const dateSimulation = useDateSimulation();
+  const realToday = dayKey(new Date());
+  const shownDay = dateSimulation.day ?? realToday;
   const [testStatus, setTestStatus] = useState<"idle" | "sending" | "sent" | "denied">("idle");
 
   const sendTest = async () => {
@@ -143,7 +148,7 @@ export default function SettingsScreen() {
 
   const location = useLocalWeather();
   const [cityPickerOpen, setCityPickerOpen] = useState(false);
-  const [sheet, setSheet] = useState<"sun" | "space" | "goals" | "spring" | "name" | "level" | "hour" | "quiet" | "plants" | "check" | "plus" | "delete" | "simulation" | null>(null);
+  const [sheet, setSheet] = useState<"sun" | "space" | "goals" | "spring" | "name" | "level" | "hour" | "quiet" | "plants" | "check" | "plus" | "delete" | "simulation" | "date" | null>(null);
   const closeSheet = () => setSheet(null);
   // « Envies » : plusieurs choix, enregistrés d'un coup par « Enregistrer ».
   const [goalsDraft, setGoalsDraft] = useState<string[]>([]);
@@ -375,6 +380,33 @@ export default function SettingsScreen() {
         </View>
         <Text style={[styles.sheetHint, { color: colors.muted }]}>{WEATHER_SCENARIOS.find((item) => item.id === simulation.scenario)?.hint}</Text>
       </BottomSheet>
+      <BottomSheet visible={sheet === "date"} onClose={closeSheet}>
+        <SheetHeading title="Faire comme si on était le…" intro="Calendrier, Saisons, badges, astuces et événements suivent ce jour. La météo et les notifications restent celles d’aujourd’hui. N’existe pas dans l’app publiée." />
+        <Text style={[styles.sheetLabel, { color: colors.foreground }]}>{dateSimulation.day ? longDayText(dateSimulation.day) : `Aujourd’hui, ${longDayText(realToday)}`}</Text>
+        <View style={styles.simulationChips}>
+          {clockPresets(realToday).map((preset) => {
+            const active = dateSimulation.day === preset.day;
+            return (
+              <Pressable key={preset.day} accessibilityRole="button" accessibilityState={{ selected: active }} onPress={() => void dateSimulation.setDay(preset.day)} style={({ pressed }) => [styles.simulationChip, { backgroundColor: active ? colors.primary : colors.surface, borderColor: active ? colors.primary : colors.border }, pressed && styles.pressed]}>
+                <Text style={[styles.simulationChipText, { color: active ? "#FFFFFF" : colors.foreground }]}>{preset.label}</Text>
+              </Pressable>
+            );
+          })}
+        </View>
+        <View style={styles.simulationChips}>
+          {([[-7, "− 1 semaine"], [-1, "− 1 jour"], [1, "+ 1 jour"], [7, "+ 1 semaine"]] as const).map(([days, label]) => (
+            <Pressable key={label} accessibilityRole="button" onPress={() => { const next = addDays(shownDay, days); void dateSimulation.setDay(next === realToday ? null : next); }} style={({ pressed }) => [styles.simulationChip, { backgroundColor: colors.surface, borderColor: colors.border }, pressed && styles.pressed]}>
+              <Text style={[styles.simulationChipText, { color: colors.foreground }]}>{label}</Text>
+            </Pressable>
+          ))}
+        </View>
+        {dateSimulation.day && (
+          <Pressable accessibilityRole="button" onPress={() => void dateSimulation.setDay(null)} style={({ pressed }) => [styles.sheetButton, { backgroundColor: colors.foreground }, pressed && styles.pressed]}>
+            <Text style={[styles.sheetButtonText, { color: colors.background }]}>Revenir à aujourd’hui</Text>
+          </Pressable>
+        )}
+        <Text style={[styles.sheetHint, { color: colors.muted }]}>Les gestes cochés pendant la simulation sont datés du jour simulé.</Text>
+      </BottomSheet>
       <BottomSheet visible={sheet === "name"} onClose={closeSheet}>
         <SheetHeading title="Ton prénom" intro="Pour que Balco et Nora te disent bonjour." />
         <TextInput value={nameDraft} onChangeText={setNameDraft} onSubmitEditing={() => void saveName()} accessibilityLabel="Ton prénom" placeholder="Ton prénom" placeholderTextColor={colors.muted} maxLength={30} returnKeyType="done" autoFocus style={[styles.sheetInput, { borderColor: colors.border, color: colors.foreground }]} />
@@ -496,6 +528,7 @@ export default function SettingsScreen() {
         {simulation.available && (
           <SettingsGroup title="Version de test">
             <SettingRow label="Simulation météo" value={WEATHER_SCENARIOS.find((item) => item.id === simulation.scenario)?.label} onPress={() => setSheet("simulation")} />
+            <SettingRow label="Date simulée" value={dateSimulation.day ? longDayText(dateSimulation.day) : "Aujourd’hui"} onPress={() => setSheet("date")} />
             {notificationsSupported && (
               <SettingRow label="Envoyer une notification de test" subtitle={testStatus === "sent" ? "Elle arrive dans 5 secondes. Verrouille ton téléphone pour la voir comme un vrai rappel, puis essaie ses boutons." : testStatus === "denied" ? "Les notifications sont bloquées : autorise-les pour Balco dans les réglages du téléphone." : undefined} disabled={testStatus === "sending"} onPress={() => void sendTest()} />
             )}

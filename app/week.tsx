@@ -20,6 +20,7 @@ import { plantDisplayName } from "@/lib/garden/garden-logic";
 import { usePlantPhotos } from "@/lib/garden/photos-context";
 import { formatLiters } from "@/lib/garden/progress";
 import { comparedToLastWeek, startOfWeek, weekSummary } from "@/lib/garden/week";
+import { useNow } from "@/hooks/use-date-simulation";
 
 const shortDate = (date: Date) => date.toLocaleDateString("fr-FR", { day: "numeric", month: "short" });
 const plural = (count: number, word: string) => `${count} ${word}${count > 1 ? "s" : ""}`;
@@ -30,7 +31,7 @@ export default function WeekScreen() {
   const insets = useSafeAreaInsets();
   const { resolvedPlants, pastPlants, events } = useGarden();
   const { photos } = usePlantPhotos();
-  const now = useMemo(() => new Date(), []);
+  const now = useNow();
   const summary = useMemo(() => weekSummary(resolvedPlants, events, photos, now, pastPlants), [events, now, pastPlants, photos, resolvedPlants]);
   const monday = startOfWeek(now);
   const sunday = new Date(monday.getFullYear(), monday.getMonth(), monday.getDate() + 6);

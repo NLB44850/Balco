@@ -68,6 +68,8 @@ import {
   sendReminderPreview,
 } from "@/lib/reminders/local-notifications";
 import { scenarioLabel } from "@/lib/weather/simulation";
+import { longDayText, now as clockNow } from "@/lib/clock";
+import { useDateSimulation } from "@/hooks/use-date-simulation";
 
 const haptic = () => {
   if (Platform.OS !== "web") void Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
@@ -126,6 +128,7 @@ export default function HomeScreen() {
   const toastId = useRef(0);
   const { celebrate, overlay: celebration } = useCelebration();
   const simulation = useWeatherSimulation();
+  const dateSimulation = useDateSimulation();
   const insets = useSafeAreaInsets();
   const sky = useMemo(() => skyScene(weatherSnapshot, now, weather.isFallback), [now, weather.isFallback, weatherSnapshot]);
   const pots = useMemo(() => potsFor(resolvedPlants.map((resolved) => resolved.entry.category)), [resolvedPlants]);
@@ -189,7 +192,7 @@ export default function HomeScreen() {
   // Jour de pluie : l'arrosage évité est compté tout seul, dès que le bandeau s'affiche.
   useEffect(() => {
     if (!loaded || away) return;
-    const toLog = rainSavingsToLog(banners, events, new Date());
+    const toLog = rainSavingsToLog(banners, events, clockNow());
     if (toLog.length === 0) return;
     void (async () => {
       for (const event of toLog) await logEvent(event);
@@ -217,7 +220,7 @@ export default function HomeScreen() {
    * Un badge, un niveau, une série ou une récolte débloqués par ce geste : plein écran pour un badge ou une
    * 1ʳᵉ récolte (une fois par jour), sinon un mot devant le message du bas.
    */
-  const cheer = (logged: MaintenanceEvent[]) => celebrate(celebrationFor(resolvedPlants, events, [...logged, ...events.filter((event) => !logged.some((item) => item.id === event.id))], new Date(), pastPlants));
+  const cheer = (logged: MaintenanceEvent[]) => celebrate(celebrationFor(resolvedPlants, events, [...logged, ...events.filter((event) => !logged.some((item) => item.id === event.id))], clockNow(), pastPlants));
 
   const logAll = async (toLog: MaintenanceEvent[]) => {
     for (const event of toLog) await logEvent(event);
@@ -231,7 +234,7 @@ export default function HomeScreen() {
   /** « C'est fait » sur une alerte : le geste est noté pour chaque plante concernée, et l'alerte se tait jusqu'à demain. */
   const completeAlert = async (group: ReminderGroup) => {
     const previous = snoozes;
-    const moment = new Date();
+    const moment = clockNow();
     const logged = group.decisions.map((decision) => eventForReminder(decision, moment));
     const undoEvents = await logAll(logged);
     await saveReminderSnoozes(group.decisions.reduce((current, decision) => addSnooze(current, decision, "skip", reminderSettings, moment), snoozes));
@@ -244,7 +247,7 @@ export default function HomeScreen() {
 
   const snoozeAlert = async (group: ReminderGroup, kind: ReminderSnooze["kind"]) => {
     const previous = snoozes;
-    const moment = new Date();
+    const moment = clockNow();
     await saveReminderSnoozes(group.decisions.reduce((current, decision) => addSnooze(current, decision, kind, reminderSettings, moment), snoozes));
     showToast(kind === "later" ? "Balco te le rappellera dans 3 h" : "Balco n’en reparlera pas avant demain", () => void saveReminderSnoozes(previous));
   };
@@ -262,7 +265,7 @@ export default function HomeScreen() {
         await removeEvent(id);
         return showToast("Geste retiré de ta journée", previous ? () => void logEvent(previous) : undefined);
       }
-      const logged = [eventForActivity(item.activity, new Date())];
+      const logged = [eventForActivity(item.activity, clockNow())];
       const undo = await logAll(logged);
       haptic();
       return showToast(withCheer(cheer(logged), `${item.title} : noté pour ce mois-ci`), undo);
@@ -275,7 +278,7 @@ export default function HomeScreen() {
       if (previous) await saveReminderSnoozes(wakeSnoozeFor(snoozes, previous));
       return showToast("Geste retiré de ta journée", previous ? () => { void logEvent(previous); void saveReminderSnoozes(previousSnoozes); } : undefined);
     }
-    const logged = [eventForSessionTask(item.task, new Date())];
+    const logged = [eventForSessionTask(item.task, clockNow())];
     const undo = await logAll(logged);
     haptic();
     // Une plante récoltée en une fois : « Radis récoltés : noté · Tout récolté ? » avec « Oui » à la place de « Annuler ».
@@ -292,9 +295,9 @@ export default function HomeScreen() {
   // « Pas encore acheté ? » : le geste revient samedi à 9 h (notification si les rappels sont activés).
   const postponeToSaturday = async (activity: CalendarActivity) => {
     const previous = snoozes;
-    const moment = new Date();
-    await saveReminderSnoozes(postponeStart(snoozes, activity.subjectId, moment));
-    void scheduleDatedReminder(saturdaySource(activity.subjectId), saturdayReminder(activity), nextSaturdayMorning(moment)).catch(() => undefined);
+    await saveReminderSnoozes(postponeStart(snoozes, activity.subjectId, clockNow()));
+    // La notification suit l'heure réelle du téléphone, même avec une date simulée.
+    void scheduleDatedReminder(saturdaySource(activity.subjectId), saturdayReminder(activity), nextSaturdayMorning(new Date())).catch(() => undefined);
     showToast("Je te le rappelle samedi", () => {
       void saveReminderSnoozes(previous);
       void scheduleDatedReminder(saturdaySource(activity.subjectId), saturdayReminder(activity), null).catch(() => undefined);
@@ -303,7 +306,7 @@ export default function HomeScreen() {
   // « Pas besoin cette année » : on a vérifié, elle ne manque pas de place. La terre du dessus prend le relais.
   const skipRepot = async (activity: CalendarActivity) => {
     const previous = snoozes;
-    await saveReminderSnoozes(skipRepotThisYear(snoozes, activity.subjectId, new Date()));
+    await saveReminderSnoozes(skipRepotThisYear(snoozes, activity.subjectId, clockNow()));
     haptic();
     showToast(REPOTTING[activity.entry.id]?.topdress ? "Pas de rempotage cette année : change plutôt la terre du dessus" : "Pas de rempotage cette année", () => void saveReminderSnoozes(previous));
   };
@@ -385,6 +388,18 @@ export default function HomeScreen() {
         />
 
         <View style={styles.body}>
+
+        {dateSimulation.day && (
+          <View style={[styles.simulation, { backgroundColor: colors.surface }]}>
+            <Text style={[styles.simulationTitle, { color: colors.foreground }]}>🧪 Date simulée : {longDayText(dateSimulation.day)}</Text>
+            <Text style={[styles.small, { color: colors.muted }]}>Calendrier, badges et événements suivent ce jour ; la météo reste celle d’aujourd’hui.</Text>
+            <View style={styles.inlineActions}>
+              <Pressable accessibilityRole="button" onPress={() => void dateSimulation.setDay(null)} style={({ pressed }) => [styles.pill, { borderColor: colors.border, borderWidth: 1 }, pressed && styles.pressed]}>
+                <Text style={[styles.pillText, { color: colors.foreground }]}>Revenir à aujourd’hui</Text>
+              </Pressable>
+            </View>
+          </View>
+        )}
 
         {simulation.scenario !== "none" && (
           <View style={[styles.simulation, { backgroundColor: colors.surface }]}>

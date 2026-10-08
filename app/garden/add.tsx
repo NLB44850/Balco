@@ -37,6 +37,7 @@ import {
 } from "@/lib/plants/catalog";
 import { ADD_CHOICE_LABELS, addChoices, suggestionActionLabel, suggestionFor, type AddChoice } from "@/lib/plants/suggestions";
 import { guideLinkText } from "@/lib/plants/guide";
+import { now as clockNow } from "@/lib/clock";
 
 const categories = Object.keys(CATEGORY_LABELS) as PlantCategory[];
 
@@ -46,7 +47,7 @@ export default function AddPlantScreen() {
   const insets = useSafeAreaInsets();
   const { plants, onboarding, addPlant, removePlant } = useGarden();
   const params = useLocalSearchParams<{ month?: string }>();
-  const currentMonth = new Date().getMonth() + 1;
+  const currentMonth = clockNow().getMonth() + 1;
   const askedMonth = Number(params.month);
   const seasonMonth = askedMonth >= 1 && askedMonth <= 12 ? askedMonth : currentMonth;
   const [inSeason, setInSeason] = useState(Boolean(params.month));
@@ -69,7 +70,7 @@ export default function AddPlantScreen() {
 
   const results = useMemo(() => {
     const matching = new Set(searchCatalog(query, category).map((entry) => entry.id));
-    const ordered = onlyFitting ? recommendPlants(onboarding, { month: new Date().getMonth() + 1 }) : [...PLANT_CATALOG].sort((a, b) => a.name.localeCompare(b.name, "fr"));
+    const ordered = onlyFitting ? recommendPlants(onboarding, { month: clockNow().getMonth() + 1 }) : [...PLANT_CATALOG].sort((a, b) => a.name.localeCompare(b.name, "fr"));
     return ordered.filter((entry) => matching.has(entry.id) && (!inSeason || suggestionFor(entry, seasonMonth) !== null));
   }, [category, inSeason, onboarding, onlyFitting, query, seasonMonth]);
 
