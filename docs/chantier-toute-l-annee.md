@@ -148,4 +148,41 @@ Ajouts du porteur :
 
 Le porteur autorise à enchaîner les étapes.
 
-## 4. Avancement
+## 4. Avancement (8 octobre, tout codé, à tester sur le téléphone)
+
+Branche `ccr-71709eb8-bxzttf` (session Claude Code du 8 octobre), un commit par étape :
+
+1. **Simulation de date** : `lib/clock.ts` (`now()`), `hooks/use-date-simulation.ts` ; Réglages → Version de test →
+   « Date simulée » (raccourcis 18 nov., 25 nov., 1er déc., 15 janv., 1er mars…, ± 1 jour / 1 semaine) ; carte
+   « 🧪 Date simulée » sur Aujourd'hui. Suivie par Aujourd'hui, Saisons, Moi, Ma semaine, la fiche, le guide, le
+   catalogue et les gestes cochés ; la météo et les notifications restent à l'heure réelle.
+2. **Badges acquis gardés** : carnet `lib/garden/awards.ts` (clé → date), sur le téléphone
+   (`balco.progress.awards.v1`) et dans la sauvegarde (`reminder_profiles.awardsJson`, migration 0017) ; recalcul
+   unique depuis l'historique ; un badge gagné hors d'Aujourd'hui est fêté à l'ouverture d'Aujourd'hui (après le
+   message du bas) ; cause des alertes dans l'identifiant du geste (`lib/reminders/alert-cause.ts`).
+3. **« Ton balcon se repose »** et **cartes en plus** (`lib/garden/today-cards.ts`).
+4. **« À anticiper »** (`lib/garden/anticipate.ts`, `components/today/anticipate-card.tsx`).
+5. **Événements** décrits par des données (`lib/events/events.ts`), Nora avec une question écrite (`question`).
+6. **Sainte-Catherine** : carte, page `app/event/[id].tsx`, notification du 18/11, badge, bilan
+   (`docs/sources-evenements.md`).
+7. **Banque d'astuces** : 99 astuces, `lib/tips/bank.ts`, détail et sources dans `docs/astuces.md`.
+8. **Carte « Astuce de la semaine »** (`lib/tips/tips.ts`, `hooks/use-tip-of-the-week.ts`).
+9. **Paliers** Graine / Pousse / Fleur (`computeBadges` dans garden-logic) : 8 badges permanents.
+10. **Badges de saison** (`lib/garden/season-badges.ts`) : 4 par saison, avec millésime.
+11. **Herbier** (`lib/garden/herbarium.ts`) et « Elle a fleuri ? » sur la fiche des fleurs.
+12. **Moi refait** : Presque là, saison en cours, herbier, tous les badges (`lib/garden/collection.ts`).
+13. Vérifications : 605 tests, 58 parcours de bout en bout (17 à 20 nouveaux), bundle Android construit.
+
+Choix faits en codant (à confirmer par le porteur) :
+- **Badges permanents** : « Zéro gâchis d'eau » compte maintenant les arrosages évités sous la pluie (5 / 20 / 50) ;
+  « Paré à tout » (nouveau) les alertes gel, chaleur, vent ou orage suivies ; « Bio-défenseur » 5 / 15 / 40
+  observations ; « Semeur » (nouveau) 1 / 5 / 15 semis ou plantations. Titres sans majuscules décoratives.
+- **Badges de saison** : printemps Premiers semis (3), Balcon fleuri (2 mellifères ajoutées), Première récolte du
+  printemps, Pots au large (1 rempotage ou terre neuve) ; été Économe en eau (3 jours de pluie sans arroser),
+  Canicule maîtrisée (3 alertes chaleur), Récoltes d'été (5), Balcon suivi (14 jours de suite) ; automne Paré pour
+  l'hiver (1 geste de protection, dont le paillage de la Sainte-Catherine), Graines du printemps (2 envies), Sainte-
+  Catherine, Récoltes d'automne (3) ; hiver Protégé du gel (1 alerte gel), Semis au chaud (1 semis), Récolte d'hiver,
+  Pots protégés (2 gestes de protection ; une série de jours ne prouve rien l'hiver, sans arrosage à faire).
+- **Une grande fête par jour** : un nouveau badge gagné le même jour qu'une autre grande fête se dit d'un mot.
+- **Sainte-Catherine sans compte** : « Demander à Nora » ouvre Nora, qui demande d'abord de se connecter.
+- **Astuces** : « plants » = plante du balcon nécessaire ; « about » = plantes citées en idée (« Sème des radis »).

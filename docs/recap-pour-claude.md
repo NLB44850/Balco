@@ -1,6 +1,6 @@
 # Balco : récapitulatif à coller au début d'une conversation avec Claude
 
-*À jour au 8 octobre 2026 (Réglages refaits et validés ; prochaine étape : vérifier la vraie app Android). Copier
+*À jour au 8 octobre 2026 (Réglages validés ; chantier « une app vivante toute l'année » codé, à tester sur le téléphone). Copier
 tout le texte sous la ligne ci-dessous dans une nouvelle conversation sur claude.ai, et y joindre au besoin les
 captures de `docs/captures/`.*
 
@@ -58,6 +58,21 @@ Balco dit chaque jour quoi faire pour chaque plante du balcon, selon la saison e
   - Compte : état de la sauvegarde, Balco+ avec « Me prévenir à l'ouverture » (compte, ou e-mail sans compte),
     « Supprimer mon compte » (efface le compte sur le serveur, garde le balcon sur le téléphone).
   - À propos : donner mon avis (e-mail), confidentialité (bientôt), crédits photos, version.
+
+## Codé le 8 octobre, à tester sur mon téléphone : « une app vivante toute l'année »
+
+D'après le brief écrit avec toi (plan et réponses validés, détail dans `docs/chantier-toute-l-annee.md`) :
+- **Date simulée** dans Réglages → Version de test, pour tout essayer sans attendre (n'existe pas dans l'app publiée).
+- **Aujourd'hui toute l'année** : « Ton balcon se repose » quand il n'y a rien à faire ; au plus 2 cartes en plus
+  (événement > à anticiper > astuce > Idée du mois) ; « À anticiper » annonce 3 à 6 semaines avant ce qu'il faut
+  préparer (godets, terreau, pot plus grand) ; « Astuce de la semaine » tirée de 99 astuces vérifiées sur deux sources.
+- **La Sainte-Catherine** (18-30 novembre) : carte, page « Ce qui se plante maintenant » (petits fruits, ail, violas,
+  pas de fraisiers), « Paille tes pots » avec « C'est fait », « Demander à Nora », notification le 18, badge
+  « Sainte-Catherine · 2026 », bilan le 1er décembre. Version climat froid (protection d'abord).
+- **Badges** : ceux obtenus restent acquis pour de bon (avec leur date, dans la sauvegarde du compte) ; 8 badges à
+  paliers Graine / Pousse / Fleur ; 4 badges par saison avec millésime ; un herbier (une carte par plante récoltée ou
+  fleurie la première fois, « Elle a fleuri ? » sur la fiche des fleurs) ; Moi refait (« Presque là », la saison,
+  l'herbier, tous les badges).
 
 ## Ce qu'il reste à faire, dans l'ordre
 
