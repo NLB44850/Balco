@@ -51,7 +51,10 @@ import { seasonalStarters, seasonalSuggestions, type SeasonalSuggestion } from "
 import { activateReminders, NOTIFICATIONS_DENIED, remindersEnabledText } from "@/lib/reminders/activate";
 import { arrivalCard } from "@/lib/garden/onboarding";
 import { springCard } from "@/lib/garden/spring";
-import { skipRepotThisYear } from "@/lib/garden/repot-skip";
+import { anticipate, type Anticipation } from "@/lib/garden/anticipate";
+import { pickTodayCards, RESTING_TEXT, RESTING_TITLE } from "@/lib/garden/today-cards";
+import { AnticipateCard } from "@/components/today/anticipate-card";
+import { skippedRepots, skipRepotThisYear } from "@/lib/garden/repot-skip";
 import { harvestedToastText, isHarvestedOnce } from "@/lib/garden/harvest-end";
 import { REPOTTING } from "@/lib/plants/repotting";
 import { guideTaskOf } from "@/lib/plants/guide";
@@ -375,6 +378,18 @@ export default function HomeScreen() {
   const arrival = loaded ? arrivalCard(onboarding, events, now) : null;
   // Mars et avril : les envies du printemps choisies l'hiver, pas encore sur le balcon.
   const springWishes = loaded ? springCard(onboarding?.springWishes, resolvedPlants.map((resolved) => resolved.entry.id), now) : [];
+  // « À anticiper » : le prochain geste à préparer, 3 à 6 semaines devant (plantes du balcon, envies du printemps).
+  const anticipation = useMemo(
+    () => (loaded ? anticipate({ plants: resolvedPlants, events, springWishes: onboarding?.springWishes, now, climate, repotSkips: skippedRepots(snoozes, now) }) : null),
+    [climate, events, loaded, now, onboarding?.springWishes, resolvedPlants, snoozes],
+  );
+  // Au plus deux cartes en plus sous la liste, par priorité (lib/garden/today-cards.ts).
+  const cards = pickTodayCards({ spring: !away && springWishes.length > 0, anticipate: !away && anticipation !== null, idea: loaded && hasPlants && !away && monthIdea !== null });
+  const [anticipationOpen, setAnticipationOpen] = useState<Anticipation | null>(null);
+  const openNeeds = (item: Anticipation) => {
+    setAnticipationOpen(null);
+    router.push({ pathname: "/guide/[catalogId]", params: { catalogId: item.entry.id, mode: "need", month: String(item.month), ...(item.kind === "repot" && item.plantId ? { plantId: item.plantId, task: "repot" } : {}) } });
+  };
   // Un geste de saison pour une plante du balcon : sa photo plutôt que son emoji, quand il y en a une.
   const seasonPicture = (item: TodayItem) => {
     if (item.kind !== "season" || !covers.has(item.activity.subjectId)) return undefined;
@@ -503,11 +518,11 @@ export default function HomeScreen() {
         {loaded && hasPlants && status.allDone && !away && (
           <FadeIn style={styles.allDone}>
             <Text style={styles.allDoneIcon}>{status.doneToday > 0 ? (evening ? "🌙" : "☀️") : "🌿"}</Text>
-            <Text style={[styles.allDoneTitle, { color: colors.foreground }]}>{status.doneToday > 0 ? (evening ? "Ton balcon est prêt pour la nuit" : "Tout est fait pour aujourd’hui") : "Rien à faire aujourd’hui"}</Text>
+            <Text style={[styles.allDoneTitle, { color: colors.foreground }]}>{status.doneToday > 0 ? (evening ? "Ton balcon est prêt pour la nuit" : "Tout est fait pour aujourd’hui") : RESTING_TITLE}</Text>
             <Text style={[styles.allDoneText, { color: colors.muted }]}>
               {status.doneToday > 0
                 ? `${status.doneToday} geste${status.doneToday > 1 ? "s" : ""} aujourd’hui${streak > 1 ? ` · ${streak} jours de suite` : ""}. Balco te préviendra si la météo change.`
-                : "Tes plantes n’ont besoin de rien. Balco te préviendra si la météo change."}
+                : RESTING_TEXT}
             </Text>
             <Pressable accessibilityRole="button" onPress={() => router.push("/week")} style={({ pressed }) => [styles.pill, styles.weekButton, { backgroundColor: colors.primary }, pressed && styles.pressed]}>
               <Text style={[styles.pillText, { color: "#FFFFFF" }]}>Voir ma semaine</Text>
@@ -541,7 +556,7 @@ export default function HomeScreen() {
           </View>
         )}
 
-        {!away && springWishes.length > 0 && (
+        {cards.includes("spring") && (
           <View style={[glass.card, styles.arrival]}>
             <Text style={[styles.cityBannerTitle, { color: colors.foreground }]}>C’est le moment 🌱</Text>
             <Text style={[styles.small, { color: colors.muted }]}>Tes envies pour le printemps se sèment ou se plantent maintenant.</Text>
@@ -560,7 +575,9 @@ export default function HomeScreen() {
           </View>
         )}
 
-        {loaded && hasPlants && !away && monthIdea && (
+        {cards.includes("anticipate") && anticipation && <AnticipateCard anticipation={anticipation} onOpen={() => setAnticipationOpen(anticipation)} />}
+
+        {cards.includes("idea") && monthIdea && (
           <View style={styles.idea}>
             <Text style={[styles.sectionTitle, { color: colors.foreground }]}>Idée du mois</Text>
             <View style={[styles.reco, styles.ideaRow, { borderBottomColor: colors.border }]}>
@@ -663,6 +680,20 @@ export default function HomeScreen() {
                 />
               ))}
             </View>
+          </View>
+        )}
+      </BottomSheet>
+
+      <BottomSheet visible={anticipationOpen !== null} onClose={() => setAnticipationOpen(null)}>
+        {anticipationOpen && (
+          <View style={styles.sheet}>
+            <Text style={[styles.sheetKind, { color: colors.primary }]}>À anticiper · {anticipationOpen.when}</Text>
+            <Text style={[styles.sheetTitle, { color: colors.foreground }]}>{anticipationOpen.title}</Text>
+            <Text style={[styles.sheetBody, { color: colors.foreground }]}>{anticipationOpen.prepare}</Text>
+            <Text style={[styles.sheetBody, { color: colors.muted }]}>{anticipationOpen.detail}</Text>
+            <Pressable accessibilityRole="button" onPress={() => openNeeds(anticipationOpen)} style={({ pressed }) => [styles.cta, { backgroundColor: colors.foreground }, pressed && styles.pressed]}>
+              <Text style={[styles.ctaText, { color: colors.background }]}>Ce qu’il te faut ›</Text>
+            </Pressable>
           </View>
         )}
       </BottomSheet>

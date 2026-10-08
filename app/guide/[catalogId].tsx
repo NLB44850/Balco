@@ -59,12 +59,13 @@ export default function GuideScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const { width } = useWindowDimensions();
-  const params = useLocalSearchParams<{ catalogId: string; plantId?: string; mode?: string; task?: string }>();
+  const params = useLocalSearchParams<{ catalogId: string; plantId?: string; mode?: string; task?: string; month?: string }>();
   const entry = getCatalogPlant(params.catalogId ?? "");
   const { plants, events, logEvent } = useGarden();
   const plant = plants.find((candidate) => candidate.id === params.plantId && !candidate.removedAt);
   const needOnly = params.mode === "need";
-  const month = clockNow().getMonth() + 1;
+  // « À anticiper » ouvre le guide d'un geste à venir : son mois, pas celui d'aujourd'hui.
+  const month = Number(params.month) >= 1 && Number(params.month) <= 12 ? Number(params.month) : clockNow().getMonth() + 1;
   const task = isGuideTask(params.task) ? params.task : null;
   const potTask = isPotTask(task) ? task : null;
   const followUp = isFollowUpTask(task) ? task : null;
