@@ -54,8 +54,9 @@ test("sans réponse, une semaine après la 1ʳᵉ récolte : la question remplac
   await expect(page.getByText("Pot libéré : tes récoltes restent dans ta progression")).toBeVisible();
   await expect(page.getByText("Tes radis sont-ils tous récoltés ?")).toHaveCount(0);
 
-  // Moi : le badge de la première récolte reste gagné, même sans plante sur le balcon.
+  // Moi : le badge de la première récolte reste gagné, même sans plante sur le balcon (et Premier Pot aussi :
+  // ce qui est acquis reste acquis).
   await open(page, "/profile", "Mes badges éco");
-  await expect(page.getByText("1/6")).toBeVisible();
+  await expect(page.getByText("2/6")).toBeVisible();
   expect(errors).toEqual([]);
 });

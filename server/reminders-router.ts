@@ -65,6 +65,8 @@ const syncInput = z.object({
     note: z.string().max(500).optional(),
   })).max(1000),
   deletedEventIds: z.array(id).max(1000),
+  /** Badges obtenus { clé: date ISO } (lib/garden/awards.ts). */
+  awards: z.record(z.string().min(1).max(96), z.iso.datetime()).refine((value) => Object.keys(value).length <= 2000, "Trop de badges.").optional(),
   /** Identifiant de l'appareil (tiré au hasard à l'installation) : un seul appareil pour un compte gratuit. */
   deviceId: z.string().min(8).max(64).optional(),
   /** L'appareil prend la sauvegarde du jardin (connexion sur ce téléphone, ou demande de la personne). */

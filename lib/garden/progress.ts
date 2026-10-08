@@ -166,20 +166,21 @@ export function sinceLabel(days: number) {
 const STREAK_STEPS = [3, 7, 14, 30, 60, 100];
 
 /** `big` : fête en plein écran (nouveau badge, 1ʳᵉ récolte d'une plante) ; sinon, un mot dans le message du bas. */
-export type Celebration = { kind: "badge" | "level" | "streak" | "harvest"; emoji: string; title: string; detail: string; big: boolean };
+export type Celebration = { kind: "badge" | "level" | "streak" | "harvest"; emoji: string; title: string; detail: string; big: boolean; /** Le badge fêté (déjà fêté : ne se refête pas à l'ouverture d'Aujourd'hui). */ awardKey?: string };
 
 /**
  * Ce qu'un geste vient de débloquer : un badge, un niveau, une série de jours, une récolte. Seuls un
  * nouveau badge et la première récolte d'une plante se fêtent en grand ; le reste se dit en un mot dans
  * le message du bas (la ligne cochée a déjà son animation). Rien sinon.
  */
-export function celebrationFor(plants: ResolvedPlant[], before: MaintenanceEvent[], after: MaintenanceEvent[], now = new Date(), past: ResolvedPlant[] = []): Celebration | null {
+export function celebrationFor(plants: ResolvedPlant[], before: MaintenanceEvent[], after: MaintenanceEvent[], now = new Date(), past: ResolvedPlant[] = [], awards: Record<string, string> = {}): Celebration | null {
   const beforeStats = computeStats(plants, before, now, past);
   const afterStats = computeStats(plants, after, now, past);
-  const beforeBadges = computeBadges(beforeStats);
-  const afterBadges = computeBadges(afterStats);
+  // Un badge déjà obtenu (même si son compteur avait baissé) ne se fête pas deux fois.
+  const beforeBadges = computeBadges(beforeStats, awards);
+  const afterBadges = computeBadges(afterStats, awards);
   const badge = afterBadges.find((item, index) => item.unlocked && !beforeBadges[index].unlocked);
-  if (badge) return { kind: "badge", emoji: "🏅", title: `Nouveau badge : ${badge.title}`, detail: `${badge.detail} : c’est fait, bravo !`, big: true };
+  if (badge) return { kind: "badge", emoji: "🏅", title: `Nouveau badge : ${badge.title}`, detail: `${badge.detail} : c’est fait, bravo !`, big: true, awardKey: `badge:${badge.id}` };
 
   const beforeLevel = computeProgress(beforeStats, beforeBadges);
   const afterLevel = computeProgress(afterStats, afterBadges);
@@ -202,6 +203,13 @@ export function celebrationFor(plants: ResolvedPlant[], before: MaintenanceEvent
       : { kind: "harvest", emoji: "🧺", title: `Récolte de ${name}`, detail: "Bon appétit ! Récolter souvent l’encourage à produire.", big: false };
   }
   return null;
+}
+
+/** La fête d'un badge obtenu hors d'Aujourd'hui (notification, pluie, autre téléphone) : `badge:<id>`. */
+export function awardCelebration(key: string): Celebration | null {
+  const badge = computeBadges({ gestures: 0, streakDays: 0, plants: 0, harvests: 0, observations: 0, weatherTipsFollowed: 0, melliferousPlants: 0 }).find((item) => `badge:${item.id}` === key);
+  if (!badge) return null;
+  return { kind: "badge", emoji: "🏅", title: `Nouveau badge : ${badge.title}`, detail: `${badge.detail} : c’est fait, bravo !`, big: true, awardKey: key };
 }
 
 /**

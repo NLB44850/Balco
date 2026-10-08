@@ -1,3 +1,4 @@
+import { useIsFocused } from "@react-navigation/native";
 import { useRouter } from "expo-router";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Alert, Animated, Platform, Pressable, ScrollView, StyleSheet, View } from "react-native";
@@ -30,7 +31,7 @@ import { useGarden } from "@/lib/garden/garden-context";
 import { trpc } from "@/lib/trpc";
 import { deviceId as loadDeviceId } from "@/lib/sync/device-id";
 import { usePlantPhotos } from "@/lib/garden/photos-context";
-import { celebrationFor, formatLiters, litersPerWatering, withCheer } from "@/lib/garden/progress";
+import { awardCelebration, celebrationFor, formatLiters, litersPerWatering, withCheer } from "@/lib/garden/progress";
 import { awayOn, preparationSteps, vacationRange, vacationState } from "@/lib/garden/vacation";
 import {
   POINTS_PER_GESTURE,
@@ -84,7 +85,7 @@ const haptic = () => {
 export default function HomeScreen() {
   const colors = useColors();
   const router = useRouter();
-  const { loaded, resolvedPlants, pastPlants, events, onboarding, account, addPlant, removePlant, logEvent, removeEvent, reportLocation, updateOnboarding } = useGarden();
+  const { loaded, resolvedPlants, pastPlants, events, awards, takeUnseenAwards, onboarding, account, addPlant, removePlant, logEvent, removeEvent, reportLocation, updateOnboarding } = useGarden();
   const aiStatus = trpc.ai.status.useQuery(undefined, { enabled: account.signedIn, retry: false });
   // Sans compte : l'analyse offerte de cet appareil (Observer sans compte).
   const [device, setDevice] = useState<string | null>(null);
@@ -220,7 +221,21 @@ export default function HomeScreen() {
    * Un badge, un niveau, une série ou une récolte débloqués par ce geste : plein écran pour un badge ou une
    * 1ʳᵉ récolte (une fois par jour), sinon un mot devant le message du bas.
    */
-  const cheer = (logged: MaintenanceEvent[]) => celebrate(celebrationFor(resolvedPlants, events, [...logged, ...events.filter((event) => !logged.some((item) => item.id === event.id))], clockNow(), pastPlants));
+  const cheer = (logged: MaintenanceEvent[]) => celebrate(celebrationFor(resolvedPlants, events, [...logged, ...events.filter((event) => !logged.some((item) => item.id === event.id))], clockNow(), pastPlants, awards));
+
+  // Un badge obtenu ailleurs (« Fait » dans une notification, pluie notée toute seule, autre téléphone) se fête ici,
+  // à l'ouverture d'Aujourd'hui. Petit délai : un badge débloqué par un geste coché ici est déjà fêté par son message.
+  const focused = useIsFocused();
+  useEffect(() => {
+    if (!focused || !loaded) return;
+    const timer = setTimeout(() => {
+      const [key] = takeUnseenAwards();
+      const line = key ? celebrate(awardCelebration(key)) : null;
+      if (line) showToast(line);
+    }, 1500);
+    return () => clearTimeout(timer);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [awards, focused, loaded]);
 
   const logAll = async (toLog: MaintenanceEvent[]) => {
     for (const event of toLog) await logEvent(event);

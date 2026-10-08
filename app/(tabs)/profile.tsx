@@ -26,7 +26,7 @@ export default function ProfileScreen() {
   const insets = useSafeAreaInsets();
   const colors = useColors();
   const router = useRouter();
-  const { resolvedPlants, pastPlants, events, profile, onboarding } = useGarden();
+  const { resolvedPlants, pastPlants, events, awards, profile, onboarding } = useGarden();
   const [openBadge, setOpenBadge] = useState<string | null>(null);
   const { photos } = usePlantPhotos();
   const now = useNow();
@@ -36,7 +36,7 @@ export default function ProfileScreen() {
   const vacationLine = trip.phase === "none" || !vacation ? "Tu pars ? Balco prépare ton balcon et se tait pendant ton absence." : trip.phase === "back" ? "Bon retour ! Ta liste de retour t’attend." : `Absence ${vacationRange(vacation)}`;
 
   const stats = useMemo(() => computeStats(resolvedPlants, events, now, pastPlants), [events, now, pastPlants, resolvedPlants]);
-  const badges = useMemo(() => computeBadges(stats), [stats]);
+  const badges = useMemo(() => computeBadges(stats, awards), [awards, stats]);
   const progress = useMemo(() => computeProgress(stats, badges), [badges, stats]);
   const unlockedCount = badges.filter((badge) => badge.unlocked).length;
   const balconyMeta = [

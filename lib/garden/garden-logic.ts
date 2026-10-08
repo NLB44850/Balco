@@ -261,6 +261,11 @@ export function eventForSessionTask({ resolved, task, eventId }: SessionTask, no
 
 export type GardenStats = { gestures: number; streakDays: number; plants: number; harvests: number; observations: number; weatherTipsFollowed: number; melliferousPlants: number };
 
+/** Une vraie observation : le geste « Observe » de la liste du jour ou une analyse Observer (pas un semis, ni la pluie). */
+export function isRealObservation(event: MaintenanceEvent) {
+  return event.type === "observation" && (event.source === "daily_task" || isScannerEvent(event));
+}
+
 /** Un « N'arrose pas, il va pleuvoir » suivi : l'arrosage évité est noté comme une observation. */
 export function isAvoidedWatering(event: MaintenanceEvent) {
   return event.source === "reminder" && event.type === "observation" && /^N[’']arrose pas/u.test(event.note ?? "");
@@ -278,6 +283,22 @@ const MAX_FOLLOWED_DAYS = 366;
  */
 export function followedDays(plants: ResolvedPlant[], events: MaintenanceEvent[], now = new Date()) {
   if (plants.length === 0) return 0;
+  const followed = followedDayChecker(plants, events);
+  const cursor = startOfDay(now);
+  if (followed(cursor) !== true) cursor.setDate(cursor.getDate() - 1);
+  let streak = 0;
+  while (streak < MAX_FOLLOWED_DAYS && followed(cursor) === true) {
+    streak += 1;
+    cursor.setDate(cursor.getDate() - 1);
+  }
+  return streak;
+}
+
+/**
+ * Le jour `day` (début de journée) a-t-il été suivi ? true : suivi ; false : un arrosage manquait ; null : pas encore
+ * de plante ce jour-là. Partagé par la série et par le recalcul des badges déjà mérités (lib/garden/awards.ts).
+ */
+export function followedDayChecker(plants: ResolvedPlant[], events: MaintenanceEvent[]): (day: Date) => boolean | null {
   const byPlant = plants.map((resolved) => {
     const own = events.filter((event) => event.plantId === resolved.plant.id);
     const waterings = own.filter((event) => event.type === "watering").map((event) => new Date(event.completedAt).getTime()).filter(Number.isFinite).sort((a, b) => a - b);
@@ -286,8 +307,7 @@ export function followedDays(plants: ResolvedPlant[], events: MaintenanceEvent[]
     return { resolved, addedAt: inGroundSince(resolved.plant, events) ?? Number.POSITIVE_INFINITY, waterings, coveredDays };
   });
 
-  /** true : suivi ; false : un arrosage manquait ; null : pas encore de plante ce jour-là. */
-  const followed = (day: Date): boolean | null => {
+  return (day: Date): boolean | null => {
     const start = day.getTime();
     const end = start + DAY_MS;
     const key = dayKey(day);
@@ -302,15 +322,6 @@ export function followedDays(plants: ResolvedPlant[], events: MaintenanceEvent[]
       return !due || coveredDays.has(key);
     });
   };
-
-  const cursor = startOfDay(now);
-  if (followed(cursor) !== true) cursor.setDate(cursor.getDate() - 1);
-  let streak = 0;
-  while (streak < MAX_FOLLOWED_DAYS && followed(cursor) === true) {
-    streak += 1;
-    cursor.setDate(cursor.getDate() - 1);
-  }
-  return streak;
 }
 
 /**
@@ -326,7 +337,8 @@ export function computeStats(plants: ResolvedPlant[], events: MaintenanceEvent[]
     streakDays: followedDays(plants, own, now),
     plants: plants.length,
     harvests: own.filter((event) => event.type === "harvest").length,
-    observations: own.filter((event) => event.type === "observation").length,
+    // Bio-Défenseur : les vraies observations seulement (ni semis, ni plantation, ni pluie).
+    observations: own.filter(isRealObservation).length,
     weatherTipsFollowed: own.filter((event) => event.source === "reminder").length,
     melliferousPlants: plants.filter(({ entry }) => entry.melliferous).length,
   };
@@ -343,9 +355,11 @@ const BADGE_RULES: Array<Omit<Badge, "current" | "unlocked"> & { metric: (stats:
   { id: "streak", title: "Main Verte", detail: "7 jours de suite", icon: "☀", tone: "#E9EFA6", target: 7, metric: (stats) => stats.streakDays },
 ];
 
-export function computeBadges(stats: GardenStats): Badge[] {
+/** `awards` : les badges déjà obtenus (lib/garden/awards.ts) restent débloqués, même si le compteur a baissé. */
+export function computeBadges(stats: GardenStats, awards: Record<string, string> = {}): Badge[] {
   return BADGE_RULES.map(({ metric, ...badge }) => {
-    const current = Math.min(metric(stats), badge.target);
+    const kept = Boolean(awards[`badge:${badge.id}`]);
+    const current = kept ? badge.target : Math.min(metric(stats), badge.target);
     return { ...badge, current, unlocked: current >= badge.target };
   });
 }

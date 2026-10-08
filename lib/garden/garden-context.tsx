@@ -24,6 +24,7 @@ import {
   buildPush,
   emptyOutbox,
   locationChanged,
+  markAwardsDirty,
   markProfileDirty,
   markSettingsDirty,
   mergeOutbox,
@@ -39,6 +40,7 @@ import { trpc } from "@/lib/trpc";
 import { TRPCClientError } from "@trpc/client";
 import { activePlants, appendEvent, createGardenPlant, MAX_STORED_EVENTS, resolvePlants, startedPlantId, type GardenPlant, type ResolvedPlant } from "./garden-logic";
 import { archiveSeason } from "./harvest-end";
+import { backfillAwards, badgesEarnedNow, capAwards, mergeAwards, newAwards, unseenAwards, type Awards } from "./awards";
 import { now as clockNow } from "@/lib/clock";
 
 export const GARDEN_PLANTS_STORAGE_KEY = "balco.garden.plants.v1";
@@ -47,6 +49,10 @@ export const USER_PROFILE_STORAGE_KEY = "balco.user.profile.v1";
 export const ONBOARDING_STORAGE_KEY = "balco.onboarding.preferences.v1";
 export const SYNC_OUTBOX_STORAGE_KEY = "balco.sync.outbox.v1";
 export const SYNC_META_STORAGE_KEY = "balco.sync.meta.v1";
+/** Badges obtenus (synchronisés), ceux déjà fêtés sur ce téléphone, et le recalcul unique depuis l'historique. */
+export const AWARDS_STORAGE_KEY = "balco.progress.awards.v1";
+
+type StoredAwards = { awards: Awards; seen: string[]; backfilled?: boolean };
 
 const SYNC_DEBOUNCE_MS = 2000;
 
@@ -79,6 +85,12 @@ type GardenContextValue = {
   /** Les plantes qui ont quitté le balcon : leurs gestes et leurs récoltes restent dans la progression. */
   pastPlants: ResolvedPlant[];
   events: MaintenanceEvent[];
+  /** Les badges obtenus, datés : ils restent acquis (lib/garden/awards.ts). */
+  awards: Awards;
+  /** Les badges pas encore fêtés sur ce téléphone, aussitôt notés comme fêtés. */
+  takeUnseenAwards: () => string[];
+  /** Un badge vient d'être fêté (par le message d'un geste) : ne pas le refêter. */
+  markAwardsSeen: (keys: string[]) => void;
   profile: UserProfile;
   onboarding: OnboardingAnswers | null;
   account: AccountState;
@@ -133,6 +145,8 @@ export function GardenProvider({ children }: { children: ReactNode }) {
   const [events, setEvents] = useState<MaintenanceEvent[]>([]);
   const [profile, setProfile] = useState<UserProfile>({});
   const [onboarding, setOnboarding] = useState<OnboardingAnswers | null>(null);
+  const [awards, setAwards] = useState<Awards>({});
+  const awardsRef = useRef<StoredAwards>({ awards: {}, seen: [] });
   const [syncStatus, setSyncStatus] = useState<AccountState["status"]>("idle");
   const [lastSyncedAt, setLastSyncedAt] = useState<string | undefined>(undefined);
   const [serverPush, setServerPush] = useState(false);
@@ -171,8 +185,11 @@ export function GardenProvider({ children }: { children: ReactNode }) {
       readJson<Outbox>(SYNC_OUTBOX_STORAGE_KEY, emptyOutbox()),
       readJson<SyncMeta>(SYNC_META_STORAGE_KEY, {}),
       readJson<PushRegistration | null>(SERVER_PUSH_STORAGE_KEY, null),
-    ]).then(([storedPlants, storedEvents, storedProfile, storedOnboarding, storedOutbox, storedMeta, pushRegistration]) => {
+      readJson<StoredAwards>(AWARDS_STORAGE_KEY, { awards: {}, seen: [] }),
+    ]).then(([storedPlants, storedEvents, storedProfile, storedOnboarding, storedOutbox, storedMeta, pushRegistration, storedAwards]) => {
       if (!active) return;
+      awardsRef.current = { awards: storedAwards?.awards ?? {}, seen: Array.isArray(storedAwards?.seen) ? storedAwards.seen : [], backfilled: storedAwards?.backfilled };
+      setAwards(awardsRef.current.awards);
       plantsRef.current = Array.isArray(storedPlants) ? storedPlants : [];
       eventsRef.current = Array.isArray(storedEvents) ? storedEvents : [];
       profileRef.current = storedProfile ?? {};
@@ -225,6 +242,12 @@ export function GardenProvider({ children }: { children: ReactNode }) {
     metaRef.current = next;
     setLastSyncedAt(next.lastSyncedAt);
     await writeJson(SYNC_META_STORAGE_KEY, next);
+  }, []);
+
+  const saveAwards = useCallback(async (next: StoredAwards) => {
+    awardsRef.current = next;
+    setAwards(next.awards);
+    await writeJson(AWARDS_STORAGE_KEY, next);
   }, []);
 
   const setOutbox = useCallback((next: Outbox) => {
@@ -283,7 +306,7 @@ export function GardenProvider({ children }: { children: ReactNode }) {
     let sent = outboxRef.current;
     try {
       const settings = await loadLocalReminderSettings();
-      const localState = (currentSettings = settings): LocalGardenState => ({ plants: plantsRef.current, events: eventsRef.current, firstName: profileRef.current.firstName, onboarding: onboardingRef.current, settings: currentSettings });
+      const localState = (currentSettings = settings): LocalGardenState => ({ plants: plantsRef.current, events: eventsRef.current, firstName: profileRef.current.firstName, onboarding: onboardingRef.current, settings: currentSettings, awards: awardsRef.current.awards });
       if (metaRef.current.openId !== openId) {
         // Premier passage de ce compte sur cet appareil : tout ce qui est local part vers le compte.
         // Se connecter ici fait de ce téléphone celui qui sauvegarde le jardin (compte gratuit).
@@ -304,6 +327,9 @@ export function GardenProvider({ children }: { children: ReactNode }) {
       await saveEvents(applied.events);
       if ((applied.firstName ?? undefined) !== profileRef.current.firstName) await saveProfile({ ...profileRef.current, firstName: applied.firstName });
       if (JSON.stringify(applied.onboarding) !== JSON.stringify(onboardingRef.current)) await saveOnboarding(applied.onboarding);
+      // Un badge obtenu sur un autre téléphone arrive ici ; on ne le refête pas (il l'a été là-bas).
+      const arrived = newAwards(awardsRef.current.awards, applied.awards);
+      if (arrived) await saveAwards({ ...awardsRef.current, awards: capAwards(applied.awards), seen: [...awardsRef.current.seen, ...Object.keys(arrived)] });
       const appliedSettings = { ...defaultLocalReminderSettings, ...applied.settings, vacation: applied.settings.vacation ?? null };
       if (JSON.stringify(appliedSettings) !== JSON.stringify(latestSettings)) await saveLocalReminderSettings(appliedSettings, "sync");
       await saveMeta({ openId, lastSyncedAt: snapshot.serverTime, lastLocation: location ?? metaRef.current.lastLocation });
@@ -333,7 +359,7 @@ export function GardenProvider({ children }: { children: ReactNode }) {
         scheduleSync(0);
       }
     }
-  }, [dropPushRegistration, ensurePushRegistration, saveMeta, saveOnboarding, savePlants, saveEvents, saveProfile, scheduleSync, setOutbox, utils]);
+  }, [dropPushRegistration, ensurePushRegistration, saveAwards, saveMeta, saveOnboarding, savePlants, saveEvents, saveProfile, scheduleSync, setOutbox, utils]);
 
   runSyncRef.current = runSync;
 
@@ -475,6 +501,32 @@ export function GardenProvider({ children }: { children: ReactNode }) {
   const plants = useMemo(() => activePlants(allPlants), [allPlants]);
   const resolvedPlants = useMemo(() => resolvePlants(plants), [plants]);
   const pastPlants = useMemo(() => resolvePlants(allPlants.filter((plant) => plant.removedAt)), [allPlants]);
+
+  // Rien ne se perd : chaque badge débloqué est noté (avec sa date), d'où qu'il vienne (geste, notification, pluie).
+  // La première fois, un recalcul unique rend ceux déjà mérités d'après l'historique, sans les refêter.
+  useEffect(() => {
+    if (!loaded) return;
+    const moment = clockNow();
+    const stored = awardsRef.current;
+    let earned = badgesEarnedNow(resolvedPlants, events, moment, pastPlants);
+    if (!stored.backfilled) earned = mergeAwards(backfillAwards(resolvedPlants, pastPlants, events, moment), earned);
+    const added = newAwards(stored.awards, earned);
+    if (!added && stored.backfilled) return;
+    const next = capAwards(mergeAwards(stored.awards, added ?? {}));
+    void saveAwards({ awards: next, seen: stored.backfilled ? stored.seen : Object.keys(next), backfilled: true });
+    if (added) queue(markAwardsDirty);
+  }, [events, loaded, pastPlants, queue, resolvedPlants, saveAwards]);
+
+  const markAwardsSeen = useCallback((keys: string[]) => {
+    const stored = awardsRef.current;
+    const fresh = keys.filter((key) => !stored.seen.includes(key));
+    if (fresh.length > 0) void saveAwards({ ...stored, seen: [...stored.seen, ...fresh] });
+  }, [saveAwards]);
+  const takeUnseenAwards = useCallback(() => {
+    const unseen = unseenAwards(awardsRef.current.awards, awardsRef.current.seen);
+    if (unseen.length > 0) markAwardsSeen(unseen);
+    return unseen;
+  }, [markAwardsSeen]);
   const account = useMemo<AccountState>(() => ({
     loginAvailable: true,
     signedIn: auth.isAuthenticated,
@@ -489,8 +541,8 @@ export function GardenProvider({ children }: { children: ReactNode }) {
   }), [auth.isAuthenticated, auth.loading, auth.user?.email, auth.user?.name, founder, lastSyncedAt, plan, serverPush, syncStatus]);
 
   const value = useMemo<GardenContextValue>(
-    () => ({ loaded, plants, resolvedPlants, pastPlants, events, profile, onboarding, account, addPlant, removePlant, restartPlant, renamePlant, setPlantVariety, logEvent, removeEvent, updateProfile, reloadOnboarding, updateOnboarding, reportLocation, signIn, signOut, syncNow, claimThisDevice, refreshAccount, completeSignIn, deleteAccount }),
-    [loaded, plants, resolvedPlants, pastPlants, events, profile, onboarding, account, addPlant, removePlant, restartPlant, renamePlant, setPlantVariety, logEvent, removeEvent, updateProfile, reloadOnboarding, updateOnboarding, reportLocation, signIn, signOut, syncNow, claimThisDevice, refreshAccount, completeSignIn, deleteAccount],
+    () => ({ loaded, plants, resolvedPlants, pastPlants, events, awards, takeUnseenAwards, markAwardsSeen, profile, onboarding, account, addPlant, removePlant, restartPlant, renamePlant, setPlantVariety, logEvent, removeEvent, updateProfile, reloadOnboarding, updateOnboarding, reportLocation, signIn, signOut, syncNow, claimThisDevice, refreshAccount, completeSignIn, deleteAccount }),
+    [loaded, plants, resolvedPlants, pastPlants, events, awards, takeUnseenAwards, markAwardsSeen, profile, onboarding, account, addPlant, removePlant, restartPlant, renamePlant, setPlantVariety, logEvent, removeEvent, updateProfile, reloadOnboarding, updateOnboarding, reportLocation, signIn, signOut, syncNow, claimThisDevice, refreshAccount, completeSignIn, deleteAccount],
   );
 
   return <GardenContext.Provider value={value}>{children}</GardenContext.Provider>;

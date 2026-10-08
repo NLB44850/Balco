@@ -43,7 +43,7 @@ export default function PlantScreen() {
   const insets = useSafeAreaInsets();
   const { width } = useWindowDimensions();
   const { id } = useLocalSearchParams<{ id: string }>();
-  const { loaded, resolvedPlants, pastPlants, events, logEvent, removeEvent, removePlant, renamePlant, setPlantVariety } = useGarden();
+  const { loaded, resolvedPlants, pastPlants, events, awards, logEvent, removeEvent, removePlant, renamePlant, setPlantVariety } = useGarden();
   const { plan, ready, snoozes, reminderSettings, climate } = useDayPlan();
   const { photos, removePhoto } = usePlantPhotos();
   const [shownPhotoId, setShownPhotoId] = useState<string | null>(null);
@@ -124,7 +124,7 @@ export default function PlantScreen() {
     // Un conseil météo suivi se tait jusqu'à demain, ici comme sur Aujourd'hui.
     if (gesture.source.type === "decision") await saveReminderSnoozes(addSnooze(snoozes, gesture.source.decision, "skip", reminderSettings, moment));
     void Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => undefined);
-    const cheer = celebrate(celebrationFor(resolvedPlants, events, [event, ...events.filter((item) => item.id !== event.id)], moment, pastPlants));
+    const cheer = celebrate(celebrationFor(resolvedPlants, events, [event, ...events.filter((item) => item.id !== event.id)], moment, pastPlants, awards));
     if (gesture.source.type === "task" && gesture.source.task.task.type === "harvest" && isHarvestedOnce(entry)) {
       return showToast(withCheer(cheer, harvestedToastText(entry)), () => void freePot.answerYes(plant.id), "Oui");
     }

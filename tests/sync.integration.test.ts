@@ -117,6 +117,14 @@ describe.skipIf(!TEST_DATABASE_URL)("garden sync and server reminders (MySQL)", 
     expect(secondDevice.events[0]).toMatchObject({ id: "basil-a:check-soil:2026-09-23", type: "watering", source: "daily_task" });
   });
 
+  it("garde les badges obtenus : ajoutés à ceux déjà sauvegardés, jamais retirés, la date la plus ancienne gagne", async () => {
+    await reminders.syncGarden(userId, { ...emptyPush(), awards: { "badge:first-pot": hoursAgo(200), "badge:plate": hoursAgo(10) } });
+    // Un autre téléphone envoie son carnet : rien ne se perd.
+    const merged = await reminders.syncGarden(userId, { ...emptyPush(), awards: { "badge:plate": hoursAgo(50), "badge:bees": hoursAgo(5) } });
+    expect(merged.awards).toEqual({ "badge:first-pot": hoursAgo(200), "badge:plate": hoursAgo(50), "badge:bees": hoursAgo(5) });
+    expect((await reminders.syncGarden(userId, emptyPush())).awards).toEqual(merged.awards);
+  });
+
   it("schedules a watering check at the preferred local time", async () => {
     const result = await reminders.recalculateUserReminders(userId, NOW);
     expect(result).toMatchObject({ status: "recalculated", decisions: 1 });

@@ -10,6 +10,7 @@
  * Le serveur fait donc foi : un geste annulé ou une plante retirée sur un appareil
  * disparaît aussi des autres, au lieu de réapparaître à la fusion.
  */
+import { mergeAwards, type Awards } from "../garden/awards";
 import type { GardenPlant } from "../garden/garden-logic";
 import type { Vacation } from "../garden/vacation";
 import type { OnboardingAnswers } from "../plants/catalog";
@@ -35,6 +36,8 @@ export type Outbox = {
   deletedEventIds: string[];
   profileDirty: boolean;
   settingsDirty: boolean;
+  /** Un badge a été obtenu depuis la dernière synchro : le carnet complet repart (le serveur fait l'union). */
+  awardsDirty?: boolean;
 };
 
 export type LocalGardenState = {
@@ -43,6 +46,7 @@ export type LocalGardenState = {
   firstName?: string;
   onboarding: OnboardingAnswers | null;
   settings: SyncSettings;
+  awards?: Awards;
 };
 
 export type SyncPushPayload = {
@@ -52,6 +56,7 @@ export type SyncPushPayload = {
   plants: Array<GardenPlant & { updatedAt: string }>;
   events: MaintenanceEvent[];
   deletedEventIds: string[];
+  awards?: Awards;
 };
 
 export type SyncSnapshotPayload = {
@@ -59,15 +64,17 @@ export type SyncSnapshotPayload = {
   settings: SyncSettings | null;
   plants: Array<GardenPlant & { updatedAt: string }>;
   events: MaintenanceEvent[];
+  /** Absent d'un serveur plus ancien. */
+  awards?: Awards;
   serverTime: string;
 };
 
 export function emptyOutbox(): Outbox {
-  return { plants: {}, events: {}, deletedEventIds: [], profileDirty: false, settingsDirty: false };
+  return { plants: {}, events: {}, deletedEventIds: [], profileDirty: false, settingsDirty: false, awardsDirty: false };
 }
 
 export function isOutboxEmpty(outbox: Outbox) {
-  return Object.keys(outbox.plants).length === 0 && Object.keys(outbox.events).length === 0 && outbox.deletedEventIds.length === 0 && !outbox.profileDirty && !outbox.settingsDirty;
+  return Object.keys(outbox.plants).length === 0 && Object.keys(outbox.events).length === 0 && outbox.deletedEventIds.length === 0 && !outbox.profileDirty && !outbox.settingsDirty && !outbox.awardsDirty;
 }
 
 export function recordPlant(outbox: Outbox, plant: GardenPlant): Outbox {
@@ -91,9 +98,13 @@ export function markSettingsDirty(outbox: Outbox): Outbox {
   return { ...outbox, settingsDirty: true };
 }
 
+export function markAwardsDirty(outbox: Outbox): Outbox {
+  return { ...outbox, awardsDirty: true };
+}
+
 /** Recombine une boîte envoyée sans succès avec les changements arrivés entre-temps (les plus récents gagnent). */
 export function mergeOutbox(older: Outbox, newer: Outbox): Outbox {
-  let merged: Outbox = { ...older, plants: { ...older.plants, ...newer.plants }, profileDirty: older.profileDirty || newer.profileDirty, settingsDirty: older.settingsDirty || newer.settingsDirty };
+  let merged: Outbox = { ...older, plants: { ...older.plants, ...newer.plants }, profileDirty: older.profileDirty || newer.profileDirty, settingsDirty: older.settingsDirty || newer.settingsDirty, awardsDirty: Boolean(older.awardsDirty || newer.awardsDirty) };
   for (const event of Object.values(newer.events)) merged = recordEvent(merged, event);
   for (const id of newer.deletedEventIds) merged = recordEventDeletion(merged, id);
   return merged;
@@ -107,6 +118,7 @@ export function buildPush(outbox: Outbox, local: LocalGardenState, location?: Sy
   return {
     ...(outbox.profileDirty ? { profile: { firstName: local.firstName?.trim() || null, balcony: local.onboarding } } : {}),
     ...(outbox.settingsDirty ? { settings: local.settings } : {}),
+    ...(outbox.awardsDirty && local.awards && Object.keys(local.awards).length > 0 ? { awards: local.awards } : {}),
     ...(location ? { location } : {}),
     plants: Object.values(outbox.plants).map((plant) => ({ ...plant, updatedAt: plantTimestamp(plant) })),
     events: Object.values(outbox.events),
@@ -129,6 +141,7 @@ export function seedOutbox(local: LocalGardenState, defaultSettings: SyncSetting
     ...outbox,
     profileDirty: hasProfile,
     settingsDirty: JSON.stringify(local.settings) !== JSON.stringify(defaultSettings),
+    awardsDirty: Object.keys(local.awards ?? {}).length > 0,
   };
 }
 
@@ -138,6 +151,8 @@ export type AppliedSnapshot = {
   firstName?: string;
   onboarding: OnboardingAnswers | null;
   settings: SyncSettings;
+  /** Union du carnet local et de celui du serveur : un badge obtenu sur un téléphone se retrouve sur l'autre. */
+  awards: Awards;
 };
 
 /**
@@ -165,6 +180,7 @@ export function applySnapshot(snapshot: SyncSnapshotPayload, pending: Outbox, lo
     // Le questionnaire d'un autre appareil remplace un questionnaire local ignoré ou absent.
     onboarding: pending.profileDirty ? local.onboarding : serverOnboarding ?? local.onboarding,
     settings: pending.settingsDirty || !snapshot.settings ? local.settings : snapshot.settings,
+    awards: mergeAwards(local.awards ?? {}, snapshot.awards ?? {}),
   };
 }
 

@@ -25,6 +25,7 @@ import { mapWithConcurrency } from "./concurrency";
 import { getDb } from "./db";
 import { withJobLock } from "./job-lock";
 import { runDailyPurge } from "./purge";
+import { capAwards, mergeAwards, type Awards } from "../lib/garden/awards";
 
 // Surchargeables pour les tests de bout en bout (serveurs simulés).
 const OPEN_METEO_URL = process.env.OPEN_METEO_URL || "https://api.open-meteo.com/v1/forecast";
@@ -60,6 +61,8 @@ export type SyncPush = {
   plants: SyncPlant[];
   events: MaintenanceEvent[];
   deletedEventIds: string[];
+  /** Badges obtenus { clé: date ISO } : ajoutés à ceux déjà connus, jamais retirés. */
+  awards?: Awards;
 };
 
 /** Ce que le serveur renvoie : l'état complet, qui fait foi. */
@@ -68,6 +71,7 @@ export type SyncSnapshot = {
   settings: ReminderSettingsInput | null;
   plants: SyncPlant[];
   events: MaintenanceEvent[];
+  awards: Awards;
   serverTime: string;
 };
 
@@ -237,6 +241,11 @@ async function applyPush(db: Db, userId: number, push: SyncPush) {
     if ("firstName" in push.profile) profileSet.firstName = push.profile.firstName?.trim() || null;
     if ("balcony" in push.profile) profileSet.balconyJson = push.profile.balcony ? JSON.stringify(push.profile.balcony) : null;
   }
+  if (push.awards && Object.keys(push.awards).length > 0) {
+    // Rien ne se perd : les badges reçus s'ajoutent à ceux déjà sauvegardés (la date la plus ancienne gagne).
+    const [existing] = await db.select({ awardsJson: reminderProfiles.awardsJson }).from(reminderProfiles).where(eq(reminderProfiles.userId, userId)).limit(1);
+    profileSet.awardsJson = JSON.stringify(capAwards(mergeAwards(parseJson<Awards>(existing?.awardsJson, {}), push.awards)));
+  }
   // La ligne de profil existe toujours après une synchro : le recalcul serveur en a besoin.
   await db.insert(reminderProfiles).values({ userId, ...profileSet }).onDuplicateKeyUpdate({ set: Object.keys(profileSet).length > 0 ? profileSet : { userId } });
 
@@ -286,6 +295,7 @@ export async function loadSnapshot(userId: number, now = new Date()): Promise<Sy
     // Les plantes retirées restent dans la réponse : l'appareil en déduit qu'il doit les masquer.
     plants: plants.map(toSyncPlant).filter((plant): plant is SyncPlant => plant !== null),
     events: events.map((event) => ({ id: event.eventId, plantId: event.plantId, type: event.type as MaintenanceEvent["type"], completedAt: event.completedAt.toISOString(), source: event.source as MaintenanceEvent["source"], note: event.note ?? undefined })),
+    awards: parseJson<Awards>(profile?.awardsJson, {}),
     serverTime: now.toISOString(),
   };
 }
