@@ -70,7 +70,7 @@ describe("petites victoires", () => {
   it("fête un badge, une série, chaque récolte, et se tait sinon", () => {
     const title = (...args: Parameters<typeof celebrationFor>) => celebrationFor(...args)?.title ?? null;
     const harvest = event("tomato-1", "harvest", 0);
-    expect(title(plants, [], [harvest], NOW)).toBe("Nouveau badge : Du Balcon à l'Assiette");
+    expect(title(plants, [], [harvest], NOW)).toBe("Nouveau badge : Du balcon à l’assiette");
     const second = { ...event("tomato-1", "harvest", 0), id: "harvest-again" };
     expect(celebrationFor(plants, [harvest], [second, harvest], NOW)).toMatchObject({ kind: "harvest", title: "Récolte de Tomates cerises" });
     expect(celebrationFor(plants, [harvest], [event("basil-1", "pruning", 0), harvest], NOW)).toBeNull();
@@ -78,7 +78,7 @@ describe("petites victoires", () => {
     // Série de jours suivis (chaque plante assoiffée arrosée) : 6 jours, puis l'arrosage du jour fait le 7ᵉ.
     const basilOnly = plants.filter(({ plant }) => plant.id === "basil-1");
     const week = [3, 5, 6].map((days) => event("basil-1", "watering", days));
-    expect(title(basilOnly, week, [event("basil-1", "watering", 0), ...week], NOW)).toBe("Nouveau badge : Main Verte");
+    expect(title(basilOnly, week, [event("basil-1", "watering", 0), ...week], NOW)).toBe("Nouveau badge : Main verte");
 
     // Thym arrosé il y a 2 jours (et 8), ciboulette il y a 3 jours : 2 jours suivis, l'arrosage de la ciboulette fait le 3ᵉ.
     const pair = resolvePlants([{ id: "thyme-1", catalogId: "thyme", addedAt: at(20) }, { id: "chives-1", catalogId: "chives", addedAt: at(20) }]);
@@ -98,13 +98,13 @@ describe("petites victoires", () => {
   });
 
   it("fête en grand au plus une fois par jour, sinon un mot dans le message du bas", () => {
-    const big = { kind: "badge" as const, emoji: "🏅", title: "Nouveau badge : Main Verte", detail: "", big: true };
+    const big = { kind: "badge" as const, emoji: "🏅", title: "Nouveau badge : Main verte", detail: "", big: true };
     const small = { kind: "streak" as const, emoji: "🔥", title: "3 jours de suite", detail: "", big: false };
     expect(celebrationStyle(big, null, NOW)).toEqual({ big: true, line: null });
     expect(celebrationStyle(big, "2026-07-14", NOW)).toEqual({ big: true, line: null });
     // Déjà une grande fête aujourd'hui : la suivante devient un mot dans le message.
     const today = `${NOW.getFullYear()}-${String(NOW.getMonth() + 1).padStart(2, "0")}-${String(NOW.getDate()).padStart(2, "0")}`;
-    expect(celebrationStyle(big, today, NOW)).toEqual({ big: false, line: "🏅 Nouveau badge : Main Verte" });
+    expect(celebrationStyle(big, today, NOW)).toEqual({ big: false, line: "🏅 Nouveau badge : Main verte" });
     expect(celebrationStyle(small, null, NOW)).toEqual({ big: false, line: "🔥 3 jours de suite" });
     expect(celebrationStyle(null, null, NOW)).toEqual({ big: false, line: null });
     expect(withCheer("🔥 3 jours de suite", "Arrose le thym : noté · +4 points")).toBe("🔥 3 jours de suite · Arrose le thym : noté · +4 points");

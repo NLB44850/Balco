@@ -34,10 +34,14 @@ test("Sainte-Catherine : carte, page, plantation, badge, puis bilan", async ({ p
   await expect(page.getByText("Se connecter pour discuter avec Nora")).toBeVisible();
   expect(decodeURIComponent(page.url())).toContain("question=Que planter pour la Sainte-Catherine sur mon balcon ?");
 
-  // Planté sur Aujourd'hui : le badge de l'édition est fêté.
+  // Planté sur Aujourd'hui : « Semeur » est fêté en grand (une grande fête par jour), puis le badge de l'édition d'un mot.
   await page.getByRole("tab", { name: /Aujourd/ }).click();
+  // Le paillage a d'abord donné le badge d'automne « Paré pour l'hiver », fêté à l'arrivée sur Aujourd'hui.
+  const winterReady = page.getByRole("button", { name: /^Nouveau badge : Paré pour l’hiver · 2026.*Fermer$/u });
+  await expect(winterReady).toBeVisible({ timeout: 10_000 });
+  await winterReady.click();
   await checkboxOf(page, "Marquer comme fait : Plante le framboisier").click();
-  await expect(page.getByRole("button", { name: /^Nouveau badge : Sainte-Catherine · 2026.*Fermer$/u })).toBeVisible({ timeout: 10_000 });
+  await expect(page.getByText(/Nouveau badge : Sainte-Catherine · 2026/u).first()).toBeVisible({ timeout: 10_000 });
   const stored = JSON.parse((await page.evaluate(() => localStorage.getItem("balco.progress.awards.v1"))) ?? "{}");
   expect(Object.keys(stored.awards)).toContain("event:sainte-catherine:2026");
 

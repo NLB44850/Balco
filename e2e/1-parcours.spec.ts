@@ -59,7 +59,7 @@ test("onboarding « Oui » : lesquelles (raccourci + recherche), soleil, espace,
   await expect(page.getByText("Position indisponible : cherche ta ville, ou passe pour l’instant.")).toBeVisible();
   await page.getByRole("button", { name: "Plus tard" }).click();
   await expect(page.getByText("Aujourd’hui").first()).toBeVisible();
-  await expect(page.getByText("Tes plantes")).toBeVisible();
+  await expect(page.getByText("Tes plantes", { exact: true })).toBeVisible();
   await expect(page.getByText("Météo de Paris par défaut")).toBeVisible();
   // Déjà en terre : pas de « Plante le basilic », l'arrosage est proposé.
   await expect(page.getByRole("checkbox", { name: /Plante le basilic|Plante le romarin/ })).toHaveCount(0);
@@ -81,7 +81,7 @@ test("« Passer » : Aujourd'hui avec des plantes de saison et « Quelques quest
   await page.getByText("Presque jamais").click();
   await page.getByText("Un rebord de fenêtre", { exact: true }).click();
   await page.getByRole("button", { name: "Plus tard" }).click();
-  await expect(page.getByText("Tes plantes")).toBeVisible();
+  await expect(page.getByText("Tes plantes", { exact: true })).toBeVisible();
   await expect(page.getByText("Quelques questions")).toHaveCount(0);
   // « Refaire l'accueil » (Réglages → Version de test) ne retire aucune plante.
   await page.goto("/settings");
@@ -271,7 +271,7 @@ test("Saisons : calendrier à lire, rangé par type ; les gestes du mois se font
   // Le détail d'un geste du mois renvoie vers Aujourd'hui.
   await page.getByRole("button", { name: /, détail$/ }).filter({ visible: true }).last().click();
   await page.getByRole("button", { name: "Le faire sur Aujourd’hui" }).click();
-  await expect(page.getByText("Tes plantes")).toBeVisible();
+  await expect(page.getByText("Tes plantes", { exact: true })).toBeVisible();
 
   // Un mois à venir se lit aussi, sans bouton.
   await page.getByRole("tab", { name: /Saisons/ }).click();

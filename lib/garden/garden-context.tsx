@@ -41,7 +41,9 @@ import { TRPCClientError } from "@trpc/client";
 import { activePlants, appendEvent, createGardenPlant, MAX_STORED_EVENTS, resolvePlants, startedPlantId, type GardenPlant, type ResolvedPlant } from "./garden-logic";
 import { archiveSeason } from "./harvest-end";
 import { eventAwards } from "@/lib/events/events";
-import { backfillAwards, badgesEarnedNow, capAwards, mergeAwards, newAwards, unseenAwards, type Awards } from "./awards";
+import { herbariumAwards } from "./herbarium";
+import { seasonAwards } from "./season-badges";
+import { BACKFILL_VERSION, backfillAwards, badgesEarnedNow, capAwards, mergeAwards, newAwards, unseenAwards, type Awards } from "./awards";
 import { now as clockNow } from "@/lib/clock";
 
 export const GARDEN_PLANTS_STORAGE_KEY = "balco.garden.plants.v1";
@@ -53,7 +55,7 @@ export const SYNC_META_STORAGE_KEY = "balco.sync.meta.v1";
 /** Badges obtenus (synchronisés), ceux déjà fêtés sur ce téléphone, et le recalcul unique depuis l'historique. */
 export const AWARDS_STORAGE_KEY = "balco.progress.awards.v1";
 
-type StoredAwards = { awards: Awards; seen: string[]; backfilled?: boolean };
+type StoredAwards = { awards: Awards; seen: string[]; backfilled?: boolean | number };
 
 const SYNC_DEBOUNCE_MS = 2000;
 
@@ -509,14 +511,18 @@ export function GardenProvider({ children }: { children: ReactNode }) {
     if (!loaded) return;
     const moment = clockNow();
     const stored = awardsRef.current;
-    let earned = mergeAwards(badgesEarnedNow(resolvedPlants, events, moment, pastPlants), eventAwards([...resolvedPlants, ...pastPlants], events, moment));
-    if (!stored.backfilled) earned = mergeAwards(backfillAwards(resolvedPlants, pastPlants, events, moment), earned);
+    const everyone = [...resolvedPlants, ...pastPlants];
+    // Paliers des badges, badges des événements et des saisons, cartes de l'herbier.
+    let earned = [eventAwards(everyone, events, moment), seasonAwards({ plants: resolvedPlants, past: pastPlants, events, springWishes: onboarding?.springWishes, now: moment }), herbariumAwards(everyone, events)].reduce(mergeAwards, badgesEarnedNow(resolvedPlants, events, moment, pastPlants));
+    const backfill = stored.backfilled !== BACKFILL_VERSION;
+    if (backfill) earned = mergeAwards(backfillAwards(resolvedPlants, pastPlants, events, moment), earned);
     const added = newAwards(stored.awards, earned);
-    if (!added && stored.backfilled) return;
+    if (!added && !backfill) return;
     const next = capAwards(mergeAwards(stored.awards, added ?? {}));
-    void saveAwards({ awards: next, seen: stored.backfilled ? stored.seen : Object.keys(next), backfilled: true });
+    // Recalcul unique : ce qui était déjà mérité ne se fête pas (il s'affichait déjà, ou c'est du passé).
+    void saveAwards({ awards: next, seen: backfill ? [...new Set([...stored.seen, ...Object.keys(next)])] : stored.seen, backfilled: BACKFILL_VERSION });
     if (added) queue(markAwardsDirty);
-  }, [events, loaded, pastPlants, queue, resolvedPlants, saveAwards]);
+  }, [events, loaded, onboarding?.springWishes, pastPlants, queue, resolvedPlants, saveAwards]);
 
   const markAwardsSeen = useCallback((keys: string[]) => {
     const stored = awardsRef.current;

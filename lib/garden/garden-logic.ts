@@ -5,6 +5,7 @@
 import { getCatalogPlant, soilCheckDepthCm, tasksForMonth, type CareTask, type CatalogPlant } from "../plants/catalog";
 import { endsWithSeason, seasonFrostText } from "../plants/season-end";
 import type { MaintenanceEvent, MaintenanceTaskType, PlantCareProfile } from "../reminders/reminder-engine";
+import { alertCauseOf } from "../reminders/alert-cause";
 
 export type GardenPlant = {
   /** Identifiant d'instance : deux pieds de tomates ont deux ids différents. */
@@ -259,7 +260,26 @@ export function eventForSessionTask({ resolved, task, eventId }: SessionTask, no
 
 // --- Statistiques, badges, points ---------------------------------------------
 
-export type GardenStats = { gestures: number; streakDays: number; plants: number; harvests: number; observations: number; weatherTipsFollowed: number; melliferousPlants: number };
+export type GardenStats = {
+  gestures: number;
+  streakDays: number;
+  /** Plantes sur le balcon aujourd'hui. */
+  plants: number;
+  /** Plantes accueillies depuis le début, retirées comprises. */
+  plantsWelcomed: number;
+  harvests: number;
+  observations: number;
+  weatherTipsFollowed: number;
+  /** Alertes gel, chaleur, vent ou orage suivies (« C'est fait »). */
+  alertsFollowed: number;
+  /** Arrosages évités sous la pluie. */
+  avoidedWaterings: number;
+  /** Semis et plantations notés. */
+  starts: number;
+  melliferousPlants: number;
+  /** Plantes mellifères différentes accueillies, retirées comprises. */
+  melliferousKinds: number;
+};
 
 /** Une vraie observation : le geste « Observe » de la liste du jour ou une analyse Observer (pas un semis, ni la pluie). */
 export function isRealObservation(event: MaintenanceEvent) {
@@ -329,38 +349,89 @@ export function followedDayChecker(plants: ResolvedPlant[], events: MaintenanceE
  * leurs récoltes restent dans la progression ; seules les plantes du balcon comptent comme plantes et pour la série.
  */
 export function computeStats(plants: ResolvedPlant[], events: MaintenanceEvent[], now = new Date(), past: ResolvedPlant[] = []): GardenStats {
-  const plantIds = new Set([...plants, ...past].map(({ plant }) => plant.id));
+  const everyone = [...plants, ...past];
+  const plantIds = new Set(everyone.map(({ plant }) => plant.id));
   const own = events.filter((event) => plantIds.has(event.plantId));
   return {
-    // L'arrosage évité grâce à la pluie est compté tout seul : ce n'est pas un geste (ni des points).
-    gestures: own.filter((event) => !isAvoidedWatering(event)).length,
+    // L'arrosage évité grâce à la pluie est compté tout seul : ce n'est pas un geste (ni des points). « Elle a fleuri » non plus.
+    gestures: own.filter((event) => !isAvoidedWatering(event) && !isBloomEvent(event)).length,
     streakDays: followedDays(plants, own, now),
     plants: plants.length,
+    plantsWelcomed: everyone.length,
     harvests: own.filter((event) => event.type === "harvest").length,
-    // Bio-Défenseur : les vraies observations seulement (ni semis, ni plantation, ni pluie).
+    // Bio-défenseur : les vraies observations seulement (ni semis, ni plantation, ni pluie).
     observations: own.filter(isRealObservation).length,
     weatherTipsFollowed: own.filter((event) => event.source === "reminder").length,
+    alertsFollowed: own.filter((event) => alertCauseOf(event) !== null).length,
+    avoidedWaterings: own.filter(isAvoidedWatering).length,
+    starts: own.filter(isStartEvent).length,
     melliferousPlants: plants.filter(({ entry }) => entry.melliferous).length,
+    melliferousKinds: new Set(everyone.filter(({ entry }) => entry.melliferous).map(({ entry }) => entry.id)).size,
   };
 }
 
-export type Badge = { id: string; title: string; detail: string; icon: string; tone: string; current: number; target: number; unlocked: boolean };
+/** Un semis ou une plantation : le premier geste d'une plante (« Sème… », « Plante… »), ou celui du calendrier. */
+export function isStartEvent(event: MaintenanceEvent) {
+  return /:start(:\d{4}-\d{2}-\d{2})?$/u.test(event.id) || event.id.includes(":calendar-sow:") || event.id.includes(":calendar-plant:");
+}
 
-const BADGE_RULES: Array<Omit<Badge, "current" | "unlocked"> & { metric: (stats: GardenStats) => number }> = [
-  { id: "first-pot", title: "Premier Pot", detail: "Ajoute ta première plante", icon: "❀", tone: "#DCE8C7", target: 1, metric: (stats) => stats.plants },
-  { id: "bees", title: "Ami des Abeilles", detail: "3 plantes mellifères", icon: "✺", tone: "#F5D27C", target: 3, metric: (stats) => stats.melliferousPlants },
-  { id: "water", title: "Zéro Gâchis d'Eau", detail: "5 conseils météo suivis", icon: "◌", tone: "#B9DCD3", target: 5, metric: (stats) => stats.weatherTipsFollowed },
-  { id: "bio", title: "Bio-Défenseur", detail: "5 inspections de tes plantes", icon: "♧", tone: "#DCE8DD", target: 5, metric: (stats) => stats.observations },
-  { id: "plate", title: "Du Balcon à l'Assiette", detail: "Ta première récolte", icon: "♡", tone: "#F0D2C5", target: 1, metric: (stats) => stats.harvests },
-  { id: "streak", title: "Main Verte", detail: "7 jours de suite", icon: "☀", tone: "#E9EFA6", target: 7, metric: (stats) => stats.streakDays },
+/** « Elle a fleuri » (herbier des fleurs) : noté, mais ce n'est pas un geste. */
+export function isBloomEvent(event: MaintenanceEvent) {
+  return event.id.startsWith("bloom:");
+}
+
+/** Les trois paliers d'un badge permanent. */
+export const TIER_NAMES = ["Graine", "Pousse", "Fleur"] as const;
+export type BadgeTier = 0 | 1 | 2 | 3;
+
+/**
+ * Un badge permanent à trois paliers. `tier` : le palier obtenu (0 : pas encore) ; `current` / `target` : la marche
+ * suivante (la dernière une fois tout obtenu) ; `detail` : ce que demande la marche suivante.
+ */
+export type Badge = {
+  id: string;
+  title: string;
+  detail: string;
+  icon: string;
+  tone: string;
+  thresholds: readonly [number, number, number];
+  value: number;
+  tier: BadgeTier;
+  current: number;
+  target: number;
+  unlocked: boolean;
+  /** « 3 plantes mellifères » : la quantité dite en clair. */
+  unit: (count: number) => string;
+};
+
+const plural = (count: number, singular: string, pluralForm = `${singular}s`) => `${count} ${count > 1 ? pluralForm : singular}`;
+
+const BADGE_RULES: Array<Pick<Badge, "id" | "title" | "icon" | "tone" | "thresholds" | "unit"> & { metric: (stats: GardenStats) => number }> = [
+  { id: "first-pot", title: "Plantes accueillies", icon: "❀", tone: "#DCE8C7", thresholds: [1, 5, 15], unit: (count) => plural(count, "plante accueillie", "plantes accueillies"), metric: (stats) => stats.plantsWelcomed },
+  { id: "bees", title: "Ami des abeilles", icon: "✺", tone: "#F5D27C", thresholds: [3, 6, 10], unit: (count) => plural(count, "plante mellifère", "plantes mellifères"), metric: (stats) => stats.melliferousKinds },
+  { id: "plate", title: "Du balcon à l’assiette", icon: "♡", tone: "#F0D2C5", thresholds: [1, 10, 50], unit: (count) => plural(count, "récolte"), metric: (stats) => stats.harvests },
+  { id: "streak", title: "Main verte", icon: "☀", tone: "#E9EFA6", thresholds: [7, 30, 100], unit: (count) => plural(count, "jour suivi de suite", "jours suivis de suite"), metric: (stats) => stats.streakDays },
+  { id: "alerts", title: "Paré à tout", icon: "☂", tone: "#CFDDEE", thresholds: [1, 5, 15], unit: (count) => plural(count, "alerte météo suivie", "alertes météo suivies"), metric: (stats) => stats.alertsFollowed },
+  { id: "water", title: "Zéro gâchis d’eau", icon: "◌", tone: "#B9DCD3", thresholds: [5, 20, 50], unit: (count) => plural(count, "arrosage évité sous la pluie", "arrosages évités sous la pluie"), metric: (stats) => stats.avoidedWaterings },
+  { id: "bio", title: "Bio-défenseur", icon: "♧", tone: "#DCE8DD", thresholds: [5, 15, 40], unit: (count) => plural(count, "observation de tes plantes", "observations de tes plantes"), metric: (stats) => stats.observations },
+  { id: "sower", title: "Semeur", icon: "✿", tone: "#E6E0C8", thresholds: [1, 5, 15], unit: (count) => plural(count, "semis ou plantation", "semis ou plantations"), metric: (stats) => stats.starts },
 ];
 
-/** `awards` : les badges déjà obtenus (lib/garden/awards.ts) restent débloqués, même si le compteur a baissé. */
+/** La clé du carnet d'un palier : `badge:bees` (Graine, la clé d'avant les paliers), `badge:bees:2`, `badge:bees:3`. */
+export function badgeTierKey(badgeId: string, tier: 1 | 2 | 3) {
+  return tier === 1 ? `badge:${badgeId}` : `badge:${badgeId}:${tier}`;
+}
+
+/** `awards` : les paliers déjà obtenus (lib/garden/awards.ts) restent acquis, même si le compteur a baissé. */
 export function computeBadges(stats: GardenStats, awards: Record<string, string> = {}): Badge[] {
-  return BADGE_RULES.map(({ metric, ...badge }) => {
-    const kept = Boolean(awards[`badge:${badge.id}`]);
-    const current = kept ? badge.target : Math.min(metric(stats), badge.target);
-    return { ...badge, current, unlocked: current >= badge.target };
+  return BADGE_RULES.map(({ metric, ...rule }) => {
+    const value = metric(stats);
+    const reached = rule.thresholds.filter((threshold) => value >= threshold).length;
+    const kept = ([3, 2, 1] as const).find((tier) => awards[badgeTierKey(rule.id, tier)]) ?? 0;
+    const tier = Math.max(reached, kept) as BadgeTier;
+    const target = rule.thresholds[Math.min(tier, 2)];
+    const current = tier === 3 ? target : Math.min(value, target);
+    return { ...rule, value, tier, current, target, unlocked: tier >= 1, detail: rule.unit(target) };
   });
 }
 
@@ -373,7 +444,8 @@ const LEVEL_TITLES = ["Graine curieuse", "Jardinier·ère en herbe", "Main verte
 export type Progress = { points: number; level: number; levelTitle: string; pointsInLevel: number; pointsToNext: number };
 
 export function computeProgress(stats: GardenStats, badges: Badge[]): Progress {
-  const points = stats.gestures * POINTS_PER_GESTURE + stats.plants * POINTS_PER_PLANT + badges.filter((badge) => badge.unlocked).length * POINTS_PER_BADGE;
+  // Chaque palier obtenu compte comme un badge.
+  const points = stats.gestures * POINTS_PER_GESTURE + stats.plants * POINTS_PER_PLANT + badges.reduce((total, badge) => total + badge.tier, 0) * POINTS_PER_BADGE;
   const level = Math.floor(points / POINTS_PER_LEVEL) + 1;
   const pointsInLevel = points % POINTS_PER_LEVEL;
   return { points, level, levelTitle: LEVEL_TITLES[Math.min(level, LEVEL_TITLES.length) - 1], pointsInLevel, pointsToNext: POINTS_PER_LEVEL - pointsInLevel };

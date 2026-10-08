@@ -17,7 +17,7 @@ async function simulate(page: Page, scenario: Scenario) {
   // L'explication du scénario choisi s'affiche sous les pastilles.
   await expect(page.getByText(HINTS[scenario])).toBeVisible();
   await page.goto("/");
-  await expect(page.getByText("Tes plantes")).toBeVisible({ timeout: 20_000 });
+  await expect(page.getByText("Tes plantes", { exact: true })).toBeVisible({ timeout: 20_000 });
 }
 
 /** Les arrosages encore à faire sur Aujourd’hui : « Arrose … » seul, ou regroupés dans « Vérifie la terre de N plantes ». */
@@ -48,7 +48,7 @@ test.describe("alertes météo", () => {
 
     // Le bandeau reste toute la journée, sans reproposer d'arrosage (même après un rechargement).
     await page.reload();
-    await expect(page.getByText("Tes plantes")).toBeVisible({ timeout: 20_000 });
+    await expect(page.getByText("Tes plantes", { exact: true })).toBeVisible({ timeout: 20_000 });
     await expect(page.getByText("N’arrose pas tes plantes aujourd’hui")).toBeVisible();
     await expect(wateringRows(page)).toHaveCount(0);
 
@@ -110,7 +110,7 @@ test.describe("alertes météo", () => {
     await expect(page.getByText(/C’est noté/)).toBeVisible();
     // Arrosées pour de bon : ni l’alerte ni « Arrose … » ne reviennent aujourd'hui.
     await page.reload();
-    await expect(page.getByText("Tes plantes")).toBeVisible({ timeout: 20_000 });
+    await expect(page.getByText("Tes plantes", { exact: true })).toBeVisible({ timeout: 20_000 });
     await expect(page.getByText("35 °C aujourd’hui : pense à tes plantes")).toHaveCount(0);
     // Les arrosages restent dans la liste, cochés, regroupés en une ligne faite.
     await expect(page.getByText(/^3 sur 3 faites · /u).filter({ visible: true })).toBeVisible();

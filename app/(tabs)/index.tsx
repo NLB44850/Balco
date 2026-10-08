@@ -55,6 +55,9 @@ import { anticipate, type Anticipation } from "@/lib/garden/anticipate";
 import { pickTodayCards, RESTING_TEXT, RESTING_TITLE } from "@/lib/garden/today-cards";
 import { AnticipateCard } from "@/components/today/anticipate-card";
 import { EventCard } from "@/components/today/event-card";
+import { TipCard } from "@/components/today/tip-card";
+import { useTipOfTheWeek } from "@/hooks/use-tip-of-the-week";
+import { tipQuestion } from "@/lib/tips/tips";
 import { useEventDismissals } from "@/hooks/use-event-dismissals";
 import { eventDismissKey, eventMoment, eventNotificationSource, eventPlanted, nextEventNotification } from "@/lib/events/events";
 import { skippedRepots, skipRepotThisYear } from "@/lib/garden/repot-skip";
@@ -243,7 +246,8 @@ export default function HomeScreen() {
   // à l'ouverture d'Aujourd'hui. Petit délai : un badge débloqué par un geste coché ici est déjà fêté par son message.
   const focused = useIsFocused();
   useEffect(() => {
-    if (!focused || !loaded) return;
+    // Un message du bas est affiché (avec son « Annuler ») : la fête attend qu'il soit parti.
+    if (!focused || !loaded || toast) return;
     const timer = setTimeout(() => {
       const [key] = takeUnseenAwards();
       const line = key ? celebrate(awardCelebration(key)) : null;
@@ -251,7 +255,7 @@ export default function HomeScreen() {
     }, 1500);
     return () => clearTimeout(timer);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [awards, focused, loaded]);
+  }, [awards, focused, loaded, toast]);
 
   const logAll = async (toLog: MaintenanceEvent[]) => {
     for (const event of toLog) await logEvent(event);
@@ -401,8 +405,12 @@ export default function HomeScreen() {
   const moment = eventMoment(now);
   const plantedForEvent = moment ? eventPlanted(moment.event, moment.year, [...resolvedPlants, ...pastPlants], events).length : 0;
   const eventCard = moment && !away && !dismissed.includes(eventDismissKey(moment.event, moment.year, moment.phase)) && (moment.phase === "running" || plantedForEvent > 0) ? moment : null;
+  // L'astuce de la semaine (lib/tips/tips.ts), selon le mois, le climat, les plantes et la météo annoncée.
+  const weatherCauses = useMemo(() => [...new Set(visibleGroups.flatMap((group) => group.decisions.map((decision) => decision.cause)).filter((cause): cause is NonNullable<typeof cause> => Boolean(cause)))], [visibleGroups]);
+  const ownedIds = useMemo(() => resolvedPlants.map(({ entry }) => entry.id), [resolvedPlants]);
+  const { tip, dismiss: dismissTip } = useTipOfTheWeek({ now, climate, owned: ownedIds, weather: weatherCauses, enabled: loaded && !away });
   // Au plus deux cartes en plus sous la liste, par priorité (lib/garden/today-cards.ts).
-  const cards = pickTodayCards({ event: eventCard !== null, spring: !away && springWishes.length > 0, anticipate: !away && anticipation !== null, idea: loaded && hasPlants && !away && monthIdea !== null });
+  const cards = pickTodayCards({ event: eventCard !== null, tip: tip !== null, spring: !away && springWishes.length > 0, anticipate: !away && anticipation !== null, idea: loaded && hasPlants && !away && monthIdea !== null });
   const [anticipationOpen, setAnticipationOpen] = useState<Anticipation | null>(null);
   const openNeeds = (item: Anticipation) => {
     setAnticipationOpen(null);
@@ -604,6 +612,8 @@ export default function HomeScreen() {
         )}
 
         {cards.includes("anticipate") && anticipation && <AnticipateCard anticipation={anticipation} onOpen={() => setAnticipationOpen(anticipation)} />}
+
+        {cards.includes("tip") && tip && <TipCard tip={tip} onAsk={() => router.push({ pathname: "/(tabs)/assistant", params: { question: tipQuestion(tip) } })} onClose={dismissTip} />}
 
         {cards.includes("idea") && monthIdea && (
           <View style={styles.idea}>

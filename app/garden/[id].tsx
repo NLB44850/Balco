@@ -33,6 +33,8 @@ import { CATEGORY_LABELS, formatMonthRange } from "@/lib/plants/catalog";
 import { guideLinkText } from "@/lib/plants/guide";
 import { REPOTTING } from "@/lib/plants/repotting";
 import { now as clockNow } from "@/lib/clock";
+import { bloomEvent, canMarkBloom, herbariumKey } from "@/lib/garden/herbarium";
+import { byForm } from "@/lib/plants/grammar";
 
 
 const clock = (iso: string) => new Date(iso).toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" });
@@ -43,7 +45,7 @@ export default function PlantScreen() {
   const insets = useSafeAreaInsets();
   const { width } = useWindowDimensions();
   const { id } = useLocalSearchParams<{ id: string }>();
-  const { loaded, resolvedPlants, pastPlants, events, awards, logEvent, removeEvent, removePlant, renamePlant, setPlantVariety } = useGarden();
+  const { loaded, resolvedPlants, pastPlants, events, awards, markAwardsSeen, logEvent, removeEvent, removePlant, renamePlant, setPlantVariety } = useGarden();
   const { plan, ready, snoozes, reminderSettings, climate } = useDayPlan();
   const { photos, removePhoto } = usePlantPhotos();
   const [shownPhotoId, setShownPhotoId] = useState<string | null>(null);
@@ -129,6 +131,16 @@ export default function PlantScreen() {
       return showToast(withCheer(cheer, harvestedToastText(entry)), () => void freePot.answerYes(plant.id), "Oui");
     }
     showToast(withCheer(cheer, `${gesture.source.type === "task" ? gesture.source.task.task.doneTitle : `${gesture.title} : noté.`} +${POINTS_PER_GESTURE} points`), () => void removeEvent(event.id));
+  };
+
+  /** « Elle a fleuri » : une carte dans l'herbier (fleurs, pendant leurs mois de floraison). */
+  const markBloom = async () => {
+    const event = bloomEvent(resolved, clockNow());
+    // Sa carte d'herbier est annoncée ici : pas besoin de la refêter sur Aujourd'hui.
+    markAwardsSeen([herbariumKey(entry.id)]);
+    await logEvent(event);
+    void Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => undefined);
+    showToast("🌿 Floraison notée dans ton herbier", () => void removeEvent(event.id));
   };
 
   const undoGesture = async () => {
@@ -257,6 +269,11 @@ export default function PlantScreen() {
             {!plant.toPlant && REPOTTING[entry.id] && (
               <Pressable accessibilityRole="button" onPress={() => router.push({ pathname: "/guide/[catalogId]", params: { catalogId: entry.id, plantId: plant.id, task: potTask } })} style={({ pressed }) => [styles.guideLink, pressed && styles.pressed]}>
                 <Text style={[styles.link, { color: colors.primary }]}>{guideLinkText(entry, potTask)}</Text>
+              </Pressable>
+            )}
+            {canMarkBloom(resolved, events, now) && (
+              <Pressable accessibilityRole="button" onPress={() => void markBloom()} style={({ pressed }) => [styles.guideLink, pressed && styles.pressed]}>
+                <Text style={[styles.link, { color: colors.primary }]}>{byForm(entry, "Il a fleuri ?", "Elle a fleuri ?", "Ils ont fleuri ?", "Elles ont fleuri ?")} Note-le dans ton herbier ›</Text>
               </Pressable>
             )}
             {!gesture && (

@@ -6,9 +6,11 @@
 import { MONTH_LONG, type Month } from "../plants/catalog";
 import { capitalize, objectPronoun, stressedPronoun, subjectPronoun, verb } from "../plants/grammar";
 import type { MaintenanceEvent } from "../reminders/reminder-engine";
-import { computeBadges, computeProgress, computeStats, dayKey, daysBetween, followedDays, isAvoidedWatering, plantDisplayName, type ResolvedPlant } from "./garden-logic";
+import { badgeTierKey, computeBadges, computeProgress, computeStats, TIER_NAMES, type Badge, dayKey, daysBetween, followedDays, isAvoidedWatering, plantDisplayName, type ResolvedPlant } from "./garden-logic";
 import type { PlantPhoto } from "./photos";
 import { eventBadgeTitle, eventById } from "../events/events";
+import { getCatalogPlant } from "../plants/catalog";
+import { seasonBadgeTitle, seasonRuleById } from "./season-badges";
 
 const DAY_MS = 86_400_000;
 /** Un arrosage de balcon mouille environ un cinquième du volume du pot. */
@@ -167,7 +169,7 @@ export function sinceLabel(days: number) {
 const STREAK_STEPS = [3, 7, 14, 30, 60, 100];
 
 /** `big` : fête en plein écran (nouveau badge, 1ʳᵉ récolte d'une plante) ; sinon, un mot dans le message du bas. */
-export type Celebration = { kind: "badge" | "level" | "streak" | "harvest"; emoji: string; title: string; detail: string; big: boolean; /** Le badge fêté (déjà fêté : ne se refête pas à l'ouverture d'Aujourd'hui). */ awardKey?: string };
+export type Celebration = { kind: "badge" | "tier" | "level" | "streak" | "harvest"; emoji: string; title: string; detail: string; big: boolean; /** Le badge fêté (déjà fêté : ne se refête pas à l'ouverture d'Aujourd'hui). */ awardKey?: string };
 
 /**
  * Ce qu'un geste vient de débloquer : un badge, un niveau, une série de jours, une récolte. Seuls un
@@ -177,11 +179,11 @@ export type Celebration = { kind: "badge" | "level" | "streak" | "harvest"; emoj
 export function celebrationFor(plants: ResolvedPlant[], before: MaintenanceEvent[], after: MaintenanceEvent[], now = new Date(), past: ResolvedPlant[] = [], awards: Record<string, string> = {}): Celebration | null {
   const beforeStats = computeStats(plants, before, now, past);
   const afterStats = computeStats(plants, after, now, past);
-  // Un badge déjà obtenu (même si son compteur avait baissé) ne se fête pas deux fois.
+  // Un palier déjà obtenu (même si son compteur avait baissé) ne se fête pas deux fois.
   const beforeBadges = computeBadges(beforeStats, awards);
   const afterBadges = computeBadges(afterStats, awards);
-  const badge = afterBadges.find((item, index) => item.unlocked && !beforeBadges[index].unlocked);
-  if (badge) return { kind: "badge", emoji: "🏅", title: `Nouveau badge : ${badge.title}`, detail: `${badge.detail} : c’est fait, bravo !`, big: true, awardKey: `badge:${badge.id}` };
+  const raised = afterBadges.find((item, index) => item.tier > beforeBadges[index].tier);
+  if (raised) return badgeCelebration(raised, raised.tier as 1 | 2 | 3);
 
   const beforeLevel = computeProgress(beforeStats, beforeBadges);
   const afterLevel = computeProgress(afterStats, afterBadges);
@@ -200,7 +202,8 @@ export function celebrationFor(plants: ResolvedPlant[], before: MaintenanceEvent
     const name = plantDisplayName(resolved);
     const first = !before.some((old) => old.plantId === event.plantId && old.type === "harvest");
     return first
-      ? { kind: "harvest", emoji: "🧺", title: `Première récolte de ${name}`, detail: "Le plus beau moment du balcon. Bravo !", big: true }
+      ? // Sa carte d'herbier arrive avec : déjà fêtée ici.
+        { kind: "harvest", emoji: "🧺", title: `Première récolte de ${name}`, detail: "Le plus beau moment du balcon. Bravo !", big: true, awardKey: `herbier:${resolved.entry.id}` }
       : { kind: "harvest", emoji: "🧺", title: `Récolte de ${name}`, detail: "Bon appétit ! Récolter souvent l’encourage à produire.", big: false };
   }
   return null;
@@ -212,9 +215,29 @@ export function awardCelebration(key: string): Celebration | null {
   const [scope, id, year] = key.split(":");
   const event = scope === "event" ? eventById(id) : null;
   if (event) return { kind: "badge", emoji: event.emoji, title: `Nouveau badge : ${eventBadgeTitle(event, Number(year))}`, detail: `${event.badge.detail} : bravo !`, big: true, awardKey: key };
-  const badge = computeBadges({ gestures: 0, streakDays: 0, plants: 0, harvests: 0, observations: 0, weatherTipsFollowed: 0, melliferousPlants: 0 }).find((item) => `badge:${item.id}` === key);
-  if (!badge) return null;
-  return { kind: "badge", emoji: "🏅", title: `Nouveau badge : ${badge.title}`, detail: `${badge.detail} : c’est fait, bravo !`, big: true, awardKey: key };
+  // Badge de saison : `season:frost-guard:2027`.
+  const rule = scope === "season" ? seasonRuleById(id) : null;
+  if (rule) return { kind: "badge", emoji: rule.emoji, title: `Nouveau badge : ${seasonBadgeTitle(rule, Number(year))}`, detail: `${capitalize(rule.unit(rule.target))} : bravo !`, big: true, awardKey: key };
+  // Nouvelle carte d'herbier : un mot, pas le plein écran.
+  const entry = scope === "herbier" ? getCatalogPlant(id) : undefined;
+  if (entry) return { kind: "tier", emoji: "🌿", title: `Nouvelle carte dans ton herbier : ${entry.name}`, detail: "", big: false, awardKey: key };
+  const [, badgeId, tierText] = key.split(":");
+  const tier = (tierText ? Number(tierText) : 1) as 1 | 2 | 3;
+  const badge = scope === "badge" ? computeBadges(computeStats([], [])).find((item) => item.id === badgeId) : undefined;
+  if (!badge || ![1, 2, 3].includes(tier)) return null;
+  return badgeCelebration(badge, tier);
+}
+
+const TIER_EMOJIS = ["🏅", "🌱", "🌸"] as const;
+
+/**
+ * Un nouveau badge (palier Graine) se fête en grand ; un nouveau palier (Pousse, Fleur) d'un mot devant le message
+ * du bas, avec une petite animation.
+ */
+export function badgeCelebration(badge: Pick<Badge, "id" | "title" | "thresholds" | "unit">, tier: 1 | 2 | 3): Celebration {
+  const awardKey = badgeTierKey(badge.id, tier);
+  if (tier === 1) return { kind: "badge", emoji: TIER_EMOJIS[0], title: `Nouveau badge : ${badge.title}`, detail: `${capitalize(badge.unit(badge.thresholds[0]))} : c’est fait, bravo !`, big: true, awardKey };
+  return { kind: "tier", emoji: TIER_EMOJIS[tier - 1], title: `${badge.title} : palier ${TIER_NAMES[tier - 1]}`, detail: `${capitalize(badge.unit(badge.thresholds[tier - 1]))}.`, big: false, awardKey };
 }
 
 /**

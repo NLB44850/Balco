@@ -25,7 +25,8 @@ describe("carnet des badges obtenus", () => {
     expect(computeBadges(stats).find((badge) => badge.id === "streak")?.unlocked).toBe(false);
     const kept = computeBadges(stats, { "badge:streak": at(30), "badge:first-pot": at(60) });
     expect(kept.filter((badge) => badge.unlocked).map((badge) => badge.id)).toEqual(["first-pot", "streak"]);
-    expect(kept.find((badge) => badge.id === "streak")).toMatchObject({ current: 7, target: 7 });
+    // Palier Graine gardé ; la marche suivante (Pousse, 30 jours) repart de la série du moment.
+    expect(kept.find((badge) => badge.id === "streak")).toMatchObject({ tier: 1, current: 0, target: 30 });
   });
 
   it("ne refête pas un badge déjà obtenu, et sait fêter un badge gagné ailleurs", () => {
@@ -33,7 +34,9 @@ describe("carnet des badges obtenus", () => {
     const harvest = event("tomato-1", "harvest", 0);
     expect(celebrationFor(plants, [], [harvest], NOW)).toMatchObject({ kind: "badge", awardKey: "badge:plate" });
     expect(celebrationFor(plants, [], [harvest], NOW, [], { "badge:plate": at(40) })).toMatchObject({ kind: "harvest", big: true });
-    expect(awardCelebration("badge:water")).toMatchObject({ title: "Nouveau badge : Zéro Gâchis d'Eau", big: true });
+    expect(awardCelebration("badge:water")).toMatchObject({ title: "Nouveau badge : Zéro gâchis d’eau", big: true });
+    // Un nouveau palier : un mot dans le message du bas, pas le plein écran.
+    expect(awardCelebration("badge:bees:2")).toMatchObject({ kind: "tier", title: "Ami des abeilles : palier Pousse", big: false, awardKey: "badge:bees:2" });
     expect(awardCelebration("season:inconnu")).toBeNull();
   });
 });
@@ -64,6 +67,8 @@ describe("recalcul unique depuis l'historique", () => {
       event("tomato-1", "harvest", 20),
       event("tomato-1", "harvest", 10),
       ...[30, 29, 28, 27, 26].map((days) => event("basil-1", "observation", days, { source: "reminder", note: "N’arrose pas le basilic aujourd’hui" })),
+      event("basil-1", "protection", 25, { id: "reminder:basil-1:protection:frost:2026-09-13", source: "reminder", note: "Gel cette nuit : protège le basilic" }),
+      event("tomato-1", "observation", 39, { id: "tomato-1:start", source: "manual" }),
       ...[15, 14, 13, 12].map((days) => event("thyme-1", "observation", days)),
       event("thyme-1", "observation", 11, { id: "scan:thyme-1:2", source: "manual" }),
     ];
@@ -72,8 +77,12 @@ describe("recalcul unique depuis l'historique", () => {
     expect(awards["badge:plate"]).toBe(at(20));
     expect(awards["badge:water"]).toBe(at(26));
     expect(awards["badge:bio"]).toBe(at(11));
-    // La menthe était partie : trois mellifères ensemble seulement à l'arrivée de la tomate… qui ne l'est pas.
-    expect(awards["badge:bees"]).toBeUndefined();
+    expect(awards["badge:alerts"]).toBe(at(25));
+    expect(awards["badge:sower"]).toBe(at(39));
+    // Trois plantes mellifères différentes accueillies (la menthe retirée compte) : à l'arrivée du thym.
+    expect(awards["badge:bees"]).toBe(at(50));
+    expect(awards["badge:bees:2"]).toBeUndefined();
+    expect(awards["badge:plate:2"]).toBeUndefined();
   });
 
   it("retrouve une série de 7 jours suivis cassée depuis", () => {
