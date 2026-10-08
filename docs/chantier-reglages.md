@@ -1,4 +1,4 @@
-# Chantier Réglages (validé le 08/10)
+# Chantier Réglages (plan validé le 08/10, tout validé sur son téléphone le 08/10)
 
 Une liste simple où chaque ligne montre sa valeur courte ; la toucher ouvre une feuille du bas avec les mêmes
 choix que l'accueil. Les phrases longues restent dans les feuilles.
@@ -40,4 +40,4 @@ choix que l'accueil. Les phrases longues restent dans les feuilles.
 5. **Fait** : À propos (Donner mon avis : `lib/feedback.ts`, e-mail prérempli avec la version ; Confidentialité
    « Bientôt » ; Crédits photos ; « Version 1.0.0 · test ») et Version de test en lignes (Simulation météo dans une
    feuille, notification de test, Refaire l'accueil, Illustrations).
-6. Vérifications complètes faites (557 tests, 53 scénarios e2e, bundle Android) ; reste le test sur le téléphone.
+6. Vérifications complètes faites (557 tests, 53 scénarios e2e, bundle Android) ; validé sur son téléphone le 08/10.

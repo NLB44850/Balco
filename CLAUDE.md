@@ -85,7 +85,7 @@ visuelle, retour immédiat.
 pour planter (PR https://github.com/NLB44850/Balco/pull/28, 06/10), puis le rempotage (R1 à R3), les 11 pas-à-pas
 (`docs/pas-a-pas.md`), Nora qui récupère sa réponse perdue et Saisons corrigé (PR https://github.com/NLB44850/Balco/pull/29,
 07/10). Validé sur son téléphone le 08/10 : accords des textes, après-récolte et laitue pommée (point 5), fusionnés dans `main` (PR https://github.com/NLB44850/Balco/pull/30, 08/10).
-Validé sur son téléphone le 08/10 : fin de saison des annuelles (point 5 bis), fusionnée dans `main` (PR https://github.com/NLB44850/Balco/pull/31, 08/10). En cours (08/10) : **refonte de Réglages**, plan et décisions dans `docs/chantier-reglages.md` (étape 1 validée sur son téléphone, étapes 2 à 5 livrées, à valider). Ensuite : l'APK (point 1). Récap pour claude.ai :
+Validé sur son téléphone le 08/10 : fin de saison des annuelles (point 5 bis), fusionnée dans `main` (PR https://github.com/NLB44850/Balco/pull/31, 08/10). Validée sur son téléphone le 08/10 : **refonte de Réglages** (`docs/chantier-reglages.md`), sur la branche, PR vers `main` à ouvrir. Ensuite : l'APK (point 1), puis faire tester par 3 à 5 personnes (piste de test interne du Play Store) avant le paiement. Récap pour claude.ai :
 `docs/recap-pour-claude.md` + captures `docs/captures/` (refaites par `bash scripts/captures.sh`, spec
 `e2e/captures.spec.ts` sautée sans `CAPTURES=1`).**
 
