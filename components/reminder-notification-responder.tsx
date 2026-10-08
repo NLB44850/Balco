@@ -63,6 +63,9 @@ export function ReminderNotificationResponder() {
 
       await notifications.dismissNotificationAsync(response.notification.request.identifier).catch(() => undefined);
       router.replace("/(tabs)");
+      // La notification d'un événement (« La Sainte-Catherine approche ») ouvre sa page.
+      const url = (data as { url?: unknown }).url;
+      if (typeof url === "string" && url.startsWith("/event/")) router.push(url as `/event/${string}`);
     };
 
     const subscription = notifications.addNotificationResponseReceivedListener((response) => void handle(response));

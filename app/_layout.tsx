@@ -95,6 +95,7 @@ export default function RootLayout() {
             <Stack.Screen name="illustrations" />
             <Stack.Screen name="guide/[catalogId]" />
             <Stack.Screen name="vacation" />
+            <Stack.Screen name="event/[id]" />
           </Stack>
           <StatusBar style="dark" />
           <ReminderNotificationResponder />

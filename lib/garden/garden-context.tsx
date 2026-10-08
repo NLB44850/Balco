@@ -40,6 +40,7 @@ import { trpc } from "@/lib/trpc";
 import { TRPCClientError } from "@trpc/client";
 import { activePlants, appendEvent, createGardenPlant, MAX_STORED_EVENTS, resolvePlants, startedPlantId, type GardenPlant, type ResolvedPlant } from "./garden-logic";
 import { archiveSeason } from "./harvest-end";
+import { eventAwards } from "@/lib/events/events";
 import { backfillAwards, badgesEarnedNow, capAwards, mergeAwards, newAwards, unseenAwards, type Awards } from "./awards";
 import { now as clockNow } from "@/lib/clock";
 
@@ -508,7 +509,7 @@ export function GardenProvider({ children }: { children: ReactNode }) {
     if (!loaded) return;
     const moment = clockNow();
     const stored = awardsRef.current;
-    let earned = badgesEarnedNow(resolvedPlants, events, moment, pastPlants);
+    let earned = mergeAwards(badgesEarnedNow(resolvedPlants, events, moment, pastPlants), eventAwards([...resolvedPlants, ...pastPlants], events, moment));
     if (!stored.backfilled) earned = mergeAwards(backfillAwards(resolvedPlants, pastPlants, events, moment), earned);
     const added = newAwards(stored.awards, earned);
     if (!added && stored.backfilled) return;

@@ -17,6 +17,7 @@ import { vacationRange, vacationState } from "@/lib/garden/vacation";
 import { weekSummary } from "@/lib/garden/week";
 import { SPACE_LABELS, SUNLIGHT_LABELS, type SpaceSize, type Sunlight } from "@/lib/plants/catalog";
 import { useNow } from "@/hooks/use-date-simulation";
+import { eventBadgeTitle, eventById } from "@/lib/events/events";
 
 function capitalize(value: string) {
   return value.charAt(0).toUpperCase() + value.slice(1);
@@ -39,6 +40,12 @@ export default function ProfileScreen() {
   const badges = useMemo(() => computeBadges(stats, awards), [awards, stats]);
   const progress = useMemo(() => computeProgress(stats, badges), [badges, stats]);
   const unlockedCount = badges.filter((badge) => badge.unlocked).length;
+  // Les badges des événements de l'année (« Sainte-Catherine · 2026 ») : gardés avec leur millésime.
+  const eventBadges = Object.keys(awards).flatMap((key) => {
+    const [scope, id, year] = key.split(":");
+    const event = scope === "event" ? eventById(id) : null;
+    return event ? [{ key, emoji: event.emoji, title: eventBadgeTitle(event, Number(year)) }] : [];
+  });
   const balconyMeta = [
     onboarding?.space && !onboarding.skipped ? capitalize(SPACE_LABELS[onboarding.space as SpaceSize]) : null,
     onboarding?.sunlight && !onboarding.skipped ? SUNLIGHT_LABELS[onboarding.sunlight as Sunlight].toLowerCase() : null,
@@ -120,6 +127,14 @@ export default function ProfileScreen() {
         )}
         ListFooterComponent={
           <>
+            {eventBadges.length > 0 && (
+              <View style={[glass.card, styles.settingsRow]}>
+                <View style={styles.flex}>
+                  <Text style={[styles.footerTitle, { color: colors.foreground }]}>Badges des temps forts</Text>
+                  {eventBadges.map((badge) => <Text key={badge.key} style={[styles.footerText, { color: colors.muted }]}>{badge.emoji} {badge.title}</Text>)}
+                </View>
+              </View>
+            )}
             <Pressable accessibilityRole="button" onPress={() => router.push("/settings")} style={({ pressed }) => [glass.card, styles.settingsRow, pressed && styles.pressed]}>
               <Text style={styles.settingsRowIcon}>⚙</Text>
               <View style={styles.flex}>

@@ -54,6 +54,9 @@ import { springCard } from "@/lib/garden/spring";
 import { anticipate, type Anticipation } from "@/lib/garden/anticipate";
 import { pickTodayCards, RESTING_TEXT, RESTING_TITLE } from "@/lib/garden/today-cards";
 import { AnticipateCard } from "@/components/today/anticipate-card";
+import { EventCard } from "@/components/today/event-card";
+import { useEventDismissals } from "@/hooks/use-event-dismissals";
+import { eventDismissKey, eventMoment, eventNotificationSource, eventPlanted, nextEventNotification } from "@/lib/events/events";
 import { skippedRepots, skipRepotThisYear } from "@/lib/garden/repot-skip";
 import { harvestedToastText, isHarvestedOnce } from "@/lib/garden/harvest-end";
 import { REPOTTING } from "@/lib/plants/repotting";
@@ -168,6 +171,16 @@ export default function HomeScreen() {
     if (plan && !awayOn(vacation, dayKey(plan.date))) void scheduleLocalReminder(plan.group, reminderSettings, plan.date);
     else void cancelBalcoReminderNotifications();
   }, [reminderSettings, reminderSettingsLoaded, snoozes, snoozesLoaded, unseenDecisions, vacation, weather.isFallback]);
+
+  // La notification de lancement d'un événement : une seule, le premier jour à l'heure du conseil (heure réelle du
+  // téléphone), si les rappels sont activés et hors vacances.
+  useEffect(() => {
+    if (!reminderSettingsLoaded) return;
+    const next = reminderSettings.enabled ? nextEventNotification(new Date(), reminderSettings) : null;
+    if (!next) return;
+    const date = awayOn(vacation, dayKey(next.date)) ? null : next.date;
+    void scheduleDatedReminder(eventNotificationSource(next.event), { ...next.event.notification, url: `/event/${next.event.id}` }, date).catch(() => undefined);
+  }, [reminderSettings, reminderSettingsLoaded, vacation]);
 
   const trip = vacationState(vacation, now);
   const away = trip.phase === "away";
@@ -383,8 +396,13 @@ export default function HomeScreen() {
     () => (loaded ? anticipate({ plants: resolvedPlants, events, springWishes: onboarding?.springWishes, now, climate, repotSkips: skippedRepots(snoozes, now) }) : null),
     [climate, events, loaded, now, onboarding?.springWishes, resolvedPlants, snoozes],
   );
+  // Un temps fort de l'année (la Sainte-Catherine) : sa carte compacte, puis son bilan si l'on a participé.
+  const { dismissed, dismiss } = useEventDismissals();
+  const moment = eventMoment(now);
+  const plantedForEvent = moment ? eventPlanted(moment.event, moment.year, [...resolvedPlants, ...pastPlants], events).length : 0;
+  const eventCard = moment && !away && !dismissed.includes(eventDismissKey(moment.event, moment.year, moment.phase)) && (moment.phase === "running" || plantedForEvent > 0) ? moment : null;
   // Au plus deux cartes en plus sous la liste, par priorité (lib/garden/today-cards.ts).
-  const cards = pickTodayCards({ spring: !away && springWishes.length > 0, anticipate: !away && anticipation !== null, idea: loaded && hasPlants && !away && monthIdea !== null });
+  const cards = pickTodayCards({ event: eventCard !== null, spring: !away && springWishes.length > 0, anticipate: !away && anticipation !== null, idea: loaded && hasPlants && !away && monthIdea !== null });
   const [anticipationOpen, setAnticipationOpen] = useState<Anticipation | null>(null);
   const openNeeds = (item: Anticipation) => {
     setAnticipationOpen(null);
@@ -488,6 +506,16 @@ export default function HomeScreen() {
             onOpen={() => setSheetKey(banner.key)}
           />
         ))}
+
+        {cards.includes("event") && eventCard && (
+          <EventCard
+            emoji={eventCard.event.emoji}
+            title={eventCard.event.title}
+            text={eventCard.phase === "running" ? eventCard.event.cardText : eventCard.event.summary(plantedForEvent)}
+            onOpen={eventCard.phase === "running" ? () => router.push({ pathname: "/event/[id]", params: { id: eventCard.event.id } }) : undefined}
+            onClose={() => void dismiss(eventDismissKey(eventCard.event, eventCard.year, eventCard.phase))}
+          />
+        )}
 
         {loaded && hasPlants && !away && (
           <Pressable accessibilityRole="button" accessibilityLabel={`Ton balcon, ${status.label}`} onPress={() => router.push("/(tabs)/balcony")} style={({ pressed }) => [styles.status, styles.glass, pressed && styles.pressed]}>

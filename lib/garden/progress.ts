@@ -8,6 +8,7 @@ import { capitalize, objectPronoun, stressedPronoun, subjectPronoun, verb } from
 import type { MaintenanceEvent } from "../reminders/reminder-engine";
 import { computeBadges, computeProgress, computeStats, dayKey, daysBetween, followedDays, isAvoidedWatering, plantDisplayName, type ResolvedPlant } from "./garden-logic";
 import type { PlantPhoto } from "./photos";
+import { eventBadgeTitle, eventById } from "../events/events";
 
 const DAY_MS = 86_400_000;
 /** Un arrosage de balcon mouille environ un cinquième du volume du pot. */
@@ -207,6 +208,10 @@ export function celebrationFor(plants: ResolvedPlant[], before: MaintenanceEvent
 
 /** La fête d'un badge obtenu hors d'Aujourd'hui (notification, pluie, autre téléphone) : `badge:<id>`. */
 export function awardCelebration(key: string): Celebration | null {
+  // Badge d'un événement : `event:sainte-catherine:2026`.
+  const [scope, id, year] = key.split(":");
+  const event = scope === "event" ? eventById(id) : null;
+  if (event) return { kind: "badge", emoji: event.emoji, title: `Nouveau badge : ${eventBadgeTitle(event, Number(year))}`, detail: `${event.badge.detail} : bravo !`, big: true, awardKey: key };
   const badge = computeBadges({ gestures: 0, streakDays: 0, plants: 0, harvests: 0, observations: 0, weatherTipsFollowed: 0, melliferousPlants: 0 }).find((item) => `badge:${item.id}` === key);
   if (!badge) return null;
   return { kind: "badge", emoji: "🏅", title: `Nouveau badge : ${badge.title}`, detail: `${badge.detail} : c’est fait, bravo !`, big: true, awardKey: key };
