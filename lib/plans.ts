@@ -51,6 +51,23 @@ export function plusBenefits(): string[] {
   ];
 }
 
+/** Réglages → feuille « Balco+ » : ce que l'offre ajoute, en quatre lignes. */
+export function plusSheetBenefits(): string[] {
+  const { scan, chat } = PLANS.plus.aiQuota;
+  return [
+    "Les alertes gel et orage, même si tu n’ouvres pas l’app",
+    "Ton balcon sur plusieurs téléphones",
+    `${scan} photos analysées et ${chat} questions à Nora par mois`,
+    `Prix fondateur pour les ${FOUNDER_OFFER.seats} premiers`,
+  ];
+}
+
+/** Sous les avantages de Balco+ : ce qui reste gratuit pour tous. */
+export function freeForAllText() {
+  const { scan, chat } = PLANS.free.aiQuota;
+  return `Gratuit pour tous : tes rappels, le calendrier, la sauvegarde, ${scan > 1 ? `${scan} photos` : "1 photo"} et ${chat} questions par mois.`;
+}
+
 /** Ce que le compte gratuit garde, sans contrepartie : rassurant avant de parler de Balco+. */
 export function freeBenefits(): string[] {
   const { scan, chat } = PLANS.free.aiQuota;

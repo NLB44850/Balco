@@ -15,6 +15,7 @@ const syncInput = z.object({
     balcony: z.object({
       experience: z.string().max(32).optional(),
       sunlight: z.string().max(32).optional(),
+      sunlightUnknown: z.boolean().optional(),
       space: z.string().max(32).optional(),
       goals: z.array(z.string().max(32)).max(10).optional(),
       skipped: z.boolean().optional(),

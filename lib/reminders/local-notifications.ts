@@ -160,6 +160,18 @@ export async function requestLocalNotificationPermission() {
   return requested.status === "granted";
 }
 
+/**
+ * L'autorisation des notifications, sans la demander : « blocked » quand le téléphone ne reposera plus la question
+ * (il faut passer par ses réglages), « denied » quand on peut encore la demander.
+ */
+export async function notificationPermission(): Promise<"granted" | "denied" | "blocked" | "undetermined" | "unavailable"> {
+  if (!Notifications) return "unavailable";
+  const current = await Notifications.getPermissionsAsync();
+  if (current.status === "granted") return "granted";
+  if (current.status === "undetermined") return "undetermined";
+  return current.canAskAgain ? "denied" : "blocked";
+}
+
 function decisionId(decision: ReminderDecision) {
   return `${decision.plantId}:${decision.taskType}:${decision.validUntil}`;
 }

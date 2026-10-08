@@ -129,7 +129,7 @@ describe("Balco MVP content", () => {
     expect(weather).toContain("balco.location.preference.v1");
     expect(weather).toContain("geocoding-api.open-meteo.com/v1/search");
     expect(weather).toContain("selectCity");
-    expect(readProjectFile("components/city-picker.tsx")).toContain("Où pousse ton jardin ?");
+    expect(readProjectFile("components/city-picker.tsx")).toContain("Où est ton balcon ?");
     expect(readProjectFile("app/(tabs)/calendar.tsx")).toContain("<CityPicker");
     expect(readProjectFile("app/(tabs)/index.tsx")).toContain("Météo de Paris par défaut");
     expect(readProjectFile("app.config.ts")).toContain("expo-location");
@@ -162,14 +162,14 @@ describe("Balco MVP content", () => {
     // Les réglages ont leur propre écran, ouvert depuis Moi.
     expect(readProjectFile("app/(tabs)/profile.tsx")).toContain('push("/settings")');
     const profile = readProjectFile("app/settings.tsx");
-    expect(profile).toContain("Rappels contextuels");
-    expect(profile).toContain("Seulement quand c’est utile");
+    expect(profile).toContain("Un conseil par jour au plus, et les alertes météo.");
+    expect(profile).toContain("Je ne reçois pas les rappels");
     expect(profile).toContain("Plage calme");
     expect(profile).toContain("quietStartHour");
     expect(profile).toContain("quietEndHour");
     expect(profile).toContain("Début");
     expect(profile).toContain("Fin");
-    expect(profile).toContain("togglePlant");
+    expect(profile).toContain("toggleFollowed");
     expect(profile).toContain("enabledPlantIds");
     expect(profile).toContain("requestLocalNotificationPermission");
     expect(profile).toContain("clearAndDisableLocalReminders");

@@ -18,6 +18,7 @@ import {
 import { ENV } from "../_core/env";
 import { getDb } from "../db";
 import { sendLoginCode } from "./mailer";
+import { removePlusInterest } from "../plus-interest";
 
 export const LOGIN_CODE_TTL_MS = 10 * 60 * 1000;
 export const MAX_CODES_PER_HOUR = 5;
@@ -191,6 +192,7 @@ export async function deleteAccount(userId: number) {
     await db.delete(table).where(eq(table.userId, userId));
   }
   if (identities.length > 0) await db.delete(loginCodes).where(inArray(loginCodes.email, identities.map((identity) => identity.subject)));
+  await removePlusInterest(userId);
   await db.delete(users).where(eq(users.id, userId));
   return { deleted: true };
 }

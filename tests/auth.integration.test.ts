@@ -217,13 +217,14 @@ describe.skipIf(!TEST_DATABASE_URL)("own authentication (MySQL)", () => {
       const { syncGarden } = await import("../server/reminders");
       await syncGarden(user.id, { plants: [{ id: "p1", catalogId: "basil", addedAt: new Date().toISOString(), updatedAt: new Date().toISOString() }], events: [{ id: "e1", plantId: "p1", type: "watering", completedAt: new Date().toISOString(), source: "manual" }], deletedEventIds: [] });
       const caller = appRouter.createCaller({ ...(context().ctx as object), user } as never);
+      await caller.plus.notifyMe({});
       await caller.auth.deleteAccount();
 
       const { getDb } = await import("../server/db");
       const schema = await import("../drizzle/schema");
       const { eq } = await import("drizzle-orm");
       const db = (await getDb())!;
-      for (const table of [schema.reminderPlants, schema.maintenanceEvents, schema.reminderProfiles, schema.authIdentities]) {
+      for (const table of [schema.reminderPlants, schema.maintenanceEvents, schema.reminderProfiles, schema.authIdentities, schema.plusInterest]) {
         expect(await db.select().from(table).where(eq(table.userId, user.id))).toHaveLength(0);
       }
       expect(await db.select().from(schema.users).where(eq(schema.users.id, user.id))).toHaveLength(0);

@@ -1437,6 +1437,8 @@ export type OnboardingAnswers = {
   hasPlants?: boolean;
   experience?: string;
   sunlight?: string;
+  /** « Je ne sais pas » (accueil, Réglages) : `sunlight` vaut alors « partial », le choix le plus prudent. */
+  sunlightUnknown?: boolean;
   space?: string;
   goals?: string[];
   skipped?: boolean;

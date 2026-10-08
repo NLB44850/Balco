@@ -17,8 +17,8 @@ type MemorySheetProps = {
 
 /** Résumé en une ligne pour la carte de l'écran Nora. */
 export function memorySummary(memory: NoraMemoryView | undefined) {
-  if (!memory) return "Ton niveau, tes préférences et ce qu'elle retient de vous.";
-  const level = NORA_LEVELS.find((item) => item.id === memory.level)?.title ?? "Niveau à choisir";
+  if (!memory) return "Comment elle te parle, tes préférences et ce qu'elle retient de vous.";
+  const level = NORA_LEVELS.find((item) => item.id === memory.level)?.short ?? "Façon de parler à choisir";
   const count = (n: number, one: string, many: string) => `${n} ${n > 1 ? many : one}`;
   return [level, memory.preferences.length > 0 ? count(memory.preferences.length, "préférence", "préférences") : null, memory.notes.length > 0 ? count(memory.notes.length, "souvenir", "souvenirs") : null].filter(Boolean).join(" · ");
 }
@@ -39,14 +39,13 @@ export function MemorySheet({ visible, onClose, memory, onLevel, onPreferences, 
         <Text style={[styles.title, { color: colors.foreground }]}>Ce que Nora sait de toi</Text>
         <Text style={[styles.intro, { color: colors.muted }]}>Elle connaît aussi tes plantes et tout l’historique de tes gestes, pour te dire ce qui a été oublié.</Text>
 
-        <Text style={[styles.section, { color: colors.foreground }]}>Ton niveau</Text>
+        <Text style={[styles.section, { color: colors.foreground }]}>Comment elle te parle</Text>
         <View style={styles.levels}>
           {NORA_LEVELS.map((level) => {
             const selected = memory?.level === level.id;
             return (
-              <Pressable key={level.id} accessibilityRole="radio" accessibilityState={{ selected }} onPress={() => onLevel(level.id)} style={({ pressed }) => [styles.level, { borderColor: selected ? colors.primary : colors.border, backgroundColor: selected ? colors.leaf : "transparent" }, pressed && styles.pressed]}>
+              <Pressable key={level.id} accessibilityRole="radio" accessibilityState={{ checked: selected }} aria-checked={selected} onPress={() => onLevel(level.id)} style={({ pressed }) => [styles.level, { borderColor: selected ? colors.primary : colors.border, backgroundColor: selected ? colors.leaf : "transparent" }, pressed && styles.pressed]}>
                 <Text style={[styles.levelTitle, { color: selected ? colors.primary : colors.foreground }]}>{level.title}</Text>
-                <Text style={[styles.levelText, { color: colors.muted }]}>{level.text}</Text>
               </Pressable>
             );
           })}
@@ -95,7 +94,6 @@ const styles = StyleSheet.create({
   levels: { gap: 8 },
   level: { borderWidth: 1.5, borderRadius: 14, paddingHorizontal: 14, paddingVertical: 11 },
   levelTitle: { fontSize: 15, fontWeight: "700" },
-  levelText: { fontSize: 13, marginTop: 1 },
   chips: { flexDirection: "row", flexWrap: "wrap", gap: 8 },
   chip: { borderWidth: 1.5, borderRadius: 20, paddingHorizontal: 13, paddingVertical: 8 },
   chipText: { fontSize: 14, fontWeight: "600" },

@@ -7,12 +7,6 @@ import { dayKey, isAvoidedWatering } from "./garden-logic";
  */
 export type OnboardingOption = { id: string; icon: string; title: string; text: string };
 
-export const EXPERIENCE_OPTIONS: OnboardingOption[] = [
-  { id: "beginner", icon: "🌱", title: "Je débute", text: "J'ai besoin d'être guidé pas à pas." },
-  { id: "curious", icon: "🪴", title: "Je me lance", text: "J'ai déjà quelques plantes à la maison." },
-  { id: "experienced", icon: "🌿", title: "J'ai déjà un potager", text: "Je veux mieux organiser mes cultures." },
-];
-
 export const SUNLIGHT_OPTIONS: OnboardingOption[] = [
   { id: "sunny", icon: "☀️", title: "Le soleil tape presque toute la journée", text: "Plus de 6 h de soleil direct." },
   { id: "partial", icon: "⛅", title: "Le matin ou l’après-midi seulement", text: "Entre 3 et 6 h de soleil direct." },

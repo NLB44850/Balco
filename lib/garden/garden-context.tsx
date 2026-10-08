@@ -11,7 +11,6 @@ import type { MaintenanceEvent } from "@/lib/reminders/reminder-engine";
 import {
   SERVER_PUSH_STORAGE_KEY,
   cancelBalcoReminderNotifications,
-  clearAndDisableLocalReminders,
   defaultLocalReminderSettings,
   loadLocalReminderSettings,
   saveLocalReminderSettings,
@@ -457,26 +456,20 @@ export function GardenProvider({ children }: { children: ReactNode }) {
     await syncNow();
   }, [syncNow]);
 
-  /** Efface le compte côté serveur puis tout ce qui reste sur l'appareil : on repart de zéro. */
+  /**
+   * Efface le compte et ses données sur le serveur (sauvegarde, échanges avec Nora). Le balcon reste sur ce
+   * téléphone : l'app repasse sans compte, sans revenir à l'accueil, et les rappels redeviennent locaux.
+   */
   const deleteAccount = useCallback(async () => {
     await deleteServerAccount();
     if (timerRef.current) clearTimeout(timerRef.current);
-    await AsyncStorage.multiRemove([GARDEN_PLANTS_STORAGE_KEY, GARDEN_EVENTS_STORAGE_KEY, USER_PROFILE_STORAGE_KEY, ONBOARDING_STORAGE_KEY, SYNC_OUTBOX_STORAGE_KEY, SYNC_META_STORAGE_KEY, SERVER_PUSH_STORAGE_KEY, "balco.assistant.history.v1"]).catch(() => undefined);
-    await clearAndDisableLocalReminders().catch(() => undefined);
-    plantsRef.current = [];
-    eventsRef.current = [];
-    profileRef.current = {};
-    onboardingRef.current = null;
+    await AsyncStorage.multiRemove([SYNC_OUTBOX_STORAGE_KEY, SYNC_META_STORAGE_KEY, SERVER_PUSH_STORAGE_KEY, "balco.assistant.history.v1"]).catch(() => undefined);
     outboxRef.current = emptyOutbox();
     metaRef.current = {};
-    setAllPlants([]);
-    setEvents([]);
-    setProfile({});
-    setOnboarding(null);
+    setOutbox(emptyOutbox());
     setLastSyncedAt(undefined);
     setServerPush(false);
-    router.replace("/welcome");
-  }, [deleteServerAccount]);
+  }, [deleteServerAccount, setOutbox]);
 
   const plants = useMemo(() => activePlants(allPlants), [allPlants]);
   const resolvedPlants = useMemo(() => resolvePlants(plants), [plants]);
