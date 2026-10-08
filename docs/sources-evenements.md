@@ -31,3 +31,40 @@ protège la terre (fiche « Arbustes à petits fruits » de Bruxelles Environnem
 gel, https://document.environnement.brussels/opac_css/elecfile/IF%20Potager%2007%20Arbustes%20petits%20fruits%20FR ;
 CAUE Occitanie, « Planter une haie » : paillage d'une dizaine de centimètres après plantation,
 https://www.les-caue-occitanie.fr/sites/default/files/fichiers/ressource/field_fichiers/planter_haie.pdf).
+
+## Prépare ton printemps (12 au 31 janvier)
+
+Choisir ses plantes du printemps, faire l'inventaire de ses graines, laver ses pots : tâches de janvier citées par
+les calendriers de jardinage (vérifié le 8 octobre 2026).
+- Consoglobe, « Calendrier du jardin mois par mois » : commander ses graines et préparer ses plans pour l'année.
+  https://www.consoglobe.com/calendrier-jardin-mois-par-mois-cg
+- Croq'Kilos, « Tout ce qu'il y a à faire dans votre jardin en janvier » : vérifier pots, outils et arrosoirs.
+  https://www.croq-kilos.com/actus/tout-ce-quil-y-a-faire-dans-votre-jardin-en-janvier
+- « Lave tes pots vides » reprend l'astuce `jan-pots-propres`, vérifiée dans `docs/astuces.md`.
+Plantes proposées : celles du catalogue qui se sèment ou se plantent en mars ou avril (climat de la ville), adaptées
+au soleil et à la place ; « Garder » les ajoute aux envies du printemps (carte de mars, notification du 1er mars).
+
+## Les Saints de glace (4 au 20 mai ; climats océanique, tempéré et continental)
+
+Les 11, 12 et 13 mai (saint Mamert, saint Pancrace, saint Servais) marquent traditionnellement la fin des gelées
+tardives ; il est conseillé d'attendre ce repère pour sortir les plantes frileuses, en surveillant la météo (vérifié
+le 8 octobre 2026).
+- Ootravaux, « Saints de glace » : dates et saints, risque de gelées jusqu'à fin mai dans l'Est.
+  https://www.ootravaux.fr/actualites/saints-glace.html
+- Météo-Paris, « Faut-il redouter les saints de glace ? » : tradition, pas une garantie.
+  https://www.meteo-paris.com/actualites/faut-il-redouter-les-saints-de-glace-11-mai-2018
+- Futura Sciences, « Les saints de glace sont-ils toujours d'actualité ? » : tomates et poivrons à ne pas sortir trop tôt.
+  https://www.futura-sciences.com/maison/actualites/jardinage-saints-glace-mythe-realite-113232/
+Pas en montagne (gelées jusqu'à début juin) ni en climat méditerranéen (dernières gelées mi-mars) : repères de
+`lib/plants/climate.ts`. Après le 13 mai, la carte dit « Feu vert » sauf si du gel est annoncé chez l'utilisateur.
+
+## Balcon en vacances (1er au 15 juillet)
+
+Avant de partir : regrouper les pots à l'ombre, arroser en profondeur puis pailler, prévoir une réserve d'eau ou un
+proche (vérifié le 8 octobre 2026).
+- Hornbach, « Arrosage des plantes pendant les vacances » : regrouper, ombre, réserves d'eau.
+  https://www.hornbach.ch/projets/arrosage-des-plantes-pendant-les-vacances/
+- Futura Sciences, « 8 conseils pour préparer votre jardin avant de partir en vacances » : arrosage, paillage.
+  https://www.futura-sciences.com/maison/questions-reponses/jardinage-jardinage-8-conseils-preparer-votre-jardin-avant-aller-vacances-17241/
+- Consoglobe, « Comment prendre soin de vos plantes pendant les vacances » : arroser abondamment puis pailler épais.
+  https://www.consoglobe.com/?p=10351287

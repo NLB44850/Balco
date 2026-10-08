@@ -94,6 +94,8 @@ type GardenContextValue = {
   takeUnseenAwards: () => string[];
   /** Un badge vient d'être fêté (par le message d'un geste) : ne pas le refêter. */
   markAwardsSeen: (keys: string[]) => void;
+  /** Donne un badge qui ne se déduit pas des gestes (une plante gardée pour le printemps pendant un événement). */
+  grantAward: (key: string) => Promise<void>;
   profile: UserProfile;
   onboarding: OnboardingAnswers | null;
   account: AccountState;
@@ -529,6 +531,12 @@ export function GardenProvider({ children }: { children: ReactNode }) {
     const fresh = keys.filter((key) => !stored.seen.includes(key));
     if (fresh.length > 0) void saveAwards({ ...stored, seen: [...stored.seen, ...fresh] });
   }, [saveAwards]);
+  const grantAward = useCallback(async (key: string) => {
+    const stored = awardsRef.current;
+    if (stored.awards[key]) return;
+    await saveAwards({ ...stored, awards: capAwards({ ...stored.awards, [key]: clockNow().toISOString() }) });
+    queue(markAwardsDirty);
+  }, [queue, saveAwards]);
   const takeUnseenAwards = useCallback(() => {
     const unseen = unseenAwards(awardsRef.current.awards, awardsRef.current.seen);
     if (unseen.length > 0) markAwardsSeen(unseen);
@@ -548,8 +556,8 @@ export function GardenProvider({ children }: { children: ReactNode }) {
   }), [auth.isAuthenticated, auth.loading, auth.user?.email, auth.user?.name, founder, lastSyncedAt, plan, serverPush, syncStatus]);
 
   const value = useMemo<GardenContextValue>(
-    () => ({ loaded, plants, resolvedPlants, pastPlants, events, awards, takeUnseenAwards, markAwardsSeen, profile, onboarding, account, addPlant, removePlant, restartPlant, renamePlant, setPlantVariety, logEvent, removeEvent, updateProfile, reloadOnboarding, updateOnboarding, reportLocation, signIn, signOut, syncNow, claimThisDevice, refreshAccount, completeSignIn, deleteAccount }),
-    [loaded, plants, resolvedPlants, pastPlants, events, awards, takeUnseenAwards, markAwardsSeen, profile, onboarding, account, addPlant, removePlant, restartPlant, renamePlant, setPlantVariety, logEvent, removeEvent, updateProfile, reloadOnboarding, updateOnboarding, reportLocation, signIn, signOut, syncNow, claimThisDevice, refreshAccount, completeSignIn, deleteAccount],
+    () => ({ loaded, plants, resolvedPlants, pastPlants, events, awards, takeUnseenAwards, markAwardsSeen, grantAward, profile, onboarding, account, addPlant, removePlant, restartPlant, renamePlant, setPlantVariety, logEvent, removeEvent, updateProfile, reloadOnboarding, updateOnboarding, reportLocation, signIn, signOut, syncNow, claimThisDevice, refreshAccount, completeSignIn, deleteAccount }),
+    [loaded, plants, resolvedPlants, pastPlants, events, awards, takeUnseenAwards, markAwardsSeen, grantAward, profile, onboarding, account, addPlant, removePlant, restartPlant, renamePlant, setPlantVariety, logEvent, removeEvent, updateProfile, reloadOnboarding, updateOnboarding, reportLocation, signIn, signOut, syncNow, claimThisDevice, refreshAccount, completeSignIn, deleteAccount],
   );
 
   return <GardenContext.Provider value={value}>{children}</GardenContext.Provider>;

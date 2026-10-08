@@ -69,6 +69,9 @@ D'après le brief écrit avec toi (plan et réponses validés, détail dans `doc
 - **La Sainte-Catherine** (18-30 novembre) : carte, page « Ce qui se plante maintenant » (petits fruits, ail, violas,
   pas de fraisiers), « Paille tes pots » avec « C'est fait », « Demander à Nora », notification le 18, badge
   « Sainte-Catherine · 2026 », bilan le 1er décembre. Version climat froid (protection d'abord).
+- **Trois autres temps forts** : Prépare ton printemps (12-31 janvier, plantes à garder pour le printemps), les Saints
+  de glace (4-20 mai, compte à rebours puis feu vert selon la météo de ma ville), Balcon en vacances (1-15 juillet,
+  paillage et mode vacances). Chacun a son badge avec millésime.
 - **Badges** : ceux obtenus restent acquis pour de bon (avec leur date, dans la sauvegarde du compte) ; 8 badges à
   paliers Graine / Pousse / Fleur ; 4 badges par saison avec millésime ; un herbier (une carte par plante récoltée ou
   fleurie la première fois, « Elle a fleuri ? » sur la fiche des fleurs) ; Moi refait (« Presque là », la saison,

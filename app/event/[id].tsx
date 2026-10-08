@@ -17,7 +17,10 @@ import { glass } from "@/components/ui/glass";
 import { Text } from "@/components/ui/typography";
 import { useColors } from "@/hooks/use-colors";
 import { useDayPlan } from "@/hooks/use-day-plan";
-import { coldMode, eventById, eventMoment, eventPlanted, eventPlantings, protectionDone, protectionEvents } from "@/lib/events/events";
+import { coldMode, eventAwardKey, eventById, eventMoment, eventPlanted, eventPlantings, protectionDone, protectionEvents } from "@/lib/events/events";
+import { addSpringWish, nextSpringReminder, SPRING_REMINDER_SOURCE, springReminderContent } from "@/lib/garden/spring";
+import { getCatalogPlant, type CatalogPlant } from "@/lib/plants/catalog";
+import { scheduleDatedReminder } from "@/lib/reminders/local-notifications";
 import { useGarden } from "@/lib/garden/garden-context";
 import { MONTH_LONG } from "@/lib/plants/catalog";
 
@@ -27,9 +30,10 @@ export default function EventScreen() {
   const insets = useSafeAreaInsets();
   const params = useLocalSearchParams<{ id: string }>();
   const event = eventById(params.id ?? "");
-  const { resolvedPlants, pastPlants, events, onboarding, addPlant, removePlant, logEvent, removeEvent } = useGarden();
+  const { resolvedPlants, pastPlants, events, onboarding, addPlant, removePlant, logEvent, removeEvent, updateOnboarding, grantAward } = useGarden();
   const { now, climate, allDecisions } = useDayPlan();
-  const year = (event && eventMoment(now)?.event.id === event.id ? eventMoment(now)?.year : undefined) ?? now.getFullYear();
+  const moment = eventMoment(now, climate);
+  const year = (event && moment?.event.id === event.id ? moment.year : undefined) ?? now.getFullYear();
   const [toast, setToast] = useState<ToastMessage | null>(null);
   const toastId = useRef(0);
   const showToast = (text: string, onUndo?: () => void) => {
@@ -65,8 +69,26 @@ export default function EventScreen() {
     const logged = protectionEvents(event, year, resolvedPlants, now);
     for (const item of logged) await logEvent(item);
     if (Platform.OS !== "web") void Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-    showToast("C’est noté : tes pots sont paillés", () => void (async () => {
+    showToast(event.protection?.doneText ?? "C’est noté", () => void (async () => {
       for (const item of logged) await removeEvent(item.id);
+    })());
+  };
+  /** « Garder pour le printemps » : la plante rejoint les envies (carte de mars, notification du 1er mars) et donne le badge. */
+  const wishes = onboarding?.springWishes ?? [];
+  const springNotice = (ids: string[]) => {
+    const entries = ids.map((id) => getCatalogPlant(id)).filter((entry): entry is CatalogPlant => Boolean(entry));
+    void scheduleDatedReminder(SPRING_REMINDER_SOURCE, springReminderContent(entries), entries.length > 0 ? nextSpringReminder(new Date()) : null).catch(() => undefined);
+  };
+  const keep = async (catalogId: string, name: string) => {
+    const next = addSpringWish(wishes, catalogId);
+    await updateOnboarding({ springWishes: next });
+    springNotice(next);
+    await grantAward(eventAwardKey(event, year));
+    if (Platform.OS !== "web") void Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+    showToast(`Gardée pour le printemps : ${name}`, () => void (async () => {
+      const without = next.filter((id) => id !== catalogId);
+      await updateOnboarding({ springWishes: without });
+      springNotice(without);
     })());
   };
   const guide = (catalogId: string, plantId?: string) => router.push({ pathname: "/guide/[catalogId]", params: { catalogId, ...(plantId ? { plantId } : {}) } });
@@ -74,9 +96,28 @@ export default function EventScreen() {
   const plantingList = event.plantings && (
     <View style={[glass.card, styles.card]}>
       <Text style={[styles.cardTitle, { color: colors.foreground }]}>{event.plantings.listTitle}</Text>
-      {plantings.length === 0 && <Text style={[styles.body, { color: colors.muted }]}>Rien de nouveau à planter sur ton balcon ce mois-ci : tout ce qui convient y est déjà.</Text>}
+      {plantings.length === 0 && <Text style={[styles.body, { color: colors.muted }]}>Rien de nouveau à proposer : tout ce qui convient à ton balcon y est déjà.</Text>}
       {plantings.map((entry) => {
         const waiting = resolvedPlants.find(({ plant, entry: owned }) => owned.id === entry.id && plant.toPlant);
+        if (event.plantings?.mode === "wish") {
+          const kept = wishes.includes(entry.id);
+          return (
+            <View key={entry.id} style={[styles.row, { borderBottomColor: colors.border }]}>
+              <CatalogPicture entry={entry} style={styles.picture} />
+              <View style={styles.flex}>
+                <Text style={[styles.rowTitle, { color: colors.foreground }]}>{entry.name}</Text>
+                <Text style={[styles.rowText, { color: colors.muted }]}>{entry.pitch}</Text>
+              </View>
+              {kept ? (
+                <Text style={[styles.pillText, { color: colors.primary }]}>✓ Gardée</Text>
+              ) : (
+                <Pressable accessibilityRole="button" accessibilityLabel={`Garder ${entry.name} pour le printemps`} onPress={() => void keep(entry.id, entry.name)} style={({ pressed }) => [styles.pill, { backgroundColor: colors.primary, borderColor: colors.primary }, pressed && styles.pressed]}>
+                  <Text style={[styles.pillText, { color: "#FFFFFF" }]}>Garder</Text>
+                </Pressable>
+              )}
+            </View>
+          );
+        }
         return (
           <View key={entry.id} style={[styles.row, { borderBottomColor: colors.border }]}>
             <CatalogPicture entry={entry} style={styles.picture} />
@@ -96,7 +137,7 @@ export default function EventScreen() {
           </View>
         );
       })}
-      {planted.length > 0 && <Text style={[styles.rowText, { color: colors.primary }]}>Déjà planté pour la {event.title.replace(/^La /u, "")} : {planted.length}</Text>}
+      {planted.length > 0 && <Text style={[styles.rowText, { color: colors.primary }]}>✓ Déjà {planted.length} plante{planted.length > 1 ? "s" : ""} installée{planted.length > 1 ? "s" : ""} pendant l’événement</Text>}
     </View>
   );
 
@@ -125,6 +166,12 @@ export default function EventScreen() {
         </View>
         {cold && event.coldNote && <Text style={[styles.cold, { color: colors.frost, borderColor: colors.frost }]}>{event.coldNote}</Text>}
         {cold ? <>{protection}{plantingList}</> : <>{plantingList}{protection}</>}
+        {event.link && (
+          <Pressable accessibilityRole="button" onPress={() => router.push(event.link!.route)} style={({ pressed }) => [glass.card, styles.card, pressed && styles.pressed]}>
+            <Text style={[styles.cardTitle, { color: colors.foreground }]}>{event.link.title} ›</Text>
+            <Text style={[styles.body, { color: colors.muted }]}>{event.link.text}</Text>
+          </Pressable>
+        )}
         <Pressable accessibilityRole="button" onPress={() => router.push({ pathname: "/(tabs)/assistant", params: { question: event.noraQuestion } })} style={({ pressed }) => [styles.nora, pressed && styles.pressed]}>
           <Text style={[styles.noraText, { color: colors.primary }]}>Demander à Nora ›</Text>
           <Text style={[styles.rowText, { color: colors.muted }]}>« {event.noraQuestion} »</Text>

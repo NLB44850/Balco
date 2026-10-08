@@ -59,7 +59,7 @@ import { TipCard } from "@/components/today/tip-card";
 import { useTipOfTheWeek } from "@/hooks/use-tip-of-the-week";
 import { tipQuestion } from "@/lib/tips/tips";
 import { useEventDismissals } from "@/hooks/use-event-dismissals";
-import { eventDismissKey, eventMoment, eventNotificationSource, eventPlanted, nextEventNotification } from "@/lib/events/events";
+import { eventCardText, eventDismissKey, eventMoment, eventNotificationSource, eventParticipation, nextEventNotification } from "@/lib/events/events";
 import { skippedRepots, skipRepotThisYear } from "@/lib/garden/repot-skip";
 import { harvestedToastText, isHarvestedOnce } from "@/lib/garden/harvest-end";
 import { REPOTTING } from "@/lib/plants/repotting";
@@ -179,11 +179,11 @@ export default function HomeScreen() {
   // téléphone), si les rappels sont activés et hors vacances.
   useEffect(() => {
     if (!reminderSettingsLoaded) return;
-    const next = reminderSettings.enabled ? nextEventNotification(new Date(), reminderSettings) : null;
+    const next = reminderSettings.enabled ? nextEventNotification(new Date(), reminderSettings, climate) : null;
     if (!next) return;
     const date = awayOn(vacation, dayKey(next.date)) ? null : next.date;
     void scheduleDatedReminder(eventNotificationSource(next.event), { ...next.event.notification, url: `/event/${next.event.id}` }, date).catch(() => undefined);
-  }, [reminderSettings, reminderSettingsLoaded, vacation]);
+  }, [climate, reminderSettings, reminderSettingsLoaded, vacation]);
 
   const trip = vacationState(vacation, now);
   const away = trip.phase === "away";
@@ -402,8 +402,8 @@ export default function HomeScreen() {
   );
   // Un temps fort de l'année (la Sainte-Catherine) : sa carte compacte, puis son bilan si l'on a participé.
   const { dismissed, dismiss } = useEventDismissals();
-  const moment = eventMoment(now);
-  const plantedForEvent = moment ? eventPlanted(moment.event, moment.year, [...resolvedPlants, ...pastPlants], events).length : 0;
+  const moment = eventMoment(now, climate);
+  const plantedForEvent = moment ? eventParticipation(moment.event, moment.year, { plants: [...resolvedPlants, ...pastPlants], events, awards, springWishes: onboarding?.springWishes }) : 0;
   const eventCard = moment && !away && !dismissed.includes(eventDismissKey(moment.event, moment.year, moment.phase)) && (moment.phase === "running" || plantedForEvent > 0) ? moment : null;
   // L'astuce de la semaine (lib/tips/tips.ts), selon le mois, le climat, les plantes et la météo annoncée.
   const weatherCauses = useMemo(() => [...new Set(visibleGroups.flatMap((group) => group.decisions.map((decision) => decision.cause)).filter((cause): cause is NonNullable<typeof cause> => Boolean(cause)))], [visibleGroups]);
@@ -519,7 +519,7 @@ export default function HomeScreen() {
           <EventCard
             emoji={eventCard.event.emoji}
             title={eventCard.event.title}
-            text={eventCard.phase === "running" ? eventCard.event.cardText : eventCard.event.summary(plantedForEvent)}
+            text={eventCard.phase === "running" ? eventCardText(eventCard.event, { now, year: eventCard.year, frostAnnounced: weatherCauses.includes("frost") }) : eventCard.event.summary(plantedForEvent)}
             onOpen={eventCard.phase === "running" ? () => router.push({ pathname: "/event/[id]", params: { id: eventCard.event.id } }) : undefined}
             onClose={() => void dismiss(eventDismissKey(eventCard.event, eventCard.year, eventCard.phase))}
           />

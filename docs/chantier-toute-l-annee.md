@@ -173,6 +173,20 @@ Branche `ccr-71709eb8-bxzttf` (session Claude Code du 8 octobre), un commit par 
 12. **Moi refait** : Presque là, saison en cours, herbier, tous les badges (`lib/garden/collection.ts`).
 13. Vérifications : 605 tests, 58 parcours de bout en bout (17 à 20 nouveaux), bundle Android construit.
 
+**Ajouté le 8 octobre, à sa demande (« d'autres événements en plus de la Sainte-Catherine »)** : les trois autres
+temps forts prévus par le brief, dans `lib/events/events.ts` (sources : `docs/sources-evenements.md`, e2e
+`21-temps-forts`) :
+- **Prépare ton printemps** (12-31 janvier) : « À garder pour le printemps » (plantes semées ou plantées en mars-avril,
+  bouton « Garder » → envies du printemps + notification du 1er mars), « Lave tes pots vides » ; badge en gardant une
+  plante ; bilan « Tu as N plantes en tête pour le printemps ».
+- **Les Saints de glace** (4-20 mai, climats océanique, tempéré, continental) : carte en compte à rebours (« Dans
+  3 jours… »), puis « Feu vert » après le 13 mai, ou « Pas encore : du gel est annoncé » ; plantes frileuses à installer ;
+  badge pour une plante frileuse plantée après le 13 mai.
+- **Balcon en vacances** (1-15 juillet) : « Paille tes pots pour l'été » avec « C'est fait » (badge), lien « Préparer mon
+  départ » vers le mode vacances.
+Le mécanisme accepte maintenant : climats, texte de carte selon le moment, plantes « à garder » ou « à planter »,
+plantes frileuses seulement, lien vers un écran, badge par plantation, geste ou envie.
+
 Choix faits en codant (à confirmer par le porteur) :
 - **Badges permanents** : « Zéro gâchis d'eau » compte maintenant les arrosages évités sous la pluie (5 / 20 / 50) ;
   « Paré à tout » (nouveau) les alertes gel, chaleur, vent ou orage suivies ; « Bio-défenseur » 5 / 15 / 40
