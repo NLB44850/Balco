@@ -18,7 +18,14 @@ avec son porteur. Détails : `docs/feuille-de-route.md` (demande d'origine, éta
 
 ## Tester sur le téléphone
 
-Tout se passe dans son GitHub Codespace (pas de Docker sur son PC).
+**En cours de mise en place (09/10, ses choix : Railway, version de test, Brevo, mises à jour sans réinstaller)** :
+tout le pas-à-pas est dans **`docs/deploiement-railway.md`**. Serveur + app web + MySQL sur Railway, redéployés à
+chaque fusion dans `main` (`railway.json`) ; APK de test construit par le bouton GitHub « Construire l'APK de test »
+(`.github/workflows/apk.yml`, secret `EXPO_TOKEN`, variable `BALCO_API_URL`) ; nouveau code de l'app publié à chaque
+fusion (`.github/workflows/update.yml`, EAS Update canal `test`, `hooks/use-app-updates.tsx` propose « Redémarrer »).
+**Changer `version` dans `app.config.ts` dès qu'on ajoute un module natif, une permission ou un plugin** (runtime
+`appVersion`), puis lui demander un nouvel APK. Tant que ce n'est pas en place, le Codespace reste la façon de tester
+(profil EAS `codespace` pour un APK qui parle au Codespace) :
 
 1. `git pull` puis `bash scripts/codespace-demarrer.sh` (nettoie le cache Docker, reconstruit, démarre,
    rend le port 3000 public).

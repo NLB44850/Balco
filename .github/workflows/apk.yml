@@ -1,0 +1,51 @@
+# Construit l'APK de test sur les serveurs d'Expo (EAS Build), d'un bouton dans l'onglet Actions de GitHub.
+# À faire une seule fois dans Settings → Secrets and variables → Actions :
+#   - secret EXPO_TOKEN (jeton créé sur expo.dev → Account settings → Access tokens)
+#   - variable BALCO_API_URL (l'adresse Railway, ex. https://balco-test.up.railway.app), la même que pour les rappels
+# Le lien de téléchargement de l'APK apparaît sur expo.dev (et dans le résumé de l'action) quand il est prêt.
+# Un nouvel APK n'est nécessaire que si la version de l'app change (module natif, permission) : le reste arrive par
+# « Publier une mise à jour ».
+name: Construire l'APK de test
+
+on:
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Vérifier la configuration
+        env:
+          EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
+          BALCO_API_URL: ${{ vars.BALCO_API_URL }}
+        run: |
+          if [ -z "$EXPO_TOKEN" ]; then echo "::error::Ajoute le secret EXPO_TOKEN (Settings → Secrets and variables → Actions)."; exit 1; fi
+          if [ -z "$BALCO_API_URL" ]; then echo "::error::Ajoute la variable BALCO_API_URL (l'adresse Railway)."; exit 1; fi
+      - uses: actions/checkout@v7
+      - uses: pnpm/action-setup@v6
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - name: Adresse du serveur dans le profil « test »
+        env:
+          BALCO_API_URL: ${{ vars.BALCO_API_URL }}
+        run: |
+          jq --arg url "${BALCO_API_URL%/}" '.build.test.env.EXPO_PUBLIC_API_BASE_URL = $url' eas.json > eas.tmp && mv eas.tmp eas.json
+          jq '.build.test.env' eas.json
+      - name: Lancer la construction
+        env:
+          EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
+          # Envoie le dossier tel quel (avec l'adresse ci-dessus), sans repasser par git.
+          EAS_NO_VCS: "1"
+          EAS_SKIP_AUTO_FINGERPRINT: "1"
+        run: |
+          npx --yes eas-cli@latest build --platform android --profile test --non-interactive --no-wait --json > build.json
+          cat build.json
+          id=$(jq -r '.[0].id // empty' build.json 2>/dev/null || true)
+          owner=$(jq -r '.[0].project.ownerAccount.name // empty' build.json 2>/dev/null || true)
+          if [ -n "$id" ] && [ -n "$owner" ]; then url="https://expo.dev/accounts/$owner/projects/balco/builds/$id"; else url="https://expo.dev (projet Balco → Builds)"; fi
+          echo "### APK en construction" >> "$GITHUB_STEP_SUMMARY"
+          echo "Suis la construction et télécharge l'APK ici : $url" >> "$GITHUB_STEP_SUMMARY"
+          echo "La file d'attente gratuite d'Expo peut prendre du temps : inutile de relancer." >> "$GITHUB_STEP_SUMMARY"

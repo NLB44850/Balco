@@ -1,0 +1,56 @@
+# Publie le nouveau code de l'app (EAS Update) à chaque fusion dans main : les téléphones qui ont l'APK de test le
+# reçoivent à la réouverture de l'app (« Nouvelle version de Balco… Redémarrer »), sans réinstaller.
+# Mêmes réglages que « Construire l'APK de test » : secret EXPO_TOKEN et variable BALCO_API_URL.
+# Seul le code de l'app voyage ainsi ; le serveur et l'app web se mettent à jour de leur côté (Railway).
+name: Publier une mise à jour
+
+on:
+  push:
+    branches: [main]
+    paths-ignore: ["docs/**", "*.md", "e2e/**", "tests/**", "server/**", "drizzle/**", ".github/**"]
+  workflow_dispatch:
+
+concurrency:
+  group: eas-update
+  cancel-in-progress: false
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Vérifier la configuration
+        id: config
+        env:
+          EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
+          BALCO_API_URL: ${{ vars.BALCO_API_URL }}
+        run: |
+          if [ -z "$EXPO_TOKEN" ] || [ -z "$BALCO_API_URL" ]; then
+            echo "Secret EXPO_TOKEN ou variable BALCO_API_URL absents : rien à publier pour l'instant."
+            echo "ready=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "ready=true" >> "$GITHUB_OUTPUT"
+          fi
+      - uses: actions/checkout@v7
+        if: steps.config.outputs.ready == 'true'
+      - uses: pnpm/action-setup@v6
+        if: steps.config.outputs.ready == 'true'
+      - uses: actions/setup-node@v7
+        if: steps.config.outputs.ready == 'true'
+        with:
+          node-version: 22
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+        if: steps.config.outputs.ready == 'true'
+      - name: Publier sur le canal « test »
+        if: steps.config.outputs.ready == 'true'
+        env:
+          EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
+          BALCO_API_URL: ${{ vars.BALCO_API_URL }}
+          EXPO_PUBLIC_WEATHER_SIMULATION: "1"
+          COMMIT_MESSAGE: ${{ github.event.head_commit.message || 'Publication manuelle' }}
+        run: |
+          export EXPO_PUBLIC_API_BASE_URL="${BALCO_API_URL%/}"
+          message=$(printf '%s' "$COMMIT_MESSAGE" | head -n 1 | cut -c1-200)
+          npx --yes eas-cli@latest update --channel test --platform android --message "$message" --non-interactive
+          echo "### Mise à jour publiée : $message" >> "$GITHUB_STEP_SUMMARY"
+          echo "Les téléphones avec l'APK de test la reçoivent à la réouverture de Balco." >> "$GITHUB_STEP_SUMMARY"
