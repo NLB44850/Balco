@@ -26,14 +26,30 @@ export type TodayItem =
   /** « Tes radis sont-ils tous récoltés ? » ou « Ton pot est libre » : la ligne ouvre la feuille du pot libre. */
   | (TodayBase & { kind: "harvest-end"; done: false; stage: "question" | "free"; resolved: ResolvedPlant });
 
+/** Les gestes regroupés en une ligne dès qu'ils concernent deux plantes : les arrosages et les récoltes. */
+export type GroupedGesture = "watering" | "harvest";
+
 /**
- * Une ligne de l'écran : un geste seul, les arrosages regroupés (« Vérifie la terre de 3 plantes », qui
- * s'ouvre sur la feuille du bas), ou les gestes pas urgents repliés (« 2 autres gestes, pas urgents »).
+ * Une ligne de l'écran : un geste seul, les arrosages ou les récoltes regroupés (« Vérifie la terre de 3 plantes »,
+ * « Récolte ce qui est prêt sur 9 plantes », qui s'ouvrent sur la feuille du bas), ou les gestes pas urgents repliés
+ * (« 2 autres gestes, pas urgents »).
  */
 export type TodayLine =
   | { type: "item"; key: string; item: TodayItem }
-  | { type: "watering"; key: "watering"; title: string; subtitle: string; done: boolean; items: TodayItem[] }
+  | { type: "group"; key: GroupedGesture; gesture: GroupedGesture; icon: string; tone: TodayTone; title: string; subtitle: string; done: boolean; items: TodayItem[] }
   | { type: "more"; key: "more"; title: string; subtitle: string; items: TodayItem[] };
+
+const GROUP_LOOK: Record<GroupedGesture, { icon: string; tone: TodayTone; title: (count: number) => string; todo: string }> = {
+  watering: { icon: "💧", tone: "water", title: (count) => `Vérifie la terre de ${count} plantes`, todo: "Sèche ? Arrose" },
+  harvest: { icon: "🧺", tone: "care", title: (count) => `Récolte ce qui est prêt sur ${count} plantes`, todo: "Cueille ce qui est mûr" },
+};
+
+/** Une récolte à regrouper : pas la question « Tout récolté ? » ni le pot libre, qui ont leur propre ligne. */
+function groupedAs(item: TodayItem): GroupedGesture | null {
+  if (item.gesture === "watering") return "watering";
+  if (item.gesture === "harvest" && item.kind !== "harvest-end" && !item.quiet) return "harvest";
+  return null;
+}
 
 export type BalconyStatus = { label: string; remaining: number; doneToday: number; progress: number; allDone: boolean };
 
@@ -179,36 +195,40 @@ export const MAX_TODAY_LINES = 5;
 const NOT_URGENT: GestureKind[] = ["fertilizing", "care"];
 
 /**
- * La liste telle qu'elle s'affiche : alertes, arrosages regroupés dès qu'il y en a deux (une seule ligne
- * « Vérifie la terre de N plantes »), récoltes et gestes de saison, puis, au-delà de 5 lignes à faire,
- * l'engrais et l'entretien repliés sous « X autres gestes, pas urgents ». Ce qui est fait passe à la fin.
- * Alertes, arrosages et récoltes restent toujours visibles.
+ * La liste telle qu'elle s'affiche : alertes, arrosages puis récoltes regroupés dès qu'il y en a deux (une seule ligne
+ * « Vérifie la terre de N plantes », « Récolte ce qui est prêt sur N plantes »), gestes de saison, puis, au-delà de
+ * 5 lignes à faire, l'engrais et l'entretien repliés sous « X autres gestes, pas urgents ». Ce qui est fait passe à
+ * la fin. Alertes, arrosages et récoltes restent toujours visibles.
  */
 export function layoutTodayList(items: TodayItem[]): TodayLine[] {
-  const waterings = items.filter((item) => item.gesture === "watering");
-  const grouped = waterings.length >= 2;
   const single = (item: TodayItem): TodayLine => ({ type: "item", key: item.key, item });
-  const loose = items.filter((item) => !(grouped && item.gesture === "watering"));
-  const pending = loose.filter((item) => !item.done);
-
-  let group: Extract<TodayLine, { type: "watering" }> | null = null;
-  if (grouped) {
-    const doneCount = waterings.filter((item) => item.done).length;
-    const names = activityGroupSummary(waterings.map((item) => item.plantName ?? item.title));
-    group = {
-      type: "watering",
-      key: "watering",
-      title: `Vérifie la terre de ${waterings.length} plantes`,
-      subtitle: doneCount > 0 ? `${doneCount} sur ${waterings.length} faites · ${names}` : `Sèche ? Arrose · ${names}`,
-      done: doneCount === waterings.length,
-      items: waterings,
-    };
+  const groups: Extract<TodayLine, { type: "group" }>[] = [];
+  for (const gesture of ["watering", "harvest"] as const) {
+    const members = items.filter((item) => groupedAs(item) === gesture);
+    if (members.length < 2) continue;
+    const look = GROUP_LOOK[gesture];
+    const doneCount = members.filter((item) => item.done).length;
+    const names = activityGroupSummary(members.map((item) => item.plantName ?? item.title));
+    groups.push({
+      type: "group",
+      key: gesture,
+      gesture,
+      icon: look.icon,
+      tone: look.tone,
+      title: look.title(members.length),
+      subtitle: doneCount > 0 ? `${doneCount} sur ${members.length} faites · ${names}` : `${look.todo} · ${names}`,
+      done: doneCount === members.length,
+      items: members,
+    });
   }
+  const inGroup = new Set(groups.flatMap((group) => group.items));
+  const loose = items.filter((item) => !inGroup.has(item));
+  const pending = loose.filter((item) => !item.done);
 
   const alerts = pending.filter((item) => item.gesture === "alert").map(single);
   const others = pending.filter((item) => item.gesture !== "alert");
   const quiet = others.filter((item) => item.quiet);
-  const lines: TodayLine[] = [...alerts, ...(group && !group.done ? [group] : []), ...others.map(single)];
+  const lines: TodayLine[] = [...alerts, ...groups.filter((group) => !group.done), ...others.map(single)];
   // Au-delà de 5 lignes (sans compter les lignes discrètes), l'engrais et l'entretien se replient aussi.
   const crowded = lines.length - quiet.length > MAX_TODAY_LINES;
   const folded = others.filter((item) => item.quiet || (crowded && NOT_URGENT.includes(item.gesture)));
@@ -223,7 +243,7 @@ export function layoutTodayList(items: TodayItem[]): TodayLine[] {
     });
     lines.splice(0, lines.length, ...kept);
   }
-  return [...lines, ...(group?.done ? [group] : []), ...loose.filter((item) => item.done).map(single)];
+  return [...lines, ...groups.filter((group) => group.done), ...loose.filter((item) => item.done).map(single)];
 }
 
 /** Le sous-titre d'un geste déjà fait : l'heure à laquelle il a été noté. */

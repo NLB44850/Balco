@@ -41,6 +41,9 @@ moins bien reconnu. Avant la publication, on prendra une adresse sur un nom de d
 1. Crée un compte sur https://railway.com avec **« Login with GitHub »**, puis prends le forfait **Hobby** (5 $ par
    mois, carte bancaire ; 5 $ de consommation inclus, Balco en test devrait rester dedans ou tout près).
 2. **New Project** → **Deploy from GitHub repo** → autorise Railway sur le dépôt **NLB44850/Balco** → choisis-le.
+   Si le dépôt n'apparaît pas, ou si plus tard *Settings → Source* affiche « Could not load branches » et « Auto deploy
+   unavailable », c'est que l'**application GitHub de Railway** n'est pas installée sur le dépôt (vu le 9 octobre) :
+   https://github.com/apps/railway-app → **Install** → compte NLB44850 → dépôt Balco, puis **Retry** dans Railway.
    Railway trouve tout seul le fichier `railway.json` et le `Dockerfile`. Le premier déploiement va échouer : c'est
    normal, les réglages ne sont pas encore là.
 3. **La base de données** : dans le projet, **+ Create** (ou *New*) → **Database** → **MySQL**.

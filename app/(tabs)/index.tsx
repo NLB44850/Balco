@@ -43,7 +43,7 @@ import {
 import { potsFor, skyScene } from "@/lib/garden/sky";
 import { publishSky } from "@/lib/garden/sky-store";
 import type { PlantTone } from "@/lib/garden/day-plan";
-import { balconyStatus, buildTodayList, doneSubtitle, isInfoBanner, layoutTodayList, rainSavingsToLog, splitTodayList, type TodayItem } from "@/lib/garden/today";
+import { balconyStatus, buildTodayList, doneSubtitle, isInfoBanner, layoutTodayList, rainSavingsToLog, splitTodayList, type GroupedGesture, type TodayItem, type TodayLine } from "@/lib/garden/today";
 import { notificationsUnavailableReason } from "@/lib/notifications/module";
 import { eventForActivity, type CalendarActivity } from "@/lib/plants/calendar";
 import { PLANT_CATALOG } from "@/lib/plants/catalog";
@@ -200,12 +200,11 @@ export default function HomeScreen() {
   const status = useMemo(() => balconyStatus(items, events, now), [events, items, now]);
   const streak = useMemo(() => followedDays(resolvedPlants, events, now), [events, now, resolvedPlants]);
   const sheetItem = items.find((item) => item.key === sheetKey) ?? null;
-  // Arrosages regroupés, gestes pas urgents repliés au-delà de 5 lignes (lib/garden/today.ts).
+  // Arrosages et récoltes regroupés, gestes pas urgents repliés au-delà de 5 lignes (lib/garden/today.ts).
   const lines = useMemo(() => layoutTodayList(rest), [rest]);
-  const [wateringOpen, setWateringOpen] = useState(false);
+  const [openGroup, setOpenGroup] = useState<GroupedGesture | null>(null);
   const [moreOpen, setMoreOpen] = useState(false);
-  const wateringLine = lines.find((line) => line.type === "watering") ?? null;
-  const wateringSheet = wateringOpen && wateringLine ? wateringLine : null;
+  const groupSheet = lines.find((line): line is Extract<TodayLine, { type: "group" }> => line.type === "group" && line.gesture === openGroup) ?? null;
   // Balcon vide : seulement des plantes à semer ou planter ce mois-ci, dans le climat de la ville.
   const starters = useMemo(() => (resolvedPlants.length === 0 ? seasonalStarters(onboarding, { month: now.getMonth() + 1, climate, limit: 3 }) : null), [climate, now, onboarding, resolvedPlants.length]);
   const recommendations = starters?.plants ?? [];
@@ -591,8 +590,8 @@ export default function HomeScreen() {
           <View>
             {lines.map((line) => {
               if (line.type === "item") return itemRow(line.item);
-              if (line.type === "watering") {
-                return <TodayRow key={line.key} icon="💧" tone="water" title={line.title} subtitle={line.subtitle} done={line.done} onOpen={() => setWateringOpen(true)} />;
+              if (line.type === "group") {
+                return <TodayRow key={line.key} icon={line.icon} tone={line.tone} title={line.title} subtitle={line.subtitle} done={line.done} onOpen={() => setOpenGroup(line.gesture)} />;
               }
               return (
                 <View key={line.key}>
@@ -712,17 +711,21 @@ export default function HomeScreen() {
       </BottomSheet>
 
       <BottomSheet
-        visible={wateringSheet !== null}
-        onClose={() => setWateringOpen(false)}
+        visible={groupSheet !== null}
+        onClose={() => setOpenGroup(null)}
         overlay={<><UndoToast message={toast} onDone={hideToast} />{celebration}</>}
       >
-        {wateringSheet && (
+        {groupSheet && (
           <View style={styles.sheet}>
-            <Text style={[styles.sheetKind, { color: colors.primary }]}>💧  {wateringSheet.items.filter((item) => item.done).length} sur {wateringSheet.items.length} faites</Text>
-            <Text style={[styles.sheetTitle, { color: colors.foreground }]}>{wateringSheet.title}</Text>
-            <Text style={[styles.sheetBody, { color: colors.muted }]}>Enfonce ton doigt dans la terre de chaque pot : si elle est sèche, arrose au pied et coche. Touche une ligne pour le détail.</Text>
+            <Text style={[styles.sheetKind, { color: colors.primary }]}>{groupSheet.icon}  {groupSheet.items.filter((item) => item.done).length} sur {groupSheet.items.length} faites</Text>
+            <Text style={[styles.sheetTitle, { color: colors.foreground }]}>{groupSheet.title}</Text>
+            <Text style={[styles.sheetBody, { color: colors.muted }]}>
+              {groupSheet.gesture === "watering"
+                ? "Enfonce ton doigt dans la terre de chaque pot : si elle est sèche, arrose au pied et coche. Touche une ligne pour le détail."
+                : "Passe d’un pot à l’autre et cueille ce qui est prêt, puis coche. Touche une ligne pour le détail."}
+            </Text>
             <View>
-              {wateringSheet.items.map((item) => (
+              {groupSheet.items.map((item) => (
                 <TodayRow
                   key={`sheet-${item.key}`}
                   icon={item.icon}
@@ -732,8 +735,8 @@ export default function HomeScreen() {
                   done={item.done}
                   onToggle={() => void toggleItem(item)}
                   onOpen={() => {
-                    // Le détail s'ouvre une fois la feuille des arrosages repliée.
-                    setWateringOpen(false);
+                    // Le détail s'ouvre une fois la feuille du groupe repliée.
+                    setOpenGroup(null);
                     setTimeout(() => setSheetKey(item.key), 320);
                   }}
                 />
@@ -759,9 +762,9 @@ export default function HomeScreen() {
 
       {freePot.sheet}
 
-      {/* Pendant que la feuille des arrosages ou du pot libre est ouverte, ils s'affichent par-dessus elle. */}
-      {wateringSheet === null && !freePot.isOpen && <UndoToast message={toast} onDone={hideToast} />}
-      {wateringSheet === null && !freePot.isOpen && celebration}
+      {/* Pendant que la feuille des arrosages, des récoltes ou du pot libre est ouverte, ils s'affichent par-dessus elle. */}
+      {groupSheet === null && !freePot.isOpen && <UndoToast message={toast} onDone={hideToast} />}
+      {groupSheet === null && !freePot.isOpen && celebration}
       <EventIntro
         event={intro?.event ?? null}
         text={intro ? eventCardText(intro.event, { now, year: intro.year, frostAnnounced: weatherCauses.includes("frost") }) : ""}

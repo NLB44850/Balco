@@ -109,6 +109,12 @@ export async function open(page: Page, url: string, ready: string | RegExp) {
   await expect(page.getByText(ready).first()).toBeVisible({ timeout: 20_000 });
 }
 
+/** Ouvre la ligne qui regroupe les récoltes sur Aujourd'hui (« Récolte ce qui est prêt sur N plantes »). */
+export async function openHarvests(page: Page) {
+  await page.getByRole("button", { name: /^Récolte ce qui est prêt sur \d+ plantes, détail$/u }).click();
+  await expect(page.getByText(/sur \d+ faites$/u).first()).toBeVisible();
+}
+
 /** Le rond à cocher d'une ligne de la liste (Aujourd'hui, Saisons), retrouvé par le titre de la ligne. */
 export function checkboxOf(page: Page, title: string | RegExp) {
   return page.getByRole("checkbox", { name: title }).first();
