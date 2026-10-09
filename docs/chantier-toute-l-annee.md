@@ -222,5 +222,6 @@ de glace, soleils l'été), l'emoji qui se balance, la citation, le texte du mom
 Une fois par édition (`eventIntroDue`, clé `<id>:<année>:intro`), pas pendant les vacances ni si la carte a été fermée ;
 la carte compacte reste ensuite dans la liste ; les badges à fêter attendent qu'elle soit fermée. Pour la revoir en
 test : Réglages → Version de test → Date simulée → « Revoir les grandes cartes des temps forts ».
-Choix à confirmer : une seule fois par temps fort (pas de seconde grande carte au « Feu vert » des Saints de glace).
+Validée sur son téléphone le 9 octobre (« c'est parfait ») : une seule fois par temps fort (pas de seconde grande carte au
+« Feu vert » des Saints de glace).
 
