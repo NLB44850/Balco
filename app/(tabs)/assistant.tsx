@@ -1,5 +1,5 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { useRouter } from "expo-router";
+import { useLocalSearchParams, useRouter } from "expo-router";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { FlatList, KeyboardAvoidingView, Platform, Pressable, StyleSheet, View } from "react-native";
 import { Text, TextInput } from "@/components/ui/typography";
@@ -60,6 +60,11 @@ export default function AssistantScreen() {
   const [messages, setMessages] = useState<Message[]>([]);
   const [loaded, setLoaded] = useState(false);
   const [draft, setDraft] = useState("");
+  // « Demander à Nora » depuis un événement ou une astuce : la question arrive écrite, prête à envoyer.
+  const { question } = useLocalSearchParams<{ question?: string }>();
+  useEffect(() => {
+    if (question) setDraft(question.slice(0, 500));
+  }, [question]);
   const [nameDraft, setNameDraft] = useState("");
   const [justNamed, setJustNamed] = useState(false);
   // null tant que la réponse n'est pas lue : on ne montre pas la question pour la retirer aussitôt.

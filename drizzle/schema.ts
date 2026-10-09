@@ -113,6 +113,8 @@ export const reminderProfiles = mysqlTable("reminder_profiles", {
   vacationJson: text("vacationJson"),
   /** Réponses d'onboarding (exposition, espace, objectifs) en JSON. */
   balconyJson: text("balconyJson"),
+  /** Badges et récompenses obtenus { clé: date ISO } en JSON : rien ne se perd (lib/garden/awards.ts). */
+  awardsJson: text("awardsJson"),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
 }, (table) => ({ userUnique: uniqueIndex("reminder_profiles_user_unique").on(table.userId) }));

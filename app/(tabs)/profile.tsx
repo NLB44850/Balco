@@ -1,6 +1,6 @@
 import { useRouter } from "expo-router";
 import { useMemo, useState } from "react";
-import { FlatList, Pressable, StyleSheet, View } from "react-native";
+import { Pressable, ScrollView, StyleSheet, View } from "react-native";
 import { Text } from "@/components/ui/typography";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
@@ -11,11 +11,16 @@ import { glass } from "@/components/ui/glass";
 import { useColors } from "@/hooks/use-colors";
 import { useVacation } from "@/hooks/use-vacation";
 import { useGarden } from "@/lib/garden/garden-context";
-import { computeBadges, computeProgress, computeStats } from "@/lib/garden/garden-logic";
+import { computeBadges, computeProgress, computeStats, TIER_NAMES } from "@/lib/garden/garden-logic";
 import { usePlantPhotos } from "@/lib/garden/photos-context";
 import { vacationRange, vacationState } from "@/lib/garden/vacation";
 import { weekSummary } from "@/lib/garden/week";
 import { SPACE_LABELS, SUNLIGHT_LABELS, type SpaceSize, type Sunlight } from "@/lib/plants/catalog";
+import { useNow } from "@/hooks/use-date-simulation";
+import { CatalogPicture, PlantPicture } from "@/components/plant-picture";
+import { almostThere, pastSeasonBadges } from "@/lib/garden/collection";
+import { herbariumCards, herbariumTotal } from "@/lib/garden/herbarium";
+import { SEASON_LABELS, seasonBadges, seasonOf } from "@/lib/garden/season-badges";
 
 function capitalize(value: string) {
   return value.charAt(0).toUpperCase() + value.slice(1);
@@ -25,18 +30,25 @@ export default function ProfileScreen() {
   const insets = useSafeAreaInsets();
   const colors = useColors();
   const router = useRouter();
-  const { resolvedPlants, pastPlants, events, profile, onboarding } = useGarden();
+  const { resolvedPlants, pastPlants, events, awards, profile, onboarding } = useGarden();
   const [openBadge, setOpenBadge] = useState<string | null>(null);
   const { photos } = usePlantPhotos();
-  const week = useMemo(() => weekSummary(resolvedPlants, events, photos, new Date(), pastPlants), [events, pastPlants, photos, resolvedPlants]);
+  const now = useNow();
+  const week = useMemo(() => weekSummary(resolvedPlants, events, photos, now, pastPlants), [events, now, pastPlants, photos, resolvedPlants]);
   const { vacation } = useVacation();
   const trip = vacationState(vacation);
   const vacationLine = trip.phase === "none" || !vacation ? "Tu pars ? Balco prépare ton balcon et se tait pendant ton absence." : trip.phase === "back" ? "Bon retour ! Ta liste de retour t’attend." : `Absence ${vacationRange(vacation)}`;
 
-  const stats = useMemo(() => computeStats(resolvedPlants, events, new Date(), pastPlants), [events, pastPlants, resolvedPlants]);
-  const badges = useMemo(() => computeBadges(stats), [stats]);
+  const stats = useMemo(() => computeStats(resolvedPlants, events, now, pastPlants), [events, now, pastPlants, resolvedPlants]);
+  const badges = useMemo(() => computeBadges(stats, awards), [awards, stats]);
   const progress = useMemo(() => computeProgress(stats, badges), [badges, stats]);
   const unlockedCount = badges.filter((badge) => badge.unlocked).length;
+  // La saison en cours, « Presque là », l'herbier et les badges passés (lib/garden/collection.ts).
+  const seasonNow = seasonOf(now);
+  const seasonList = useMemo(() => seasonBadges({ plants: resolvedPlants, past: pastPlants, events, springWishes: onboarding?.springWishes, now, awards }), [awards, events, now, onboarding?.springWishes, pastPlants, resolvedPlants]);
+  const almost = useMemo(() => almostThere(badges, seasonList), [badges, seasonList]);
+  const herbarium = useMemo(() => herbariumCards(awards), [awards]);
+  const past = useMemo(() => pastSeasonBadges(awards, now), [awards, now]);
   const balconyMeta = [
     onboarding?.space && !onboarding.skipped ? capitalize(SPACE_LABELS[onboarding.space as SpaceSize]) : null,
     onboarding?.sunlight && !onboarding.skipped ? SUNLIGHT_LABELS[onboarding.sunlight as Sunlight].toLowerCase() : null,
@@ -92,46 +104,120 @@ export default function ProfileScreen() {
         <View style={[glass.card, styles.statCard]} accessibilityLabel={`${week.streak} jour${week.streak > 1 ? "s" : ""} de suite`}><Text style={[styles.statValue, { color: colors.foreground }]}>{week.streak}</Text><Text style={[styles.statLabel, { color: colors.muted }]}>jour{week.streak > 1 ? "s" : ""} de suite</Text></View>
         <View style={[glass.card, styles.statCard]}><Text style={[styles.statValue, { color: colors.foreground }]}>{unlockedCount}</Text><Text style={[styles.statLabel, { color: colors.muted }]}>badge{unlockedCount > 1 ? "s" : ""}</Text></View>
       </View>
-      <View style={styles.badgeHeading}><View><Text style={[styles.sectionEyebrow, { color: colors.muted }]}>Petites victoires</Text><Text style={[styles.sectionTitle, { color: colors.foreground }]}>Mes badges éco</Text></View><Text style={[styles.badgeCount, { color: colors.primary }]}>{unlockedCount}/{badges.length}</Text></View>
     </>
   );
 
   return (
     <LightScreen>
-      <FlatList
-        data={badges}
-        keyExtractor={(item) => item.id}
-        numColumns={2}
-        columnWrapperStyle={styles.badgeRow}
-        ListHeaderComponent={header}
-        contentContainerStyle={[styles.content, { paddingTop: insets.top + 14 }]}
-        showsVerticalScrollIndicator={false}
-        renderItem={({ item }) => (
-          <Pressable accessibilityRole="button" onPress={() => setOpenBadge(openBadge === item.id ? null : item.id)} style={({ pressed }) => [glass.card, styles.badgeCard, !item.unlocked && styles.badgeLocked, pressed && styles.pressed]}>
-            <View style={[styles.badgeIcon, { backgroundColor: item.unlocked ? item.tone : "#E4E1D9" }]}><Text style={[styles.badgeIconText, { color: item.unlocked ? colors.foreground : "#A8AAA4" }]}>{item.unlocked ? item.icon : "·"}</Text></View>
-            <Text style={[styles.badgeTitle, { color: item.unlocked ? colors.foreground : colors.muted }]}>{item.title}</Text>
-            <Text style={[styles.badgeDetail, { color: item.unlocked ? colors.muted : "#A8AAA4" }]}>{item.detail}</Text>
-            {!item.unlocked && <Text style={[styles.badgeProgress, { color: colors.muted }]}>{item.current} / {item.target}</Text>}
-            {openBadge === item.id && <Text style={[styles.badgeDetail, { color: colors.primary }]}>{item.unlocked ? "Débloqué, bravo !" : `Encore ${item.target - item.current} pour le débloquer.`}</Text>}
-            {item.unlocked && <PopIn delay={180} style={[styles.unlockedMark, { backgroundColor: colors.leaf }]}><Text style={[styles.unlockedMarkText, { color: colors.primary }]}>✓</Text></PopIn>}
-          </Pressable>
-        )}
-        ListFooterComponent={
-          <>
-            <Pressable accessibilityRole="button" onPress={() => router.push("/settings")} style={({ pressed }) => [glass.card, styles.settingsRow, pressed && styles.pressed]}>
-              <Text style={styles.settingsRowIcon}>⚙</Text>
-              <View style={styles.flex}>
-                <Text style={[styles.footerTitle, { color: colors.foreground }]}>Réglages</Text>
-                <Text style={[styles.footerText, { color: colors.muted }]}>Prénom, balcon, rappels, sauvegarde</Text>
+      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={[styles.content, { paddingTop: insets.top + 14 }]}>
+        {header}
+
+        {/* 1. Presque là : les badges les plus proches, avec leur barre. */}
+        {almost.length > 0 && (
+          <View style={styles.section}>
+            <Text style={[styles.sectionTitle, { color: colors.foreground }]}>Presque là</Text>
+            {almost.map((item) => (
+              <View key={item.key} style={[glass.card, styles.almostCard]} accessibilityLabel={`${item.title}. ${item.phrase}.`}>
+                <Text style={styles.almostIcon}>{item.icon}</Text>
+                <View style={styles.flex}>
+                  <Text style={[styles.badgeTitle, styles.noTop, { color: colors.foreground }]}>{item.title}</Text>
+                  <View style={[styles.heroProgressTrack, styles.almostTrack, { backgroundColor: "rgba(18,22,20,0.08)" }]}><View style={[styles.heroProgressFill, { width: `${Math.max(4, Math.round((item.current / item.target) * 100))}%`, backgroundColor: colors.primary }]} /></View>
+                  <Text style={[styles.badgeDetail, { color: colors.muted }]}>{item.phrase}</Text>
+                </View>
               </View>
-              <Text style={[styles.footerArrow, { color: colors.muted }]}>›</Text>
-            </Pressable>
-            <View style={[glass.soft, styles.footerCard]}><Text style={[styles.footerIcon, { color: colors.primary }]}>♧</Text><View style={styles.footerCopy}><Text style={[styles.footerTitle, { color: colors.foreground }]}>Chaque geste compte.</Text><Text style={[styles.footerText, { color: colors.muted }]}>Invite un proche à faire pousser quelque chose.</Text></View><Text style={[styles.footerArrow, { color: colors.muted }]}>›</Text></View>
-          </>
-        }
-      />
+            ))}
+          </View>
+        )}
+
+        {/* 2. La collection de la saison en cours. */}
+        <View style={styles.section}>
+          <View style={styles.badgeHeading}>
+            <Text style={[styles.sectionTitle, { color: colors.foreground }]}>{capitalize(SEASON_LABELS[seasonNow.season])} {seasonNow.year}</Text>
+            <Text style={[styles.badgeCount, { color: colors.primary }]}>{seasonList.filter((badge) => badge.obtained).length}/{seasonList.length}</Text>
+          </View>
+          <View style={styles.grid}>
+            {seasonList.map((badge) => (
+              <View key={badge.key} style={[glass.card, styles.badgeCard, !badge.obtained && styles.badgeLocked]} accessibilityLabel={`${badge.title}, ${badge.obtained ? "obtenu" : `${badge.current} sur ${badge.target}`}`}>
+                <Text style={[styles.seasonIcon, !badge.obtained && styles.dimmed]}>{badge.emoji}</Text>
+                <Text style={[styles.badgeTitle, { color: badge.obtained ? colors.foreground : colors.muted }]}>{badge.title}</Text>
+                <Text style={[styles.badgeDetail, { color: colors.muted }]}>{capitalize(badge.unit(badge.target))}</Text>
+                {!badge.obtained && <Text style={[styles.badgeProgress, { color: colors.muted }]}>{badge.current} / {badge.target}</Text>}
+                {badge.obtained && <PopIn delay={180} style={[styles.unlockedMark, { backgroundColor: colors.leaf }]}><Text style={[styles.unlockedMarkText, { color: colors.primary }]}>✓</Text></PopIn>}
+              </View>
+            ))}
+          </View>
+        </View>
+
+        {/* 3. L'herbier : une carte par plante récoltée ou fleurie pour la première fois. */}
+        <View style={styles.section}>
+          <View style={styles.badgeHeading}>
+            <Text style={[styles.sectionTitle, { color: colors.foreground }]}>Ton herbier</Text>
+            <Text style={[styles.badgeCount, { color: colors.primary }]}>{herbarium.length} plante{herbarium.length > 1 ? "s" : ""} sur {herbariumTotal}</Text>
+          </View>
+          {herbarium.length === 0 ? (
+            <Text style={[styles.badgeDetail, { color: colors.muted }]}>Ta première récolte, ou ta première fleur, y ajoutera sa carte.</Text>
+          ) : (
+            <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.herbRow}>
+              {herbarium.map((card) => {
+                const own = [...resolvedPlants, ...pastPlants].find(({ entry }) => entry.id === card.entry.id);
+                return (
+                  <View key={card.entry.id} style={[glass.card, styles.herbCard]} accessibilityLabel={`${card.entry.name}, ${card.kind === "bloom" ? "fleuri" : "récolté"} le ${shortDay(card.at)}`}>
+                    {own ? <PlantPicture resolved={own} style={styles.herbPicture} /> : <CatalogPicture entry={card.entry} style={styles.herbPicture} />}
+                    <Text style={[styles.herbName, { color: colors.foreground }]} numberOfLines={1}>{card.entry.name}</Text>
+                    <Text style={[styles.badgeDetail, { color: colors.muted }]}>{card.kind === "bloom" ? "Fleuri" : "Récolté"} le {shortDay(card.at)}</Text>
+                  </View>
+                );
+              })}
+            </ScrollView>
+          )}
+        </View>
+
+        {/* 4. Tous les badges : les permanents avec leurs paliers, puis ceux des saisons passées et des événements. */}
+        <View style={styles.section}>
+          <View style={styles.badgeHeading}>
+            <Text style={[styles.sectionTitle, { color: colors.foreground }]}>Mes badges éco</Text>
+            <Text style={[styles.badgeCount, { color: colors.primary }]}>{unlockedCount}/{badges.length}</Text>
+          </View>
+          <View style={styles.grid}>
+            {badges.map((item) => (
+              <Pressable key={item.id} accessibilityRole="button" onPress={() => setOpenBadge(openBadge === item.id ? null : item.id)} style={({ pressed }) => [glass.card, styles.badgeCard, !item.unlocked && styles.badgeLocked, pressed && styles.pressed]}>
+                <View style={[styles.badgeIcon, { backgroundColor: item.unlocked ? item.tone : "#E4E1D9" }]}><Text style={[styles.badgeIconText, { color: item.unlocked ? colors.foreground : "#A8AAA4" }]}>{item.unlocked ? item.icon : "·"}</Text></View>
+                <Text style={[styles.badgeTitle, { color: item.unlocked ? colors.foreground : colors.muted }]}>{item.title}</Text>
+                <View style={styles.tiers} accessibilityLabel={item.tier === 0 ? "Pas encore de palier" : `Palier ${TIER_NAMES[item.tier - 1]}`}>
+                  {TIER_NAMES.map((tierName, index) => <View key={tierName} style={[styles.tierDot, { backgroundColor: index < item.tier ? colors.primary : "rgba(18,22,20,0.1)" }]} />)}
+                  <Text style={[styles.tierText, { color: item.tier > 0 ? colors.primary : colors.muted }]}>{item.tier > 0 ? TIER_NAMES[item.tier - 1] : ""}</Text>
+                </View>
+                <Text style={[styles.badgeDetail, { color: colors.muted }]}>{item.tier === 3 ? "Tous les paliers, bravo !" : `Prochain : ${item.detail}`}</Text>
+                {item.tier < 3 && <Text style={[styles.badgeProgress, { color: colors.muted }]}>{item.current} / {item.target}</Text>}
+                {openBadge === item.id && <Text style={[styles.badgeDetail, { color: colors.primary }]}>{item.tier === 3 ? "Débloqué, bravo !" : `Encore ${item.unit(item.target - item.current)}.`}</Text>}
+                {item.unlocked && <PopIn delay={180} style={[styles.unlockedMark, { backgroundColor: colors.leaf }]}><Text style={[styles.unlockedMarkText, { color: colors.primary }]}>✓</Text></PopIn>}
+              </Pressable>
+            ))}
+          </View>
+          {past.length > 0 && (
+            <View style={[glass.card, styles.pastCard]}>
+              <Text style={[styles.footerTitle, { color: colors.foreground }]}>Saisons et temps forts</Text>
+              {past.map((badge) => <Text key={badge.key} style={[styles.footerText, { color: colors.muted }]}>{badge.icon} {badge.title}</Text>)}
+            </View>
+          )}
+        </View>
+
+        <Pressable accessibilityRole="button" onPress={() => router.push("/settings")} style={({ pressed }) => [glass.card, styles.settingsRow, pressed && styles.pressed]}>
+          <Text style={styles.settingsRowIcon}>⚙</Text>
+          <View style={styles.flex}>
+            <Text style={[styles.footerTitle, { color: colors.foreground }]}>Réglages</Text>
+            <Text style={[styles.footerText, { color: colors.muted }]}>Prénom, balcon, rappels, sauvegarde</Text>
+          </View>
+          <Text style={[styles.footerArrow, { color: colors.muted }]}>›</Text>
+        </Pressable>
+        <View style={[glass.soft, styles.footerCard]}><Text style={[styles.footerIcon, { color: colors.primary }]}>♧</Text><View style={styles.footerCopy}><Text style={[styles.footerTitle, { color: colors.foreground }]}>Chaque geste compte.</Text><Text style={[styles.footerText, { color: colors.muted }]}>Invite un proche à faire pousser quelque chose.</Text></View><Text style={[styles.footerArrow, { color: colors.muted }]}>›</Text></View>
+      </ScrollView>
     </LightScreen>
   );
+}
+
+function shortDay(iso: string) {
+  return new Date(iso).toLocaleDateString("fr-FR", { day: "numeric", month: "long", year: "numeric" });
 }
 
 const styles = StyleSheet.create({
@@ -174,8 +260,23 @@ const styles = StyleSheet.create({
   sectionEyebrow: { fontSize: 13, fontWeight: "600" },
   sectionTitle: { fontSize: 21, fontWeight: "800", marginTop: 4, letterSpacing: -0.5 },
   badgeCount: { fontSize: 13, fontWeight: "800", marginBottom: 2 },
-  badgeRow: { gap: 12, marginBottom: 12 },
-  badgeCard: { flex: 1, minHeight: 164, padding: 14, position: "relative" },
+  section: { marginBottom: 22, gap: 10 },
+  grid: { flexDirection: "row", flexWrap: "wrap", gap: 12 },
+  badgeCard: { width: "47%", flexGrow: 1, minHeight: 150, padding: 14, position: "relative" },
+  almostCard: { flexDirection: "row", alignItems: "center", gap: 12, padding: 14 },
+  almostIcon: { fontSize: 26, width: 34, textAlign: "center" },
+  almostTrack: { marginTop: 8, marginBottom: 2 },
+  noTop: { marginTop: 0 },
+  seasonIcon: { fontSize: 32 },
+  dimmed: { opacity: 0.35 },
+  tiers: { flexDirection: "row", alignItems: "center", gap: 4, marginTop: 6 },
+  tierDot: { width: 9, height: 9, borderRadius: 5 },
+  tierText: { fontSize: 12, fontWeight: "700", marginLeft: 4 },
+  herbRow: { gap: 10, paddingRight: 8 },
+  herbCard: { width: 128, padding: 10, gap: 4 },
+  herbPicture: { width: 108, height: 108, borderRadius: 14, alignItems: "center", justifyContent: "center" },
+  herbName: { fontSize: 14, fontWeight: "700", marginTop: 4 },
+  pastCard: { padding: 15, gap: 4 },
   badgeLocked: { backgroundColor: "rgba(255,255,255,0.45)" },
   badgeIcon: { width: 47, height: 47, borderRadius: 16, alignItems: "center", justifyContent: "center" },
   badgeIconText: { fontSize: 25, fontWeight: "700" },

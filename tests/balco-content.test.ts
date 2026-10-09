@@ -22,7 +22,7 @@ describe("Balco MVP content", () => {
     expect(readProjectFile("lib/plants/catalog.ts")).toContain("Arrose ${label}");
     expect(readProjectFile("app/(tabs)/assistant.tsx")).toContain("quickQuestions(resolvedPlants)");
     expect(readProjectFile("app/(tabs)/scanner.tsx")).toContain("Solution naturelle");
-    expect(readProjectFile("lib/garden/garden-logic.ts")).toContain("Ami des Abeilles");
+    expect(readProjectFile("lib/garden/garden-logic.ts")).toContain("Ami des abeilles");
   });
 
   it("includes the warmer modern layer requested for the second iteration", () => {

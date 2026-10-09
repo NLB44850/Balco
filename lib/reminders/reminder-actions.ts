@@ -5,6 +5,9 @@
 import { dayKey } from "../garden/garden-logic";
 import type { MaintenanceEvent, ReminderDecision } from "./reminder-engine";
 import { groupReminders, type ReminderGroup } from "./reminder-groups";
+import { WEATHER_ALERT_CAUSES } from "./alert-cause";
+
+export { alertCauseOf, type WeatherAlertCause } from "./alert-cause";
 
 /** « later » : on en reparle dans quelques heures ; « skip » : plus rien aujourd'hui. */
 export type ReminderResponse = "done" | "later" | "skip";
@@ -98,10 +101,14 @@ export function planNotification(decisions: ReminderDecision[], snoozes: Reminde
   return best;
 }
 
-/** Le geste enregistré quand l'utilisateur répond « Fait » (depuis l'app ou la notification). */
-export function eventForReminder(decision: DecisionRef & Pick<ReminderDecision, "action" | "title">, now: Date): MaintenanceEvent {
+/**
+ * Le geste enregistré quand l'utilisateur répond « Fait » (depuis l'app ou la notification). Pour le gel, la chaleur,
+ * le vent et l'orage, la cause entre dans l'identifiant : gel et vent le même soir ne s'écrasent plus.
+ */
+export function eventForReminder(decision: DecisionRef & Pick<ReminderDecision, "action" | "title" | "cause">, now: Date): MaintenanceEvent {
+  const cause = decision.cause && (WEATHER_ALERT_CAUSES as readonly string[]).includes(decision.cause) ? `${decision.cause}:` : "";
   return {
-    id: `reminder:${decision.plantId}:${decision.taskType}:${dayKey(now)}`,
+    id: `reminder:${decision.plantId}:${decision.taskType}:${cause}${dayKey(now)}`,
     plantId: decision.plantId,
     // Suivre un « n'arrose pas » compte comme une observation, pas comme un arrosage.
     type: decision.action === "skip" ? "observation" : decision.taskType,
@@ -122,3 +129,4 @@ export function planGroupedNotification(decisions: ReminderDecision[], snoozes: 
   const group = groupReminders(awake.includes(plan.decision) ? awake : [plan.decision, ...awake]).find((candidate) => candidate.decisions.includes(plan.decision));
   return group ? { group, date: plan.date } : null;
 }
+

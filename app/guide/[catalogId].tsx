@@ -27,6 +27,7 @@ import { useGarden } from "@/lib/garden/garden-context";
 import { potHistory, startEventId } from "@/lib/garden/garden-logic";
 import { activityDone, eventForActivity, potCareActivity, startActivity } from "@/lib/plants/calendar";
 import { getCatalogPlant } from "@/lib/plants/catalog";
+import { now as clockNow } from "@/lib/clock";
 import {
   emptyHave,
   guideModelFor,
@@ -58,12 +59,13 @@ export default function GuideScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const { width } = useWindowDimensions();
-  const params = useLocalSearchParams<{ catalogId: string; plantId?: string; mode?: string; task?: string }>();
+  const params = useLocalSearchParams<{ catalogId: string; plantId?: string; mode?: string; task?: string; month?: string }>();
   const entry = getCatalogPlant(params.catalogId ?? "");
   const { plants, events, logEvent } = useGarden();
   const plant = plants.find((candidate) => candidate.id === params.plantId && !candidate.removedAt);
   const needOnly = params.mode === "need";
-  const month = new Date().getMonth() + 1;
+  // « À anticiper » ouvre le guide d'un geste à venir : son mois, pas celui d'aujourd'hui.
+  const month = Number(params.month) >= 1 && Number(params.month) <= 12 ? Number(params.month) : clockNow().getMonth() + 1;
   const task = isGuideTask(params.task) ? params.task : null;
   const potTask = isPotTask(task) ? task : null;
   const followUp = isFollowUpTask(task) ? task : null;
@@ -121,15 +123,15 @@ export default function GuideScreen() {
   const displayName = plant?.nickname?.trim() || entry.name;
   const potActivity = plant && potTask && !plant.toPlant ? potCareActivity({ id: plant.id, displayName, repots }, entry, potTask) : null;
   // Geste de suite (éclaircir, pincer, sortir les plants) : seulement quand Balco le propose, une seule fois.
-  const followUpActivity = plant && followUp ? followUpsFor({ plant, entry }, events, new Date()).find((activity) => activity.followUp === followUp) ?? null : null;
+  const followUpActivity = plant && followUp ? followUpsFor({ plant, entry }, events, clockNow()).find((activity) => activity.followUp === followUp) ?? null : null;
   const taskActivity = potActivity ?? followUpActivity;
   const canPlant = task
-    ? taskActivity !== null && !activityDone(taskActivity, events, new Date())
+    ? taskActivity !== null && !activityDone(taskActivity, events, clockNow())
     : Boolean(plant?.toPlant) && !events.some((event) => event.id === startEventId(plant!.id));
   const markPlanted = async () => {
     if (!plant) return;
     const activity = taskActivity ?? startActivity({ id: plant.id, entry, displayName, addedAt: plant.addedAt, toPlant: true }, month);
-    await logEvent(eventForActivity(activity, new Date()));
+    await logEvent(eventForActivity(activity, clockNow()));
     if (Platform.OS !== "web") void Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => undefined);
     setPlanted(true);
     setTimeout(() => router.back(), 1400);

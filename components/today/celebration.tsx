@@ -8,6 +8,7 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useColors } from "@/hooks/use-colors";
 import { dayKey } from "@/lib/garden/garden-logic";
 import { celebrationStyle, type Celebration } from "@/lib/garden/progress";
+import { useGarden } from "@/lib/garden/garden-context";
 
 export type CelebrationMessage = Celebration & { id: number };
 
@@ -140,7 +141,10 @@ void AsyncStorage.getItem(LAST_BIG_KEY)
 export function useCelebration() {
   const [message, setMessage] = useState<CelebrationMessage | null>(null);
   const id = useRef(0);
+  const { markAwardsSeen } = useGarden();
   const celebrate = useCallback((celebration: Celebration | null): string | null => {
+    // Un badge fêté ici (en grand ou d'un mot) ne se refête pas à l'ouverture d'Aujourd'hui.
+    if (celebration?.awardKey) markAwardsSeen([celebration.awardKey]);
     const now = new Date();
     const style = celebrationStyle(celebration, lastBigDay, now);
     if (!celebration || !style.big) return style.line;
@@ -150,7 +154,7 @@ export function useCelebration() {
     id.current += 1;
     setMessage({ ...celebration, id: id.current });
     return null;
-  }, []);
+  }, [markAwardsSeen]);
   const hide = useCallback(() => setMessage(null), []);
   return { celebrate, overlay: <CelebrationBurst celebration={message} onDone={hide} /> };
 }

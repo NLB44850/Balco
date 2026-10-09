@@ -47,6 +47,8 @@ import { nextSuggestionMonth, seasonalStarters, seasonalSuggestions, seasonSugge
 import { climateSummary, climateZoneFor } from "@/lib/plants/climate";
 import type { ReminderSnooze } from "@/lib/reminders/reminder-actions";
 import { loadReminderSnoozes, subscribeReminderSnoozes } from "@/lib/reminders/local-notifications";
+import { useNow } from "@/hooks/use-date-simulation";
+import { now as clockNow } from "@/lib/clock";
 
 type PlantFilter = "all" | string;
 
@@ -62,7 +64,7 @@ export default function CalendarScreen() {
   // La météo et les alertes du plan du jour : les mêmes qu'Aujourd'hui (une alerte traitée là-bas disparaît ici).
   const { weather, weatherSnapshot, isLoading, refresh, requestDeviceLocation, searchCities, selectCity, visibleGroups } = useDayPlan();
   const { resolvedPlants, events, onboarding, addPlant, removePlant, reportLocation } = useGarden();
-  const now = useMemo(() => new Date(), []);
+  const now = useNow();
 
   // Une ville choisie ici doit aussi servir aux rappels envoyés par le serveur.
   useEffect(() => {
@@ -123,7 +125,7 @@ export default function CalendarScreen() {
   // Le mois en cours : ses gestes se font depuis Aujourd'hui (le détail y renvoie).
   const thisMonth = !showingIdeas && view === "month" && selectedMonth === currentMonth;
   // Rien ne se coche ici, mais ce qui est déjà fait (sur Aujourd'hui ou la fiche) se voit, et passe en bas.
-  const isDone = (activity: CalendarActivity) => thisMonth && activityDoneSoFar(activity, events, new Date());
+  const isDone = (activity: CalendarActivity) => thisMonth && activityDoneSoFar(activity, events, clockNow());
   const ordered = [...currentActivities.filter((activity) => !isDone(activity)), ...currentActivities.filter(isDone)];
   const sheetActivity = currentActivities.find((activity) => activity.key === sheetKey) ?? null;
   // Rangés par type de geste, sauf quand on regarde une seule plante (on veut alors tout son détail).

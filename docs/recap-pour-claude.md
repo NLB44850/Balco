@@ -1,6 +1,6 @@
 # Balco : récapitulatif à coller au début d'une conversation avec Claude
 
-*À jour au 8 octobre 2026 (Réglages refaits et validés ; prochaine étape : vérifier la vraie app Android). Copier
+*À jour au 9 octobre 2026 (Réglages validés ; chantier « une app vivante toute l'année » validé sur le téléphone le 9 octobre). Copier
 tout le texte sous la ligne ci-dessous dans une nouvelle conversation sur claude.ai, et y joindre au besoin les
 captures de `docs/captures/`.*
 
@@ -59,15 +59,36 @@ Balco dit chaque jour quoi faire pour chaque plante du balcon, selon la saison e
     « Supprimer mon compte » (efface le compte sur le serveur, garde le balcon sur le téléphone).
   - À propos : donner mon avis (e-mail), confidentialité (bientôt), crédits photos, version.
 
+## Validé sur mon téléphone le 9 octobre : « une app vivante toute l'année »
+
+D'après le brief écrit avec toi (plan et réponses validés, détail dans `docs/chantier-toute-l-annee.md`) :
+- **Date simulée** dans Réglages → Version de test, pour tout essayer sans attendre (n'existe pas dans l'app publiée).
+- **Aujourd'hui toute l'année** : « Ton balcon se repose » quand il n'y a rien à faire ; au plus 2 cartes en plus
+  (événement > à anticiper > astuce > Idée du mois) ; « À anticiper » annonce 3 à 6 semaines avant ce qu'il faut
+  préparer (godets, terreau, pot plus grand) ; « Astuce de la semaine » tirée de 99 astuces vérifiées sur deux sources.
+- **La Sainte-Catherine** (18-30 novembre) : carte, page « Ce qui se plante maintenant » (petits fruits, ail, violas,
+  pas de fraisiers), « Paille tes pots » avec « C'est fait », « Demander à Nora », notification le 18, badge
+  « Sainte-Catherine · 2026 », bilan le 1er décembre. Version climat froid (protection d'abord).
+- **Trois autres temps forts** : Prépare ton printemps (12-31 janvier, plantes à garder pour le printemps), les Saints
+  de glace (4-20 mai, compte à rebours puis feu vert selon la météo de ma ville), Balcon en vacances (1-15 juillet,
+  paillage et mode vacances). Chacun a son badge avec millésime.
+- **Badges** : ceux obtenus restent acquis pour de bon (avec leur date, dans la sauvegarde du compte) ; 8 badges à
+  paliers Graine / Pousse / Fleur ; 4 badges par saison avec millésime ; un herbier (une carte par plante récoltée ou
+  fleurie la première fois, « Elle a fleuri ? » sur la fiche des fleurs) ; Moi refait (« Presque là », la saison,
+  l'herbier, tous les badges).
+
 ## Ce qu'il reste à faire, dans l'ordre
 
-1. **Vérifier sur la vraie app Android (APK)**, pas revue depuis le 6 octobre : photo dans Observer, appareil photo
+1. **Fusionner « une app vivante toute l'année » dans `main`** (PR depuis la branche `ccr-71709eb8-bxzttf`).
+2. **Vérifier sur la vraie app Android (APK)**, pas revue depuis le 6 octobre : photo dans Observer, appareil photo
    depuis Aujourd'hui, notifications (heure, plage calme, « Je ne reçois pas les rappels », économie de batterie,
-   rappel test), Balcon à deux cartes par ligne, question des rappels et de la position dans l'accueil.
-2. **Mémoire de Nora sur plusieurs jours** : test sur 2 ou 3 jours, retour à donner.
-3. **Faire tester par 3 à 5 personnes** avant de brancher le paiement (piste de « test interne » du Play Store).
-4. **Tester sans Codespace** (proposé) : version web en ligne qui se met à jour seule, APK construit par GitHub.
-5. **Avant la publication** :
+   rappel test, notification d'un temps fort : la date simulée ne les déclenche pas), Balcon à deux cartes par
+   ligne, question des rappels et de la position dans l'accueil.
+3. **Sainte-Catherine en vrai** : regarder la carte le 18 novembre (sans date simulée), le bilan le 1er décembre.
+4. **Mémoire de Nora sur plusieurs jours** : test sur 2 ou 3 jours, retour à donner.
+5. **Faire tester par 3 à 5 personnes** avant de brancher le paiement (piste de « test interne » du Play Store).
+6. **Tester sans Codespace** (proposé) : version web en ligne qui se met à jour seule, APK construit par GitHub.
+7. **Avant la publication** :
    - notifications envoyées par le serveur (Firebase), pour les alertes même app fermée ;
    - synchroniser avec le serveur les « Dans 3 h », les réponses « Tout récolté ? » / « Ta saison est finie ? »
      et les photos des plantes ;
@@ -76,7 +97,7 @@ Balco dit chaque jour quoi faire pour chaque plante du balcon, selon la saison e
    - page Confidentialité (compte, position, photos, questions à Nora, e-mail laissé pour Balco+) ;
    - adresse de contact sur mon nom de domaine (aujourd'hui contact_balco@gmail.com) ;
    - compte développeur Google et fiche Play Store ; offre payante d'Open-Meteo dès que Balco+ sera payant.
-6. **Version suivante** : suivi d'une plante en photos, balcon visuel (plan, emplacement, exposition), récoltes et
+8. **Version suivante** : suivi d'une plante en photos, balcon visuel (plan, emplacement, exposition), récoltes et
    recettes, défis entre jardiniers, rentrer une plante pour l'hiver (piment, poivron, physalis).
 
 ## Décisions déjà prises (à ne pas remettre en question sans moi)

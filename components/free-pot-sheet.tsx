@@ -31,6 +31,7 @@ import type { ClimateInfo } from "@/lib/plants/climate";
 import { addSpringWish, nextSpringReminder, SPRING_REMINDER_SOURCE, springReminderContent } from "@/lib/garden/spring";
 import { getCatalogPlant, type CatalogPlant } from "@/lib/plants/catalog";
 import { loadReminderSnoozes, saveReminderSnoozes, scheduleDatedReminder } from "@/lib/reminders/local-notifications";
+import { now as clockNow } from "@/lib/clock";
 
 type Stage = "question" | "free";
 
@@ -46,7 +47,7 @@ export function useFreePot({ climate, onDone, overlay }: { climate?: ClimateInfo
   // `detail` : la ligne sous la question, telle que la liste du jour l'a écrite (relance de fin de saison).
   const [open, setOpen] = useState<{ plantId: string; stage: Stage; detail?: string } | null>(null);
   const resolved = open ? resolvedPlants.find(({ plant }) => plant.id === open.plantId) ?? null : null;
-  const now = new Date();
+  const now = clockNow();
   const month = now.getMonth() + 1;
   const choices = resolved ? freePotChoices(resolved, onboarding, { month, climate, ownedCatalogIds: resolvedPlants.map(({ entry }) => entry.id), seed: dayKey(now) }) : [];
   const close = () => setOpen(null);
@@ -67,7 +68,7 @@ export function useFreePot({ climate, onDone, overlay }: { climate?: ClimateInfo
   };
 
   const answerYes = async (plantId: string) => {
-    await saveReminderSnoozes(answerAllHarvested(await loadReminderSnoozes(), plantId, new Date()));
+    await saveReminderSnoozes(answerAllHarvested(await loadReminderSnoozes(), plantId, clockNow()));
     setOpen({ plantId, stage: "free" });
   };
 

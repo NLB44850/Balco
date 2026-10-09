@@ -1,3 +1,4 @@
+import { useIsFocused } from "@react-navigation/native";
 import { useRouter } from "expo-router";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Alert, Animated, Platform, Pressable, ScrollView, StyleSheet, View } from "react-native";
@@ -30,7 +31,7 @@ import { useGarden } from "@/lib/garden/garden-context";
 import { trpc } from "@/lib/trpc";
 import { deviceId as loadDeviceId } from "@/lib/sync/device-id";
 import { usePlantPhotos } from "@/lib/garden/photos-context";
-import { celebrationFor, formatLiters, litersPerWatering, withCheer } from "@/lib/garden/progress";
+import { awardCelebration, celebrationFor, formatLiters, litersPerWatering, withCheer } from "@/lib/garden/progress";
 import { awayOn, preparationSteps, vacationRange, vacationState } from "@/lib/garden/vacation";
 import {
   POINTS_PER_GESTURE,
@@ -50,7 +51,16 @@ import { seasonalStarters, seasonalSuggestions, type SeasonalSuggestion } from "
 import { activateReminders, NOTIFICATIONS_DENIED, remindersEnabledText } from "@/lib/reminders/activate";
 import { arrivalCard } from "@/lib/garden/onboarding";
 import { springCard } from "@/lib/garden/spring";
-import { skipRepotThisYear } from "@/lib/garden/repot-skip";
+import { anticipate, type Anticipation } from "@/lib/garden/anticipate";
+import { pickTodayCards, RESTING_TEXT, RESTING_TITLE } from "@/lib/garden/today-cards";
+import { AnticipateCard } from "@/components/today/anticipate-card";
+import { EventCard } from "@/components/today/event-card";
+import { TipCard } from "@/components/today/tip-card";
+import { useTipOfTheWeek } from "@/hooks/use-tip-of-the-week";
+import { tipQuestion } from "@/lib/tips/tips";
+import { useEventDismissals } from "@/hooks/use-event-dismissals";
+import { eventCardText, eventDismissKey, eventMoment, eventNotificationSource, eventParticipation, nextEventNotification } from "@/lib/events/events";
+import { skippedRepots, skipRepotThisYear } from "@/lib/garden/repot-skip";
 import { harvestedToastText, isHarvestedOnce } from "@/lib/garden/harvest-end";
 import { REPOTTING } from "@/lib/plants/repotting";
 import { guideTaskOf } from "@/lib/plants/guide";
@@ -68,6 +78,8 @@ import {
   sendReminderPreview,
 } from "@/lib/reminders/local-notifications";
 import { scenarioLabel } from "@/lib/weather/simulation";
+import { longDayText, now as clockNow } from "@/lib/clock";
+import { useDateSimulation } from "@/hooks/use-date-simulation";
 
 const haptic = () => {
   if (Platform.OS !== "web") void Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
@@ -82,7 +94,7 @@ const haptic = () => {
 export default function HomeScreen() {
   const colors = useColors();
   const router = useRouter();
-  const { loaded, resolvedPlants, pastPlants, events, onboarding, account, addPlant, removePlant, logEvent, removeEvent, reportLocation, updateOnboarding } = useGarden();
+  const { loaded, resolvedPlants, pastPlants, events, awards, takeUnseenAwards, onboarding, account, addPlant, removePlant, logEvent, removeEvent, reportLocation, updateOnboarding } = useGarden();
   const aiStatus = trpc.ai.status.useQuery(undefined, { enabled: account.signedIn, retry: false });
   // Sans compte : l'analyse offerte de cet appareil (Observer sans compte).
   const [device, setDevice] = useState<string | null>(null);
@@ -126,6 +138,7 @@ export default function HomeScreen() {
   const toastId = useRef(0);
   const { celebrate, overlay: celebration } = useCelebration();
   const simulation = useWeatherSimulation();
+  const dateSimulation = useDateSimulation();
   const insets = useSafeAreaInsets();
   const sky = useMemo(() => skyScene(weatherSnapshot, now, weather.isFallback), [now, weather.isFallback, weatherSnapshot]);
   const pots = useMemo(() => potsFor(resolvedPlants.map((resolved) => resolved.entry.category)), [resolvedPlants]);
@@ -162,6 +175,16 @@ export default function HomeScreen() {
     else void cancelBalcoReminderNotifications();
   }, [reminderSettings, reminderSettingsLoaded, snoozes, snoozesLoaded, unseenDecisions, vacation, weather.isFallback]);
 
+  // La notification de lancement d'un événement : une seule, le premier jour à l'heure du conseil (heure réelle du
+  // téléphone), si les rappels sont activés et hors vacances.
+  useEffect(() => {
+    if (!reminderSettingsLoaded) return;
+    const next = reminderSettings.enabled ? nextEventNotification(new Date(), reminderSettings, climate) : null;
+    if (!next) return;
+    const date = awayOn(vacation, dayKey(next.date)) ? null : next.date;
+    void scheduleDatedReminder(eventNotificationSource(next.event), { ...next.event.notification, url: `/event/${next.event.id}` }, date).catch(() => undefined);
+  }, [climate, reminderSettings, reminderSettingsLoaded, vacation]);
+
   const trip = vacationState(vacation, now);
   const away = trip.phase === "away";
   const tripPlan = useMemo(() => (vacation ? preparationSteps(resolvedPlants, vacation, now) : []), [now, resolvedPlants, vacation]);
@@ -189,7 +212,7 @@ export default function HomeScreen() {
   // Jour de pluie : l'arrosage évité est compté tout seul, dès que le bandeau s'affiche.
   useEffect(() => {
     if (!loaded || away) return;
-    const toLog = rainSavingsToLog(banners, events, new Date());
+    const toLog = rainSavingsToLog(banners, events, clockNow());
     if (toLog.length === 0) return;
     void (async () => {
       for (const event of toLog) await logEvent(event);
@@ -217,7 +240,22 @@ export default function HomeScreen() {
    * Un badge, un niveau, une série ou une récolte débloqués par ce geste : plein écran pour un badge ou une
    * 1ʳᵉ récolte (une fois par jour), sinon un mot devant le message du bas.
    */
-  const cheer = (logged: MaintenanceEvent[]) => celebrate(celebrationFor(resolvedPlants, events, [...logged, ...events.filter((event) => !logged.some((item) => item.id === event.id))], new Date(), pastPlants));
+  const cheer = (logged: MaintenanceEvent[]) => celebrate(celebrationFor(resolvedPlants, events, [...logged, ...events.filter((event) => !logged.some((item) => item.id === event.id))], clockNow(), pastPlants, awards));
+
+  // Un badge obtenu ailleurs (« Fait » dans une notification, pluie notée toute seule, autre téléphone) se fête ici,
+  // à l'ouverture d'Aujourd'hui. Petit délai : un badge débloqué par un geste coché ici est déjà fêté par son message.
+  const focused = useIsFocused();
+  useEffect(() => {
+    // Un message du bas est affiché (avec son « Annuler ») : la fête attend qu'il soit parti.
+    if (!focused || !loaded || toast) return;
+    const timer = setTimeout(() => {
+      const [key] = takeUnseenAwards();
+      const line = key ? celebrate(awardCelebration(key)) : null;
+      if (line) showToast(line);
+    }, 1500);
+    return () => clearTimeout(timer);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [awards, focused, loaded, toast]);
 
   const logAll = async (toLog: MaintenanceEvent[]) => {
     for (const event of toLog) await logEvent(event);
@@ -231,7 +269,7 @@ export default function HomeScreen() {
   /** « C'est fait » sur une alerte : le geste est noté pour chaque plante concernée, et l'alerte se tait jusqu'à demain. */
   const completeAlert = async (group: ReminderGroup) => {
     const previous = snoozes;
-    const moment = new Date();
+    const moment = clockNow();
     const logged = group.decisions.map((decision) => eventForReminder(decision, moment));
     const undoEvents = await logAll(logged);
     await saveReminderSnoozes(group.decisions.reduce((current, decision) => addSnooze(current, decision, "skip", reminderSettings, moment), snoozes));
@@ -244,7 +282,7 @@ export default function HomeScreen() {
 
   const snoozeAlert = async (group: ReminderGroup, kind: ReminderSnooze["kind"]) => {
     const previous = snoozes;
-    const moment = new Date();
+    const moment = clockNow();
     await saveReminderSnoozes(group.decisions.reduce((current, decision) => addSnooze(current, decision, kind, reminderSettings, moment), snoozes));
     showToast(kind === "later" ? "Balco te le rappellera dans 3 h" : "Balco n’en reparlera pas avant demain", () => void saveReminderSnoozes(previous));
   };
@@ -262,7 +300,7 @@ export default function HomeScreen() {
         await removeEvent(id);
         return showToast("Geste retiré de ta journée", previous ? () => void logEvent(previous) : undefined);
       }
-      const logged = [eventForActivity(item.activity, new Date())];
+      const logged = [eventForActivity(item.activity, clockNow())];
       const undo = await logAll(logged);
       haptic();
       return showToast(withCheer(cheer(logged), `${item.title} : noté pour ce mois-ci`), undo);
@@ -275,7 +313,7 @@ export default function HomeScreen() {
       if (previous) await saveReminderSnoozes(wakeSnoozeFor(snoozes, previous));
       return showToast("Geste retiré de ta journée", previous ? () => { void logEvent(previous); void saveReminderSnoozes(previousSnoozes); } : undefined);
     }
-    const logged = [eventForSessionTask(item.task, new Date())];
+    const logged = [eventForSessionTask(item.task, clockNow())];
     const undo = await logAll(logged);
     haptic();
     // Une plante récoltée en une fois : « Radis récoltés : noté · Tout récolté ? » avec « Oui » à la place de « Annuler ».
@@ -292,9 +330,9 @@ export default function HomeScreen() {
   // « Pas encore acheté ? » : le geste revient samedi à 9 h (notification si les rappels sont activés).
   const postponeToSaturday = async (activity: CalendarActivity) => {
     const previous = snoozes;
-    const moment = new Date();
-    await saveReminderSnoozes(postponeStart(snoozes, activity.subjectId, moment));
-    void scheduleDatedReminder(saturdaySource(activity.subjectId), saturdayReminder(activity), nextSaturdayMorning(moment)).catch(() => undefined);
+    await saveReminderSnoozes(postponeStart(snoozes, activity.subjectId, clockNow()));
+    // La notification suit l'heure réelle du téléphone, même avec une date simulée.
+    void scheduleDatedReminder(saturdaySource(activity.subjectId), saturdayReminder(activity), nextSaturdayMorning(new Date())).catch(() => undefined);
     showToast("Je te le rappelle samedi", () => {
       void saveReminderSnoozes(previous);
       void scheduleDatedReminder(saturdaySource(activity.subjectId), saturdayReminder(activity), null).catch(() => undefined);
@@ -303,7 +341,7 @@ export default function HomeScreen() {
   // « Pas besoin cette année » : on a vérifié, elle ne manque pas de place. La terre du dessus prend le relais.
   const skipRepot = async (activity: CalendarActivity) => {
     const previous = snoozes;
-    await saveReminderSnoozes(skipRepotThisYear(snoozes, activity.subjectId, new Date()));
+    await saveReminderSnoozes(skipRepotThisYear(snoozes, activity.subjectId, clockNow()));
     haptic();
     showToast(REPOTTING[activity.entry.id]?.topdress ? "Pas de rempotage cette année : change plutôt la terre du dessus" : "Pas de rempotage cette année", () => void saveReminderSnoozes(previous));
   };
@@ -357,6 +395,27 @@ export default function HomeScreen() {
   const arrival = loaded ? arrivalCard(onboarding, events, now) : null;
   // Mars et avril : les envies du printemps choisies l'hiver, pas encore sur le balcon.
   const springWishes = loaded ? springCard(onboarding?.springWishes, resolvedPlants.map((resolved) => resolved.entry.id), now) : [];
+  // « À anticiper » : le prochain geste à préparer, 3 à 6 semaines devant (plantes du balcon, envies du printemps).
+  const anticipation = useMemo(
+    () => (loaded ? anticipate({ plants: resolvedPlants, events, springWishes: onboarding?.springWishes, now, climate, repotSkips: skippedRepots(snoozes, now) }) : null),
+    [climate, events, loaded, now, onboarding?.springWishes, resolvedPlants, snoozes],
+  );
+  // Un temps fort de l'année (la Sainte-Catherine) : sa carte compacte, puis son bilan si l'on a participé.
+  const { dismissed, dismiss } = useEventDismissals();
+  const moment = eventMoment(now, climate);
+  const plantedForEvent = moment ? eventParticipation(moment.event, moment.year, { plants: [...resolvedPlants, ...pastPlants], events, awards, springWishes: onboarding?.springWishes }) : 0;
+  const eventCard = moment && !away && !dismissed.includes(eventDismissKey(moment.event, moment.year, moment.phase)) && (moment.phase === "running" || plantedForEvent > 0) ? moment : null;
+  // L'astuce de la semaine (lib/tips/tips.ts), selon le mois, le climat, les plantes et la météo annoncée.
+  const weatherCauses = useMemo(() => [...new Set(visibleGroups.flatMap((group) => group.decisions.map((decision) => decision.cause)).filter((cause): cause is NonNullable<typeof cause> => Boolean(cause)))], [visibleGroups]);
+  const ownedIds = useMemo(() => resolvedPlants.map(({ entry }) => entry.id), [resolvedPlants]);
+  const { tip, dismiss: dismissTip } = useTipOfTheWeek({ now, climate, owned: ownedIds, weather: weatherCauses, enabled: loaded && !away });
+  // Au plus deux cartes en plus sous la liste, par priorité (lib/garden/today-cards.ts).
+  const cards = pickTodayCards({ event: eventCard !== null, tip: tip !== null, spring: !away && springWishes.length > 0, anticipate: !away && anticipation !== null, idea: loaded && hasPlants && !away && monthIdea !== null });
+  const [anticipationOpen, setAnticipationOpen] = useState<Anticipation | null>(null);
+  const openNeeds = (item: Anticipation) => {
+    setAnticipationOpen(null);
+    router.push({ pathname: "/guide/[catalogId]", params: { catalogId: item.entry.id, mode: "need", month: String(item.month), ...(item.kind === "repot" && item.plantId ? { plantId: item.plantId, task: "repot" } : {}) } });
+  };
   // Un geste de saison pour une plante du balcon : sa photo plutôt que son emoji, quand il y en a une.
   const seasonPicture = (item: TodayItem) => {
     if (item.kind !== "season" || !covers.has(item.activity.subjectId)) return undefined;
@@ -385,6 +444,18 @@ export default function HomeScreen() {
         />
 
         <View style={styles.body}>
+
+        {dateSimulation.day && (
+          <View style={[styles.simulation, { backgroundColor: colors.surface }]}>
+            <Text style={[styles.simulationTitle, { color: colors.foreground }]}>🧪 Date simulée : {longDayText(dateSimulation.day)}</Text>
+            <Text style={[styles.small, { color: colors.muted }]}>Calendrier, badges et événements suivent ce jour ; la météo reste celle d’aujourd’hui.</Text>
+            <View style={styles.inlineActions}>
+              <Pressable accessibilityRole="button" onPress={() => void dateSimulation.setDay(null)} style={({ pressed }) => [styles.pill, { borderColor: colors.border, borderWidth: 1 }, pressed && styles.pressed]}>
+                <Text style={[styles.pillText, { color: colors.foreground }]}>Revenir à aujourd’hui</Text>
+              </Pressable>
+            </View>
+          </View>
+        )}
 
         {simulation.scenario !== "none" && (
           <View style={[styles.simulation, { backgroundColor: colors.surface }]}>
@@ -444,6 +515,16 @@ export default function HomeScreen() {
           />
         ))}
 
+        {cards.includes("event") && eventCard && (
+          <EventCard
+            emoji={eventCard.event.emoji}
+            title={eventCard.event.title}
+            text={eventCard.phase === "running" ? eventCardText(eventCard.event, { now, year: eventCard.year, frostAnnounced: weatherCauses.includes("frost") }) : eventCard.event.summary(plantedForEvent)}
+            onOpen={eventCard.phase === "running" ? () => router.push({ pathname: "/event/[id]", params: { id: eventCard.event.id } }) : undefined}
+            onClose={() => void dismiss(eventDismissKey(eventCard.event, eventCard.year, eventCard.phase))}
+          />
+        )}
+
         {loaded && hasPlants && !away && (
           <Pressable accessibilityRole="button" accessibilityLabel={`Ton balcon, ${status.label}`} onPress={() => router.push("/(tabs)/balcony")} style={({ pressed }) => [styles.status, styles.glass, pressed && styles.pressed]}>
             <Text style={[styles.statusText, { color: colors.foreground }]}>Ton balcon <Text style={{ color: colors.muted, fontWeight: "500" }}>· {status.label}</Text></Text>
@@ -473,11 +554,11 @@ export default function HomeScreen() {
         {loaded && hasPlants && status.allDone && !away && (
           <FadeIn style={styles.allDone}>
             <Text style={styles.allDoneIcon}>{status.doneToday > 0 ? (evening ? "🌙" : "☀️") : "🌿"}</Text>
-            <Text style={[styles.allDoneTitle, { color: colors.foreground }]}>{status.doneToday > 0 ? (evening ? "Ton balcon est prêt pour la nuit" : "Tout est fait pour aujourd’hui") : "Rien à faire aujourd’hui"}</Text>
+            <Text style={[styles.allDoneTitle, { color: colors.foreground }]}>{status.doneToday > 0 ? (evening ? "Ton balcon est prêt pour la nuit" : "Tout est fait pour aujourd’hui") : RESTING_TITLE}</Text>
             <Text style={[styles.allDoneText, { color: colors.muted }]}>
               {status.doneToday > 0
                 ? `${status.doneToday} geste${status.doneToday > 1 ? "s" : ""} aujourd’hui${streak > 1 ? ` · ${streak} jours de suite` : ""}. Balco te préviendra si la météo change.`
-                : "Tes plantes n’ont besoin de rien. Balco te préviendra si la météo change."}
+                : RESTING_TEXT}
             </Text>
             <Pressable accessibilityRole="button" onPress={() => router.push("/week")} style={({ pressed }) => [styles.pill, styles.weekButton, { backgroundColor: colors.primary }, pressed && styles.pressed]}>
               <Text style={[styles.pillText, { color: "#FFFFFF" }]}>Voir ma semaine</Text>
@@ -511,7 +592,7 @@ export default function HomeScreen() {
           </View>
         )}
 
-        {!away && springWishes.length > 0 && (
+        {cards.includes("spring") && (
           <View style={[glass.card, styles.arrival]}>
             <Text style={[styles.cityBannerTitle, { color: colors.foreground }]}>C’est le moment 🌱</Text>
             <Text style={[styles.small, { color: colors.muted }]}>Tes envies pour le printemps se sèment ou se plantent maintenant.</Text>
@@ -530,7 +611,11 @@ export default function HomeScreen() {
           </View>
         )}
 
-        {loaded && hasPlants && !away && monthIdea && (
+        {cards.includes("anticipate") && anticipation && <AnticipateCard anticipation={anticipation} onOpen={() => setAnticipationOpen(anticipation)} />}
+
+        {cards.includes("tip") && tip && <TipCard tip={tip} onAsk={() => router.push({ pathname: "/(tabs)/assistant", params: { question: tipQuestion(tip) } })} onClose={dismissTip} />}
+
+        {cards.includes("idea") && monthIdea && (
           <View style={styles.idea}>
             <Text style={[styles.sectionTitle, { color: colors.foreground }]}>Idée du mois</Text>
             <View style={[styles.reco, styles.ideaRow, { borderBottomColor: colors.border }]}>
@@ -633,6 +718,20 @@ export default function HomeScreen() {
                 />
               ))}
             </View>
+          </View>
+        )}
+      </BottomSheet>
+
+      <BottomSheet visible={anticipationOpen !== null} onClose={() => setAnticipationOpen(null)}>
+        {anticipationOpen && (
+          <View style={styles.sheet}>
+            <Text style={[styles.sheetKind, { color: colors.primary }]}>À anticiper · {anticipationOpen.when}</Text>
+            <Text style={[styles.sheetTitle, { color: colors.foreground }]}>{anticipationOpen.title}</Text>
+            <Text style={[styles.sheetBody, { color: colors.foreground }]}>{anticipationOpen.prepare}</Text>
+            <Text style={[styles.sheetBody, { color: colors.muted }]}>{anticipationOpen.detail}</Text>
+            <Pressable accessibilityRole="button" onPress={() => openNeeds(anticipationOpen)} style={({ pressed }) => [styles.cta, { backgroundColor: colors.foreground }, pressed && styles.pressed]}>
+              <Text style={[styles.ctaText, { color: colors.background }]}>Ce qu’il te faut ›</Text>
+            </Pressable>
           </View>
         )}
       </BottomSheet>
