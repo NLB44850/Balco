@@ -26,16 +26,12 @@ dans Railway, Brevo ou GitHub.
 1. Crée un compte gratuit sur https://www.brevo.com (300 e-mails par jour offerts).
 2. **Expéditeur** : menu en haut à droite → *Senders, Domains & Dedicated IPs* → *Senders* → *Add a sender*. Mets ton
    adresse e-mail, valide le lien reçu.
-3. **Clé SMTP** : menu → *SMTP & API* → onglet *SMTP* → *Generate a new SMTP key*. Note trois choses (sans les
-   envoyer à personne) : le **serveur** `smtp-relay.brevo.com`, le **login** (de la forme `8a1b2c001@smtp-brevo.com`)
-   et la **clé** affichée une seule fois.
-4. Prépare la valeur `SMTP_URL` en remplaçant le `@` du login par `%40` :
-
-   ```
-   smtp://8a1b2c001%40smtp-brevo.com:LA_CLE@smtp-relay.brevo.com:587
-   ```
-
-   (Si la clé contient un `+`, un `/` ou un `@`, remplace-les par `%2B`, `%2F`, `%40`.)
+3. **Clé API** (pas la clé SMTP : Railway bloque le SMTP sur le forfait Hobby, l'envoi passe donc par l'API de
+   Brevo) : menu → *SMTP & API* → onglet **Clés API** (*API Keys*) → **Générer une nouvelle clé API** (nom : `balco`).
+   Copie la clé (elle commence par `xkeysib-`), affichée une seule fois. Ne l'envoie à personne.
+4. **Adresses IP autorisées** : menu → *Sécurité* (*Security*) → **Adresses IP autorisées** (*Authorised IPs*). Si le
+   blocage des adresses inconnues est activé, **désactive-le** : l'adresse du serveur Railway change à chaque
+   redémarrage, Brevo refuserait alors l'envoi.
 
 Les premiers codes peuvent arriver dans les **indésirables** : un expéditeur Gmail ou Outlook envoyé par Brevo est
 moins bien reconnu. Avant la publication, on prendra une adresse sur un nom de domaine (`docs/avant-publication.md`).
@@ -55,7 +51,7 @@ moins bien reconnu. Avant la publication, on prendra une adresse sur un nom de d
    DATABASE_URL=${{MySQL.MYSQL_URL}}
    JWT_SECRET=…
    CRON_SECRET=…
-   SMTP_URL=…
+   BREVO_API_KEY=…
    MAIL_FROM=Balco <ton.adresse@exemple.fr>
    ANTHROPIC_API_KEY=…
    AI_MONTHLY_BUDGET_USD=30
@@ -68,7 +64,8 @@ moins bien reconnu. Avant la publication, on prendra une adresse sur un nom de d
    - `JWT_SECRET` et `CRON_SECRET` : deux longues suites de caractères différentes. Pour en fabriquer une, tape dans
      le terminal du Codespace `openssl rand -hex 32` et copie le résultat. **Garde `CRON_SECRET` de côté** : il resservira
      dans GitHub (partie 3).
-   - `SMTP_URL` : la valeur préparée à la partie 1 ; `MAIL_FROM` : l'expéditeur validé chez Brevo.
+   - `BREVO_API_KEY` : la clé API de la partie 1 ; `MAIL_FROM` : l'expéditeur validé chez Brevo, par exemple
+     `Balco <ton.adresse@outlook.fr>`.
    - `ANTHROPIC_API_KEY` : ta clé Anthropic (la même que dans le `.env` du Codespace).
    - `EXPO_PUBLIC_WEATHER_SIMULATION=1` : l'app web garde la simulation météo et la date simulée (version de test).
 
@@ -80,7 +77,10 @@ moins bien reconnu. Avant la publication, on prendra une adresse sur un nom de d
    téléphone : l'app web, avec un compte à créer (le code arrive par e-mail).
 
 Si le déploiement échoue : onglet **Deployments** → le dernier → **View logs**. Une ligne
-`Invalid production configuration` dit quelle variable manque.
+`Invalid production configuration` dit quelle variable manque. Si le code n'arrive pas, onglet **Deploy Logs** : une
+ligne `Brevo refused the login mail` donne la raison (clé fausse, expéditeur pas validé, adresse IP bloquée).
+« Connection timeout » en demandant le code = envoi par SMTP bloqué par Railway : utiliser `BREVO_API_KEY` et retirer
+`SMTP_URL`.
 
 Les données (compte, plantes) de ce nouveau serveur partent de zéro : ton balcon reste sur ton téléphone, et il se
 sauvegarde sur le nouveau serveur dès que tu te connectes avec ton e-mail.

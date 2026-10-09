@@ -22,7 +22,7 @@ avec son porteur. Détails : `docs/feuille-de-route.md` (demande d'origine, éta
 tout le pas-à-pas est dans **`docs/deploiement-railway.md`**. Serveur + app web + MySQL sur Railway, redéployés à
 chaque fusion dans `main` (`railway.json`) ; APK de test construit par le bouton GitHub « Construire l'APK de test »
 (`.github/workflows/apk.yml`, secret `EXPO_TOKEN`, variable `BALCO_API_URL`) ; nouveau code de l'app publié à chaque
-fusion (`.github/workflows/update.yml`, EAS Update canal `test`, `hooks/use-app-updates.tsx` propose « Redémarrer »).
+fusion (`.github/workflows/update.yml`, EAS Update canal `test`, `hooks/use-app-updates.tsx` propose « Redémarrer »). E-mails par l'API de Brevo (`BREVO_API_KEY`, `server/auth/mailer.ts`) : Railway Hobby bloque le SMTP (« Connection timeout »).
 **Changer `version` dans `app.config.ts` dès qu'on ajoute un module natif, une permission ou un plugin** (runtime
 `appVersion`), puis lui demander un nouvel APK. Tant que ce n'est pas en place, le Codespace reste la façon de tester
 (profil EAS `codespace` pour un APK qui parle au Codespace) :
@@ -46,7 +46,7 @@ fusion (`.github/workflows/update.yml`, EAS Update canal `test`, `hooks/use-app-
 
 - `pnpm -s check`, `pnpm -s lint`, puis `TEST_DATABASE_URL=mysql://balco:balco@localhost:3306/balco_cal npx vitest run`
   (MariaDB locale : `service mariadb start` si elle s'est arrêtée, `apt-get install -y mariadb-server` si elle manque,
-  puis `DATABASE_URL=… npx drizzle-kit migrate` ; 617 tests à ce jour). Dans un conteneur
+  puis `DATABASE_URL=… npx drizzle-kit migrate` ; 619 tests à ce jour). Dans un conteneur
   neuf : `apt-get install -y mariadb-server`, `service mariadb start`, créer la base `balco_cal` et l'utilisateur
   `balco`/`balco`, puis `pnpm -s build && DATABASE_URL=mysql://balco:balco@localhost:3306/balco_cal node dist/migrate.mjs`.
 - `npx expo export --platform android` pour s'assurer que le bundle Android se construit.

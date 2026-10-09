@@ -26,6 +26,11 @@ export const ENV = {
   corsOrigins: list(process.env.CORS_ORIGINS),
   /** smtp(s)://utilisateur:motdepasse@hote:port — Brevo, OVH, Gmail, Mailjet… */
   smtpUrl: process.env.SMTP_URL ?? "",
+  /**
+   * Clé API Brevo : envoi des e-mails par HTTPS (api.brevo.com) au lieu du SMTP. Indispensable chez les hébergeurs qui
+   * bloquent les ports SMTP (Railway, forfait Hobby). Prioritaire sur SMTP_URL quand les deux sont renseignés.
+   */
+  brevoApiKey: process.env.BREVO_API_KEY ?? "",
   mailFrom: process.env.MAIL_FROM ?? "Balco <bonjour@balco.app>",
   /** Identifiants de bundle iOS acceptés dans les jetons « Sign in with Apple ». */
   appleAudiences: list(process.env.APPLE_AUDIENCES),
@@ -66,6 +71,6 @@ export function assertProductionConfig() {
   const problems: string[] = [];
   if (ENV.cookieSecret.length < 32) problems.push("JWT_SECRET must be at least 32 characters");
   if (!ENV.databaseUrl) problems.push("DATABASE_URL is required");
-  if (!ENV.smtpUrl) problems.push("SMTP_URL is required to send login codes");
+  if (!ENV.smtpUrl && !ENV.brevoApiKey) problems.push("BREVO_API_KEY or SMTP_URL is required to send login codes");
   if (problems.length > 0) throw new Error(`Invalid production configuration:\n- ${problems.join("\n- ")}`);
 }
