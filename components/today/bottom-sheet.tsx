@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef } from "react";
-import { Animated, Modal, PanResponder, Pressable, ScrollView, StyleSheet, useWindowDimensions, View } from "react-native";
+import { Animated, KeyboardAvoidingView, Modal, PanResponder, Pressable, ScrollView, StyleSheet, useWindowDimensions, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { Text } from "@/components/ui/typography";
@@ -19,7 +19,8 @@ const CLOSE_DISTANCE = 90;
 /**
  * Feuille qui monte du bas pour un détail. On la ferme en touchant le fond, avec le « × », ou en la
  * glissant vers le bas (depuis la poignée, ou depuis le contenu quand il est tout en haut). Elle ne
- * dépasse jamais l'écran : un contenu trop long défile à l'intérieur.
+ * dépasse jamais l'écran : un contenu trop long défile à l'intérieur. Elle remonte au-dessus du clavier (prénom,
+ * questions) : sans cela, sur Android, le clavier passe par-dessus la fenêtre.
  */
 export function BottomSheet({ visible, onClose, children, overlay }: BottomSheetProps) {
   const colors = useColors();
@@ -57,7 +58,7 @@ export function BottomSheet({ visible, onClose, children, overlay }: BottomSheet
 
   return (
     <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose} statusBarTranslucent>
-      <View style={styles.root}>
+      <KeyboardAvoidingView behavior="padding" style={styles.root}>
         <Pressable accessibilityRole="button" accessibilityLabel="Fermer" onPress={onClose} style={styles.backdrop} />
         <Animated.View
           {...pan.panHandlers}
@@ -83,7 +84,7 @@ export function BottomSheet({ visible, onClose, children, overlay }: BottomSheet
           </ScrollView>
         </Animated.View>
         {overlay}
-      </View>
+      </KeyboardAvoidingView>
     </Modal>
   );
 }
@@ -91,7 +92,8 @@ export function BottomSheet({ visible, onClose, children, overlay }: BottomSheet
 const styles = StyleSheet.create({
   root: { flex: 1, justifyContent: "flex-end" },
   backdrop: { ...StyleSheet.absoluteFillObject, backgroundColor: "rgba(18, 22, 20, 0.4)" },
-  sheet: { borderTopLeftRadius: 24, borderTopRightRadius: 24, overflow: "hidden" },
+  // Clavier ouvert : la feuille rétrécit à la place qui reste, son contenu défile.
+  sheet: { flexShrink: 1, borderTopLeftRadius: 24, borderTopRightRadius: 24, overflow: "hidden" },
   header: { height: 44, alignItems: "center", justifyContent: "center" },
   grab: { width: 40, height: 5, borderRadius: 3 },
   close: { position: "absolute", right: 14, top: 8, width: 30, height: 30, borderRadius: 15, alignItems: "center", justifyContent: "center" },
