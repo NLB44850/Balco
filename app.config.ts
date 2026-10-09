@@ -9,6 +9,9 @@ import type { ExpoConfig } from "expo/config";
 const bundleId = process.env.APP_BUNDLE_ID || "com.app.balco";
 // Schéma des liens profonds (balco://…) : retour de connexion Google, ouverture depuis une notification.
 const scheme = "balco";
+// Projet EAS (expo.dev) : nécessaire pour construire l'app, pour les notifications push serveur et les mises à jour.
+// EAS_PROJECT_ID permet de pointer vers un autre projet sans modifier ce fichier.
+const projectId = process.env.EAS_PROJECT_ID || "1b50fb7f-c9be-4d63-8fd1-d2ff99b8653d";
 
 const config: ExpoConfig = {
   // Nom sous l'icône : court, sinon iOS le tronque. Le nom long reste celui de la fiche des stores.
@@ -87,9 +90,12 @@ const config: ExpoConfig = {
       },
     ],
   ],
-  // Projet EAS (expo.dev) : nécessaire pour construire l'app et pour les notifications push serveur.
-  // EAS_PROJECT_ID permet de pointer vers un autre projet sans modifier ce fichier.
-  extra: { eas: { projectId: process.env.EAS_PROJECT_ID || "1b50fb7f-c9be-4d63-8fd1-d2ff99b8653d" } },
+  extra: { eas: { projectId } },
+  // Mises à jour sans réinstaller (EAS Update) : l'app télécharge le nouveau code publié sur son canal (eas.json).
+  // Une mise à jour n'arrive que sur les APK de la même version : changer `version` dès qu'on ajoute un module natif,
+  // une permission ou un plugin (il faut alors un nouvel APK, docs/deploiement-railway.md).
+  runtimeVersion: { policy: "appVersion" },
+  updates: { url: `https://u.expo.dev/${projectId}`, checkAutomatically: "NEVER", fallbackToCacheTimeout: 0 },
   experiments: {
     typedRoutes: true,
     reactCompiler: true,

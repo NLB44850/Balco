@@ -22,6 +22,7 @@ import { ScreenHeader } from "@/components/screen-header";
 import { Text, TextInput } from "@/components/ui/typography";
 import { freeForAllText, plusSheetBenefits } from "@/lib/plans";
 import { FEEDBACK_EMAIL, feedbackMailto, versionText } from "@/lib/feedback";
+import { currentUpdateDate } from "@/hooks/use-app-updates";
 import { trpc } from "@/lib/trpc";
 import { useColors } from "@/hooks/use-colors";
 import { useLocalWeather } from "@/hooks/use-local-weather";
@@ -529,7 +530,7 @@ export default function SettingsScreen() {
           <SettingRow label="Confidentialité" value="Bientôt" />
           <SettingRow label="Crédits photos" onPress={() => router.push("/credits")} />
         </SettingsGroup>
-        <Text style={[styles.version, { color: colors.muted }]}>{versionText(appVersion, simulation.available)}</Text>
+        <Text style={[styles.version, { color: colors.muted }]}>{versionText(appVersion, simulation.available, currentUpdateDate())}</Text>
 
         {simulation.available && (
           <SettingsGroup title="Version de test">

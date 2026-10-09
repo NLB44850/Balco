@@ -88,7 +88,9 @@ D'après le brief écrit avec toi (plan et réponses validés, détail dans `doc
 3. **Sainte-Catherine en vrai** : regarder la carte le 18 novembre (sans date simulée), le bilan le 1er décembre.
 4. **Mémoire de Nora sur plusieurs jours** : test sur 2 ou 3 jours, retour à donner.
 5. **Faire tester par 3 à 5 personnes** avant de brancher le paiement (piste de « test interne » du Play Store).
-6. **Tester sans Codespace** (proposé) : version web en ligne qui se met à jour seule, APK construit par GitHub.
+6. **Tester sans Codespace** (en cours de mise en place, 9 octobre) : serveur et app web sur Railway, mis à jour à
+   chaque fusion ; APK construit par un bouton GitHub ; nouveau code reçu sans réinstaller (pas-à-pas dans
+   `docs/deploiement-railway.md`).
 7. **Avant la publication** :
    - notifications envoyées par le serveur (Firebase), pour les alertes même app fermée ;
    - synchroniser avec le serveur les « Dans 3 h », les réponses « Tout récolté ? » / « Ta saison est finie ? »

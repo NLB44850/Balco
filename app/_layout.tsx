@@ -19,6 +19,7 @@ import type { EdgeInsets, Rect } from "react-native-safe-area-context";
 
 import { trpc, createTRPCClient } from "@/lib/trpc";
 import { ReminderNotificationResponder } from "@/components/reminder-notification-responder";
+import { AppUpdater } from "@/hooks/use-app-updates";
 import { GardenProvider } from "@/lib/garden/garden-context";
 import { PlantPhotosProvider } from "@/lib/garden/photos-context";
 import { DATE_SIMULATION_AVAILABLE, loadDateSimulation } from "@/hooks/use-date-simulation";
@@ -99,6 +100,7 @@ export default function RootLayout() {
           </Stack>
           <StatusBar style="dark" />
           <ReminderNotificationResponder />
+          <AppUpdater />
           </PlantPhotosProvider>
           </GardenProvider>
         </QueryClientProvider>

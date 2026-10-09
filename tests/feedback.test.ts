@@ -12,5 +12,6 @@ describe("Donner mon avis", () => {
   it("la version, avec « · test » seulement dans la version de test", () => {
     expect(versionText("1.0.0", true)).toBe("Version 1.0.0 · test");
     expect(versionText("1.0.0", false)).toBe("Version 1.0.0");
+    expect(versionText("1.0.0", true, new Date(2026, 9, 10, 14, 5))).toBe("Version 1.0.0 · test · mise à jour du 10 octobre à 14 h 05");
   });
 });
