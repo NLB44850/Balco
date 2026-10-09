@@ -148,7 +148,7 @@ Ajouts du porteur :
 
 Le porteur autorise à enchaîner les étapes.
 
-## 4. Avancement (8 octobre, tout codé, à tester sur le téléphone)
+## 4. Avancement (codé le 8 octobre, validé sur le téléphone le 9 octobre)
 
 Branche `ccr-71709eb8-bxzttf` (session Claude Code du 8 octobre), un commit par étape :
 
@@ -187,7 +187,7 @@ temps forts prévus par le brief, dans `lib/events/events.ts` (sources : `docs/s
 Le mécanisme accepte maintenant : climats, texte de carte selon le moment, plantes « à garder » ou « à planter »,
 plantes frileuses seulement, lien vers un écran, badge par plantation, geste ou envie.
 
-Choix faits en codant (à confirmer par le porteur) :
+Choix faits en codant (acceptés par le porteur le 9 octobre, « tout est OK ») :
 - **Badges permanents** : « Zéro gâchis d'eau » compte maintenant les arrosages évités sous la pluie (5 / 20 / 50) ;
   « Paré à tout » (nouveau) les alertes gel, chaleur, vent ou orage suivies ; « Bio-défenseur » 5 / 15 / 40
   observations ; « Semeur » (nouveau) 1 / 5 / 15 semis ou plantations. Titres sans majuscules décoratives.
@@ -200,3 +200,14 @@ Choix faits en codant (à confirmer par le porteur) :
 - **Une grande fête par jour** : un nouveau badge gagné le même jour qu'une autre grande fête se dit d'un mot.
 - **Sainte-Catherine sans compte** : « Demander à Nora » ouvre Nora, qui demande d'abord de se connecter.
 - **Astuces** : « plants » = plante du balcon nécessaire ; « about » = plantes citées en idée (« Sème des radis »).
+
+## 5. Validation et suite (9 octobre)
+
+Le porteur a tout testé sur son téléphone avec la date simulée (cartes des quatre temps forts, badges, astuces,
+« À anticiper », Moi) : « tout est OK ». Reste pour ce chantier :
+1. **Fusionner dans `main`** : PR depuis `ccr-71709eb8-bxzttf` (la migration 0017 s'applique toute seule au
+   démarrage du serveur, `server/migrate.mjs` dans le Dockerfile).
+2. **Dans le prochain APK** : vérifier la vraie notification d'un temps fort (la date simulée ne déclenche pas les
+   notifications ; avec l'APK, la Sainte-Catherine envoie la sienne le 18 novembre à l'heure des rappels).
+3. **En vrai, à la date** : regarder la carte de la Sainte-Catherine le 18 novembre (sans date simulée), puis le
+   bilan le 1ᵉʳ décembre.
