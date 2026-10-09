@@ -25,7 +25,7 @@ import { useColors } from "@/hooks/use-colors";
 import { useVacation } from "@/hooks/use-vacation";
 import { useWeatherSimulation } from "@/hooks/use-weather-simulation";
 import { cameraWasInterrupted } from "@/lib/ai/camera-interrupt";
-import { setPendingPhoto } from "@/lib/ai/pending-photo";
+import { setPendingPhoto, setPendingPhotoFailed } from "@/lib/ai/pending-photo";
 import { pickPlantPhoto } from "@/lib/ai/photo";
 import { useGarden } from "@/lib/garden/garden-context";
 import { trpc } from "@/lib/trpc";
@@ -55,11 +55,12 @@ import { anticipate, type Anticipation } from "@/lib/garden/anticipate";
 import { pickTodayCards, RESTING_TEXT, RESTING_TITLE } from "@/lib/garden/today-cards";
 import { AnticipateCard } from "@/components/today/anticipate-card";
 import { EventCard } from "@/components/today/event-card";
+import { EventIntro } from "@/components/today/event-intro";
 import { TipCard } from "@/components/today/tip-card";
 import { useTipOfTheWeek } from "@/hooks/use-tip-of-the-week";
 import { tipQuestion } from "@/lib/tips/tips";
 import { useEventDismissals } from "@/hooks/use-event-dismissals";
-import { eventCardText, eventDismissKey, eventMoment, eventNotificationSource, eventParticipation, nextEventNotification } from "@/lib/events/events";
+import { eventCardText, eventDismissKey, eventIntroDue, eventIntroKey, eventMoment, type EventMoment, eventNotificationSource, eventParticipation, nextEventNotification } from "@/lib/events/events";
 import { skippedRepots, skipRepotThisYear } from "@/lib/garden/repot-skip";
 import { harvestedToastText, isHarvestedOnce } from "@/lib/garden/harvest-end";
 import { REPOTTING } from "@/lib/plants/repotting";
@@ -120,8 +121,10 @@ export default function HomeScreen() {
         const result = await pickPlantPhoto("camera");
         if (result.status === "canceled") return;
         if (result.status === "ok") setPendingPhoto(result.photo);
-      } catch {
-        // Photo illisible : Observer s'ouvre quand même, pour en choisir une autre.
+      } catch (error) {
+        // Photo illisible : Observer s'ouvre quand même, le dit, et propose d'en reprendre une.
+        console.warn("[observe] photo not prepared", error);
+        setPendingPhotoFailed();
       }
     }
     router.push("/(tabs)/scanner");
@@ -137,6 +140,8 @@ export default function HomeScreen() {
   const [toast, setToast] = useState<ToastMessage | null>(null);
   const toastId = useRef(0);
   const { celebrate, overlay: celebration } = useCelebration();
+  // La grande carte d'arrivée d'un temps fort, ouverte (voir plus bas) : les badges à fêter attendent qu'elle se ferme.
+  const [intro, setIntro] = useState<EventMoment | null>(null);
   const simulation = useWeatherSimulation();
   const dateSimulation = useDateSimulation();
   const insets = useSafeAreaInsets();
@@ -247,7 +252,7 @@ export default function HomeScreen() {
   const focused = useIsFocused();
   useEffect(() => {
     // Un message du bas est affiché (avec son « Annuler ») : la fête attend qu'il soit parti.
-    if (!focused || !loaded || toast) return;
+    if (!focused || !loaded || toast || intro) return;
     const timer = setTimeout(() => {
       const [key] = takeUnseenAwards();
       const line = key ? celebrate(awardCelebration(key)) : null;
@@ -255,7 +260,7 @@ export default function HomeScreen() {
     }, 1500);
     return () => clearTimeout(timer);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [awards, focused, loaded, toast]);
+  }, [awards, focused, intro, loaded, toast]);
 
   const logAll = async (toLog: MaintenanceEvent[]) => {
     for (const event of toLog) await logEvent(event);
@@ -401,8 +406,24 @@ export default function HomeScreen() {
     [climate, events, loaded, now, onboarding?.springWishes, resolvedPlants, snoozes],
   );
   // Un temps fort de l'année (la Sainte-Catherine) : sa carte compacte, puis son bilan si l'on a participé.
-  const { dismissed, dismiss } = useEventDismissals();
+  const { dismissed, loaded: dismissalsLoaded, dismiss } = useEventDismissals();
   const moment = eventMoment(now, climate);
+  // À la première ouverture pendant un temps fort, sa grande carte en plein écran (une fois par édition), un instant
+  // après l'arrivée sur l'écran. Ensuite, la carte compacte reste dans la liste.
+  const introDue = loaded && dismissalsLoaded && focused && !away && eventIntroDue(moment, dismissed) ? moment : null;
+  const introDueKey = introDue ? eventIntroKey(introDue.event, introDue.year) : null;
+  useEffect(() => {
+    if (!introDueKey || intro) return;
+    const timer = setTimeout(() => setIntro(introDue), 600);
+    return () => clearTimeout(timer);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [introDueKey]);
+  const closeIntro = (openPage: boolean) => {
+    if (!intro) return;
+    void dismiss(eventIntroKey(intro.event, intro.year));
+    setIntro(null);
+    if (openPage) router.push({ pathname: "/event/[id]", params: { id: intro.event.id } });
+  };
   const plantedForEvent = moment ? eventParticipation(moment.event, moment.year, { plants: [...resolvedPlants, ...pastPlants], events, awards, springWishes: onboarding?.springWishes }) : 0;
   const eventCard = moment && !away && !dismissed.includes(eventDismissKey(moment.event, moment.year, moment.phase)) && (moment.phase === "running" || plantedForEvent > 0) ? moment : null;
   // L'astuce de la semaine (lib/tips/tips.ts), selon le mois, le climat, les plantes et la météo annoncée.
@@ -741,6 +762,12 @@ export default function HomeScreen() {
       {/* Pendant que la feuille des arrosages ou du pot libre est ouverte, ils s'affichent par-dessus elle. */}
       {wateringSheet === null && !freePot.isOpen && <UndoToast message={toast} onDone={hideToast} />}
       {wateringSheet === null && !freePot.isOpen && celebration}
+      <EventIntro
+        event={intro?.event ?? null}
+        text={intro ? eventCardText(intro.event, { now, year: intro.year, frostAnnounced: weatherCauses.includes("frost") }) : ""}
+        onOpen={() => closeIntro(true)}
+        onClose={() => closeIntro(false)}
+      />
       <CityPicker visible={cityPickerOpen} onClose={() => setCityPickerOpen(false)} searchCities={searchCities} selectCity={selectCity} requestDeviceLocation={requestDeviceLocation} />
     </ScreenContainer>
   );

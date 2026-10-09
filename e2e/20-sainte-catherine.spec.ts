@@ -7,20 +7,26 @@ import { atDate, checkboxOf, mockWeather, open, seedBalcony, trackErrors } from 
  * « Paille tes pots », Nora), une plante ajoutée puis plantée → le badge « Sainte-Catherine · 2026 », et le bilan
  * le 1er décembre.
  */
-test("Sainte-Catherine : carte, page, plantation, badge, puis bilan", async ({ page }) => {
+test("Sainte-Catherine : grande carte d'arrivée, page, plantation, badge, puis bilan", async ({ page }) => {
   const errors = trackErrors(page);
   const now = await atDate(page, new Date(2026, 10, 20, 10));
   await mockWeather(page);
-  await seedBalcony(page, { plants: ["thyme"], now, wateredDaysAgo: 1 });
+  await seedBalcony(page, { plants: ["thyme"], now, wateredDaysAgo: 1, eventIntro: true });
   await open(page, "/", "Tes plantes");
 
-  const card = page.getByRole("button", { name: "La Sainte-Catherine. Ce que tu plantes maintenant s’enracine tout l’hiver" });
-  await expect(card).toBeVisible();
-  await card.click();
+  // À l'arrivée, la grande carte en plein écran, qui ouvre la page.
+  await expect(page.getByText("Temps fort de l’année")).toBeVisible({ timeout: 10_000 });
+  await page.getByRole("button", { name: "Voir ce qui se plante" }).click();
   await expect(page.getByText("« À la Sainte-Catherine, tout bois prend racine. »")).toBeVisible();
   await expect(page.getByText("Ce qui se plante maintenant")).toBeVisible();
   await expect(page.getByText("Groseillier")).toBeVisible();
   await expect(page.getByText(/^Fraisier$/)).toHaveCount(0);
+  // Une seule fois : de retour sur Aujourd'hui, la carte compacte, sans la grande carte.
+  await open(page, "/", "Tes plantes");
+  await expect(page.getByRole("button", { name: "La Sainte-Catherine. Ce que tu plantes maintenant s’enracine tout l’hiver" })).toBeVisible();
+  await page.waitForTimeout(1200);
+  await expect(page.getByText("Temps fort de l’année")).toHaveCount(0);
+  await page.goto("/event/sainte-catherine");
 
   await page.getByRole("button", { name: "Ajouter Framboisier" }).click();
   await expect(page.getByText("Ajouté à ton balcon : Framboisier")).toBeVisible();

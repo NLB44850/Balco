@@ -72,6 +72,9 @@ D'après le brief écrit avec toi (plan et réponses validés, détail dans `doc
 - **Trois autres temps forts** : Prépare ton printemps (12-31 janvier, plantes à garder pour le printemps), les Saints
   de glace (4-20 mai, compte à rebours puis feu vert selon la météo de ma ville), Balcon en vacances (1-15 juillet,
   paillage et mode vacances). Chacun a son badge avec millésime.
+- **Grande carte d'arrivée** (ajoutée et validée le 9 octobre) : à la première ouverture pendant un temps fort, une carte
+  en plein écran avec des feuilles, flocons ou soleils qui tombent, la citation et un bouton vers la page ; une fois par
+  temps fort, puis la petite carte reste sur Aujourd'hui.
 - **Badges** : ceux obtenus restent acquis pour de bon (avec leur date, dans la sauvegarde du compte) ; 8 badges à
   paliers Graine / Pousse / Fleur ; 4 badges par saison avec millésime ; un herbier (une carte par plante récoltée ou
   fleurie la première fois, « Elle a fleuri ? » sur la fiche des fleurs) ; Moi refait (« Presque là », la saison,
@@ -80,10 +83,8 @@ D'après le brief écrit avec toi (plan et réponses validés, détail dans `doc
 ## Ce qu'il reste à faire, dans l'ordre
 
 1. **Fusionner « une app vivante toute l'année » dans `main`** (PR depuis la branche `ccr-71709eb8-bxzttf`).
-2. **Vérifier sur la vraie app Android (APK)**, pas revue depuis le 6 octobre : photo dans Observer, appareil photo
-   depuis Aujourd'hui, notifications (heure, plage calme, « Je ne reçois pas les rappels », économie de batterie,
-   rappel test, notification d'un temps fort : la date simulée ne les déclenche pas), Balcon à deux cartes par
-   ligne, question des rappels et de la position dans l'accueil.
+2. ~~Vérifier sur la vraie app Android (APK)~~ : **fait et validé le 9 octobre** (photo dans Observer, clavier,
+   Réglages corrigés). Reste la notification d'un temps fort, qui n'arrivera que le 18 novembre.
 3. **Sainte-Catherine en vrai** : regarder la carte le 18 novembre (sans date simulée), le bilan le 1er décembre.
 4. **Mémoire de Nora sur plusieurs jours** : test sur 2 ou 3 jours, retour à donner.
 5. **Faire tester par 3 à 5 personnes** avant de brancher le paiement (piste de « test interne » du Play Store).

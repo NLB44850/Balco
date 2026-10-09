@@ -12,7 +12,7 @@ import { glass } from "@/components/ui/glass";
 import { IconSymbol } from "@/components/ui/icon-symbol";
 import { useColors } from "@/hooks/use-colors";
 import { CAMERA_INTERRUPTED_MESSAGE, takeCameraInterrupted } from "@/lib/ai/camera-interrupt";
-import { takePendingPhoto } from "@/lib/ai/pending-photo";
+import { onPendingPhoto, photoPreviewUri, takePendingPhoto, type PendingPhoto } from "@/lib/ai/pending-photo";
 import { pickPlantPhoto, type PreparedPhoto } from "@/lib/ai/photo";
 import { quotaLabel } from "@/lib/ai/quota-text";
 import { useGarden } from "@/lib/garden/garden-context";
@@ -114,17 +114,22 @@ export default function ScannerScreen() {
   pending.current = diagnose.isPending;
   const restartRef = useRef(restart);
   restartRef.current = restart;
+  const receiveRef = useRef((fromHome: PendingPhoto) => {
+    restartRef.current();
+    if (fromHome.status === "ok") setPhoto(fromHome.photo);
+    else setNotice("Ta photo n’a pas pu être préparée. Reprends-la, ou choisis-la dans ta galerie.");
+  });
   useFocusEffect(
     useCallback(() => {
       // Page rechargée par le navigateur pendant la prise de vue : on explique quoi faire.
       if (takeCameraInterrupted()) setNotice(CAMERA_INTERRUPTED_MESSAGE);
-      // Photo prise depuis le bouton appareil photo de l'accueil : prête à analyser.
+      // Photo prise depuis le bouton appareil photo de l'accueil : prête à analyser (en arrivant, ou dès
+      // qu'elle arrive si Observer est déjà ouvert).
       const fromHome = takePendingPhoto();
-      if (fromHome) {
-        restartRef.current();
-        setPhoto(fromHome);
-      }
+      if (fromHome) receiveRef.current(fromHome);
+      const unsubscribe = onPendingPhoto((photo) => receiveRef.current(photo));
       return () => {
+        unsubscribe();
         if (!pending.current) restartRef.current();
       };
     }, []),
@@ -188,12 +193,13 @@ export default function ScannerScreen() {
         ) : (
           !diagnosis && (
             <View style={[glass.card, styles.card]}>
-              {/* La zone photo : vide, elle ouvre l'appareil photo ; pleine, elle montre la photo à analyser. */}
-              <Pressable accessibilityRole="button" accessibilityLabel={photo ? "Photo à analyser" : "Prendre une photo"} disabled={!!photo || busy} onPress={() => void choose("camera")} style={[styles.shot, !photo && { backgroundColor: colors.leaf, borderColor: "rgba(31,122,77,0.35)", borderStyle: "dashed", borderWidth: 1.5 }]}>
+              {/* La zone photo : vide, elle ouvre l'appareil photo ; pleine, elle montre la photo à analyser. Deux vues
+                  distinctes (clé) : sur Android, la zone qui perdait sa bordure pointillée n'affichait plus rien dedans. */}
+              <Pressable key={photo ? "photo" : "empty"} accessibilityRole="button" accessibilityLabel={photo ? "Photo à analyser" : "Prendre une photo"} disabled={!!photo || busy} onPress={() => void choose("camera")} style={[styles.shot, !photo && { backgroundColor: colors.leaf, borderColor: "rgba(31,122,77,0.35)", borderStyle: "dashed", borderWidth: 1.5 }]}>
                 {photo ? (
                   <>
-                    {/* expo-image, comme les photos des plantes : l'Image de React Native restait vide sur Android pour la photo prise depuis l'accueil. */}
-                    <Image key={photo.uri} source={{ uri: photo.uri }} style={StyleSheet.absoluteFill} contentFit="cover" accessibilityIgnoresInvertColors />
+                    {/* expo-image, avec les données de la photo : le fichier en cache restait vide sur Android pour la photo prise depuis l'accueil. */}
+                    <Image key={photo.uri} source={{ uri: photoPreviewUri(photo) }} style={StyleSheet.absoluteFill} contentFit="cover" accessibilityIgnoresInvertColors />
                     {busy && (
                       <View style={[StyleSheet.absoluteFill, styles.busy]}>
                         <ActivityIndicator size="large" color="#FFFFFF" />
@@ -248,7 +254,7 @@ export default function ScannerScreen() {
             ) : (
               <>
                 <View style={styles.resultHeader}>
-                  {photo && <Image source={{ uri: photo.uri }} style={styles.resultPhoto} contentFit="cover" accessibilityIgnoresInvertColors />}
+                  {photo && <Image source={{ uri: photoPreviewUri(photo) }} style={styles.resultPhoto} contentFit="cover" accessibilityIgnoresInvertColors />}
                   <View style={styles.flex}>
                     <Text style={[styles.resultName, { color: colors.foreground }]}>{diagnosis.commonName || "Plante non identifiée"}</Text>
                     {!!diagnosis.scientificName && <Text style={[styles.scientific, { color: colors.muted }]}>{diagnosis.scientificName}</Text>}

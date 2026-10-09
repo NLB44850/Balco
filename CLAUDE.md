@@ -39,7 +39,7 @@ Tout se passe dans son GitHub Codespace (pas de Docker sur son PC).
 
 - `pnpm -s check`, `pnpm -s lint`, puis `TEST_DATABASE_URL=mysql://balco:balco@localhost:3306/balco_cal npx vitest run`
   (MariaDB locale : `service mariadb start` si elle s'est arrêtée, `apt-get install -y mariadb-server` si elle manque,
-  puis `DATABASE_URL=… npx drizzle-kit migrate` ; 611 tests à ce jour). Dans un conteneur
+  puis `DATABASE_URL=… npx drizzle-kit migrate` ; 617 tests à ce jour). Dans un conteneur
   neuf : `apt-get install -y mariadb-server`, `service mariadb start`, créer la base `balco_cal` et l'utilisateur
   `balco`/`balco`, puis `pnpm -s build && DATABASE_URL=mysql://balco:balco@localhost:3306/balco_cal node dist/migrate.mjs`.
 - `npx expo export --platform android` pour s'assurer que le bundle Android se construit.
@@ -85,7 +85,7 @@ visuelle, retour immédiat.
 pour planter (PR https://github.com/NLB44850/Balco/pull/28, 06/10), puis le rempotage (R1 à R3), les 11 pas-à-pas
 (`docs/pas-a-pas.md`), Nora qui récupère sa réponse perdue et Saisons corrigé (PR https://github.com/NLB44850/Balco/pull/29,
 07/10). Validé sur son téléphone le 08/10 : accords des textes, après-récolte et laitue pommée (point 5), fusionnés dans `main` (PR https://github.com/NLB44850/Balco/pull/30, 08/10).
-Validé sur son téléphone le 08/10 : fin de saison des annuelles (point 5 bis), fusionnée dans `main` (PR https://github.com/NLB44850/Balco/pull/31, 08/10). Validée sur son téléphone le 08/10 : **refonte de Réglages** (`docs/chantier-reglages.md`), PR https://github.com/NLB44850/Balco/pull/32 (avec la correction Saisons), fusionnée. **Chantier « une app vivante toute l'année » (`docs/brief-toute-l-annee.md`) : plan et 12 réponses validés le 08/10, les 13 étapes codées le 08/10 sur la branche `ccr-71709eb8-bxzttf`, validées sur son téléphone le 09/10 (« tout est OK », choix faits en codant acceptés) ; PR vers `main` ouverte (https://github.com/NLB44850/Balco/pull/33, 09/10) ; restent la vraie notification d'un temps fort dans le prochain APK et la carte de la Sainte-Catherine le 18/11 sans date simulée** (détail, décisions et choix à confirmer : **`docs/chantier-toute-l-annee.md`**) : date simulée (Réglages → Version de test, `lib/clock.ts`), badges gardés avec leur date dans la sauvegarde (`lib/garden/awards.ts`, migration 0017), « Ton balcon se repose », « À anticiper », au plus 2 cartes en plus, événements en données + Sainte-Catherine 18-30/11 (`lib/events/events.ts`, `app/event/[id].tsx`, à valider avant le 15/11) ; ajoutés à sa demande le 08/10 : Prépare ton printemps (12-31/01, « Garder pour le printemps »), Saints de glace (4-20/05, compte à rebours puis feu vert selon la météo, pas en montagne ni dans le Midi), Balcon en vacances (1-15/07, paillage + lien mode vacances), sources dans `docs/sources-evenements.md` ; 99 astuces vérifiées (`lib/tips/bank.ts`, `docs/astuces.md`), paliers Graine/Pousse/Fleur, badges de saison, herbier, Moi refait. Restent aussi l'APK (point 1) et le test par 3 à 5 personnes avant le paiement. Récap pour claude.ai :
+Validé sur son téléphone le 08/10 : fin de saison des annuelles (point 5 bis), fusionnée dans `main` (PR https://github.com/NLB44850/Balco/pull/31, 08/10). Validée sur son téléphone le 08/10 : **refonte de Réglages** (`docs/chantier-reglages.md`), PR https://github.com/NLB44850/Balco/pull/32 (avec la correction Saisons), fusionnée. **Chantier « une app vivante toute l'année » (`docs/brief-toute-l-annee.md`) : plan et 12 réponses validés le 08/10, les 13 étapes codées le 08/10 sur la branche `ccr-71709eb8-bxzttf`, validées sur son téléphone le 09/10 (« tout est OK », choix faits en codant acceptés) ; fusionnées dans `main` (PR https://github.com/NLB44850/Balco/pull/33, 09/10). **Puis (09/10, à sa demande « en mode waouh ») : grande carte d'arrivée des temps forts** (`components/today/event-intro.tsx`, `eventIntroDue`/`eventIntroKey` dans events.ts, `intro` de chaque événement : ce qui tombe et le bouton) en plein écran à la 1ʳᵉ ouverture d'Aujourd'hui pendant l'événement, une fois par édition (clé `<id>:<année>:intro` avec les cartes fermées), « Plus tard » laisse la carte compacte ; Réglages → Version de test → Date simulée → « Revoir les grandes cartes des temps forts » ; les e2e la marquent vue par défaut (`eventIntro: true` dans `seedBalcony` pour la voir), **validée sur son téléphone le 09/10** (« c'est parfait »), PR https://github.com/NLB44850/Balco/pull/34 vers `main` (avec les corrections de l'APK). Restent la vraie notification d'un temps fort dans le prochain APK et la carte de la Sainte-Catherine le 18/11 sans date simulée** (détail, décisions et choix à confirmer : **`docs/chantier-toute-l-annee.md`**) : date simulée (Réglages → Version de test, `lib/clock.ts`), badges gardés avec leur date dans la sauvegarde (`lib/garden/awards.ts`, migration 0017), « Ton balcon se repose », « À anticiper », au plus 2 cartes en plus, événements en données + Sainte-Catherine 18-30/11 (`lib/events/events.ts`, `app/event/[id].tsx`, à valider avant le 15/11) ; ajoutés à sa demande le 08/10 : Prépare ton printemps (12-31/01, « Garder pour le printemps »), Saints de glace (4-20/05, compte à rebours puis feu vert selon la météo, pas en montagne ni dans le Midi), Balcon en vacances (1-15/07, paillage + lien mode vacances), sources dans `docs/sources-evenements.md` ; 99 astuces vérifiées (`lib/tips/bank.ts`, `docs/astuces.md`), paliers Graine/Pousse/Fleur, badges de saison, herbier, Moi refait. Restent aussi l'APK (point 1) et le test par 3 à 5 personnes avant le paiement. Récap pour claude.ai :
 `docs/recap-pour-claude.md` + captures `docs/captures/` (refaites par `bash scripts/captures.sh`, spec
 `e2e/captures.spec.ts` sautée sans `CAPTURES=1`).**
 
@@ -97,8 +97,14 @@ souvient, progression, vacances, catalogue de 100 plantes avec photos, refonte v
 et les 10 étapes du test utilisateur du 04/10 (détail dans « Historique des listes de travail »).
 
 **À faire, dans l'ordre** (une étape = un commit testé, puis validation du porteur sur son téléphone) :
-1. **Revérifier sur l'APK** (construit le 06/10, à refaire avec la correction) : l'aperçu de la photo dans Observer
-   (`expo-image`), l'appareil photo depuis Aujourd'hui, les notifications, Balcon à deux cartes par ligne.
+1. **APK revu et validé le 09/10** (deux APK de suite) : notifications, Balcon à deux cartes, accueil, grande carte du
+   18/11 OK du premier coup ; corrigé puis validé : feuille du bas au-dessus du clavier (`KeyboardAvoidingView` dans
+   `bottom-sheet.tsx`), « Se déconnecter » qui dépassait (`accountActions` en `flexWrap`), « Comment Nora te parle »
+   décalé (`copyBeforeValue` dans `components/settings/rows.tsx` : le libellé garde sa largeur, la valeur passe à la
+   ligne ; coupure `simple` sur Android dans `typography.tsx`), aperçu vide dans Observer (la zone photo perdait sa
+   bordure pointillée et n'affichait plus rien sur Android : `key` photo / vide pour la recréer ; aperçu en données
+   `photoPreviewUri`, relais `pending-photo.ts` avec abonnement et photo illisible signalée). Reste la vraie
+   notification d'un temps fort, le 18/11.
 2. **Refonte de l'onboarding : chantier en cours, plan validé le 06/10.** Tout est dans
    **`docs/chantier-onboarding.md`** (état des lieux vérifié, plan en 8 étapes A1, A2, A3, B1 à B4, C1, C2, et les
    8 décisions prises). **Validé et fusionné dans `main` (PR #28, 06/10)** ; reste à revoir sur l'APK (rappels et position).
@@ -415,8 +421,7 @@ et route réservée à `role = admin`. Balco+ sera payant (offre commerciale Ope
      faux service d'IA `e2e/fake-anthropic.mjs`, `e2e/5-observer.spec.ts`.
   10. Offre en bénéfices : `plusBenefits`, `freeBenefits`, `plusQuotaHint` (`lib/plans.ts`) dans Réglages → Compte
       et les messages de quota ; bouton « Créer mon compte ou me connecter ».
-  Après la fusion : Observer affiche la photo avec `expo-image` (zone vide sur Android avec l'Image de React
-  Native, vu dans l'APK du 06/10) ; **à revérifier dans le prochain APK**.
+  Après la fusion : aperçu d'Observer vide sur Android, corrigé et validé dans l'APK du 09/10 (voir « À faire » 1).
 - **Erreur de Nora « Failed to execute 'json' on 'Response' »** (vue le 07/10, question du 05/10) : réponse vide du
   transfert de port du Codespace (serveur qui redémarre ou délai dépassé), pas une erreur du serveur. Corrigé :
   `lib/ai/error-text.ts` (`aiErrorText` garde les messages du serveur, remplace ceux du navigateur ; `noticeText`
