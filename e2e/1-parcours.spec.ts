@@ -1,6 +1,6 @@
 import { expect, test } from "@playwright/test";
 
-import { atDate, checkboxOf, denyGeolocation, mockWeather, open, seedBalcony, trackErrors, wateringGroup } from "./helpers";
+import { atDate, checkboxOf, denyGeolocation, mockWeather, open, openHarvests, seedBalcony, trackErrors, wateringGroup } from "./helpers";
 
 /** Le parcours de tous les jours : arriver, créer son balcon, cocher, annuler, ajouter une plante. */
 
@@ -120,6 +120,8 @@ test("cocher un geste, puis « Annuler »", async ({ page }) => {
   await mockWeather(page);
   await seedBalcony(page, { plants: ["basil", "cherry-tomato", "mint"], wateredDaysAgo: 1, now });
   await open(page, "/", "Tes plantes");
+  // Les trois récoltes de juillet sont regroupées : on coche la première dans leur feuille.
+  await openHarvests(page);
   const first = page.getByRole("checkbox", { name: /^Marquer comme fait : / }).first();
   const name = (await first.getAttribute("aria-label"))!.replace("Marquer comme fait : ", "");
   await first.click();
@@ -146,6 +148,7 @@ test("une 1ʳᵉ récolte se fête en grand, une seule fois par jour", async ({ 
   await mockWeather(page);
   await seedBalcony(page, { plants: ["mint", "thyme"], wateredDaysAgo: 0 });
   await open(page, "/", "Tes plantes");
+  await openHarvests(page);
   await page.getByRole("checkbox", { name: /^Marquer comme fait : Récolte la menthe/ }).click();
   const party = page.getByRole("button", { name: /^(Nouveau badge|Première récolte).*\. Fermer$/u });
   await expect(party).toBeVisible();

@@ -46,7 +46,7 @@ fusion (`.github/workflows/update.yml`, EAS Update canal `test`, `hooks/use-app-
 
 - `pnpm -s check`, `pnpm -s lint`, puis `TEST_DATABASE_URL=mysql://balco:balco@localhost:3306/balco_cal npx vitest run`
   (MariaDB locale : `service mariadb start` si elle s'est arrêtée, `apt-get install -y mariadb-server` si elle manque,
-  puis `DATABASE_URL=… npx drizzle-kit migrate` ; 619 tests à ce jour). Dans un conteneur
+  puis `DATABASE_URL=… npx drizzle-kit migrate` ; 621 tests à ce jour). Dans un conteneur
   neuf : `apt-get install -y mariadb-server`, `service mariadb start`, créer la base `balco_cal` et l'utilisateur
   `balco`/`balco`, puis `pnpm -s build && DATABASE_URL=mysql://balco:balco@localhost:3306/balco_cal node dist/migrate.mjs`.
 - `npx expo export --platform android` pour s'assurer que le bundle Android se construit.
@@ -311,7 +311,7 @@ Livré, à valider sur son téléphone :
   · 5 plantes », « Entretien · 3 gestes », Engrais à part), « 2 sur 5 faits · menthe, thym… » ; la ligne ouvre
   une feuille du bas où l'on coche chaque plante (« Annuler » et fête s'affichent par-dessus grâce à
   `overlay` de `BottomSheet`). Un type d'une seule plante reste une ligne à cocher ; le filtre par plante
-  garde le détail. **Aujourd'hui reste une ligne par plante** (choix du porteur). Vue « Par saison » : mois à
+  garde le détail. **Aujourd'hui reste une ligne par plante** (choix du porteur), mais depuis le 09/10 (à sa demande, « indigeste avec plusieurs plantes ») les **récoltes se regroupent comme les arrosages** dès 2 plantes : « Récolte ce qui est prêt sur N plantes » (ligne `type: "group"`, `gesture: "harvest"` de `layoutTodayList`, feuille du bas commune `groupSheet` dans `index.tsx`, e2e `openHarvests`) ; « Tout récolté ? » et le pot libre restent à part. Vue « Par saison » : mois à
   venir seulement pour la saison en cours, et suggestions de la saison (`seasonSuggestions`, « En novembre ·
   … »). Plus de « Plante … » pour une plante déjà sur le balcon (`addedAt` du `CalendarSubject`, option
   `now`), sauf arrivée ce mois-ci (achetée, ajoutée depuis une suggestion) ; vaut pour Saisons et

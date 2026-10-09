@@ -1,6 +1,6 @@
 import { expect, test } from "@playwright/test";
 
-import { mockWeather, open, seedBalcony, trackErrors, wateringGroup } from "./helpers";
+import { mockWeather, open, openHarvests, seedBalcony, trackErrors, wateringGroup } from "./helpers";
 
 /**
  * Cohérence entre les écrans, sur le balcon de démonstration du test utilisateur : chaque plante a le
@@ -80,9 +80,11 @@ test("cohérence : une récolte sur Aujourd'hui se voit dans Saisons, Ma semaine
 
   // Une récolte sur Aujourd'hui…
   await open(page, "/", "Tes plantes");
+  await openHarvests(page);
   const harvest = page.getByRole("checkbox", { name: /^Marquer comme fait : Récolte / }).filter({ visible: true }).first();
   await harvest.click();
   await expect(page.getByRole("checkbox", { name: /^Annuler ce geste : Récolte / }).filter({ visible: true }).first()).toBeVisible();
+  await page.getByRole("button", { name: "Fermer la fiche" }).click();
 
   // … se voit dans Saisons (sans rien à cocher)…
   await page.getByRole("tab", { name: /Saisons/ }).click();

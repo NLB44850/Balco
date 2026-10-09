@@ -185,10 +185,10 @@ describe("liste affichée : arrosages regroupés, gestes pas urgents repliés", 
   it("regroupe les arrosages en une ligne « Vérifie la terre de N plantes » qui garde chaque plante", () => {
     const { items } = list(12, []);
     const lines = layoutTodayList(items);
-    const group = lines.find((line) => line.type === "watering");
+    const group = lines.find((line) => line.type === "group" && line.gesture === "watering");
     expect(group).toMatchObject({ title: "Vérifie la terre de 3 plantes", done: false });
-    expect(group?.type === "watering" && group.subtitle).toMatch(/^Sèche \? Arrose · /u);
-    expect(group?.type === "watering" && group.items).toHaveLength(wateringRows(items).length);
+    expect(group?.type === "group" && group.subtitle).toMatch(/^Sèche \? Arrose · /u);
+    expect(group?.type === "group" && group.items).toHaveLength(wateringRows(items).length);
     expect(lines.filter((line) => line.type === "item" && line.item.gesture === "watering")).toHaveLength(0);
   });
 
@@ -199,7 +199,7 @@ describe("liste affichée : arrosages regroupés, gestes pas urgents repliés", 
 
   it("compte les arrosages faits, et passe le groupe en bas une fois tout fait", () => {
     const partial = layoutTodayList([item("a", "watering", "Basilic", true), item("b", "watering", "Menthe"), item("c", "harvest", "Thym")]);
-    expect(partial[0]).toMatchObject({ type: "watering", subtitle: "1 sur 2 faites · Basilic, menthe", done: false });
+    expect(partial[0]).toMatchObject({ type: "group", gesture: "watering", subtitle: "1 sur 2 faites · Basilic, menthe", done: false });
     const all = layoutTodayList([item("a", "watering", "Basilic", true), item("b", "watering", "Menthe", true), item("c", "harvest", "Thym")]);
     expect(all.map((line) => line.key)).toEqual(["c", "watering"]);
   });
@@ -210,12 +210,28 @@ describe("liste affichée : arrosages regroupés, gestes pas urgents repliés", 
       item("w1", "watering", "Basilic"),
       item("w2", "watering", "Menthe"),
       ...["Thym", "Fraisier", "Tomates"].map((name) => item(`h-${name}`, "harvest", name)),
+      ...["Ail", "Radis", "Laitue"].map((name) => item(`s-${name}`, "season", name)),
       item("f", "fertilizing", "Rosier"),
       item("c", "care", "Lavande"),
     ];
     const lines = layoutTodayList(items);
-    expect(lines.map((line) => line.key)).toEqual(["alert", "watering", "h-Thym", "h-Fraisier", "h-Tomates", "more"]);
+    expect(lines.map((line) => line.key)).toEqual(["alert", "watering", "harvest", "s-Ail", "s-Radis", "s-Laitue", "more"]);
     expect(lines.at(-1)).toMatchObject({ type: "more", title: "2 autres gestes, pas urgents", subtitle: "Rosier, lavande" });
+  });
+
+  it("regroupe aussi les récoltes dès deux plantes, en gardant chaque plante", () => {
+    const lines = layoutTodayList([item("h1", "harvest", "Menthe"), item("h2", "harvest", "Tomates cerises", true), item("h3", "harvest", "Mâche"), item("s", "season", "Ail")]);
+    expect(lines[0]).toMatchObject({ type: "group", gesture: "harvest", icon: "🧺", title: "Récolte ce qui est prêt sur 3 plantes", subtitle: "1 sur 3 faites · Menthe, tomates cerises, mâche", done: false });
+    expect(lines[0].type === "group" && lines[0].items.map((entry) => entry.key)).toEqual(["h1", "h2", "h3"]);
+    expect(lines.map((line) => line.key)).toEqual(["harvest", "s"]);
+    // Une seule récolte reste une ligne à cocher.
+    expect(layoutTodayList([item("h1", "harvest", "Menthe"), item("s", "season", "Ail")]).map((line) => line.type)).toEqual(["item", "item"]);
+  });
+
+  it("laisse « Tout récolté ? » et le pot libre hors du groupe des récoltes", () => {
+    const end = { ...item("end", "harvest", "Radis"), kind: "harvest-end" } as unknown as Parameters<typeof layoutTodayList>[0][number];
+    const lines = layoutTodayList([item("h1", "harvest", "Menthe"), end]);
+    expect(lines.map((line) => line.type)).toEqual(["item", "item"]);
   });
 
   it("ne replie rien jusqu'à 5 lignes", () => {
