@@ -4,7 +4,7 @@
  * fontWeight pour qu'Android ne rajoute pas un faux gras par-dessus.
  */
 import { forwardRef } from "react";
-import { Text as NativeText, TextInput as NativeTextInput, StyleSheet, type StyleProp, type TextInputProps, type TextProps, type TextStyle } from "react-native";
+import { Text as NativeText, TextInput as NativeTextInput, Platform, StyleSheet, type StyleProp, type TextInputProps, type TextProps, type TextStyle } from "react-native";
 
 export const ONEST: Record<string, string> = {
   "100": "Onest_300Light",
@@ -28,8 +28,14 @@ export function withOnest(style: StyleProp<TextStyle>): StyleProp<TextStyle> {
   return [style, { fontFamily: family, fontWeight: "normal" }];
 }
 
+/**
+ * Sur Android, la coupure des lignes « highQuality » mesure parfois une ligne de trop avec Onest : le texte prend la
+ * hauteur de deux lignes pour une seule (« Comment Nora te parle » décalé dans Réglages). La coupure simple mesure juste.
+ */
+const BREAK_STRATEGY = Platform.OS === "android" ? "simple" : undefined;
+
 export const Text = forwardRef<NativeText, TextProps>(function BalcoText({ style, ...props }, ref) {
-  return <NativeText ref={ref} {...props} style={withOnest(style)} />;
+  return <NativeText ref={ref} textBreakStrategy={BREAK_STRATEGY} {...props} style={withOnest(style)} />;
 });
 
 export const TextInput = forwardRef<NativeTextInput, TextInputProps>(function BalcoTextInput({ style, ...props }, ref) {

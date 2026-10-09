@@ -25,7 +25,7 @@ import { useColors } from "@/hooks/use-colors";
 import { useVacation } from "@/hooks/use-vacation";
 import { useWeatherSimulation } from "@/hooks/use-weather-simulation";
 import { cameraWasInterrupted } from "@/lib/ai/camera-interrupt";
-import { setPendingPhoto } from "@/lib/ai/pending-photo";
+import { setPendingPhoto, setPendingPhotoFailed } from "@/lib/ai/pending-photo";
 import { pickPlantPhoto } from "@/lib/ai/photo";
 import { useGarden } from "@/lib/garden/garden-context";
 import { trpc } from "@/lib/trpc";
@@ -121,8 +121,10 @@ export default function HomeScreen() {
         const result = await pickPlantPhoto("camera");
         if (result.status === "canceled") return;
         if (result.status === "ok") setPendingPhoto(result.photo);
-      } catch {
-        // Photo illisible : Observer s'ouvre quand même, pour en choisir une autre.
+      } catch (error) {
+        // Photo illisible : Observer s'ouvre quand même, le dit, et propose d'en reprendre une.
+        console.warn("[observe] photo not prepared", error);
+        setPendingPhotoFailed();
       }
     }
     router.push("/(tabs)/scanner");

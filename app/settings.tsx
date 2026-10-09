@@ -552,7 +552,8 @@ const styles = StyleSheet.create({
   content: { paddingHorizontal: 20, paddingBottom: 40 },
   header: { marginBottom: 8 },
   benefits: { gap: 8, marginTop: 8 },
-  accountActions: { flexDirection: "row", alignItems: "center", gap: 10, marginTop: 10 },
+  // Deux boutons qui ne tiennent pas sur une ligne (« Sauvegarder depuis ce téléphone ») : le second passe dessous.
+  accountActions: { flexDirection: "row", flexWrap: "wrap", alignItems: "center", gap: 10, marginTop: 10 },
   accountButton: { borderRadius: 12, paddingHorizontal: 14, paddingVertical: 9 },
   accountButtonText: { color: "#FFFFFF", fontSize: 14, fontWeight: "700" },
   accountButtonGhost: { borderWidth: 1, borderRadius: 12, paddingHorizontal: 14, paddingVertical: 9 },
