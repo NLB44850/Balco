@@ -58,6 +58,8 @@ export type SeasonalEvent = {
   /** Le bilan, le lendemain de la fin, si l'on a participé (`count` : plantes, envies…). */
   summary: (count: number) => string;
   notification: { title: string; body: string };
+  /** La grande carte d'arrivée, en plein écran, à la première ouverture pendant l'événement : ce qui tombe, et son bouton. */
+  intro: { particles: string[]; action: string };
 };
 
 export const SAINTE_CATHERINE: SeasonalEvent = {
@@ -87,6 +89,7 @@ export const SAINTE_CATHERINE: SeasonalEvent = {
   badge: { title: "Sainte-Catherine", detail: "Une plante installée pour la Sainte-Catherine", rule: "plant" },
   summary: (planted) => `Tu as planté ${planted} plante${planted > 1 ? "s" : ""} pour la Sainte-Catherine. Rendez-vous au printemps pour les voir repartir.`,
   notification: { title: "La Sainte-Catherine approche 🌳", body: "C’est le moment de planter." },
+  intro: { particles: ["🍂", "🍁", "🌰"], action: "Voir ce qui se plante" },
 };
 
 /** Hiver : en janvier, choisir ses plantes du printemps et préparer son matériel. */
@@ -115,6 +118,7 @@ export const PREPARE_SPRING: SeasonalEvent = {
   badge: { title: "Prépare ton printemps", detail: "Une plante gardée pour le printemps", rule: "wish" },
   summary: (wishes) => `Tu as ${wishes} plante${wishes > 1 ? "s" : ""} en tête pour le printemps. Balco te les reproposera début mars.`,
   notification: { title: "Prépare ton printemps 🌱", body: "Choisis tes plantes du printemps pendant que le balcon se repose." },
+  intro: { particles: ["🌱", "🌸", "🌿"], action: "Choisir mes plantes" },
 };
 
 const SAINTS_DAY = 13;
@@ -149,6 +153,7 @@ export const SAINTS_DE_GLACE: SeasonalEvent = {
   badge: { title: "Saints de glace", detail: "Une plante frileuse installée après les Saints de glace", rule: "plant", from: { month: 5, day: SAINTS_DAY + 1 } },
   summary: (planted) => `Tu as installé ${planted} plante${planted > 1 ? "s" : ""} frileuse${planted > 1 ? "s" : ""} après les Saints de glace. Bel été !`,
   notification: { title: "Les Saints de glace approchent 🧊", body: "Garde tes plantes frileuses à l’abri jusqu’au 13 mai." },
+  intro: { particles: ["❄️", "🧊", "🍅"], action: "Voir quand planter" },
 };
 
 /** Été : avant les départs, préparer le balcon à la chaleur et à l'absence. */
@@ -171,6 +176,7 @@ export const SUMMER_HOLIDAYS: SeasonalEvent = {
   badge: { title: "Balcon en vacances", detail: "Tes pots paillés pour l’été", rule: "action" },
   summary: () => "Tes pots sont paillés pour l’été : ils garderont leur fraîcheur plus longtemps. Bonnes vacances !",
   notification: { title: "Balcon en vacances 🏖️", body: "Quelques gestes avant de partir, et ton balcon passe l’été tranquille." },
+  intro: { particles: ["☀️", "🌻", "💧"], action: "Préparer mon balcon" },
 };
 
 export const SEASONAL_EVENTS: SeasonalEvent[] = [PREPARE_SPRING, SAINTS_DE_GLACE, SUMMER_HOLIDAYS, SAINTE_CATHERINE];
@@ -225,6 +231,17 @@ export function eventAwardKey(event: Pick<SeasonalEvent, "id">, year: number) {
 /** Clé gardée quand on ferme la carte (ou le bilan) d'une édition. */
 export function eventDismissKey(event: Pick<SeasonalEvent, "id">, year: number, phase: EventMoment["phase"]) {
   return `${event.id}:${year}:${phase}`;
+}
+
+/** La clé de la grande carte d'arrivée déjà vue (une fois par édition), rangée avec les cartes fermées. */
+export function eventIntroKey(event: Pick<SeasonalEvent, "id">, year: number) {
+  return `${event.id}:${year}:intro`;
+}
+
+/** La grande carte d'arrivée est-elle à montrer ? Pendant l'événement, si elle n'a pas été vue ni la carte fermée. */
+export function eventIntroDue(moment: EventMoment | null, dismissed: string[]): moment is EventMoment {
+  if (!moment || moment.phase !== "running") return false;
+  return !dismissed.includes(eventIntroKey(moment.event, moment.year)) && !dismissed.includes(eventDismissKey(moment.event, moment.year, "running"));
 }
 
 /** Une plante qu'on peut semer ou planter l'un de ces mois-là, dans ce climat. */

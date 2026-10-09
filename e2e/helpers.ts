@@ -56,7 +56,11 @@ type Seed = {
   extra?: Record<string, string>;
   /** La date du balcon (par défaut maintenant) : la même que l'horloge de la page quand le test la fixe. */
   now?: Date;
+  /** Laisser la grande carte d'arrivée des temps forts s'ouvrir (par défaut déjà vue, pour ne pas gêner les autres tests). */
+  eventIntro?: boolean;
 };
+
+const EVENT_IDS = ["prepare-ton-printemps", "saints-de-glace", "balcon-en-vacances", "sainte-catherine"];
 
 /**
  * Fixe la date de la page (et du balcon, à passer à `seedBalcony`) pour un test qui dépend de la saison :
@@ -88,6 +92,7 @@ export async function seedBalcony(page: Page, seed: Seed) {
     "balco.garden.events.v1": JSON.stringify(events),
     "balco.location.preference.v1": JSON.stringify({ mode: "manual", city: "Lyon", latitude: 45.76, longitude: 4.84 }),
     "balco.weather.simulation.v1": seed.scenario ?? "none",
+    ...(seed.eventIntro ? {} : { "balco.events.dismissed.v1": JSON.stringify(EVENT_IDS.flatMap((id) => [-1, 0, 1].map((shift) => `${id}:${new Date(now).getFullYear() + shift}:intro`))) }),
     ...seed.extra,
   };
   await page.addInitScript((values) => {

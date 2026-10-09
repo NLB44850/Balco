@@ -27,6 +27,7 @@ import { useColors } from "@/hooks/use-colors";
 import { useLocalWeather } from "@/hooks/use-local-weather";
 import { useWeatherSimulation } from "@/hooks/use-weather-simulation";
 import { useDateSimulation } from "@/hooks/use-date-simulation";
+import { useEventDismissals } from "@/hooks/use-event-dismissals";
 import { addDays, clockPresets, longDayText } from "@/lib/clock";
 import { useGarden } from "@/lib/garden/garden-context";
 import { dayKey, plantDisplayName } from "@/lib/garden/garden-logic";
@@ -130,6 +131,8 @@ export default function SettingsScreen() {
   const notificationsSupported = notificationsUnavailableReason === null;
   const simulation = useWeatherSimulation();
   const dateSimulation = useDateSimulation();
+  const eventDismissals = useEventDismissals();
+  const [introsReset, setIntrosReset] = useState(false);
   const realToday = dayKey(new Date());
   const shownDay = dateSimulation.day ?? realToday;
   const [testStatus, setTestStatus] = useState<"idle" | "sending" | "sent" | "denied">("idle");
@@ -405,6 +408,9 @@ export default function SettingsScreen() {
             <Text style={[styles.sheetButtonText, { color: colors.background }]}>Revenir à aujourd’hui</Text>
           </Pressable>
         )}
+        <Pressable accessibilityRole="button" onPress={() => { void eventDismissals.restore(":intro", { suffix: true }); setIntrosReset(true); }} style={({ pressed }) => [styles.simulationChip, styles.introReset, { backgroundColor: colors.surface, borderColor: colors.border }, pressed && styles.pressed]}>
+          <Text style={[styles.simulationChipText, { color: colors.foreground }]}>{introsReset ? "✓ Grandes cartes remises" : "Revoir les grandes cartes des temps forts"}</Text>
+        </Pressable>
         <Text style={[styles.sheetHint, { color: colors.muted }]}>Les gestes cochés pendant la simulation sont datés du jour simulé.</Text>
       </BottomSheet>
       <BottomSheet visible={sheet === "name"} onClose={closeSheet}>
@@ -542,6 +548,7 @@ export default function SettingsScreen() {
 }
 
 const styles = StyleSheet.create({
+  introReset: { alignSelf: "flex-start", marginTop: 4 },
   content: { paddingHorizontal: 20, paddingBottom: 40 },
   header: { marginBottom: 8 },
   benefits: { gap: 8, marginTop: 8 },

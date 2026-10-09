@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { coldMode, eventAwardKey, eventCardText, eventParticipation, PREPARE_SPRING, SAINTS_DE_GLACE, SUMMER_HOLIDAYS, eventAwards, eventMoment, eventPlanted, eventPlantings, nextEventNotification, protectionDone, protectionEvents, SAINTE_CATHERINE } from "../lib/events/events";
+import { coldMode, eventAwardKey, eventCardText, eventParticipation, PREPARE_SPRING, SAINTS_DE_GLACE, SUMMER_HOLIDAYS, eventAwards, eventIntroDue, eventIntroKey, eventMoment, eventDismissKey, eventPlanted, eventPlantings, nextEventNotification, protectionDone, protectionEvents, SAINTE_CATHERINE } from "../lib/events/events";
 import { resolvePlants } from "../lib/garden/garden-logic";
 import { awardCelebration } from "../lib/garden/progress";
 import { climateZoneFor } from "../lib/plants/climate";
@@ -23,6 +23,28 @@ describe("Sainte-Catherine : dates", () => {
     expect(next?.date).toEqual(new Date(2026, 10, 18, 18, 30));
     // Une fois la Sainte-Catherine commencée, la suivante est « Prépare ton printemps », le 12 janvier.
     expect(nextEventNotification(day(11, 20), { preferredHour: 8, preferredMinute: 30 })).toMatchObject({ event: { id: "prepare-ton-printemps" }, date: new Date(2027, 0, 12, 8, 30) });
+  });
+});
+
+describe("la grande carte d'arrivée", () => {
+  it("une fois par édition, pendant l'événement seulement", () => {
+    const moment = eventMoment(day(11, 20));
+    expect(eventIntroDue(moment, [])).toBe(true);
+    expect(eventIntroDue(moment, [eventIntroKey(SAINTE_CATHERINE, 2026)])).toBe(false);
+    // L'an prochain, elle revient.
+    expect(eventIntroDue(eventMoment(new Date(2027, 10, 20, 10)), [eventIntroKey(SAINTE_CATHERINE, 2026)])).toBe(true);
+    // Carte fermée d'une croix : pas de grande carte non plus.
+    expect(eventIntroDue(moment, [eventDismissKey(SAINTE_CATHERINE, 2026, "running")])).toBe(false);
+    // Le bilan et les jours sans événement : rien.
+    expect(eventIntroDue(eventMoment(day(12, 1)), [])).toBe(false);
+    expect(eventIntroDue(eventMoment(day(10, 8)), [])).toBe(false);
+  });
+
+  it("chaque temps fort a ses éléments qui tombent et son bouton", () => {
+    for (const event of [SAINTE_CATHERINE, PREPARE_SPRING, SAINTS_DE_GLACE, SUMMER_HOLIDAYS]) {
+      expect(event.intro.particles.length).toBeGreaterThan(0);
+      expect(event.intro.action.length).toBeGreaterThan(0);
+    }
   });
 });
 

@@ -72,6 +72,9 @@ D'après le brief écrit avec toi (plan et réponses validés, détail dans `doc
 - **Trois autres temps forts** : Prépare ton printemps (12-31 janvier, plantes à garder pour le printemps), les Saints
   de glace (4-20 mai, compte à rebours puis feu vert selon la météo de ma ville), Balcon en vacances (1-15 juillet,
   paillage et mode vacances). Chacun a son badge avec millésime.
+- **Grande carte d'arrivée** (ajoutée le 9 octobre, à tester) : à la première ouverture pendant un temps fort, une carte
+  en plein écran avec des feuilles, flocons ou soleils qui tombent, la citation et un bouton vers la page ; une fois par
+  temps fort, puis la petite carte reste sur Aujourd'hui.
 - **Badges** : ceux obtenus restent acquis pour de bon (avec leur date, dans la sauvegarde du compte) ; 8 badges à
   paliers Graine / Pousse / Fleur ; 4 badges par saison avec millésime ; un herbier (une carte par plante récoltée ou
   fleurie la première fois, « Elle a fleuri ? » sur la fiche des fleurs) ; Moi refait (« Presque là », la saison,

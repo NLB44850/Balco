@@ -211,3 +211,16 @@ Le porteur a tout testé sur son téléphone avec la date simulée (cartes des q
    notifications ; avec l'APK, la Sainte-Catherine envoie la sienne le 18 novembre à l'heure des rappels).
 3. **En vrai, à la date** : regarder la carte de la Sainte-Catherine le 18 novembre (sans date simulée), puis le
    bilan le 1ᵉʳ décembre.
+
+## 6. Grande carte d'arrivée des temps forts (9 octobre, à sa demande « en mode waouh »)
+
+Fusionné dans `main` (PR #33), puis : à la première ouverture d'Aujourd'hui pendant un temps fort, une grande carte en
+plein écran s'ouvre un instant après l'arrivée (`components/today/event-intro.tsx`) : ce qui tombe du ciel selon
+l'événement (feuilles et châtaignes à la Sainte-Catherine, pousses et fleurs en janvier, flocons et tomates aux Saints
+de glace, soleils l'été), l'emoji qui se balance, la citation, le texte du moment, un bouton (« Voir ce qui se plante »,
+« Choisir mes plantes », « Voir quand planter », « Préparer mon balcon ») qui ouvre la page, et « Plus tard ».
+Une fois par édition (`eventIntroDue`, clé `<id>:<année>:intro`), pas pendant les vacances ni si la carte a été fermée ;
+la carte compacte reste ensuite dans la liste ; les badges à fêter attendent qu'elle soit fermée. Pour la revoir en
+test : Réglages → Version de test → Date simulée → « Revoir les grandes cartes des temps forts ».
+Choix à confirmer : une seule fois par temps fort (pas de seconde grande carte au « Feu vert » des Saints de glace).
+

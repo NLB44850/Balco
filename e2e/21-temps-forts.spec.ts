@@ -24,8 +24,12 @@ test("mai : les Saints de glace, compte à rebours puis feu vert", async ({ page
   const errors = trackErrors(page);
   const now = await atDate(page, new Date(2027, 4, 8, 10));
   await mockWeather(page);
-  await seedBalcony(page, { plants: ["thyme"], now, wateredDaysAgo: 1 });
+  await seedBalcony(page, { plants: ["thyme"], now, wateredDaysAgo: 1, eventIntro: true });
   await open(page, "/", "Tes plantes");
+  // La grande carte d'arrivée : « Plus tard » la ferme, la carte compacte reste.
+  await expect(page.getByText("Temps fort de l’année")).toBeVisible({ timeout: 10_000 });
+  await page.getByRole("button", { name: "Plus tard" }).click();
+  await expect(page.getByText("Temps fort de l’année")).toHaveCount(0);
   await expect(page.getByText("Dans 3 jours : garde encore tes plantes frileuses à l’abri ›")).toBeVisible();
   await page.clock.setSystemTime(new Date(2027, 4, 15, 10));
   await open(page, "/", "Tes plantes");
