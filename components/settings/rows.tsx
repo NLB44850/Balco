@@ -46,7 +46,7 @@ export function SettingRow({ label, value, subtitle, onPress, disabled, danger, 
   const colors = useColors();
   const content = (
     <>
-      <View style={styles.copy}>
+      <View style={[styles.copy, value && !accessory ? styles.copyBeforeValue : null]}>
         <Text style={[styles.label, { color: danger ? colors.error : colors.foreground }]}>{label}</Text>
         {subtitle ? <Text style={[styles.subtitle, { color: colors.muted }]}>{subtitle}</Text> : null}
       </View>
@@ -84,9 +84,12 @@ const styles = StyleSheet.create({
   separator: { height: StyleSheet.hairlineWidth, backgroundColor: "rgba(18,22,20,0.12)" },
   row: { flexDirection: "row", alignItems: "center", gap: 10, minHeight: 52, paddingVertical: 12 },
   copy: { flex: 1, gap: 2 },
+  // Avec une valeur à droite, le libellé garde sa largeur (sinon Android le mesurait sur deux lignes et décalait la
+  // ligne : « Comment Nora te parle ») ; c'est la valeur qui passe à la ligne s'il le faut.
+  copyBeforeValue: { flexBasis: "auto", flexShrink: 0, maxWidth: "62%" },
   label: { fontSize: 15, fontWeight: "600" },
   subtitle: { fontSize: 13, lineHeight: 18 },
-  value: { flexShrink: 1, fontSize: 15, maxWidth: "55%", textAlign: "right" },
+  value: { flex: 1, fontSize: 15, textAlign: "right" },
   arrow: { fontSize: 22, fontWeight: "300", marginTop: -2 },
   disabled: { opacity: 0.45 },
   pressed: { opacity: 0.7 },

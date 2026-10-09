@@ -193,8 +193,9 @@ export default function ScannerScreen() {
         ) : (
           !diagnosis && (
             <View style={[glass.card, styles.card]}>
-              {/* La zone photo : vide, elle ouvre l'appareil photo ; pleine, elle montre la photo à analyser. */}
-              <Pressable accessibilityRole="button" accessibilityLabel={photo ? "Photo à analyser" : "Prendre une photo"} disabled={!!photo || busy} onPress={() => void choose("camera")} style={[styles.shot, !photo && { backgroundColor: colors.leaf, borderColor: "rgba(31,122,77,0.35)", borderStyle: "dashed", borderWidth: 1.5 }]}>
+              {/* La zone photo : vide, elle ouvre l'appareil photo ; pleine, elle montre la photo à analyser. Deux vues
+                  distinctes (clé) : sur Android, la zone qui perdait sa bordure pointillée n'affichait plus rien dedans. */}
+              <Pressable key={photo ? "photo" : "empty"} accessibilityRole="button" accessibilityLabel={photo ? "Photo à analyser" : "Prendre une photo"} disabled={!!photo || busy} onPress={() => void choose("camera")} style={[styles.shot, !photo && { backgroundColor: colors.leaf, borderColor: "rgba(31,122,77,0.35)", borderStyle: "dashed", borderWidth: 1.5 }]}>
                 {photo ? (
                   <>
                     {/* expo-image, avec les données de la photo : le fichier en cache restait vide sur Android pour la photo prise depuis l'accueil. */}
