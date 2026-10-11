@@ -78,7 +78,7 @@ Règles qui valent pour toutes les étapes :
 
 ## Avancement
 
-1. **Taille du pot : codée le 11/10, à valider sur son téléphone.** `lib/plants/pot-size.ts` (`PotSize`, `POT_LITERS`
+1. **Taille du pot : codée et validée sur son téléphone le 11/10.** `lib/plants/pot-size.ts` (`PotSize`, `POT_LITERS`
    4 / 10 / 22 / 20 L, `potSizeOf`, `potSizeLabel`, `potLitersOf`) ; `GardenPlant.potSize` (absent = « Je ne sais pas »),
    `setPlantPotSize` (garden-context) ; colonne `reminder_plants.potSize` (migration 0018) et synchro ; feuille
    `components/pot-size-sheet.tsx` (dessins `PotSizeArt` en react-native-svg, déjà dans l'app : rien à réinstaller ;
