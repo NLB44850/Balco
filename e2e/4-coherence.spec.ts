@@ -33,16 +33,31 @@ test("cohérence : Aujourd'hui, Balcon et la fiche disent la même chose de chaq
     const { status, line } = balcony.get(id)!;
     await expect(page.getByRole("button", { name: `${name}, ${status}` })).toBeVisible();
     // Les onglets restent montés, cachés : on ne regarde que ce qui est à l'écran.
-    if (line !== NOTHING && !line.startsWith("✓") && !line.startsWith("Arrose")) await expect(page.getByText(line, { exact: true }).filter({ visible: true }).first()).toBeVisible();
+    if (line !== NOTHING && !line.startsWith("✓") && !line.startsWith("Arrose") && !line.startsWith("Récolte")) await expect(page.getByText(line, { exact: true }).filter({ visible: true }).first()).toBeVisible();
   }
   // Les arrosages sont regroupés : chacun se retrouve dans la feuille « Vérifie la terre de N plantes ».
   const waterings = [...balcony.values()].map(({ line }) => line).filter((line) => line.startsWith("Arrose"));
   if (waterings.length > 1) {
     await wateringGroup(page).click();
     for (const line of waterings) await expect(page.getByRole("checkbox", { name: `Marquer comme fait : ${line}` })).toBeVisible();
-    await page.keyboard.press("Escape");
+    await page.getByRole("button", { name: "Fermer la fiche" }).click();
+    await expect(page.getByRole("button", { name: "Fermer la fiche" })).toHaveCount(0);
   } else {
     for (const line of waterings) await expect(page.getByText(line, { exact: true }).filter({ visible: true }).first()).toBeVisible();
+  }
+
+  // Les récoltes aussi (dès deux plantes, « Récolte ce qui est prêt sur N plantes »).
+  const harvests = [...balcony.values()].map(({ line }) => line).filter((line) => line.startsWith("Récolte"));
+  if (harvests.length > 0) {
+    const grouped = page.getByRole("button", { name: /^Récolte ce qui est prêt sur \d+ plantes, détail$/u });
+    if (await grouped.count()) {
+      await openHarvests(page);
+      for (const line of harvests) await expect(page.getByRole("checkbox", { name: `Marquer comme fait : ${line}` })).toBeVisible();
+      await page.getByRole("button", { name: "Fermer la fiche" }).click();
+    await expect(page.getByRole("button", { name: "Fermer la fiche" })).toHaveCount(0);
+    } else {
+      for (const line of harvests) await expect(page.getByText(line, { exact: true }).filter({ visible: true }).first()).toBeVisible();
+    }
   }
 
   // 3. La fiche de chaque plante : même état, même prochain geste.

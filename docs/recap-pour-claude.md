@@ -105,7 +105,8 @@ D'après le brief écrit avec toi (plan et réponses validés, détail dans `doc
 
 ## Décisions déjà prises (à ne pas remettre en question sans moi)
 
-- Aujourd'hui garde **une ligne à faire par plante au plus** ; Saisons est **à lire**, on coche sur Aujourd'hui.
+- Aujourd'hui garde **une ligne à faire par plante au plus** (sauf la récolte, visible même si l'arrosage attend ; arrosages et
+  récoltes sont regroupés dès deux plantes) ; Saisons est **à lire**, on coche sur Aujourd'hui.
 - Les pas-à-pas sont **facultatifs** ; règles d'écriture : une action par écran, verbe en tête, moins de 12 mots, tutoiement.
 - L'accueil ne propose que des plantes de saison ; prénom et niveau de Nora ne sont plus dans l'accueil (on les règle
   dans Réglages ou dans Nora).

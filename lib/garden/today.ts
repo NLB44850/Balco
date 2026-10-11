@@ -106,6 +106,8 @@ const KIND_RANK = Object.fromEntries(GESTURE_ORDER.map((kind, index) => [kind, i
  * Les alertes météo d'abord, puis une ligne à faire par plante au plus : son premier geste hors alerte
  * encore à faire (arrosage, récolte, plantation / semis / rempotage, engrais, entretien), dans cet ordre.
  * Une fois ce geste fait, le suivant prend sa place : les gestes du mois se font tous depuis Aujourd'hui.
+ * Seule exception (décidée le 11/10) : une récolte s'affiche aussi quand l'arrosage de la plante attend encore
+ * (la terre encore humide, on ne le coche pas) ; arrosages et récoltes étant regroupés, la liste ne s'allonge pas.
  * Ce qui est déjà fait aujourd'hui passe à la fin.
  */
 export function buildTodayList({ groups, plan }: BuildTodayInput): TodayItem[] {
@@ -119,7 +121,8 @@ export function buildTodayList({ groups, plan }: BuildTodayInput): TodayItem[] {
   for (const day of plan) {
     const gestures = day.gestures.filter((candidate) => candidate.kind !== "alert");
     const next = gestures.find((candidate) => !candidate.done);
-    for (const gesture of gestures.filter((candidate) => candidate.done || candidate === next)) {
+    const harvest = next?.kind === "watering" ? gestures.find((candidate) => !candidate.done && candidate.kind === "harvest") : undefined;
+    for (const gesture of gestures.filter((candidate) => candidate.done || candidate === next || candidate === harvest)) {
       const item = rowFor(day, gesture, groups);
       if (item) rows.push({ rank: KIND_RANK[gesture.kind], item });
     }
