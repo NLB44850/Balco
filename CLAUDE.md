@@ -18,13 +18,13 @@ avec son porteur. Détails : `docs/feuille-de-route.md` (demande d'origine, éta
 
 ## Tester sur le téléphone
 
-**En cours de mise en place (09/10, ses choix : Railway, version de test, Brevo, mises à jour sans réinstaller)** :
+**En place depuis le 09/10 (ses choix : Railway, version de test, Brevo, mises à jour sans réinstaller ; APK construit par GitHub, mise à jour publiée à la fusion de la PR #37, rappels météo du serveur chaque heure)** :
 tout le pas-à-pas est dans **`docs/deploiement-railway.md`**. Serveur + app web + MySQL sur Railway, redéployés à
 chaque fusion dans `main` (`railway.json`) ; APK de test construit par le bouton GitHub « Construire l'APK de test »
 (`.github/workflows/apk.yml`, secret `EXPO_TOKEN`, variable `BALCO_API_URL`) ; nouveau code de l'app publié à chaque
 fusion (`.github/workflows/update.yml`, EAS Update canal `test`, `hooks/use-app-updates.tsx` propose « Redémarrer »). E-mails par l'API de Brevo (`BREVO_API_KEY`, `server/auth/mailer.ts`) : Railway Hobby bloque le SMTP (« Connection timeout »).
 **Changer `version` dans `app.config.ts` dès qu'on ajoute un module natif, une permission ou un plugin** (runtime
-`appVersion`), puis lui demander un nouvel APK. Tant que ce n'est pas en place, le Codespace reste la façon de tester
+`appVersion`), puis lui demander un nouvel APK. Le Codespace reste possible en secours
 (profil EAS `codespace` pour un APK qui parle au Codespace) :
 
 1. `git pull` puis `bash scripts/codespace-demarrer.sh` (nettoie le cache Docker, reconstruit, démarre,
@@ -196,8 +196,7 @@ et les 10 étapes du test utilisateur du 04/10 (détail dans « Historique des l
      notification du 1er mars). E2e `15-fin-de-saison`.
    - Corrigé au passage : « de haricots » (h aspiré, `elides` dans grammar.ts) au lieu de « d'haricots ».
 6. **Mémoire de Nora sur plusieurs jours** : il doit encore faire le test sur 2-3 jours (retour à recueillir).
-7. **Tester sans Codespace** (proposé, pas encore demandé) : version web hébergée qui se met à jour seule et APK
-   construit par une action GitHub (EXPO_TOKEN qu'il enregistre lui-même dans les secrets du dépôt).
+7. **Tester sans Codespace : fait le 09/10** (Railway + APK par GitHub + EAS Update, `docs/deploiement-railway.md`).
 8. **À la publication** (pas encore décidée) : notifications serveur Android (FCM), reports « Dans 3 h »
    synchronisés avec le serveur, photos des plantes sur le serveur, paiement Balco+ (RevenueCat ; les textes
    disent « Bientôt »), Expo 54 → 57, politique de confidentialité, fiche et compte Play Store
