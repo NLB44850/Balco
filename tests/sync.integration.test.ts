@@ -98,7 +98,7 @@ describe.skipIf(!TEST_DATABASE_URL)("garden sync and server reminders (MySQL)", 
       settings: SETTINGS,
       location: PARIS,
       plants: [
-        { id: "basil-a", catalogId: "basil", nickname: "Basilic cuisine", varietyId: "thai", addedAt: hoursAgo(240), updatedAt: hoursAgo(240) },
+        { id: "basil-a", catalogId: "basil", nickname: "Basilic cuisine", varietyId: "thai", potSize: "medium", addedAt: hoursAgo(240), updatedAt: hoursAgo(240) },
         { id: "tomato-a", catalogId: "cherry-tomato", varietyId: "variete-inventee", addedAt: hoursAgo(240), updatedAt: hoursAgo(240) },
         { id: "ghost", catalogId: "not-in-catalog", addedAt: hoursAgo(1), updatedAt: hoursAgo(1) },
       ],
@@ -110,7 +110,9 @@ describe.skipIf(!TEST_DATABASE_URL)("garden sync and server reminders (MySQL)", 
     const secondDevice = await reminders.syncGarden(userId, emptyPush());
     expect(secondDevice.profile).toEqual({ firstName: "Nicolas", balcony: { sunlight: "sunny", space: "balcony", goals: ["tomatoes"] } });
     expect(secondDevice.settings).toMatchObject({ enabled: true, preferredHour: 18 });
-    expect(secondDevice.plants.find((plant) => plant.id === "basil-a")).toMatchObject({ catalogId: "basil", nickname: "Basilic cuisine", varietyId: "thai" });
+    expect(secondDevice.plants.find((plant) => plant.id === "basil-a")).toMatchObject({ catalogId: "basil", nickname: "Basilic cuisine", varietyId: "thai", potSize: "medium" });
+    // Taille du pot jamais choisie : rien n'est renvoyé (« Je ne sais pas »).
+    expect(secondDevice.plants.find((plant) => plant.id === "tomato-a")?.potSize).toBeUndefined();
     // Une variété absente du catalogue n'est pas conservée.
     expect(secondDevice.plants.find((plant) => plant.id === "tomato-a")?.varietyId).toBeUndefined();
     expect(secondDevice.events).toHaveLength(1);

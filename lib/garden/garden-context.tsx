@@ -45,6 +45,7 @@ import { herbariumAwards } from "./herbarium";
 import { seasonAwards } from "./season-badges";
 import { BACKFILL_VERSION, backfillAwards, badgesEarnedNow, capAwards, mergeAwards, newAwards, unseenAwards, type Awards } from "./awards";
 import { now as clockNow } from "@/lib/clock";
+import type { PotSize } from "@/lib/plants/pot-size";
 
 export const GARDEN_PLANTS_STORAGE_KEY = "balco.garden.plants.v1";
 export const GARDEN_EVENTS_STORAGE_KEY = "balco.garden.events.v1";
@@ -106,6 +107,8 @@ type GardenContextValue = {
   restartPlant: (plantId: string) => Promise<void>;
   renamePlant: (plantId: string, nickname: string) => Promise<void>;
   setPlantVariety: (plantId: string, varietyId: string | undefined) => Promise<void>;
+  /** « Je ne sais pas » retire la taille notée. */
+  setPlantPotSize: (plantId: string, potSize: PotSize) => Promise<void>;
   logEvent: (event: MaintenanceEvent) => Promise<void>;
   removeEvent: (eventId: string) => Promise<void>;
   updateProfile: (patch: Partial<UserProfile>) => Promise<void>;
@@ -412,6 +415,7 @@ export function GardenProvider({ children }: { children: ReactNode }) {
   }, [queue, saveEvents, updatePlant]);
   const renamePlant = useCallback((plantId: string, nickname: string) => updatePlant(plantId, (plant) => ({ ...plant, nickname: nickname.trim() || undefined })), [updatePlant]);
   const setPlantVariety = useCallback((plantId: string, varietyId: string | undefined) => updatePlant(plantId, (plant) => ({ ...plant, varietyId })), [updatePlant]);
+  const setPlantPotSize = useCallback((plantId: string, potSize: PotSize) => updatePlant(plantId, (plant) => ({ ...plant, potSize: potSize === "unknown" ? undefined : potSize })), [updatePlant]);
 
   const logEvent = useCallback(async (event: MaintenanceEvent) => {
     await saveEvents(appendEvent(eventsRef.current, event));
@@ -556,8 +560,8 @@ export function GardenProvider({ children }: { children: ReactNode }) {
   }), [auth.isAuthenticated, auth.loading, auth.user?.email, auth.user?.name, founder, lastSyncedAt, plan, serverPush, syncStatus]);
 
   const value = useMemo<GardenContextValue>(
-    () => ({ loaded, plants, resolvedPlants, pastPlants, events, awards, takeUnseenAwards, markAwardsSeen, grantAward, profile, onboarding, account, addPlant, removePlant, restartPlant, renamePlant, setPlantVariety, logEvent, removeEvent, updateProfile, reloadOnboarding, updateOnboarding, reportLocation, signIn, signOut, syncNow, claimThisDevice, refreshAccount, completeSignIn, deleteAccount }),
-    [loaded, plants, resolvedPlants, pastPlants, events, awards, takeUnseenAwards, markAwardsSeen, grantAward, profile, onboarding, account, addPlant, removePlant, restartPlant, renamePlant, setPlantVariety, logEvent, removeEvent, updateProfile, reloadOnboarding, updateOnboarding, reportLocation, signIn, signOut, syncNow, claimThisDevice, refreshAccount, completeSignIn, deleteAccount],
+    () => ({ loaded, plants, resolvedPlants, pastPlants, events, awards, takeUnseenAwards, markAwardsSeen, grantAward, profile, onboarding, account, addPlant, removePlant, restartPlant, renamePlant, setPlantVariety, setPlantPotSize, logEvent, removeEvent, updateProfile, reloadOnboarding, updateOnboarding, reportLocation, signIn, signOut, syncNow, claimThisDevice, refreshAccount, completeSignIn, deleteAccount }),
+    [loaded, plants, resolvedPlants, pastPlants, events, awards, takeUnseenAwards, markAwardsSeen, grantAward, profile, onboarding, account, addPlant, removePlant, restartPlant, renamePlant, setPlantVariety, setPlantPotSize, logEvent, removeEvent, updateProfile, reloadOnboarding, updateOnboarding, reportLocation, signIn, signOut, syncNow, claimThisDevice, refreshAccount, completeSignIn, deleteAccount],
   );
 
   return <GardenContext.Provider value={value}>{children}</GardenContext.Provider>;

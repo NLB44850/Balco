@@ -2,6 +2,7 @@ import { TRPCError } from "@trpc/server";
 import { z } from "zod";
 
 import { can, planOf } from "../lib/plans";
+import { POT_SIZE_IDS } from "../lib/plants/pot-size";
 import { protectedProcedure, router } from "./_core/trpc";
 import { checkSyncDevice, OtherDeviceError, recalculateUserReminders, registerPushToken, syncGarden, unregisterPushToken } from "./reminders";
 
@@ -51,6 +52,7 @@ const syncInput = z.object({
     catalogId: z.string().min(1).max(64),
     nickname: z.string().max(128).optional(),
     varietyId: z.string().max(64).optional(),
+    potSize: z.enum(POT_SIZE_IDS).optional(),
     toPlant: z.boolean().optional(),
     addedAt: z.iso.datetime(),
     updatedAt: z.iso.datetime(),

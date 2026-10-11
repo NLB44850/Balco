@@ -7,7 +7,8 @@ import { Pressable, StyleSheet, View } from "react-native";
 import { Text } from "@/components/ui/typography";
 import { useColors } from "@/hooks/use-colors";
 
-export type Choice = { id: string; title: string; icon?: string };
+/** `art` : un petit dessin à la place de l'emoji (la taille du pot). */
+export type Choice = { id: string; title: string; icon?: string; art?: React.ReactNode };
 
 type Props = {
   choices: Choice[];
@@ -33,7 +34,7 @@ export function ChoiceList({ choices, selected, onPick, multiple = false, hints 
               onPress={() => onPick(choice.id)}
               style={({ pressed }) => [styles.choice, { borderColor: active ? colors.primary : colors.border, backgroundColor: active ? "rgba(31,122,77,0.08)" : "transparent" }, pressed && styles.pressed]}
             >
-              {choice.icon ? <Text style={styles.icon}>{choice.icon}</Text> : null}
+              {choice.art ?? (choice.icon ? <Text style={styles.icon}>{choice.icon}</Text> : null)}
               <Text style={[styles.text, { color: colors.foreground }]}>{choice.title}</Text>
               <View style={[multiple ? styles.box : styles.radio, { borderColor: active ? colors.primary : colors.border, backgroundColor: active && multiple ? colors.primary : "transparent" }]}>
                 {active && (multiple ? <Text style={styles.mark}>✓</Text> : <View style={[styles.dot, { backgroundColor: colors.primary }]} />)}

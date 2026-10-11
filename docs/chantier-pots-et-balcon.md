@@ -78,4 +78,11 @@ Règles qui valent pour toutes les étapes :
 
 ## Avancement
 
-1. Taille du pot : en cours.
+1. **Taille du pot : codée le 11/10, à valider sur son téléphone.** `lib/plants/pot-size.ts` (`PotSize`, `POT_LITERS`
+   4 / 10 / 22 / 20 L, `potSizeOf`, `potSizeLabel`, `potLitersOf`) ; `GardenPlant.potSize` (absent = « Je ne sais pas »),
+   `setPlantPotSize` (garden-context) ; colonne `reminder_plants.potSize` (migration 0018) et synchro ; feuille
+   `components/pot-size-sheet.tsx` (dessins `PotSizeArt` en react-native-svg, déjà dans l'app : rien à réinstaller ;
+   `art` ajouté à `ChoiceList`) ; ligne « Pot » de la fiche (la pastille devient « Pot conseillé : 5 L ») ; feuille
+   « Dans quel pot ? » après l'ajout depuis le catalogue (« Passer », « Annuler » par-dessus). Pas dans l'accueil, ni
+   dans les ajouts depuis Saisons, Aujourd'hui ou un temps fort (la fiche suffit). Tests `tests/pot-size.test.ts`,
+   synchro, e2e « catalogue : ajouter une plante puis ouvrir sa fiche ».

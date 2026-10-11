@@ -3,6 +3,7 @@ import { and, desc, eq, gt, inArray, lt, lte, notInArray, sql } from "drizzle-or
 import { careProfileFor, resolvePlants, type GardenPlant } from "../lib/garden/garden-logic";
 import { awayOn, isValidVacation, type Vacation } from "../lib/garden/vacation";
 import type { OnboardingAnswers } from "../lib/plants/catalog";
+import { isPotSize } from "../lib/plants/pot-size";
 import {
   decideReminders,
   type MaintenanceEvent,
@@ -195,6 +196,7 @@ function toSyncPlant(row: typeof reminderPlants.$inferSelect): SyncPlant | null 
     catalogId: row.catalogId,
     nickname: row.nickname ?? undefined,
     varietyId: row.varietyId ?? undefined,
+    ...(isPotSize(row.potSize) && row.potSize !== "unknown" ? { potSize: row.potSize } : {}),
     ...(row.toPlant ? { toPlant: true } : {}),
     addedAt: (row.addedAt ?? row.createdAt).toISOString(),
     updatedAt: (row.clientUpdatedAt ?? row.updatedAt).toISOString(),
@@ -259,6 +261,7 @@ async function applyPush(db: Db, userId: number, push: SyncPush) {
       catalogId: plant.catalogId,
       nickname: plant.nickname?.trim() || null,
       varietyId: plant.varietyId && resolved.entry.varieties.some((variety) => variety.id === plant.varietyId) ? plant.varietyId : null,
+      potSize: plant.potSize && plant.potSize !== "unknown" ? plant.potSize : null,
       addedAt: new Date(plant.addedAt),
       removedAt: plant.removedAt ? new Date(plant.removedAt) : null,
       toPlant: plant.toPlant ? 1 : 0,
