@@ -1,6 +1,6 @@
 # Balco : récapitulatif à coller au début d'une conversation avec Claude
 
-*À jour au 9 octobre 2026 (Réglages validés ; chantier « une app vivante toute l'année » validé sur le téléphone le 9 octobre). Copier
+*À jour au 11 octobre 2026 (tout est validé sur le téléphone et fusionné dans `main` ; l'app se met en ligne et se met à jour toute seule). Copier
 tout le texte sous la ligne ci-dessous dans une nouvelle conversation sur claude.ai, et y joindre au besoin les
 captures de `docs/captures/`.*
 
@@ -16,6 +16,17 @@ projet et ce qu'il reste à faire.
 - Ne me demande jamais de coller un secret (clé Expo, clé Anthropic, mot de passe) : je les tape moi-même.
 - Le code est développé avec **Claude Code** (dépôt GitHub `NLB44850/Balco`). Ici, j'ai surtout besoin d'aide pour
   **réfléchir, décider et préparer** (idées, priorités, textes, plans), puis je transmets à Claude Code.
+
+## Comment je teste (en place depuis le 9 octobre, plus besoin du Codespace)
+
+- **Serveur, app web et base de données sur Railway** (environ 5 $ par mois) : à chaque fusion dans `main`, Railway se met
+  à jour tout seul. J'ouvre l'adresse Railway dans Chrome pour la version web (avec simulation météo et date simulée).
+- **E-mails des codes de connexion** envoyés par Brevo (gratuit, par son API : Railway bloque l'envoi classique).
+- **APK de test** construit par un bouton sur GitHub (onglet Actions → « Construire l'APK de test »), à installer à la
+  main seulement quand l'app change de version (nouvelle fonction du téléphone).
+- **Mises à jour sans réinstaller** : à chaque fusion dans `main`, GitHub envoie le nouveau code ; en rouvrant Balco,
+  « Nouvelle version de Balco… Redémarrer ». Testé et validé le 11 octobre. Réglages affiche la date de la mise à jour.
+- **Rappels météo du serveur** lancés par GitHub chaque heure. Pas-à-pas complet : `docs/deploiement-railway.md`.
 
 ## L'application en bref
 
@@ -37,7 +48,9 @@ Balco dit chaque jour quoi faire pour chaque plante du balcon, selon la saison e
 ## Ce qui est fait et validé sur mon téléphone
 
 - **Rappels intelligents** selon la météo (pluie, gel, chaleur, vent, orage) ; « Fait », « Dans 3 h », « Pas aujourd'hui ».
-- **Aujourd'hui** : une ligne à faire par plante ; arrosages regroupés ; alertes météo en bandeau ; eau économisée comptée.
+- **Aujourd'hui** : une ligne à faire par plante ; **arrosages et récoltes regroupés** dès deux plantes (« Vérifie la terre
+  de N plantes », « Récolte ce qui est prêt sur N plantes », une feuille pour cocher chaque plante) ; la récolte reste
+  visible même si l'arrosage attend (terre encore humide) ; alertes météo en bandeau ; eau économisée comptée.
 - **Saisons** : calendrier de 101 plantes vérifié auprès de semenciers, adapté au climat de ma ville ; suggestions du mois ;
   mêmes alertes qu'Aujourd'hui.
 - **Nora** : connaît mes plantes, ma ville, mon historique ; se souvient de ce que je lui dis ; je règle comment elle
@@ -59,7 +72,7 @@ Balco dit chaque jour quoi faire pour chaque plante du balcon, selon la saison e
     « Supprimer mon compte » (efface le compte sur le serveur, garde le balcon sur le téléphone).
   - À propos : donner mon avis (e-mail), confidentialité (bientôt), crédits photos, version.
 
-## Validé sur mon téléphone le 9 octobre : « une app vivante toute l'année »
+## Validé le 9 octobre : « une app vivante toute l'année »
 
 D'après le brief écrit avec toi (plan et réponses validés, détail dans `docs/chantier-toute-l-annee.md`) :
 - **Date simulée** dans Réglages → Version de test, pour tout essayer sans attendre (n'existe pas dans l'app publiée).
@@ -80,27 +93,29 @@ D'après le brief écrit avec toi (plan et réponses validés, détail dans `doc
   fleurie la première fois, « Elle a fleuri ? » sur la fiche des fleurs) ; Moi refait (« Presque là », la saison,
   l'herbier, tous les badges).
 
+## Corrigé après mes tests de l'APK (9 au 11 octobre, validé)
+
+- La feuille du bas remonte au-dessus du clavier (prénom, ville) ; « Se déconnecter » ne dépasse plus ; « Comment Nora te
+  parle » bien aligné ; l'aperçu de la photo s'affiche dans Observer (galerie et appareil photo depuis Aujourd'hui).
+
 ## Ce qu'il reste à faire, dans l'ordre
 
-1. **Fusionner « une app vivante toute l'année » dans `main`** (PR depuis la branche `ccr-71709eb8-bxzttf`).
-2. ~~Vérifier sur la vraie app Android (APK)~~ : **fait et validé le 9 octobre** (photo dans Observer, clavier,
-   Réglages corrigés). Reste la notification d'un temps fort, qui n'arrivera que le 18 novembre.
-3. **Sainte-Catherine en vrai** : regarder la carte le 18 novembre (sans date simulée), le bilan le 1er décembre.
-4. **Mémoire de Nora sur plusieurs jours** : test sur 2 ou 3 jours, retour à donner.
-5. **Faire tester par 3 à 5 personnes** avant de brancher le paiement (piste de « test interne » du Play Store).
-6. **Tester sans Codespace** (en place depuis le 9 octobre) : serveur et app web sur Railway, mis à jour à
-   chaque fusion ; APK construit par un bouton GitHub ; nouveau code reçu sans réinstaller (pas-à-pas dans
-   `docs/deploiement-railway.md`).
-7. **Avant la publication** :
+1. **Sainte-Catherine en vrai** : le 18 novembre, la notification (à l'heure de mes rappels) et la grande carte sans
+   date simulée ; le bilan le 1er décembre.
+2. **Mémoire de Nora sur plusieurs jours** : test sur 2 ou 3 jours, retour à donner.
+3. **Faire tester par 3 à 5 personnes** avant de brancher le paiement (l'adresse Railway et l'APK de test le
+   permettent déjà ; ensuite piste de « test interne » du Play Store).
+4. **Avant la publication** :
    - notifications envoyées par le serveur (Firebase), pour les alertes même app fermée ;
    - synchroniser avec le serveur les « Dans 3 h », les réponses « Tout récolté ? » / « Ta saison est finie ? »
      et les photos des plantes ;
    - paiement Balco+ (RevenueCat), puis un seul e-mail aux inscrits de « Me prévenir à l'ouverture », et effacer la liste ;
    - mise à jour d'Expo (SDK 54 → 57) ;
    - page Confidentialité (compte, position, photos, questions à Nora, e-mail laissé pour Balco+) ;
-   - adresse de contact sur mon nom de domaine (aujourd'hui contact_balco@gmail.com) ;
+   - un nom de domaine : adresse de contact (aujourd'hui contact_balco@gmail.com) et expéditeur des e-mails reconnu par
+     Brevo (avec une adresse Outlook ou Gmail, les codes peuvent arriver dans les indésirables) ;
    - compte développeur Google et fiche Play Store ; offre payante d'Open-Meteo dès que Balco+ sera payant.
-8. **Version suivante** : suivi d'une plante en photos, balcon visuel (plan, emplacement, exposition), récoltes et
+5. **Version suivante** : suivi d'une plante en photos, balcon visuel (plan, emplacement, exposition), récoltes et
    recettes, défis entre jardiniers, rentrer une plante pour l'hiver (piment, poivron, physalis).
 
 ## Décisions déjà prises (à ne pas remettre en question sans moi)
