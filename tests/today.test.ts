@@ -94,9 +94,9 @@ describe("liste « Aujourd'hui »", () => {
     expect(items.slice(-plants.length).every((item) => item.done)).toBe(true);
   });
 
-  it("une ligne par plante au plus, hors alertes météo", () => {
+  it("une ligne par plante au plus, hors alertes météo (la récolte peut s'ajouter à un arrosage en attente)", () => {
     const { items } = list(12);
-    const plantIds = items.flatMap((item) => (item.kind === "task" ? [item.task.resolved.plant.id] : item.kind === "season" ? [item.activity.subjectId] : item.kind === "harvest-end" ? [item.resolved.plant.id] : item.group.cause === "thirst" ? item.group.decisions.map((decision) => decision.plantId) : []));
+    const plantIds = items.filter((item) => item.gesture !== "harvest").flatMap((item) => (item.kind === "task" ? [item.task.resolved.plant.id] : item.kind === "season" ? [item.activity.subjectId] : item.kind === "harvest-end" ? [item.resolved.plant.id] : item.group.cause === "thirst" ? item.group.decisions.map((decision) => decision.plantId) : []));
     expect(new Set(plantIds).size).toBe(plantIds.length);
   });
 
@@ -177,6 +177,17 @@ describe("état du balcon", () => {
 });
 
 
+describe("une récolte ne reste pas cachée derrière un arrosage pas coché", () => {
+  it("montre l'arrosage et la récolte de la même plante, mais pas son entretien", () => {
+    const now = new Date(2026, 6, 15, 10);
+    const mint = resolvePlants([{ id: "mint-1", catalogId: "mint", addedAt: new Date(2026, 5, 1).toISOString() }]);
+    const plan = planDay({ plants: mint, events: [], now });
+    expect(plan[0].gestures.map((gesture) => gesture.kind)).toEqual(expect.arrayContaining(["watering", "harvest"]));
+    const items = buildTodayList({ groups: [], plan });
+    expect(items.map((item) => item.gesture)).toEqual(["watering", "harvest"]);
+  });
+});
+
 describe("liste affichée : arrosages regroupés, gestes pas urgents repliés", () => {
   type Item = ReturnType<typeof buildTodayList>[number];
   const item = (key: string, gesture: Item["gesture"], plantName: string, done = false) =>
@@ -240,9 +251,12 @@ describe("liste affichée : arrosages regroupés, gestes pas urgents repliés", 
     expect(lines).toHaveLength(5);
   });
 
-  it("garde une seule ligne par plante sur le balcon du test utilisateur", () => {
+  it("garde une seule ligne par plante sur le balcon du test utilisateur (arrosage et récolte regroupés à part)", () => {
     const { items } = list(12, []);
-    const names = layoutTodayList(items).flatMap((line) => (line.type === "item" ? [line.item] : line.items)).filter((entry) => entry.kind !== "alert" || entry.group.cause === "thirst").map((entry) => entry.plantName);
+    const entries = layoutTodayList(items).flatMap((line) => (line.type === "item" ? [line.item] : line.items)).filter((entry) => entry.kind !== "alert" || entry.group.cause === "thirst");
+    const names = entries.filter((entry) => entry.gesture !== "harvest").map((entry) => entry.plantName);
     expect(new Set(names).size).toBe(names.length);
+    const harvests = entries.filter((entry) => entry.gesture === "harvest").map((entry) => entry.plantName);
+    expect(new Set(harvests).size).toBe(harvests.length);
   });
 });

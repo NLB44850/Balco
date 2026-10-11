@@ -18,13 +18,13 @@ avec son porteur. Détails : `docs/feuille-de-route.md` (demande d'origine, éta
 
 ## Tester sur le téléphone
 
-**En cours de mise en place (09/10, ses choix : Railway, version de test, Brevo, mises à jour sans réinstaller)** :
+**En place depuis le 09/10 (ses choix : Railway, version de test, Brevo, mises à jour sans réinstaller ; APK construit par GitHub, mise à jour publiée à la fusion de la PR #37, rappels météo du serveur chaque heure)** :
 tout le pas-à-pas est dans **`docs/deploiement-railway.md`**. Serveur + app web + MySQL sur Railway, redéployés à
 chaque fusion dans `main` (`railway.json`) ; APK de test construit par le bouton GitHub « Construire l'APK de test »
 (`.github/workflows/apk.yml`, secret `EXPO_TOKEN`, variable `BALCO_API_URL`) ; nouveau code de l'app publié à chaque
 fusion (`.github/workflows/update.yml`, EAS Update canal `test`, `hooks/use-app-updates.tsx` propose « Redémarrer »). E-mails par l'API de Brevo (`BREVO_API_KEY`, `server/auth/mailer.ts`) : Railway Hobby bloque le SMTP (« Connection timeout »).
 **Changer `version` dans `app.config.ts` dès qu'on ajoute un module natif, une permission ou un plugin** (runtime
-`appVersion`), puis lui demander un nouvel APK. Tant que ce n'est pas en place, le Codespace reste la façon de tester
+`appVersion`), puis lui demander un nouvel APK. Le Codespace reste possible en secours
 (profil EAS `codespace` pour un APK qui parle au Codespace) :
 
 1. `git pull` puis `bash scripts/codespace-demarrer.sh` (nettoie le cache Docker, reconstruit, démarre,
@@ -46,7 +46,7 @@ fusion (`.github/workflows/update.yml`, EAS Update canal `test`, `hooks/use-app-
 
 - `pnpm -s check`, `pnpm -s lint`, puis `TEST_DATABASE_URL=mysql://balco:balco@localhost:3306/balco_cal npx vitest run`
   (MariaDB locale : `service mariadb start` si elle s'est arrêtée, `apt-get install -y mariadb-server` si elle manque,
-  puis `DATABASE_URL=… npx drizzle-kit migrate` ; 621 tests à ce jour). Dans un conteneur
+  puis `DATABASE_URL=… npx drizzle-kit migrate` ; 622 tests à ce jour). Dans un conteneur
   neuf : `apt-get install -y mariadb-server`, `service mariadb start`, créer la base `balco_cal` et l'utilisateur
   `balco`/`balco`, puis `pnpm -s build && DATABASE_URL=mysql://balco:balco@localhost:3306/balco_cal node dist/migrate.mjs`.
 - `npx expo export --platform android` pour s'assurer que le bundle Android se construit.
@@ -196,8 +196,7 @@ et les 10 étapes du test utilisateur du 04/10 (détail dans « Historique des l
      notification du 1er mars). E2e `15-fin-de-saison`.
    - Corrigé au passage : « de haricots » (h aspiré, `elides` dans grammar.ts) au lieu de « d'haricots ».
 6. **Mémoire de Nora sur plusieurs jours** : il doit encore faire le test sur 2-3 jours (retour à recueillir).
-7. **Tester sans Codespace** (proposé, pas encore demandé) : version web hébergée qui se met à jour seule et APK
-   construit par une action GitHub (EXPO_TOKEN qu'il enregistre lui-même dans les secrets du dépôt).
+7. **Tester sans Codespace : fait le 09/10** (Railway + APK par GitHub + EAS Update, `docs/deploiement-railway.md`).
 8. **À la publication** (pas encore décidée) : notifications serveur Android (FCM), reports « Dans 3 h »
    synchronisés avec le serveur, photos des plantes sur le serveur, paiement Balco+ (RevenueCat ; les textes
    disent « Bientôt »), Expo 54 → 57, politique de confidentialité, fiche et compte Play Store
@@ -311,7 +310,7 @@ Livré, à valider sur son téléphone :
   · 5 plantes », « Entretien · 3 gestes », Engrais à part), « 2 sur 5 faits · menthe, thym… » ; la ligne ouvre
   une feuille du bas où l'on coche chaque plante (« Annuler » et fête s'affichent par-dessus grâce à
   `overlay` de `BottomSheet`). Un type d'une seule plante reste une ligne à cocher ; le filtre par plante
-  garde le détail. **Aujourd'hui reste une ligne par plante** (choix du porteur), mais depuis le 09/10 (à sa demande, « indigeste avec plusieurs plantes ») les **récoltes se regroupent comme les arrosages** dès 2 plantes : « Récolte ce qui est prêt sur N plantes » (ligne `type: "group"`, `gesture: "harvest"` de `layoutTodayList`, feuille du bas commune `groupSheet` dans `index.tsx`, e2e `openHarvests`) ; « Tout récolté ? » et le pot libre restent à part. Vue « Par saison » : mois à
+  garde le détail. **Aujourd'hui reste une ligne par plante** (choix du porteur), mais depuis le 09/10 (à sa demande, « indigeste avec plusieurs plantes ») les **récoltes se regroupent comme les arrosages** dès 2 plantes : « Récolte ce qui est prêt sur N plantes » (ligne `type: "group"`, `gesture: "harvest"` de `layoutTodayList`, feuille du bas commune `groupSheet` dans `index.tsx`, e2e `openHarvests`) ; « Tout récolté ? » et le pot libre restent à part. Décidé avec lui le 11/10 (récoltes invisibles deux jours : cachées derrière « Vérifie la terre » pas cochée, terre humide) : **la récolte s'affiche aussi quand l'arrosage de la plante attend** (`buildTodayList`, seule exception à « une ligne à faire par plante »). Vue « Par saison » : mois à
   venir seulement pour la saison en cours, et suggestions de la saison (`seasonSuggestions`, « En novembre ·
   … »). Plus de « Plante … » pour une plante déjà sur le balcon (`addedAt` du `CalendarSubject`, option
   `now`), sauf arrivée ce mois-ci (achetée, ajoutée depuis une suggestion) ; vaut pour Saisons et

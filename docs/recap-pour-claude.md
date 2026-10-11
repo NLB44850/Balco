@@ -88,7 +88,7 @@ D'après le brief écrit avec toi (plan et réponses validés, détail dans `doc
 3. **Sainte-Catherine en vrai** : regarder la carte le 18 novembre (sans date simulée), le bilan le 1er décembre.
 4. **Mémoire de Nora sur plusieurs jours** : test sur 2 ou 3 jours, retour à donner.
 5. **Faire tester par 3 à 5 personnes** avant de brancher le paiement (piste de « test interne » du Play Store).
-6. **Tester sans Codespace** (en cours de mise en place, 9 octobre) : serveur et app web sur Railway, mis à jour à
+6. **Tester sans Codespace** (en place depuis le 9 octobre) : serveur et app web sur Railway, mis à jour à
    chaque fusion ; APK construit par un bouton GitHub ; nouveau code reçu sans réinstaller (pas-à-pas dans
    `docs/deploiement-railway.md`).
 7. **Avant la publication** :
@@ -105,7 +105,8 @@ D'après le brief écrit avec toi (plan et réponses validés, détail dans `doc
 
 ## Décisions déjà prises (à ne pas remettre en question sans moi)
 
-- Aujourd'hui garde **une ligne à faire par plante au plus** ; Saisons est **à lire**, on coche sur Aujourd'hui.
+- Aujourd'hui garde **une ligne à faire par plante au plus** (sauf la récolte, visible même si l'arrosage attend ; arrosages et
+  récoltes sont regroupés dès deux plantes) ; Saisons est **à lire**, on coche sur Aujourd'hui.
 - Les pas-à-pas sont **facultatifs** ; règles d'écriture : une action par écran, verbe en tête, moins de 12 mots, tutoiement.
 - L'accueil ne propose que des plantes de saison ; prénom et niveau de Nora ne sont plus dans l'accueil (on les règle
   dans Réglages ou dans Nora).
