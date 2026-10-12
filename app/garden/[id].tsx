@@ -48,7 +48,7 @@ export default function PlantScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const { width } = useWindowDimensions();
-  const { id } = useLocalSearchParams<{ id: string }>();
+  const { id, pot } = useLocalSearchParams<{ id: string; /** « 1 » : ouvrir « Dans quel pot ? » (carte « Vérifie tes pots »). */ pot?: string }>();
   const { loaded, resolvedPlants, pastPlants, events, awards, markAwardsSeen, logEvent, removeEvent, removePlant, renamePlant, setPlantVariety, setPlantPotSize } = useGarden();
   const { plan, ready, snoozes, reminderSettings, climate } = useDayPlan();
   const { photos, removePhoto } = usePlantPhotos();
@@ -58,7 +58,7 @@ export default function PlantScreen() {
   const [editingName, setEditingName] = useState(false);
   const [nameDraft, setNameDraft] = useState("");
   const [confirmRemove, setConfirmRemove] = useState(false);
-  const [potSheet, setPotSheet] = useState(false);
+  const [potSheet, setPotSheet] = useState(pot === "1");
   const [toast, setToast] = useState<ToastMessage | null>(null);
   const toastId = useRef(0);
   const { celebrate, overlay: celebration } = useCelebration();

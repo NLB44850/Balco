@@ -48,6 +48,9 @@ test("onboarding « Pas encore » : soleil, espace, envies, puis des plantes de 
   // Choisies, pas encore en terre : leur premier geste est de les semer ou planter.
   await expect(page.getByRole("checkbox", { name: /^Marquer comme fait : (Sème|Plante) / }).first()).toBeVisible();
   await expect(page.getByText(/Vérifie la terre/)).toHaveCount(0);
+  // Première tâche liée au pot (étape 3c) : le pot et le terreau de chaque plante à planter.
+  await expect(page.getByText("🪴 Prépare tes pots")).toBeVisible();
+  await expect(page.getByText(/^Un pot percé d’au moins \d+ cm de large, du terreau/u).first()).toBeVisible();
   // Carte d'arrivée, jusqu'au premier geste coché.
   await expect(page.getByText("Bienvenue, voici ton balcon 🌱")).toBeVisible();
   await page.getByRole("checkbox", { name: /^Marquer comme fait : (Sème|Plante) / }).first().click();
@@ -81,6 +84,16 @@ test("onboarding « Oui » : lesquelles (raccourci + recherche), soleil, espace,
   // Déjà en terre : pas de « Plante le basilic », l'arrosage est proposé.
   await expect(page.getByRole("checkbox", { name: /Plante le basilic|Plante le romarin/ })).toHaveCount(0);
   await expect(page.getByText(/Vérifie la terre de 2 plantes|Arrose/).first()).toBeVisible();
+  // « Vérifie tes pots » (étape 3c) : le pot noté d'office, qu'on change depuis la fiche, puis « C'est bon ».
+  await expect(page.getByText("🪴 Vérifie tes pots")).toBeVisible();
+  await page.getByRole("button", { name: /^Basilic : Noté : / }).click();
+  await expect(page.getByText("Dans quel pot ?")).toBeVisible();
+  await page.getByText("Grand (30 à 40 cm)").click();
+  await expect(page.getByText("Dans quel pot ?")).toHaveCount(0);
+  await page.goBack();
+  await expect(page.getByRole("button", { name: "Basilic : Noté : grand (30 à 40 cm). C’est bien ça ?" })).toBeVisible();
+  await page.getByRole("button", { name: "C’est bon" }).click();
+  await expect(page.getByText("🪴 Vérifie tes pots")).toHaveCount(0);
   expect(errors).toEqual([]);
 });
 

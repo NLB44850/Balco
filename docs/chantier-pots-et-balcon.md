@@ -131,10 +131,17 @@ Règles qui valent pour toutes les étapes :
      pas ») puis « Ton balcon a-t-il de l'ombre ? » (couvert, vis-à-vis, résultat recalculé à chaque case). Réglages →
      Soleil : même simulateur, enregistré à chaque toucher, valeur « Plein sud · plein soleil ». Réponses
      `orientation`, `covered`, `facing` dans `OnboardingAnswers` (synchronisées), `sunlight` en découle (`sunPatch`).
-   - **3b, diagnostic du balcon : codé le 13/10, à valider.** `lib/garden/balcony-diagnosis.ts` (`diagnoseBalcony`, nos
+   - **3b, diagnostic du balcon : codé le 13/10, validé sur son téléphone le 13/10.** `lib/garden/balcony-diagnosis.ts` (`diagnoseBalcony`, nos
      règles, sans IA) : soleil en heures et ce qu'il permet, « Chaud l'été » (sud ou ouest en plein soleil, non couvert),
      « La pluie passe à côté » (couvert), « Le soleil bas est caché » (vis-à-vis), « Peu pour les légumes-fruits »
      (ombre), la place, le climat de la ville (`frostNote`), deux plantes déjà là qui voudraient plus de soleil, trois
      plantes qui y pousseront bien (`recommendPlants`). Écran `app/diagnostic.tsx` : à la fin de l'accueil
      (`/diagnostic?first=1`, « Voir mon balcon ») et Réglages → Mon balcon → « Diagnostic de ton balcon ». À reprendre à
      l'étape 6 (arrosage météo) : un balcon couvert ne devrait pas recevoir « N'arrose pas, il pleut ».
+   - **3c, première tâche liée au pot : codée le 13/10, à valider.** `lib/garden/first-pots.ts` (`firstPotsCard`) :
+     pendant les 14 jours qui suivent l'accueil (pas après « Passer »), carte prioritaire sur Aujourd'hui (`pots` en tête
+     de `pickTodayCards`, `components/today/first-pots-card.tsx`) : « Prépare tes pots » (plantes à planter : « Un pot
+     percé d'au moins 30 cm de large, du terreau neuf mêlé de sable. ») ou « Vérifie tes pots » (plantes déjà là :
+     « Noté : moyen (20 à 30 cm). C'est bien ça ? », en orange si le pot noté est trop petit). Chaque ligne a le dessin
+     du pot et ouvre la fiche directement sur « Dans quel pot ? » (`/garden/<id>?pot=1`) ; « C'est bon » la ferme pour
+     de bon (`first-pots:<date de l'accueil>` avec les cartes fermées des temps forts). E2e dans `1-parcours`.
