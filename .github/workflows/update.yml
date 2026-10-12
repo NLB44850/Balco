@@ -58,7 +58,8 @@ jobs:
           EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
           BALCO_API_URL: ${{ vars.BALCO_API_URL }}
           EXPO_PUBLIC_WEATHER_SIMULATION: "1"
-          COMMIT_MESSAGE: ${{ github.event.pull_request && format('PR #{0} : {1}', github.event.pull_request.number, github.event.pull_request.title) || github.event.head_commit.message || 'Publication manuelle' }}
+          # Entre guillemets : sans eux, « #» et « : » couperaient la ligne en YAML.
+          COMMIT_MESSAGE: "${{ github.event.pull_request && format('PR n°{0}, {1}', github.event.pull_request.number, github.event.pull_request.title) || github.event.head_commit.message || 'Publication manuelle' }}"
         run: |
           export EXPO_PUBLIC_API_BASE_URL="${BALCO_API_URL%/}"
           message=$(printf '%s' "$COMMIT_MESSAGE" | head -n 1 | cut -c1-200)
