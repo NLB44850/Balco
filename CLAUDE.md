@@ -96,7 +96,7 @@ Validé sur son téléphone le 08/10 : fin de saison des annuelles (point 5 bis)
 `docs/recap-pour-claude.md` + captures `docs/captures/` (refaites par `bash scripts/captures.sh`, spec
 `e2e/captures.spec.ts` sautée sans `CAPTURES=1`).**
 
-**Chantier « Pots et balcon » (validé le 11/10, 10 étapes) : tout est dans `docs/chantier-pots-et-balcon.md`.** Étape 1 (taille du pot) validée sur son téléphone le 11/10, PR vers `main` depuis la branche `ccr-301722b9-4da3s2`. Étape 2 (fiches « Spécial Pot », `lib/plants/pot-sheet.ts`, sources `docs/sources-pots.md`) codée le 12/10 sur la même branche, à valider.
+**Chantier « Pots et balcon » (validé le 11/10, 10 étapes) : tout est dans `docs/chantier-pots-et-balcon.md`.** Étape 1 (taille du pot) validée sur son téléphone le 11/10, PR vers `main` depuis la branche `ccr-301722b9-4da3s2`. Étape 2 (fiches « Spécial Pot », `lib/plants/pot-sheet.ts`, sources `docs/sources-pots.md`) validée sur son téléphone le 12/10 (tout en cm, conseil jardinière, pot trop petit en dessin), PR vers `main`. Prochaine : étape 3, accueil enrichi.
 
 **Récap pour reprendre (07/10)** : ce bloc fait foi ; les paragraphes plus bas sont l'historique (certains
 décrivent un état ancien, par exemple Saisons « à cocher » ou une fête plein écran à chaque récolte).

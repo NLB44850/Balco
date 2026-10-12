@@ -86,7 +86,7 @@ Règles qui valent pour toutes les étapes :
    « Dans quel pot ? » après l'ajout depuis le catalogue (« Passer », « Annuler » par-dessus). Pas dans l'accueil, ni
    dans les ajouts depuis Saisons, Aujourd'hui ou un temps fort (la fiche suffit). Tests `tests/pot-size.test.ts`,
    synchro, e2e « catalogue : ajouter une plante puis ouvrir sa fiche ».
-2. **Fiches « Spécial Pot » : codées le 12/10, à valider sur son téléphone.** Recherche web en deux passages (consignes
+2. **Fiches « Spécial Pot » : codées le 12/10, validées sur son téléphone le 12/10 (« parfait et très lisible »).** Recherche web en deux passages (consignes
    dans `scripts/pots/`) : 90 plantes vérifiées sur 2 sources au moins, 11 estimations affichées comme telles (son choix
    « A » du 12/10 : « Estimation : peu de sources sur cette plante en pot. »). Données `lib/plants/pot-sheets-data.ts`,
    logique `lib/plants/pot-sheet.ts` (`potSheetFor`, `SOIL_LABELS`, `feedingValue`, `feedingDetail`, `potFit`), sources
