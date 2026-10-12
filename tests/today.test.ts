@@ -239,6 +239,18 @@ describe("liste affichée : arrosages regroupés, gestes pas urgents repliés", 
     expect(layoutTodayList([item("h1", "harvest", "Menthe"), item("s", "season", "Ail")]).map((line) => line.type)).toEqual(["item", "item"]);
   });
 
+  it("regroupe semis et plantations du mois dès deux plantes ; rempotage et gestes de suite restent seuls", () => {
+    const season = (key: string, plantName: string, kind: string, done = false) =>
+      ({ ...item(key, "season", plantName, done), kind: "season", activity: { kind } }) as unknown as Item;
+    const lines = layoutTodayList([season("p1", "Aubergine", "plant"), season("p2", "Chou-rave", "plant", true), season("s1", "Cresson", "sow"), season("r", "Thym", "repot")]);
+    expect(lines[0]).toMatchObject({ type: "group", gesture: "planting", icon: "🌱", title: "Plante ou sème 3 plantes de saison", subtitle: "1 sur 3 faites · Aubergine, chou-rave, cresson", done: false });
+    expect(lines.map((line) => line.key)).toEqual(["planting", "r"]);
+    expect(layoutTodayList([season("p1", "Aubergine", "plant"), season("p2", "Chou-rave", "plant")])[0]).toMatchObject({ title: "Plante 2 plantes de saison", subtitle: "Ce mois-ci · Aubergine, chou-rave" });
+    expect(layoutTodayList([season("s1", "Radis", "sow"), season("s2", "Cresson", "sow")])[0]).toMatchObject({ title: "Sème 2 plantes de saison" });
+    // Une seule plantation reste une ligne à cocher.
+    expect(layoutTodayList([season("p1", "Aubergine", "plant"), season("r", "Thym", "repot")]).map((line) => line.type)).toEqual(["item", "item"]);
+  });
+
   it("laisse « Tout récolté ? » et le pot libre hors du groupe des récoltes", () => {
     const end = { ...item("end", "harvest", "Radis"), kind: "harvest-end" } as unknown as Parameters<typeof layoutTodayList>[0][number];
     const lines = layoutTodayList([item("h1", "harvest", "Menthe"), end]);

@@ -733,7 +733,9 @@ export default function HomeScreen() {
             <Text style={[styles.sheetBody, { color: colors.muted }]}>
               {groupSheet.gesture === "watering"
                 ? "Enfonce ton doigt dans la terre de chaque pot : si elle est sèche, arrose au pied et coche. Touche une ligne pour le détail."
-                : "Passe d’un pot à l’autre et cueille ce qui est prêt, puis coche. Touche une ligne pour le détail."}
+                : groupSheet.gesture === "planting"
+                  ? "Pas besoin de tout faire aujourd’hui : tu as le mois. Touche une ligne pour le pas-à-pas, coche quand c’est fait."
+                  : "Passe d’un pot à l’autre et cueille ce qui est prêt, puis coche. Touche une ligne pour le détail."}
             </Text>
             <View>
               {groupSheet.items.map((item) => (
@@ -744,6 +746,7 @@ export default function HomeScreen() {
                   title={item.title}
                   subtitle={item.done ? doneSubtitle(item, events) : item.subtitle}
                   done={item.done}
+                  picture={seasonPicture(item)}
                   onToggle={() => void toggleItem(item)}
                   onOpen={() => {
                     // Le détail s'ouvre une fois la feuille du groupe repliée.

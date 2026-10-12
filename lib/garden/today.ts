@@ -26,8 +26,8 @@ export type TodayItem =
   /** « Tes radis sont-ils tous récoltés ? » ou « Ton pot est libre » : la ligne ouvre la feuille du pot libre. */
   | (TodayBase & { kind: "harvest-end"; done: false; stage: "question" | "free"; resolved: ResolvedPlant });
 
-/** Les gestes regroupés en une ligne dès qu'ils concernent deux plantes : les arrosages et les récoltes. */
-export type GroupedGesture = "watering" | "harvest";
+/** Les gestes regroupés en une ligne dès qu'ils concernent deux plantes : arrosages, récoltes, semis et plantations. */
+export type GroupedGesture = "watering" | "harvest" | "planting";
 
 /**
  * Une ligne de l'écran : un geste seul, les arrosages ou les récoltes regroupés (« Vérifie la terre de 3 plantes »,
@@ -39,15 +39,26 @@ export type TodayLine =
   | { type: "group"; key: GroupedGesture; gesture: GroupedGesture; icon: string; tone: TodayTone; title: string; subtitle: string; done: boolean; items: TodayItem[] }
   | { type: "more"; key: "more"; title: string; subtitle: string; items: TodayItem[] };
 
-const GROUP_LOOK: Record<GroupedGesture, { icon: string; tone: TodayTone; title: (count: number) => string; todo: string }> = {
+const GROUP_LOOK: Record<GroupedGesture, { icon: string; tone: TodayTone; title: (count: number, members: TodayItem[]) => string; todo: string }> = {
   watering: { icon: "💧", tone: "water", title: (count) => `Vérifie la terre de ${count} plantes`, todo: "Sèche ? Arrose" },
   harvest: { icon: "🧺", tone: "care", title: (count) => `Récolte ce qui est prêt sur ${count} plantes`, todo: "Cueille ce qui est mûr" },
+  // 14/10 : « Plante l'aubergine », « Plante le chou-rave »… prenaient 7 lignes ; une seule, comme les arrosages.
+  planting: { icon: "🌱", tone: "season", title: (count, members) => `${plantingVerb(members)} ${count} plantes de saison`, todo: "Ce mois-ci" },
 };
+
+/** « Sème », « Plante » ou « Plante ou sème », selon les gestes du groupe. */
+function plantingVerb(members: TodayItem[]) {
+  const kinds = new Set(members.map((item) => (item.kind === "season" ? item.activity.kind : null)));
+  if (!kinds.has("plant")) return "Sème";
+  return kinds.has("sow") ? "Plante ou sème" : "Plante";
+}
 
 /** Une récolte à regrouper : pas la question « Tout récolté ? » ni le pot libre, qui ont leur propre ligne. */
 function groupedAs(item: TodayItem): GroupedGesture | null {
   if (item.gesture === "watering") return "watering";
   if (item.gesture === "harvest" && item.kind !== "harvest-end" && !item.quiet) return "harvest";
+  // Semis et plantations du mois (pas le rempotage ni les gestes de suite, qui restent une ligne par plante).
+  if (item.kind === "season" && (item.activity.kind === "sow" || item.activity.kind === "plant")) return "planting";
   return null;
 }
 
@@ -198,15 +209,16 @@ export const MAX_TODAY_LINES = 5;
 const NOT_URGENT: GestureKind[] = ["fertilizing", "care"];
 
 /**
- * La liste telle qu'elle s'affiche : alertes, arrosages puis récoltes regroupés dès qu'il y en a deux (une seule ligne
- * « Vérifie la terre de N plantes », « Récolte ce qui est prêt sur N plantes »), gestes de saison, puis, au-delà de
+ * La liste telle qu'elle s'affiche : alertes, arrosages, récoltes, semis et plantations regroupés dès qu'il y en a deux
+ * (une seule ligne « Vérifie la terre de N plantes », « Récolte ce qui est prêt sur N plantes », « Plante ou sème N
+ * plantes de saison »), autres gestes de saison, puis, au-delà de
  * 5 lignes à faire, l'engrais et l'entretien repliés sous « X autres gestes, pas urgents ». Ce qui est fait passe à
  * la fin. Alertes, arrosages et récoltes restent toujours visibles.
  */
 export function layoutTodayList(items: TodayItem[]): TodayLine[] {
   const single = (item: TodayItem): TodayLine => ({ type: "item", key: item.key, item });
   const groups: Extract<TodayLine, { type: "group" }>[] = [];
-  for (const gesture of ["watering", "harvest"] as const) {
+  for (const gesture of ["watering", "harvest", "planting"] as const) {
     const members = items.filter((item) => groupedAs(item) === gesture);
     if (members.length < 2) continue;
     const look = GROUP_LOOK[gesture];
@@ -218,7 +230,7 @@ export function layoutTodayList(items: TodayItem[]): TodayLine[] {
       gesture,
       icon: look.icon,
       tone: look.tone,
-      title: look.title(members.length),
+      title: look.title(members.length, members),
       subtitle: doneCount > 0 ? `${doneCount} sur ${members.length} faites · ${names}` : `${look.todo} · ${names}`,
       done: doneCount === members.length,
       items: members,

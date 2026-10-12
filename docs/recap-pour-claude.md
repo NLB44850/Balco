@@ -1,6 +1,6 @@
 # Balco : récapitulatif à coller au début d'une conversation avec Claude
 
-*À jour au 11 octobre 2026 (tout est validé sur le téléphone et fusionné dans `main` ; l'app se met en ligne et se met à jour toute seule). Copier
+*À jour au 14 octobre 2026 (tout est validé sur le téléphone ; dernière demande de fusion, PR #43, à fusionner ; l'app se met en ligne et se met à jour toute seule). Copier
 tout le texte sous la ligne ci-dessous dans une nouvelle conversation sur claude.ai, et y joindre au besoin les
 captures de `docs/captures/`.*
 
@@ -98,6 +98,26 @@ D'après le brief écrit avec toi (plan et réponses validés, détail dans `doc
 - La feuille du bas remonte au-dessus du clavier (prénom, ville) ; « Se déconnecter » ne dépasse plus ; « Comment Nora te
   parle » bien aligné ; l'aperçu de la photo s'affiche dans Observer (galerie et appareil photo depuis Aujourd'hui).
 
+## Chantier en cours : « Pots et balcon » (plan validé le 11 octobre, détail dans `docs/chantier-pots-et-balcon.md`)
+
+Rendre Balco plus juste en tenant compte du pot de chaque plante et du balcon (soleil, poids), puis préparer Balco+.
+Règles : rien d'obligatoire (« Je ne sais pas » partout), une ligne par plante au plus sur Aujourd'hui (regroupée dès deux
+plantes), chaque valeur de jardinage vérifiée sur 2 sources, pas de nouveau module du téléphone sans me prévenir, aucune
+marque citée, jamais de produit chimique, tout en centimètres (jamais de litres de pot à l'écran).
+
+- **Fait et validé** :
+  - étape 1, taille du pot de chaque plante (5 choix dessinés), choisie d'office par Balco à l'ajout ;
+  - étape 2, fiches « Spécial pot » (profondeur, largeur, terreau, engrais ; « Pot trop petit » en dessin) ;
+  - étape 3, accueil enrichi : simulateur de soleil (orientation, couvert, vis-à-vis → heures de soleil), « Diagnostic de
+    ton balcon », et une ligne « Vérifie le pot de N plantes » après l'accueil (détail dans une feuille du bas) ;
+  - en plus (14/10) : sur Aujourd'hui, semis et plantations du mois regroupés dès deux plantes
+    (« Plante ou sème 7 plantes de saison »), PR #43.
+- **Prochaine étape, 4 : rappels d'engrais** tirés des fiches (rythme, rien en hiver ni en vacances, « Arrose et nourris
+  tes tomates » quand les deux tombent le même jour, « Nourris 3 plantes » dès deux plantes, réglages de rappels respectés).
+- Ensuite : 5 liste de courses pour la jardinerie, 6 arrosage selon la météo et la taille du pot (puis coach Balco+ ;
+  un balcon couvert ne doit pas recevoir « N'arrose pas, il pleut »), 7 consignes pour le voisin qui arrose,
+  8 « Que planter à la place ? » et traitement naturel, 9 calculateur de poids, 10 écran Balco+.
+
 ## Ce qu'il reste à faire, dans l'ordre
 
 1. **Sainte-Catherine en vrai** : le 18 novembre, la notification (à l'heure de mes rappels) et la grande carte sans
@@ -121,7 +141,7 @@ D'après le brief écrit avec toi (plan et réponses validés, détail dans `doc
 ## Décisions déjà prises (à ne pas remettre en question sans moi)
 
 - Aujourd'hui garde **une ligne à faire par plante au plus** (sauf la récolte, visible même si l'arrosage attend ; arrosages et
-  récoltes sont regroupés dès deux plantes) ; Saisons est **à lire**, on coche sur Aujourd'hui.
+  récoltes, semis et plantations sont regroupés dès deux plantes) ; Saisons est **à lire**, on coche sur Aujourd'hui.
 - Les pas-à-pas sont **facultatifs** ; règles d'écriture : une action par écran, verbe en tête, moins de 12 mots, tutoiement.
 - L'accueil ne propose que des plantes de saison ; prénom et niveau de Nora ne sont plus dans l'accueil (on les règle
   dans Réglages ou dans Nora).
