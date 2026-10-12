@@ -36,8 +36,8 @@ import { now as clockNow } from "@/lib/clock";
 import { bloomEvent, canMarkBloom, herbariumKey } from "@/lib/garden/herbarium";
 import { byForm } from "@/lib/plants/grammar";
 import { PotSizeSheet } from "@/components/pot-size-sheet";
-import { SettingRow, SettingsGroup } from "@/components/settings/rows";
-import { potSizeLabel, potSizeOf } from "@/lib/plants/pot-size";
+import { PotSheetCard } from "@/components/pot-sheet-card";
+import { potSizeOf } from "@/lib/plants/pot-size";
 
 
 const clock = (iso: string) => new Date(iso).toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" });
@@ -288,10 +288,8 @@ export default function PlantScreen() {
             )}
           </FadeIn>}
 
-          {/* La taille de son pot : Balco en tiendra compte (arrosage, terreau, poids). */}
-          <SettingsGroup>
-            <SettingRow label="Pot" value={potSizeLabel(potSizeOf(plant))} onPress={() => setPotSheet(true)} />
-          </SettingsGroup>
+          {/* Son pot (Balco en tiendra compte : arrosage, terreau, poids) et sa fiche « Spécial pot ». */}
+          <PotSheetCard entry={entry} potSize={potSizeOf(plant)} onChoosePot={() => setPotSheet(true)} />
 
           {/* Tes photos : toucher une photo l'affiche en grand. */}
           {plantPhotos.length > 0 && (
