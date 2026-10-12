@@ -151,7 +151,7 @@ Règles qui valent pour toutes les étapes :
      (trop petit, à choisir, à préparer, puis ceux qui vont bien), « C'est bon » en bas. Proposé ensuite : regrouper les
      plantations de saison sur Aujourd'hui dès 2 plantes (« Plante ou sème 7 plantes de saison »), accepté le 14/10.
    - **Étape 3 fusionnée dans `main` (PR #42, 14/10).**
-   - **Plantations regroupées sur Aujourd'hui : codé le 14/10, à valider.** Groupe `planting` de `layoutTodayList`
+   - **Plantations regroupées sur Aujourd'hui : codé et validé sur son téléphone le 14/10.** Groupe `planting` de `layoutTodayList`
      (`lib/garden/today.ts`) : dès 2 semis ou plantations du mois (gestes `sow` / `plant`, dont le 1ᵉʳ geste d'une plante
      « à planter »), une ligne « Plante ou sème N plantes de saison » (« Plante » ou « Sème » seuls quand tous sont du même
      type), « Ce mois-ci · aubergine, chou-rave… ». Feuille du bas commune avec l'arrosage et la récolte : « Pas besoin
