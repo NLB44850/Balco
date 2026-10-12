@@ -138,7 +138,7 @@ Règles qui valent pour toutes les étapes :
      plantes qui y pousseront bien (`recommendPlants`). Écran `app/diagnostic.tsx` : à la fin de l'accueil
      (`/diagnostic?first=1`, « Voir mon balcon ») et Réglages → Mon balcon → « Diagnostic de ton balcon ». À reprendre à
      l'étape 6 (arrosage météo) : un balcon couvert ne devrait pas recevoir « N'arrose pas, il pleut ».
-   - **3c, première tâche liée au pot : codée le 13/10, à valider.** `lib/garden/first-pots.ts` (`firstPotsCard`) :
+   - **3c, première tâche liée au pot : codée le 13/10, validée sur son téléphone le 14/10 (« nickel », après la carte en une ligne).** `lib/garden/first-pots.ts` (`firstPotsCard`) :
      pendant les 14 jours qui suivent l'accueil (pas après « Passer »), carte prioritaire sur Aujourd'hui (`pots` en tête
      de `pickTodayCards`, `components/today/first-pots-card.tsx`) : « Prépare tes pots » (plantes à planter : « Un pot
      percé d'au moins 30 cm de large, du terreau neuf mêlé de sable. ») ou « Vérifie tes pots » (plantes déjà là :
