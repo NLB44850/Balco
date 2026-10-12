@@ -162,3 +162,75 @@ export function potFit(entry: Pick<CatalogPlant, "id" | "potLiters">, size: PotS
   const shallow = POT_SHAPES[size].widthCm + 3 >= need.widthCm;
   return { tone: "small", title: shallow ? "Pot trop peu profond" : "Pot trop petit", detail: `${potNeedText(need)} ${advice}` };
 }
+
+// --- Rempoter et pas-à-pas : le pot suivant et le terreau d'après la fiche ------------------------------------------
+
+/** La largeur haute de chaque taille du choix (« Moyen, 20 à 30 cm » : 30). */
+const SIZE_MAX_WIDTH: Record<(typeof ROUND_SIZES)[number], number> = { small: 20, medium: 30, large: 40 };
+
+/** La taille du choix qui correspond à une largeur, ou null au-delà d'un grand pot (un bac). */
+export function sizeForWidth(widthCm: number): KnownPotSize | null {
+  return ROUND_SIZES.find((size) => widthCm <= SIZE_MAX_WIDTH[size]) ?? null;
+}
+
+export type NextPot = {
+  widthCm: number;
+  /** La taille du choix « Dans quel pot ? » du nouveau pot (null : un bac de plus de 40 cm). */
+  size: KnownPotSize | null;
+  /** Son pot actuel est plus petit que ce que dit sa fiche. */
+  tooSmall: boolean;
+};
+
+/**
+ * Le pot du prochain rempotage (règles du 12/10) : si son pot (étape 1) est plus petit que sa fiche, celui de la fiche ;
+ * sinon un pot de 5 cm plus large que le sien. Taille inconnue : 5 cm de plus que le pot de la fiche, à chaque rempotage.
+ */
+export function nextPotFor(entry: Pick<CatalogPlant, "id" | "potLiters">, potSize: PotSize | undefined, repots = 0): NextPot {
+  const need = potNeedFor(entry);
+  const size = potSize ?? "unknown";
+  if (size === "unknown") {
+    // Sans taille connue, on la suppose dans le pot de sa fiche : un peu plus grand à chaque rempotage.
+    const widthCm = need.widthCm + 5 * (repots + 1);
+    return { widthCm, size: sizeForWidth(widthCm), tooSmall: false };
+  }
+  const fit = potFit(entry, size);
+  if (fit.tone === "small") return { widthCm: need.widthCm, size: sizeForWidth(need.widthCm), tooSmall: true };
+  const current = size === "planter" ? need.widthCm : SIZE_MAX_WIDTH[size];
+  const widthCm = current + 5;
+  return { widthCm, size: sizeForWidth(widthCm), tooSmall: false };
+}
+
+/** « du terreau neuf mêlé de sable », « de la terre de bruyère » : le terreau de sa fiche, pour les phrases. */
+export function soilPhrase(entry: Pick<CatalogPlant, "id">) {
+  switch (potSheetFor(entry.id)?.soil) {
+    case "rich": return "du terreau neuf enrichi de compost";
+    case "draining": return "du terreau neuf mêlé de sable";
+    case "light": return "du terreau neuf et léger";
+    case "acid": return "de la terre de bruyère";
+    case "citrus": return "du terreau pour agrumes";
+    default: return "du terreau neuf";
+  }
+}
+
+/** Les fournitures de terre de sa fiche, pour « Ce qu'il te faut » (`shared` : « J'ai déjà » vaut pour toutes). */
+export function soilSupplies(entry: Pick<CatalogPlant, "id">, amount: string): { id: string; label: string; detail?: string; shared: boolean }[] {
+  switch (potSheetFor(entry.id)?.soil) {
+    case "acid": return [{ id: "heath-soil", label: "De la terre de bruyère", detail: "Une terre acide, sans calcaire.", shared: true }];
+    case "citrus": return [{ id: "citrus-soil", label: "Du terreau pour agrumes", detail: amount, shared: true }];
+    case "seed": return [{ id: "seed-soil", label: "Du terreau de semis", detail: "Un terreau fin, sans engrais.", shared: true }];
+    case "rich": return [{ id: "soil", label: "Du terreau", detail: amount, shared: true }, { id: "compost", label: "Du compost", detail: "Un tiers de compost, mêlé au terreau.", shared: true }];
+    case "draining": return [{ id: "soil", label: "Du terreau", detail: amount, shared: true }, { id: "sand", label: "Du sable de rivière", detail: "Un tiers de sable, mêlé au terreau.", shared: true }];
+    case "light": return [{ id: "soil", label: "Du terreau léger", detail: "Sans cailloux ni fumier : les racines s’allongent bien.", shared: true }];
+    default: return [{ id: "soil", label: "Du terreau", detail: amount, shared: true }];
+  }
+}
+
+/** Ce que dit sa fiche sur l'engrais, pour « Et après ? » du pas-à-pas (null : rien à dire). */
+export function feedingNext(entry: Agreeable & Pick<CatalogPlant, "id">): string | null {
+  const feeding = potSheetFor(entry.id)?.feeding;
+  if (!feeding) return null;
+  if (feeding.need === "none") return `Pas d’engrais : ${feedingDetail(entry, feeding).charAt(0).toLowerCase()}${feedingDetail(entry, feeding).slice(1)}`;
+  const kind = feeding.kind ?? "engrais organique";
+  if (feeding.need === "regular" && feeding.everyDays) return `Engrais tous les ${feeding.everyDays} jours${feeding.from ? `, ${feeding.from}` : ""} : ${kind}.`;
+  return `Un peu d’engrais${feeding.from ? ` ${feeding.from}` : ""} : ${kind}.`;
+}

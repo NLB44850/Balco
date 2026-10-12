@@ -429,7 +429,7 @@ export default function PlantScreen() {
       </ScrollView>
       {capture.sheet}
       {freePot.sheet}
-      <PotSizeSheet visible={potSheet} onClose={() => setPotSheet(false)} value={potSizeOf(plant)} onPick={(size) => { setPotSheet(false); void setPlantPotSize(plant.id, size); }} />
+      <PotSizeSheet entry={entry} visible={potSheet} onClose={() => setPotSheet(false)} value={potSizeOf(plant)} onPick={(size) => { setPotSheet(false); void setPlantPotSize(plant.id, size); }} />
       {!freePot.isOpen && <UndoToast message={toast} onDone={hideToast} bottom={insets.bottom + 16} />}
       {!freePot.isOpen && celebration}
     </View>

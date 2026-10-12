@@ -8,11 +8,12 @@ import type { IllustrationId } from "./illustration-names";
 import { MONTH_LONG, type CatalogPlant } from "./catalog";
 import { sowsOnWindowsill } from "./indoor";
 import { PLANTING, type Planting } from "./planting";
-import { ofLabel, potSizes, startActivity } from "./calendar";
+import { ofLabel, startActivity } from "./calendar";
 import { REPOTTING } from "./repotting";
 import type { ClimateInfo } from "./climate";
 import { agree, byForm, elides, capitalize, objectBefore, objectPronoun, stressedPronoun, subjectPronoun, verb } from "./grammar";
-import { potNeedFor, potNeedShort } from "./pot-sheet";
+import { feedingNext, nextPotFor, potNeedFor, potNeedShort, potSheetFor, soilPhrase, soilSupplies } from "./pot-sheet";
+import type { PotSize } from "./pot-size";
 
 export type GuideModel = "sow-pot" | "sow-indoor" | "plant-seedling" | "plant-bulb" | "perennial-pot" | GuideTask;
 
@@ -34,7 +35,8 @@ export function guideTaskOf(activity: { kind: string; topdress?: true; followUp?
 }
 
 /** Pour le pot suivant : combien de fois elle a déjà été rempotée (`potHistory`). */
-export type GuideOptions = { repots?: number };
+/** `potSize` : la taille de son pot (étape 1), pour le pot du rempotage. */
+export type GuideOptions = { repots?: number; potSize?: PotSize };
 
 /**
  * Bulbes et tubercules : on ne les sème pas, on ne plante pas un « plant ». Profondeur de plantation et ce qu'on
@@ -94,11 +96,9 @@ export function supplies(entry: CatalogPlant, model: GuideModel, options: GuideO
   const potLabel = model === "perennial-pot" ? `Un grand pot percé de ${potNeedFor(entry).widthCm} cm de large ou plus` : capitalize(potNeedShort(entry, { pierced: true }));
   const pot: Supply = isDenseSowing(planting)
     ? { id: "tray", label: "Une barquette ou une assiette creuse", detail: "Quelques centimètres de terreau suffisent.", shared: false }
-    : { id: "pot", label: potLabel, detail: planting.perPot > 1 ? `Pour ${planting.perPot} plants, à ${planting.spacingCm} cm l’un de l’autre.` : "Avec des trous au fond, et une soucoupe.", shared: false };
-  // Le myrtillier ne pousse que dans une terre acide.
-  const soil: Supply = entry.id === "blueberry"
-    ? { id: "heath-soil", label: "De la terre de bruyère", detail: "Il ne pousse que dans une terre acide.", shared: true }
-    : { id: "soil", label: "Du terreau", detail: "Un sac de 20 L remplit deux ou trois pots moyens.", shared: true };
+    : { id: "pot", label: potLabel, detail: planting.perPot > 1 ? `${potNeedFor(entry).depthCm} cm de profondeur. Pour ${planting.perPot} plants, à ${planting.spacingCm} cm l’un de l’autre.` : `${potNeedFor(entry).depthCm} cm de profondeur, des trous au fond et une soucoupe.`, shared: false };
+  // Le terreau de sa fiche Spécial pot : compost pour les gourmandes, sable pour celles qui craignent l'eau…
+  const soil = soilSupplies(entry, "Un sac de 20 L remplit deux ou trois pots moyens.");
   const clay: Supply = { id: "clay-balls", label: "Une poignée de billes d’argile", detail: "Au fond du pot, l’eau s’écoule mieux.", shared: true };
   const can: Supply = isSowing(model)
     ? { id: "spray", label: "Un vaporisateur ou un arrosoir à pomme fine", detail: "Une pluie fine ne déplace pas les graines.", shared: true }
@@ -113,7 +113,7 @@ export function supplies(entry: CatalogPlant, model: GuideModel, options: GuideO
     return [
       { id: "pot", label: capitalize(potNeedShort(entry, { pierced: true })), detail: planting.perPot > 1 ? `Pour ${planting.perPot} plants, à ${planting.spacingCm} cm l’un de l’autre.` : "Un par plant, avec des trous au fond et une soucoupe.", shared: false },
       clay,
-      soil,
+      ...soil,
       { id: "watering-can", label: "Un arrosoir", shared: true },
     ];
   }
@@ -121,31 +121,30 @@ export function supplies(entry: CatalogPlant, model: GuideModel, options: GuideO
     return [
       what,
       { id: "cells", label: "Des godets ou de petits pots", detail: "Un par graine ou par pincée de graines.", shared: false },
-      soil,
+      { id: "soil", label: "Du terreau", detail: "Un terreau fin, sans cailloux, pour les godets.", shared: true },
       { id: "cover", label: "Un sac transparent ou un film", detail: "Il garde l’humidité jusqu’à la levée.", shared: true },
       can,
       ...(entry.plantMonths.length > 0 ? [{ ...pot, id: "pot-later", label: `Plus tard : ${pot.label.charAt(0).toLowerCase()}${pot.label.slice(1)}` }] : []),
     ];
   }
-  return isDenseSowing(planting) ? [what, pot, soil, can] : [what, pot, clay, soil, can];
+  return isDenseSowing(planting) ? [what, pot, ...soil, can] : [what, pot, clay, ...soil, can];
 }
 
 /** Le pot suivant (un tiers de plus) ; la terre du dessus ne demande qu'une fourchette et un peu de terreau. */
-function potCareSupplies(entry: CatalogPlant, task: PotTask, { repots = 0 }: GuideOptions): Supply[] {
-  const acid = entry.id === "blueberry";
+function potCareSupplies(entry: CatalogPlant, task: PotTask, { repots = 0, potSize }: GuideOptions): Supply[] {
   const can: Supply = { id: "watering-can", label: "Un arrosoir", shared: true };
   if (task === "topdress") {
     return [
       { id: "fork", label: "Une vieille fourchette ou une petite griffe", detail: "Pour gratter sans abîmer les racines.", shared: true },
-      acid ? { id: "heath-soil", label: "De la terre de bruyère", detail: "Quelques poignées suffisent.", shared: true } : { id: "soil", label: "Du terreau", detail: "Quelques poignées suffisent.", shared: true },
+      ...soilSupplies(entry, "Quelques poignées suffisent."),
       can,
     ];
   }
-  const pot = potSizes(entry, repots);
+  const next = nextPotFor(entry, potSize, repots);
   return [
-    { id: "next-pot", label: `Un pot percé d’environ ${pot.nextWidthCm} cm de large`, detail: "Un peu plus large que l’actuel.", shared: false },
+    { id: "next-pot", label: `Un pot percé d’environ ${next.widthCm} cm de large`, detail: next.tooSmall ? `Le tien est trop petit : ${potNeedFor(entry).depthCm} cm de profondeur au moins.` : "Un peu plus large que l’actuel.", shared: false },
     { id: "clay-balls", label: "Une poignée de billes d’argile", detail: "Au fond du pot, l’eau s’écoule mieux.", shared: true },
-    acid ? { id: "heath-soil", label: "De la terre de bruyère", detail: "Il ne pousse que dans une terre acide.", shared: true } : { id: "soil", label: "Du terreau", detail: "Un sac de 20 L remplit deux ou trois pots moyens.", shared: true },
+    ...soilSupplies(entry, "Un sac de 20 L remplit deux ou trois pots moyens."),
     can,
   ];
 }
@@ -165,7 +164,8 @@ export function delayText([min, max]: [number, number], unit: "days" | "weeks") 
  * Ex. « Les pousses sortent dans 7 à 10 jours. Garde la terre humide. »
  */
 export function whatsNext(entry: CatalogPlant, model: GuideModel): string[] {
-  if (model === "repot") return [`Garde-${objectPronoun(entry)} quelques jours à l’ombre légère : ${verb(entry, "ses", "leurs")} racines s’installent.`, "Arrose un peu moins les deux premières semaines."];
+  const feeding = feedingNext(entry);
+  if (model === "repot") return [`Garde-${objectPronoun(entry)} quelques jours à l’ombre légère : ${verb(entry, "ses", "leurs")} racines s’installent.`, "Arrose un peu moins les deux premières semaines.", ...(feeding ? [feeding] : [])];
   if (model === "topdress") return [`Le terreau neuf ${objectBefore(entry, "nourrit")} pour toute la saison.`];
   if (model === "thin") return ["Celles qui restent ont maintenant la place de grandir."];
   if (model === "pinch") {
@@ -174,7 +174,7 @@ export function whatsNext(entry: CatalogPlant, model: GuideModel): string[] {
   }
   if (model === "outdoors") {
     const harvest = plantingOf(entry).harvestWeeksFromPlanting;
-    return ["Les premiers jours, garde-les à l’abri du plein soleil de midi.", ...(harvest ? [`${entry.category === "flower" ? "Premières fleurs" : "Première récolte"} dans ${delayText(harvest, "weeks")}.`] : [])];
+    return ["Les premiers jours, garde-les à l’abri du plein soleil de midi.", ...(harvest ? [`${entry.category === "flower" ? "Premières fleurs" : "Première récolte"} dans ${delayText(harvest, "weeks")}.`] : []), ...(feeding ? [feeding] : [])];
   }
   const planting = plantingOf(entry);
   const flower = entry.category === "flower";
@@ -183,6 +183,7 @@ export function whatsNext(entry: CatalogPlant, model: GuideModel): string[] {
   if (model === "plant-bulb") lines.push("Les premières pousses sortent en quelques semaines. Arrose peu tant qu’elles ne sont pas sorties.");
   const harvest = isSowing(model) ? planting.harvestWeeksFromSowing : planting.harvestWeeksFromPlanting;
   if (harvest) lines.push(`${flower ? "Premières fleurs" : "Première récolte"} dans ${delayText(harvest, "weeks")}.`);
+  if (feeding) lines.push(feeding);
   return lines;
 }
 
@@ -193,6 +194,18 @@ export function whatsNext(entry: CatalogPlant, model: GuideModel): string[] {
  * facultative pour le « pourquoi » ; l'erreur à éviter du modèle, à l'étape qu'elle concerne.
  */
 export type GuideStep = { illustration: IllustrationId; text: string; why?: string; mistake?: string };
+
+/** « Remplis de terreau mêlé d’un tiers de sable » : la terre de sa fiche Spécial pot, en une action. */
+function fillText(entry: CatalogPlant, plain: string) {
+  switch (potSheetFor(entry.id)?.soil) {
+    case "rich": return "Remplis de terreau mêlé d’un tiers de compost.";
+    case "draining": return "Remplis de terreau mêlé d’un tiers de sable.";
+    case "light": return "Remplis de terreau léger, sans cailloux.";
+    case "acid": return "Remplis de terre de bruyère.";
+    case "citrus": return "Remplis de terreau pour agrumes.";
+    default: return plain;
+  }
+}
 
 /** « 1 cm », « 0,5 cm » : une mesure lisible. */
 const cm = (value: number) => `${String(value).replace(".", ",")} cm`;
@@ -206,7 +219,8 @@ function sowingSteps(entry: CatalogPlant, planting: Planting, indoors: boolean):
   else if (dense) steps.push({ illustration: "fill-soil", text: "Remplis la barquette de 3 cm de terreau." });
   else {
     steps.push({ illustration: "clay-balls", text: "Mets une poignée de billes d’argile au fond.", why: "Les racines ne baigneront pas dans l’eau." });
-    steps.push({ illustration: "fill-soil", text: "Remplis de terreau jusqu’à 2 cm du bord.", why: "Il reste de la place pour arroser." });
+    const fill = fillText(entry, "Remplis de terreau jusqu’à 2 cm du bord.");
+    steps.push({ illustration: "fill-soil", text: fill, why: fill.includes("2 cm") ? "Il reste de la place pour arroser." : "Jusqu’à 2 cm du bord, pour arroser." });
   }
   // Graines profondes (haricots, pois…) : le trou d'abord ; sinon on pose les graines et on recouvre.
   // Une seule erreur à éviter par guide : au chaud, c'est la lumière (étape de la fenêtre) ; dehors, la profondeur.
@@ -244,7 +258,9 @@ function plantingSteps(entry: CatalogPlant, planting: Planting, model: GuideMode
     steps.push({ illustration: "water-well", text: "Arrose une fois, puis peu jusqu’aux pousses.", why: "Trop d’eau les ferait pourrir." });
     return steps;
   }
-  steps.push({ illustration: "fill-soil", text: model === "perennial-pot" ? "Remplis le grand pot de terreau à moitié." : "Remplis le pot de terreau aux deux tiers." });
+  const plainFill = model === "perennial-pot" ? "Remplis le grand pot de terreau à moitié." : "Remplis le pot de terreau aux deux tiers.";
+  const fill = fillText(entry, plainFill);
+  steps.push({ illustration: "fill-soil", text: fill, why: fill === plainFill ? undefined : model === "perennial-pot" ? "Jusqu’à la moitié du pot." : "Jusqu’aux deux tiers du pot." });
   steps.push({ illustration: "unpot", text: "Sors la motte du godet, sans tirer sur la tige.", why: "Retourne le godet et tapote le fond." });
   steps.push({
     illustration: model === "perennial-pot" ? "big-pot" : "place-plant",
@@ -263,15 +279,15 @@ function plantingSteps(entry: CatalogPlant, planting: Planting, model: GuideMode
 }
 
 /** Rempoter : vérifier le signe, un pot à peine plus grand, démêler les racines, au même niveau qu'avant. */
-function repotSteps(entry: CatalogPlant, { repots = 0 }: GuideOptions): GuideStep[] {
-  const pot = potSizes(entry, repots);
+function repotSteps(entry: CatalogPlant, { repots = 0, potSize }: GuideOptions): GuideStep[] {
+  const next = nextPotFor(entry, potSize, repots);
   return [
     { illustration: "roots-out", text: "Regarde sous le pot si des racines sortent.", why: `Ou si l’eau ressort tout de suite : ${subjectPronoun(entry)} ${verb(entry, "manque", "manquent")} de place.` },
-    { illustration: "clay-balls", text: "Mets des billes d’argile au fond du nouveau pot.", why: `Environ ${pot.next} L, ${pot.nextWidthCm} cm de large.`, mistake: "Erreur à éviter : un pot bien plus grand. La terre resterait trempée." },
+    { illustration: "clay-balls", text: "Mets des billes d’argile au fond du nouveau pot.", why: `Environ ${next.widthCm} cm de large.`, mistake: next.tooSmall ? undefined : "Erreur à éviter : un pot bien plus grand. La terre resterait trempée." },
     { illustration: "unpot", text: "Sors la plante en tapotant le pot retourné.", why: "Arrosée la veille, la motte sort plus facilement." },
     { illustration: "loosen-roots", text: "Démêle du bout des doigts les racines qui tournent.", why: "Elles partiront dans la terre neuve." },
     { illustration: "place-plant", text: "Pose la motte au centre, au même niveau qu’avant.", why: "Mets un peu de terreau dessous pour la remonter." },
-    { illustration: "firm-soil", text: "Ajoute du terreau autour, puis tasse avec les mains." },
+    { illustration: "firm-soil", text: "Ajoute du terreau autour, puis tasse avec les mains.", why: `Avec ${soilPhrase(entry)}.` },
     { illustration: "water-well", text: "Arrose bien, jusqu’à ce que l’eau coule dessous.", why: "La terre neuve se colle aux racines." },
   ];
 }

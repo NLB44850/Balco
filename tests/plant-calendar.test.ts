@@ -35,7 +35,8 @@ import { activityDone, activityEventId, describeMonths, eventForActivity, season
 import { adaptToClimate, climateSummary, climateZoneFor } from "../lib/plants/climate";
 import { potHistory, sessionEventId } from "../lib/garden/garden-logic";
 import { skippedRepots, skipRepotThisYear, unskipRepot } from "../lib/garden/repot-skip";
-import { genericRepotSign, potSizes, potWidthCm } from "../lib/plants/calendar";
+import { genericRepotSign, potSizes } from "../lib/plants/calendar";
+import { roundPotWidthCm } from "../lib/plants/pot-sheet";
 
 /** Une plante sur le balcon, dans son pot depuis cette date. */
 const potted = (catalogId: string, since: Date, id = catalogId, extra: { lastTopdress?: string; repots?: number; repotSkippedUntil?: string } = {}) => ({ ...subject(catalogId, id), addedAt: since.toISOString(), inPotSince: since.toISOString(), ...extra });
@@ -80,7 +81,7 @@ describe("rempotage selon le besoin", () => {
     const [sage] = calendarActivities([potted("sage", old)], 3, { now: MARCH_2027 }).filter((activity) => activity.kind === "repot");
     const liters = getCatalogPlant("sage")!.potLiters;
     expect(sage.description).toContain("racines sortent par les trous du pot, ta sauge");
-    expect(sage.description).toContain(`Si son pot fait environ ${potWidthCm(liters)} cm de large, prends-en un d’environ ${potSizes({ potLiters: liters }, 0).nextWidthCm} cm`);
+    expect(sage.description).toContain(`Prends un pot d’environ ${roundPotWidthCm(liters) + 5} cm de large, avec du terreau neuf mêlé de sable.`);
     // Sans signe propre à la plante : le signe commun.
     const [oregano] = calendarActivities([potted("oregano", old)], 3, { now: MARCH_2027 }).filter((activity) => activity.kind === "repot");
     expect(oregano.description).toContain(genericRepotSign(oregano.entry));
@@ -88,6 +89,18 @@ describe("rempotage selon le besoin", () => {
     expect(potSizes({ potLiters: 10 }, 0)).toEqual({ now: 10, next: 13, nextWidthCm: 26 });
     expect(potSizes({ potLiters: 10 }, 2)).toEqual({ now: 18, next: 24, nextWidthCm: 32 });
     expect(potSizes({ potLiters: 1 }, 0).next).toBe(2);
+  });
+
+  it("rempote plus tôt une vivace dans un pot trop petit pour sa fiche, avec le pot de la fiche", () => {
+    // Un romarin arrivé ce mois-ci : d'habitude rien la première saison…
+    const fresh = potted("rosemary", new Date(2027, 2, 1));
+    expect(repots(calendarActivities([fresh], 3, { now: MARCH_2027 }))).toEqual([]);
+    // … mais dans un petit pot (sa fiche : 30 cm de large), on le rempote dès la bonne saison.
+    const [rosemary] = calendarActivities([{ ...fresh, potSize: "small" }], 3, { now: MARCH_2027 }).filter((activity) => activity.kind === "repot");
+    expect(rosemary.title).toBe("Rempote le romarin");
+    expect(rosemary.description).toBe("Ton pot est trop petit pour lui. Prends un pot d’environ 30 cm de large, avec du terreau neuf mêlé de sable. À faire en mars–avril.");
+    // Un grand pot lui suffit : rien de plus tôt.
+    expect(repots(calendarActivities([{ ...fresh, potSize: "large" }], 3, { now: MARCH_2027 }))).toEqual([]);
   });
 
   it("« Pas besoin cette année » : la terre du dessus à la place, le rempotage revient l'an prochain", () => {

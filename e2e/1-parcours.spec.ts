@@ -169,10 +169,14 @@ test("catalogue : ajouter une plante puis ouvrir sa fiche", async ({ page }) => 
   // « + » : déjà sur le balcon, ou à planter ?
   await page.getByRole("button", { name: /^Ajouter Menthe/ }).first().click();
   await page.getByRole("button", { name: "Menthe : Déjà sur mon balcon" }).click();
-  // « Dans quel pot ? » s'ouvre, facultatif ; « Annuler » reste visible par-dessus.
+  // « Dans quel pot ? » s'ouvre, facultatif ; « Annuler » reste visible par-dessus. Chaque taille dit si elle convient.
   await expect(page.getByText("Dans quel pot ?")).toBeVisible();
   await expect(page.getByText("Ajouté à ton balcon : Menthe")).toBeVisible();
+  await expect(page.getByText("Il lui faut un pot de 30 cm de large, 20 cm de profondeur.", { exact: false })).toBeVisible();
+  await expect(page.getByText("Trop petit pour elle")).toBeVisible();
+  await expect(page.getByText("✓ Le plus adapté")).toBeVisible();
   await page.getByRole("radio", { name: "Moyen (20 à 30 cm)" }).click();
+  await expect(page.getByText("Pot noté : il lui convient.").first()).toBeVisible();
   await expect(page.getByText("Dans quel pot ?")).toHaveCount(0);
   await expect(page.getByText("✓ Sur ton balcon")).toBeVisible();
   // La même, à planter : son premier geste sera de la planter. La question du pot se passe.

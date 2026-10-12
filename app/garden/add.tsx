@@ -6,7 +6,7 @@
  */
 import * as Haptics from "expo-haptics";
 import { useLocalSearchParams, useRouter } from "expo-router";
-import { useCallback, useMemo, useRef, useState } from "react";
+import { memo, useCallback, useDeferredValue, useMemo, useRef, useState } from "react";
 import { Platform, Pressable, ScrollView, StyleSheet, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
@@ -16,7 +16,7 @@ import { CatalogPicture } from "@/components/plant-picture";
 import { BottomSheet } from "@/components/today/bottom-sheet";
 import { UndoToast, type ToastMessage } from "@/components/today/undo-toast";
 import { PotSizeSheet } from "@/components/pot-size-sheet";
-import { potNeedFor, potNeedText } from "@/lib/plants/pot-sheet";
+import { potFit, potNeedFor, potNeedText } from "@/lib/plants/pot-sheet";
 import { glass } from "@/components/ui/glass";
 import { Text, TextInput } from "@/components/ui/typography";
 import { useColors } from "@/hooks/use-colors";
@@ -33,6 +33,7 @@ import {
   MONTH_LONG,
   recommendPlants,
   searchCatalog,
+  type CatalogPlant,
   type PlantCategory,
   type SpaceSize,
   type Sunlight,
@@ -72,11 +73,13 @@ export default function AddPlantScreen() {
     return counts;
   }, [plants]);
 
+  // La liste suit la frappe sans la bloquer : sur un téléphone moyen, la refaire à chaque lettre figeait le clavier.
+  const deferredQuery = useDeferredValue(query);
   const results = useMemo(() => {
-    const matching = new Set(searchCatalog(query, category).map((entry) => entry.id));
+    const matching = new Set(searchCatalog(deferredQuery, category).map((entry) => entry.id));
     const ordered = onlyFitting ? recommendPlants(onboarding, { month: clockNow().getMonth() + 1 }) : [...PLANT_CATALOG].sort((a, b) => a.name.localeCompare(b.name, "fr"));
     return ordered.filter((entry) => matching.has(entry.id) && (!inSeason || suggestionFor(entry, seasonMonth) !== null));
-  }, [category, inSeason, onboarding, onlyFitting, query, seasonMonth]);
+  }, [category, inSeason, onboarding, onlyFitting, deferredQuery, seasonMonth]);
 
   const fitLabel = hasBalconyInfo
     ? [onboarding?.sunlight && SUNLIGHT_LABELS[onboarding.sunlight as Sunlight], onboarding?.space && SPACE_LABELS[onboarding.space as SpaceSize]].filter(Boolean).join(" · ").toLowerCase()
@@ -93,9 +96,16 @@ export default function AddPlantScreen() {
     setToast({ id: toastId.current, text: `${choice === "toPlant" ? "À planter sur ton balcon" : "Ajouté à ton balcon"} : ${entry?.name ?? "ta plante"}`, onUndo: () => { setPotPlantId(null); void removePlant(created.id); } });
     setPotPlantId(created.id);
   };
+  // Des fonctions stables pour les lignes : seules les lignes qui changent se redessinent (101 lignes avec photo).
+  const addRef = useRef(add);
+  addRef.current = add;
+  const onAdd = useCallback((catalogId: string, choice: AddChoice) => void addRef.current(catalogId, choice), []);
+  const onToggle = useCallback((catalogId: string) => setChoosingId((current) => (current === catalogId ? null : catalogId)), []);
+  const onOpen = useCallback((catalogId: string) => setSheetId(catalogId), []);
+  const potEntry = potPlantId ? getCatalogPlant(plants.find((plant) => plant.id === potPlantId)?.catalogId ?? "") : undefined;
 
   return (
-    <LightScreen>
+    <LightScreen still>
       <ScrollView style={styles.flex} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled" contentContainerStyle={[styles.content, { paddingTop: insets.top + 14, paddingBottom: plants.length > 0 ? 20 : insets.bottom + 40 }]}>
         <ScreenHeader back title="Ajouter une plante" subtitle={`${PLANT_CATALOG.length} plantes pour le balcon`} />
 
@@ -133,32 +143,7 @@ export default function AddPlantScreen() {
               const owned = countByCatalogId.get(entry.id) ?? 0;
               const seasonal = inSeason ? suggestionFor(entry, seasonMonth) : null;
               const meta = owned ? `✓ Sur ton balcon${owned > 1 ? ` (${owned})` : ""}` : seasonal ? `${suggestionActionLabel(seasonal)} · ${seasonal.reason}` : effortLabel(entry);
-              const choosing = choosingId === entry.id;
-              return (
-                <View key={entry.id} style={index < results.length - 1 && glass.line}>
-                <View style={styles.row}>
-                  <Pressable accessibilityRole="button" accessibilityLabel={`${entry.name}, voir le détail`} onPress={() => setSheetId(entry.id)} style={({ pressed }) => [styles.rowMain, pressed && styles.pressed]}>
-                    <CatalogPicture entry={entry} style={styles.bubble} />
-                    <View style={styles.flex}>
-                      <Text style={[styles.name, { color: colors.foreground }]} numberOfLines={1}>{entry.name}</Text>
-                      <Text style={[styles.meta, { color: owned ? colors.primary : colors.muted }]} numberOfLines={seasonal && !owned ? 2 : 1}>{meta}</Text>
-                    </View>
-                  </Pressable>
-                  <Pressable accessibilityRole="button" accessibilityLabel={`Ajouter ${entry.name}`} hitSlop={8} onPress={() => setChoosingId(choosing ? null : entry.id)} style={({ pressed }) => [styles.add, { backgroundColor: owned || choosing ? colors.leaf : colors.primary }, pressed && styles.pressed]}>
-                    <Text style={[styles.addText, { color: owned || choosing ? colors.primary : "#FFFFFF" }]}>{choosing ? "×" : "+"}</Text>
-                  </Pressable>
-                </View>
-                {choosing && (
-                  <View style={styles.choices}>
-                    {addChoices(entry, currentMonth).map((choice, position) => (
-                      <Pressable key={choice} accessibilityRole="button" accessibilityLabel={`${entry.name} : ${ADD_CHOICE_LABELS[choice]}`} onPress={() => void add(entry.id, choice)} style={({ pressed }) => [styles.choice, position === 0 ? { backgroundColor: colors.primary } : { borderColor: colors.primary, borderWidth: 1 }, pressed && styles.pressed]}>
-                        <Text style={[styles.choiceText, { color: position === 0 ? "#FFFFFF" : colors.primary }]}>{ADD_CHOICE_LABELS[choice]}</Text>
-                      </Pressable>
-                    ))}
-                  </View>
-                )}
-                </View>
-              );
+              return <CatalogRow key={entry.id} entry={entry} owned={owned > 0} meta={meta} metaLines={seasonal && !owned ? 2 : 1} choosing={choosingId === entry.id} month={currentMonth} last={index === results.length - 1} onOpen={onOpen} onToggle={onToggle} onAdd={onAdd} />;
             })}
           </View>
         )}
@@ -224,9 +209,17 @@ export default function AddPlantScreen() {
         onClose={() => setPotPlantId(null)}
         onSkip={() => setPotPlantId(null)}
         value="unknown"
+        entry={potEntry}
         onPick={(size) => {
           setPotPlantId(null);
-          if (potPlantId && size !== "unknown") void setPlantPotSize(potPlantId, size);
+          if (!potPlantId || size === "unknown") return;
+          void setPlantPotSize(potPlantId, size);
+          // Retour immédiat, avec la même logique que la fiche ; « Annuler » retire toujours la plante.
+          if (potEntry) {
+            const fit = potFit(potEntry, size);
+            toastId.current += 1;
+            setToast((current) => ({ id: toastId.current, text: fit.tone === "small" ? `Pot noté, mais trop petit : ${fit.detail.split(". ").pop()!.replace(/^P/, "p")}` : "Pot noté : il lui convient.", onUndo: current?.onUndo }));
+          }
         }}
         overlay={<UndoToast message={toast} onDone={hideToast} />}
       />
@@ -234,6 +227,49 @@ export default function AddPlantScreen() {
     </LightScreen>
   );
 }
+
+type RowProps = {
+  entry: CatalogPlant;
+  owned: boolean;
+  meta: string;
+  metaLines: number;
+  choosing: boolean;
+  month: number;
+  last: boolean;
+  onOpen: (catalogId: string) => void;
+  onToggle: (catalogId: string) => void;
+  onAdd: (catalogId: string, choice: AddChoice) => void;
+};
+
+/** Une ligne du catalogue, redessinée seulement quand elle change (« + » touché, plante ajoutée). */
+const CatalogRow = memo(function CatalogRow({ entry, owned, meta, metaLines, choosing, month, last, onOpen, onToggle, onAdd }: RowProps) {
+  const colors = useColors();
+  return (
+    <View style={!last && glass.line}>
+      <View style={styles.row}>
+        <Pressable accessibilityRole="button" accessibilityLabel={`${entry.name}, voir le détail`} onPress={() => onOpen(entry.id)} style={({ pressed }) => [styles.rowMain, pressed && styles.pressed]}>
+          <CatalogPicture entry={entry} style={styles.bubble} />
+          <View style={styles.flex}>
+            <Text style={[styles.name, { color: colors.foreground }]} numberOfLines={1}>{entry.name}</Text>
+            <Text style={[styles.meta, { color: owned ? colors.primary : colors.muted }]} numberOfLines={metaLines}>{meta}</Text>
+          </View>
+        </Pressable>
+        <Pressable accessibilityRole="button" accessibilityLabel={`Ajouter ${entry.name}`} hitSlop={8} onPress={() => onToggle(entry.id)} style={({ pressed }) => [styles.add, { backgroundColor: owned || choosing ? colors.leaf : colors.primary }, pressed && styles.pressed]}>
+          <Text style={[styles.addText, { color: owned || choosing ? colors.primary : "#FFFFFF" }]}>{choosing ? "×" : "+"}</Text>
+        </Pressable>
+      </View>
+      {choosing && (
+        <View style={styles.choices}>
+          {addChoices(entry, month).map((choice, position) => (
+            <Pressable key={choice} accessibilityRole="button" accessibilityLabel={`${entry.name} : ${ADD_CHOICE_LABELS[choice]}`} onPress={() => onAdd(entry.id, choice)} style={({ pressed }) => [styles.choice, position === 0 ? { backgroundColor: colors.primary } : { borderColor: colors.primary, borderWidth: 1 }, pressed && styles.pressed]}>
+              <Text style={[styles.choiceText, { color: position === 0 ? "#FFFFFF" : colors.primary }]}>{ADD_CHOICE_LABELS[choice]}</Text>
+            </Pressable>
+          ))}
+        </View>
+      )}
+    </View>
+  );
+});
 
 const styles = StyleSheet.create({
   content: { paddingHorizontal: 20, gap: 14 },

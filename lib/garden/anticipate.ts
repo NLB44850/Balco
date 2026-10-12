@@ -5,11 +5,11 @@
  */
 import { adaptToClimate, type ClimateInfo } from "../plants/climate";
 import { formatMonthRange, getCatalogPlant, MONTH_LONG, sowsIndoors, type CatalogPlant, type Month } from "../plants/catalog";
-import { ofLabel, potCareFor, potSizes, type CalendarSubject } from "../plants/calendar";
+import { ofLabel, potCareFor, type CalendarSubject } from "../plants/calendar";
 import { ofBare } from "../plants/grammar";
 import { plantDisplayName, potHistory, type ResolvedPlant } from "./garden-logic";
 import type { MaintenanceEvent } from "../reminders/reminder-engine";
-import { potNeedShort } from "../plants/pot-sheet";
+import { nextPotFor, potNeedShort, soilPhrase } from "../plants/pot-sheet";
 
 export type AnticipationKind = "sow-indoor" | "sow" | "plant" | "repot";
 
@@ -105,10 +105,10 @@ export function anticipate({ plants, events, springWishes = [], now, climate, re
         continue;
       }
       // Une vivace installée dont le rempotage arrive : un pot plus grand à prévoir (pas la terre du dessus, rien à acheter).
-      const subject: CalendarSubject = { id: resolved.plant.id, entry: resolved.entry, displayName: plantDisplayName(resolved), addedAt: resolved.plant.addedAt, ...potHistory(resolved.plant, events), repotSkippedUntil: repotSkips?.get(resolved.plant.id) };
+      const subject: CalendarSubject = { id: resolved.plant.id, entry: resolved.entry, displayName: plantDisplayName(resolved), addedAt: resolved.plant.addedAt, ...potHistory(resolved.plant, events), repotSkippedUntil: repotSkips?.get(resolved.plant.id), potSize: resolved.plant.potSize };
       if (potCareFor(subject, resolved.entry, current, now) === null && potCareFor(subject, resolved.entry, month, now) === "repot") {
-        const pot = potSizes(resolved.entry, subject.repots ?? 0);
-        candidates.push({ key: `${resolved.plant.id}:repot:${month}`, kind: "repot", entry: resolved.entry, plantId: resolved.plant.id, month, startsOn, rank: 2, title: `Rempotage ${ofLabel(resolved.entry.label)}`, prepare: `Prévois un pot d’environ ${pot.nextWidthCm} cm de large et du terreau neuf.`, detail: `À faire en ${formatMonthRange(resolved.entry.repotMonths)}, si la plante manque de place.` });
+        const next = nextPotFor(resolved.entry, subject.potSize, subject.repots ?? 0);
+        candidates.push({ key: `${resolved.plant.id}:repot:${month}`, kind: "repot", entry: resolved.entry, plantId: resolved.plant.id, month, startsOn, rank: 2, title: `Rempotage ${ofLabel(resolved.entry.label)}`, prepare: `Prévois un pot d’environ ${next.widthCm} cm de large et ${soilPhrase(resolved.entry)}.`, detail: `À faire en ${formatMonthRange(resolved.entry.repotMonths)}, si la plante manque de place.` });
       }
     }
     // Les envies du printemps pas encore sur le balcon.

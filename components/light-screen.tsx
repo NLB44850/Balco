@@ -9,12 +9,13 @@ import { ScreenContainer } from "@/components/screen-container";
 import { BalconySky } from "@/components/today/balcony-sky";
 import { useSharedSky } from "@/lib/garden/sky-store";
 
-export function LightScreen({ children, scrollY, bottom = false }: { children: React.ReactNode; scrollY?: Animated.Value; bottom?: boolean }) {
+/** `still` : décor immobile, pour les longues listes (voir BalconySky). */
+export function LightScreen({ children, scrollY, bottom = false, still = false }: { children: React.ReactNode; scrollY?: Animated.Value; bottom?: boolean; still?: boolean }) {
   const insets = useSafeAreaInsets();
   const sky = useSharedSky();
   return (
     <ScreenContainer edges={bottom ? ["left", "right", "bottom"] : ["left", "right"]}>
-      <BalconySky quiet scene={sky} topInset={insets.top} scrollY={scrollY} />
+      <BalconySky quiet still={still} scene={sky} topInset={insets.top} scrollY={scrollY} />
       {children}
     </ScreenContainer>
   );

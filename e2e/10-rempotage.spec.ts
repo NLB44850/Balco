@@ -17,7 +17,7 @@ test("rempotage : le signe, le pot suivant, puis « Pas besoin cette année » p
   await checkboxOf(page, "Marquer comme fait : Récolte le thym").click();
   await expect(page.getByText("Rempote le thym")).toBeVisible();
   await page.getByRole("button", { name: "Rempote le thym, détail" }).click();
-  await expect(page.getByText(/des racines sortent par le trou, rempote ton thym\. Si son pot fait environ \d+ cm de large, prends-en un d’environ \d+ cm/)).toBeVisible();
+  await expect(page.getByText(/des racines sortent par le trou, rempote ton thym\. Prends un pot d’environ \d+ cm de large, avec du terreau neuf/)).toBeVisible();
 
   await page.getByRole("button", { name: "Pas besoin cette année" }).click();
   await expect(page.getByText("Pas de rempotage cette année : change plutôt la terre du dessus")).toBeVisible();

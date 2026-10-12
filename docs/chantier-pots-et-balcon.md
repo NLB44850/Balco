@@ -104,3 +104,14 @@ Règles qui valent pour toutes les étapes :
    deux pots à la même échelle (le sien en orange, celui qu'il faut en pointillés verts), titre « ⚠︎ Pot trop petit »,
    « Prends un grand pot » (ou « un bac de 45 cm ou plus »), carte bordée d'orange, « Changer › ». Formes types des
    tailles : `POT_SHAPES` (pot-sheet.ts).
+   **Retours du 12/10 (après validation), faits le 13/10** : (1) pas-à-pas selon les fiches : terreau de la fiche dans
+   « Ce qu'il te faut » (`soilSupplies` : compost, sable, terre de bruyère…), étape « Remplis de terreau mêlé d'un tiers
+   de sable », profondeur du pot, engrais dans « Et après ? » (`feedingNext`) ; `docs/pas-a-pas.md` refait par
+   `scripts/pas-a-pas/mettre-a-jour.ts`. (2) Ajout d'une plante : « Dans quel pot ? » dit ce qu'il lui faut, « ✓ Le plus
+   adapté » / « Trop petit pour elle » sous chaque taille (`hintTones` de `ChoiceList`), puis « Pot noté : il lui
+   convient » ou « Pot noté, mais trop petit : prends un grand pot » (avec « Annuler »). (3) Rempotage : pot suivant
+   `nextPotFor` (celui de la fiche si son pot est trop petit, sinon 5 cm de plus ; inconnu : fiche + 5 cm par rempotage),
+   terreau de la fiche (`soilPhrase`) ; un pot trop petit avance le rempotage d'une vivace dès ses mois de rempotage,
+   même la première saison (`potCareFor`, `CalendarSubject.potSize`). (4) Lenteurs du catalogue : feuillage animé en
+   continu derrière 101 cartes translucides (redessin permanent) → décor immobile sur cet écran (`still` de
+   `LightScreen`/`BalconySky`), lignes mémorisées (`CatalogRow`), recherche différée (`useDeferredValue`).
