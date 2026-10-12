@@ -145,3 +145,9 @@ Règles qui valent pour toutes les étapes :
      « Noté : moyen (20 à 30 cm). C'est bien ça ? », en orange si le pot noté est trop petit). Chaque ligne a le dessin
      du pot et ouvre la fiche directement sur « Dans quel pot ? » (`/garden/<id>?pot=1`) ; « C'est bon » la ferme pour
      de bon (`first-pots:<date de l'accueil>` avec les cartes fermées des temps forts). E2e dans `1-parcours`.
+     **Retour du 14/10** (« liste beaucoup trop grande dès plusieurs plantes ») : une seule ligne sur Aujourd'hui, quel
+     que soit le nombre de plantes (« Vérifie le pot de 9 plantes · 1 trop petit · 6 à choisir », en orange s'il y a un
+     pot trop petit) ; le détail dans une feuille du bas, une ligne courte par plante, les pots à corriger d'abord
+     (trop petit, à choisir, à préparer, puis ceux qui vont bien), « C'est bon » en bas. Proposé ensuite : regrouper les
+     plantations de saison sur Aujourd'hui dès 2 plantes (« Plante ou sème 7 plantes de saison »), à coder après sa
+     validation.
