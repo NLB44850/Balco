@@ -169,16 +169,30 @@ test("catalogue : ajouter une plante puis ouvrir sa fiche", async ({ page }) => 
   // « + » : déjà sur le balcon, ou à planter ?
   await page.getByRole("button", { name: /^Ajouter Menthe/ }).first().click();
   await page.getByRole("button", { name: "Menthe : Déjà sur mon balcon" }).click();
+  // « Dans quel pot ? » s'ouvre, facultatif ; « Annuler » reste visible par-dessus.
+  await expect(page.getByText("Dans quel pot ?")).toBeVisible();
   await expect(page.getByText("Ajouté à ton balcon : Menthe")).toBeVisible();
+  await page.getByRole("radio", { name: "Moyen (20 à 30 cm)" }).click();
+  await expect(page.getByText("Dans quel pot ?")).toHaveCount(0);
   await expect(page.getByText("✓ Sur ton balcon")).toBeVisible();
-  // La même, à planter : son premier geste sera de la planter.
+  // La même, à planter : son premier geste sera de la planter. La question du pot se passe.
   await page.getByPlaceholder("Basilic, fraisier, lavande…").fill("lavande");
   await page.getByRole("button", { name: /^Ajouter Lavande/ }).first().click();
   await page.getByRole("button", { name: "Lavande : À planter" }).click();
   await expect(page.getByText("À planter sur ton balcon : Lavande")).toBeVisible();
+  await page.getByRole("button", { name: "Passer" }).click();
+  await expect(page.getByText("Dans quel pot ?")).toHaveCount(0);
   await page.getByRole("button", { name: "Voir mon balcon · 3 plantes" }).click();
   await page.getByRole("button", { name: /^Menthe, .*voir la fiche/ }).click();
   await expect(page.getByText(/Photo d’exemple|Ajoute ta photo/).first()).toBeVisible();
+  // Sa fiche montre le pot choisi ; la ligne ouvre la même feuille pour le changer.
+  await page.getByRole("button", { name: "Pot : Moyen (20 à 30 cm)" }).click();
+  await expect(page.getByRole("radio", { name: "Moyen (20 à 30 cm)" })).toBeChecked();
+  await page.getByRole("radio", { name: "Jardinière ou bac" }).click();
+  await expect(page.getByRole("button", { name: "Pot : Jardinière ou bac" })).toBeVisible();
+  const stored = await page.evaluate(() => JSON.parse(localStorage.getItem("balco.garden.plants.v1") ?? "[]"));
+  expect(stored.find((plant: { catalogId: string }) => plant.catalogId === "mint")?.potSize).toBe("planter");
+  expect(stored.find((plant: { catalogId: string }) => plant.catalogId === "lavender")?.potSize).toBeUndefined();
   expect(errors).toEqual([]);
 });
 

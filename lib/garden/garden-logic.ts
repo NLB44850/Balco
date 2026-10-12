@@ -6,6 +6,7 @@ import { getCatalogPlant, soilCheckDepthCm, tasksForMonth, type CareTask, type C
 import { endsWithSeason, seasonFrostText } from "../plants/season-end";
 import type { MaintenanceEvent, MaintenanceTaskType, PlantCareProfile } from "../reminders/reminder-engine";
 import { alertCauseOf } from "../reminders/alert-cause";
+import type { PotSize } from "../plants/pot-size";
 
 export type GardenPlant = {
   /** Identifiant d'instance : deux pieds de tomates ont deux ids différents. */
@@ -14,6 +15,8 @@ export type GardenPlant = {
   nickname?: string;
   /** Variété choisie parmi celles du catalogue ; absente si l'utilisateur ne la connaît pas. */
   varietyId?: string;
+  /** Taille du pot (lib/plants/pot-size.ts) ; absente : « Je ne sais pas ». */
+  potSize?: PotSize;
   addedAt: string;
   /** Dernière modification sur l'appareil : départage deux appareils qui modifient la même plante. */
   updatedAt?: string;

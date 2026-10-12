@@ -127,6 +127,13 @@
       "when": 1791463618717,
       "tag": "0017_awards",
       "breakpoints": true
+    },
+    {
+      "idx": 18,
+      "version": "5",
+      "when": 1791738174972,
+      "tag": "0018_pot_size",
+      "breakpoints": true
     }
   ]
 }

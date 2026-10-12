@@ -1,0 +1,1 @@
+ALTER TABLE `reminder_plants` ADD `potSize` varchar(16);
