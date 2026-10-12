@@ -35,7 +35,8 @@ import { dayKey, plantDisplayName } from "@/lib/garden/garden-logic";
 import { harvestEndStates, potIsFree } from "@/lib/garden/harvest-end";
 import { GOAL_OPTIONS, SPACE_OPTIONS, SUNLIGHT_UNKNOWN } from "@/lib/garden/onboarding";
 import { NORA_LEVELS } from "@/lib/ai/memory";
-import { backupStatus, cityValue, goalsValue, NOT_YET, spaceValue, springWishEntries, springWishesValue, SUNLIGHT_CHOICES, sunlightChoice, sunlightPatch, SUNLIGHT_TIP, sunlightValue } from "@/lib/garden/settings-summary";
+import { backupStatus, cityValue, goalsValue, NOT_YET, spaceValue, springWishEntries, springWishesValue, SUNLIGHT_TIP, sunlightValue, sunPatch } from "@/lib/garden/settings-summary";
+import { ORIENTATION_OPTIONS, seasonSunHours, sunSummary, type Orientation } from "@/lib/garden/sun";
 import { nextSpringReminder, SPRING_REMINDER_SOURCE, springReminderContent } from "@/lib/garden/spring";
 import { notificationsUnavailableReason } from "@/lib/notifications/module";
 import { activateReminders, NOTIFICATIONS_DENIED } from "@/lib/reminders/activate";
@@ -426,8 +427,30 @@ export default function SettingsScreen() {
         <ChoiceList choices={NORA_LEVELS} selected={(id) => answers.experience === id} onPick={(id) => { void updateOnboarding({ experience: id }); closeSheet(); }} />
       </BottomSheet>
       <BottomSheet visible={sheet === "sun"} onClose={closeSheet}>
-        <SheetHeading title="Combien de soleil reçoit ton balcon ?" intro="Une estimation suffit : les plantes proposées seront plus justes." />
-        <ChoiceList choices={SUNLIGHT_CHOICES} selected={(id) => sunlightChoice(answers) === id} onPick={(id) => { void updateOnboarding(sunlightPatch(id)); closeSheet(); }} hints={{ [SUNLIGHT_UNKNOWN.id]: SUNLIGHT_TIP }} />
+        {/* Le simulateur de soleil (« Pots et balcon », étape 3) : chaque toucher enregistre et recalcule les heures. */}
+        <SheetHeading title="De quel côté est ton balcon ?" intro="À midi, le soleil est au sud. Une idée suffit." />
+        <ChoiceList
+          choices={[...ORIENTATION_OPTIONS.map(({ id, title }) => ({ id, title })), { id: SUNLIGHT_UNKNOWN.id, title: SUNLIGHT_UNKNOWN.title }]}
+          selected={(id) => (answers.sunlightUnknown ? SUNLIGHT_UNKNOWN.id : answers.orientation) === id}
+          onPick={(id) => void updateOnboarding(sunPatch(id as Orientation, Boolean(answers.covered), Boolean(answers.facing), location.weather.latitude))}
+          hints={{ [SUNLIGHT_UNKNOWN.id]: SUNLIGHT_TIP }}
+        />
+        {answers.orientation && !answers.sunlightUnknown && (
+          <>
+            <SheetHeading title="De l’ombre ?" />
+            <ChoiceList
+              multiple
+              choices={[{ id: "covered", title: "Il est couvert" }, { id: "facing", title: "Un immeuble ou un arbre en face" }]}
+              selected={(id) => Boolean(answers[id as "covered" | "facing"])}
+              onPick={(id) => {
+                const covered = id === "covered" ? !answers.covered : Boolean(answers.covered);
+                const facing = id === "facing" ? !answers.facing : Boolean(answers.facing);
+                void updateOnboarding(sunPatch(answers.orientation!, covered, facing, location.weather.latitude));
+              }}
+            />
+            <Text style={[styles.sunResult, { color: colors.foreground }]}>☀️  {sunSummary(seasonSunHours({ orientation: answers.orientation, latitude: location.weather.latitude, covered: answers.covered, facing: answers.facing }))}</Text>
+          </>
+        )}
       </BottomSheet>
       <BottomSheet visible={sheet === "space"} onClose={closeSheet}>
         <SheetHeading title="Quelle place as-tu ?" intro="Balco évite les plantes trop grandes pour ton espace." />
@@ -462,6 +485,7 @@ export default function SettingsScreen() {
           <SettingRow label="Espace" value={spaceValue(answers.space)} onPress={() => setSheet("space")} />
           <SettingRow label="Envies" value={goalsValue(answers.goals)} onPress={openGoals} />
           <SettingRow label="Envies du printemps" value={springWishesValue(onboarding?.springWishes)} onPress={() => setSheet("spring")} />
+          <SettingRow label="Diagnostic de ton balcon" onPress={() => router.push("/diagnostic")} />
         </SettingsGroup>
 
         <SettingsGroup title="Rappels">
@@ -549,6 +573,7 @@ export default function SettingsScreen() {
 }
 
 const styles = StyleSheet.create({
+  sunResult: { fontSize: 15, lineHeight: 21, marginTop: 12 },
   introReset: { alignSelf: "flex-start", marginTop: 4 },
   content: { paddingHorizontal: 20, paddingBottom: 40 },
   header: { marginBottom: 8 },

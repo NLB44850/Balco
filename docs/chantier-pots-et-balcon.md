@@ -120,3 +120,34 @@ Règles qui valent pour toutes les étapes :
    `addPlant` de garden-context, donc pour tous les ajouts) et le dit dans le message du bas : « Ajouté : Menthe en pot
    moyen (20 à 30 cm) » (`potSizePhrase` ; catalogue, Saisons, Aujourd'hui, temps forts). On la change sur la fiche ; la
    feuille n'y marque plus que « ✓ Conseillé ». Les plantes déjà sur le balcon gardent leur taille (ou « Je ne sais pas »).
+3. **Accueil enrichi**, découpé en trois livraisons (13/10) : 3a simulateur de soleil, 3b diagnostic du balcon,
+   3c première tâche liée au pot.
+   - **3a, simulateur de soleil : codé le 13/10, validé sur son téléphone le 13/10.** `lib/garden/sun.ts` : position du soleil (déclinaison,
+     angle horaire, heure solaire), heures de soleil direct au quart d'heure selon l'orientation (S/E/O/N), la latitude
+     de la ville (Paris par défaut) et la date ; soleil caché sous 10° (toits), sous 25° avec un vis-à-vis, au-dessus de
+     55° si le balcon est couvert, et quand il rase la façade (plus de 75° de côté) ; moyenne du 15 de chaque mois
+     d'avril à septembre, à la demi-heure ; plein soleil ≥ 6 h, mi-ombre 3 à 6 h, ombre < 3 h (Paris : sud 7 h 30,
+     est et ouest 5 h 30, nord 0 h 30). Accueil : « De quel côté est ton balcon ? » (4 orientations + « Je ne sais
+     pas ») puis « Ton balcon a-t-il de l'ombre ? » (couvert, vis-à-vis, résultat recalculé à chaque case). Réglages →
+     Soleil : même simulateur, enregistré à chaque toucher, valeur « Plein sud · plein soleil ». Réponses
+     `orientation`, `covered`, `facing` dans `OnboardingAnswers` (synchronisées), `sunlight` en découle (`sunPatch`).
+   - **3b, diagnostic du balcon : codé le 13/10, validé sur son téléphone le 13/10.** `lib/garden/balcony-diagnosis.ts` (`diagnoseBalcony`, nos
+     règles, sans IA) : soleil en heures et ce qu'il permet, « Chaud l'été » (sud ou ouest en plein soleil, non couvert),
+     « La pluie passe à côté » (couvert), « Le soleil bas est caché » (vis-à-vis), « Peu pour les légumes-fruits »
+     (ombre), la place, le climat de la ville (`frostNote`), deux plantes déjà là qui voudraient plus de soleil, trois
+     plantes qui y pousseront bien (`recommendPlants`). Écran `app/diagnostic.tsx` : à la fin de l'accueil
+     (`/diagnostic?first=1`, « Voir mon balcon ») et Réglages → Mon balcon → « Diagnostic de ton balcon ». À reprendre à
+     l'étape 6 (arrosage météo) : un balcon couvert ne devrait pas recevoir « N'arrose pas, il pleut ».
+   - **3c, première tâche liée au pot : codée le 13/10, validée sur son téléphone le 14/10 (« nickel », après la carte en une ligne).** `lib/garden/first-pots.ts` (`firstPotsCard`) :
+     pendant les 14 jours qui suivent l'accueil (pas après « Passer »), carte prioritaire sur Aujourd'hui (`pots` en tête
+     de `pickTodayCards`, `components/today/first-pots-card.tsx`) : « Prépare tes pots » (plantes à planter : « Un pot
+     percé d'au moins 30 cm de large, du terreau neuf mêlé de sable. ») ou « Vérifie tes pots » (plantes déjà là :
+     « Noté : moyen (20 à 30 cm). C'est bien ça ? », en orange si le pot noté est trop petit). Chaque ligne a le dessin
+     du pot et ouvre la fiche directement sur « Dans quel pot ? » (`/garden/<id>?pot=1`) ; « C'est bon » la ferme pour
+     de bon (`first-pots:<date de l'accueil>` avec les cartes fermées des temps forts). E2e dans `1-parcours`.
+     **Retour du 14/10** (« liste beaucoup trop grande dès plusieurs plantes ») : une seule ligne sur Aujourd'hui, quel
+     que soit le nombre de plantes (« Vérifie le pot de 9 plantes · 1 trop petit · 6 à choisir », en orange s'il y a un
+     pot trop petit) ; le détail dans une feuille du bas, une ligne courte par plante, les pots à corriger d'abord
+     (trop petit, à choisir, à préparer, puis ceux qui vont bien), « C'est bon » en bas. Proposé ensuite : regrouper les
+     plantations de saison sur Aujourd'hui dès 2 plantes (« Plante ou sème 7 plantes de saison »), à coder après sa
+     validation.

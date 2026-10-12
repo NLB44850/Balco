@@ -27,9 +27,7 @@ import {
   GOAL_OPTIONS,
   onboardingSteps,
   SPACE_OPTIONS,
-  SUNLIGHT_OPTIONS,
   SUNLIGHT_UNKNOWN,
-  sunlightFromChoice,
   type OnboardingOption,
   type OnboardingStep,
 } from "@/lib/garden/onboarding";
@@ -37,6 +35,8 @@ import { getCatalogPlant, searchCatalog, type CatalogPlant, type OnboardingAnswe
 import { seasonalStarters } from "@/lib/plants/suggestions";
 import { nextSpringReminder, SPRING_REMINDER_SOURCE, springReminderContent } from "@/lib/garden/spring";
 import { climateZoneFor } from "@/lib/plants/climate";
+import { ORIENTATION_OPTIONS, seasonSunHours, sunSummary, type Orientation } from "@/lib/garden/sun";
+import { sunPatch } from "@/lib/garden/settings-summary";
 import { notificationsUnavailableReason } from "@/lib/notifications/module";
 import { activateReminders, NOTIFICATIONS_DENIED } from "@/lib/reminders/activate";
 import { loadLocalReminderSettings, requestLocalNotificationPermission, saveLocalReminderSettings, scheduleDatedReminder } from "@/lib/reminders/local-notifications";
@@ -50,7 +50,8 @@ type Question = { title: string; subtitle: string; options: OnboardingOption[]; 
 
 const QUESTIONS: Partial<Record<OnboardingStep, Question>> = {
   has: { title: "Tu as déjà des plantes sur ton balcon ?", subtitle: "Même une seule, même en pot sur le rebord.", options: HAS_OPTIONS },
-  sun: { title: "Combien de soleil reçoit ton balcon ?", subtitle: "Une estimation suffit : tes conseils seront plus justes.", options: [...SUNLIGHT_OPTIONS, SUNLIGHT_UNKNOWN] },
+  // Le simulateur de soleil (« Pots et balcon », étape 3) : l'orientation, puis l'ombre ; Balco calcule les heures.
+  sun: { title: "De quel côté est ton balcon ?", subtitle: "À midi, le soleil est au sud. Une idée suffit.", options: [...ORIENTATION_OPTIONS, SUNLIGHT_UNKNOWN] },
   space: { title: "Quelle place as-tu ?", subtitle: "Même un rebord de fenêtre peut devenir un petit potager.", options: SPACE_OPTIONS },
   goals: { title: "Qu'aimerais-tu cultiver ?", subtitle: "Choisis tout ce qui te donne envie.", options: GOAL_OPTIONS, multiple: true },
 };
@@ -60,7 +61,7 @@ const ADVANCE_MS = 280;
 const SEARCH_RESULTS = 6;
 const LOCATE_TIMEOUT_MS = 20_000;
 
-type Answers = { has?: "yes" | "no"; sun?: string; space?: string; goals: string[] };
+type Answers = { has?: "yes" | "no"; sun?: string; covered: boolean; facing: boolean; space?: string; goals: string[] };
 
 export default function OnboardingScreen() {
   const colors = useColors();
@@ -72,7 +73,7 @@ export default function OnboardingScreen() {
   // 0 : la bienvenue ; ensuite, l'écran `steps[index - 1]`.
   // Accueil refait : on va droit aux questions.
   const [index, setIndex] = useState(again ? 1 : 0);
-  const [answers, setAnswers] = useState<Answers>({ goals: [] });
+  const [answers, setAnswers] = useState<Answers>({ goals: [], covered: false, facing: false });
   const [owned, setOwned] = useState<string[]>([]);
   const [query, setQuery] = useState("");
   const [picked, setPicked] = useState<string[] | null>(null);
@@ -86,16 +87,19 @@ export default function OnboardingScreen() {
   const advanceTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const hasPlants = answers.has === "yes";
-  const steps = onboardingSteps({ hasPlants, reminders: notificationsUnavailableReason === null });
+  const oriented = answers.sun !== undefined && answers.sun !== SUNLIGHT_UNKNOWN.id;
+  const steps = onboardingSteps({ hasPlants, reminders: notificationsUnavailableReason === null, orientation: oriented });
   const step = index > 0 ? steps[index - 1] : null;
   const question = step ? QUESTIONS[step] ?? null : null;
 
-  const onboardingAnswers: OnboardingAnswers = useMemo(
-    () => ({ hasPlants: answers.has === undefined ? undefined : answers.has === "yes", sunlight: answers.sun ? sunlightFromChoice(answers.sun) : undefined, sunlightUnknown: answers.sun === SUNLIGHT_UNKNOWN.id || undefined, space: answers.space, goals: answers.has === "yes" ? [] : answers.goals }),
-    [answers],
-  );
   // Seulement ce qui se sème ou se plante ce mois-ci, dans le climat de la ville choisie (Paris sinon).
   const { weather } = location;
+  // Le soleil vient du simulateur : orientation, ombre, latitude de la ville (Paris tant qu'elle n'est pas choisie).
+  const onboardingAnswers: OnboardingAnswers = useMemo(
+    () => ({ hasPlants: answers.has === undefined ? undefined : answers.has === "yes", ...(answers.sun ? sunPatch(answers.sun as Orientation, answers.covered, answers.facing, weather.latitude) : {}), space: answers.space, goals: answers.has === "yes" ? [] : answers.goals }),
+    [answers, weather.latitude],
+  );
+  const sunHours = oriented ? seasonSunHours({ orientation: answers.sun as Orientation, latitude: weather.latitude, covered: answers.covered, facing: answers.facing }) : null;
   const climate = useMemo(() => (weather.isFallback ? null : climateZoneFor(weather.latitude, weather.longitude, weather.snapshot.elevationM)), [weather.isFallback, weather.latitude, weather.longitude, weather.snapshot.elevationM]);
   const starters = useMemo(() => seasonalStarters(onboardingAnswers, { month: new Date().getMonth() + 1, climate }), [climate, onboardingAnswers]);
   const suggestions = starters.plants;
@@ -197,7 +201,8 @@ export default function OnboardingScreen() {
       void scheduleDatedReminder(SPRING_REMINDER_SOURCE, springReminderContent(entries), nextSpringReminder(new Date())).catch(() => undefined);
     }
     await garden.reloadOnboarding();
-    leave();
+    // Le diagnostic de son balcon pour finir (« Pots et balcon », étape 3b), puis « Voir mon balcon ».
+    router.replace("/diagnostic?first=1");
   };
 
   // Accueil refait : il s'était ouvert par-dessus les onglets, on revient dessus (sans en empiler d'autres).
@@ -219,7 +224,8 @@ export default function OnboardingScreen() {
 
   // Onboarding déjà fait : on ne repose pas les questions à chaque lancement.
   if (!garden.loaded) return null;
-  if (garden.onboarding && !again) return <Redirect href="/(tabs)" />;
+  // Pendant l'enregistrement de la fin, on reste ici : le diagnostic s'ouvre ensuite (pas Aujourd'hui).
+  if (garden.onboarding && !again && !saving) return <Redirect href="/(tabs)" />;
 
   const plantRow = (entry: CatalogPlant, active: boolean, onPress: () => void, last: boolean, text = entry.pitch) => (
     <Pressable key={entry.id} accessibilityRole="checkbox" accessibilityState={{ checked: active }} accessibilityLabel={entry.name} onPress={onPress} style={({ pressed }) => [styles.plant, !last && glass.line, pressed && styles.pressed]}>
@@ -286,6 +292,41 @@ export default function OnboardingScreen() {
                 <Text style={styles.ctaText}>{answers.goals.length > 0 ? "Continuer" : "Passer cette question"}</Text>
               </Pressable>
             )}
+          </FadeIn>
+        )}
+
+        {step === "shade" && (
+          <FadeIn style={styles.step}>
+            <Text style={[styles.title, { color: colors.foreground }]}>{"Ton balcon a-t-il de l’ombre\u00a0?"}</Text>
+            <Text style={[styles.subtitle, { color: colors.muted }]}>Coche ce qui cache le soleil. Rien ? Continue.</Text>
+            <View style={styles.options}>
+              {([
+                { key: "covered", icon: "🏠", title: "Il est couvert", text: "Un balcon au-dessus ou un auvent." },
+                { key: "facing", icon: "🏢", title: "Un immeuble ou un arbre en face", text: "Il cache le soleil quand il est bas." },
+              ] as const).map((option) => {
+                const active = answers[option.key];
+                return (
+                  <Pressable key={option.key} accessibilityRole="checkbox" accessibilityState={{ checked: active }} onPress={() => setAnswers((current) => ({ ...current, [option.key]: !current[option.key] }))} style={({ pressed }) => [glass.card, styles.option, active && { borderColor: colors.primary, borderWidth: 2, backgroundColor: "rgba(227,241,232,0.92)" }, pressed && styles.pressed]}>
+                    <View style={[styles.optionIcon, { backgroundColor: active ? "#FFFFFF" : colors.leaf }]}><Text style={styles.optionEmoji}>{option.icon}</Text></View>
+                    <View style={styles.flex}>
+                      <Text style={[styles.optionTitle, { color: colors.foreground }]}>{option.title}</Text>
+                      <Text style={[styles.optionText, { color: colors.muted }]}>{option.text}</Text>
+                    </View>
+                    <View style={[styles.check, { borderColor: active ? colors.primary : "rgba(18,22,20,0.22)", backgroundColor: active ? colors.primary : "transparent" }]}>{active && <Text style={styles.checkMark}>✓</Text>}</View>
+                  </Pressable>
+                );
+              })}
+            </View>
+            {/* Retour immédiat : les heures de soleil se recalculent à chaque case. */}
+            {sunHours !== null && (
+              <View style={[glass.card, styles.sunResult]} accessibilityLiveRegion="polite">
+                <Text style={styles.optionEmoji}>☀️</Text>
+                <Text style={[styles.optionText, styles.flex, { color: colors.foreground }]}>{sunSummary(sunHours)}</Text>
+              </View>
+            )}
+            <Pressable accessibilityRole="button" onPress={next} style={({ pressed }) => [styles.cta, { backgroundColor: colors.primary }, pressed && styles.pressed]}>
+              <Text style={styles.ctaText}>Continuer</Text>
+            </Pressable>
           </FadeIn>
         )}
 
@@ -441,6 +482,7 @@ const styles = StyleSheet.create({
   chip: { borderRadius: 999, borderWidth: 1, paddingHorizontal: 12, paddingVertical: 8 },
   chipText: { fontSize: 14, fontWeight: "600" },
   cta: { borderRadius: 16, paddingVertical: 16, alignItems: "center", marginTop: 4 },
+  sunResult: { flexDirection: "row", alignItems: "center", gap: 12, padding: 14 },
   ctaText: { color: "#FFFFFF", fontSize: 16, fontWeight: "700" },
   ghost: { alignItems: "center", paddingVertical: 10 },
   ghostText: { fontSize: 14, fontWeight: "600" },

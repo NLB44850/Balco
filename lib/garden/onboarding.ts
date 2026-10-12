@@ -62,7 +62,7 @@ export function arrivalCard(answers: { skipped?: boolean; completedAt?: string }
 }
 
 /** Les écrans de l'accueil après la bienvenue, selon le chemin suivi. */
-export type OnboardingStep = "has" | "which" | "sun" | "space" | "goals" | "city" | "plants" | "reminders";
+export type OnboardingStep = "has" | "which" | "sun" | "shade" | "space" | "goals" | "city" | "plants" | "reminders";
 
 /**
  * Le chemin de l'accueil : « Oui, j'ai des plantes » → lesquelles, soleil, espace, ville ; « Pas encore » →
@@ -70,7 +70,8 @@ export type OnboardingStep = "has" | "which" | "sun" | "space" | "goals" | "city
  * plantes de saison. Sur un téléphone qui sait notifier, les rappels ferment la marche. Tant que la réponse
  * manque, on suppose « Pas encore » (la barre ne compte que les écrans du chemin suivi).
  */
-export function onboardingSteps({ hasPlants, reminders = false }: { hasPlants?: boolean; reminders?: boolean }): OnboardingStep[] {
-  const path: OnboardingStep[] = hasPlants ? ["has", "which", "sun", "space", "city"] : ["has", "sun", "space", "goals", "city", "plants"];
+export function onboardingSteps({ hasPlants, reminders = false, orientation = false }: { hasPlants?: boolean; reminders?: boolean; /** Orientation choisie : l'écran « De l'ombre ? » suit. */ orientation?: boolean }): OnboardingStep[] {
+  const sun: OnboardingStep[] = orientation ? ["sun", "shade"] : ["sun"];
+  const path: OnboardingStep[] = hasPlants ? ["has", "which", ...sun, "space", "city"] : ["has", ...sun, "space", "goals", "city", "plants"];
   return reminders ? [...path, "reminders"] : path;
 }

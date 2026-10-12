@@ -11,7 +11,17 @@ test("onboarding « Pas encore » : soleil, espace, envies, puis des plantes de 
   await page.getByText("C’est parti").click();
   await expect(page.getByLabel("Étape 1 sur 6")).toBeVisible();
   await page.getByText("Pas encore").click();
-  await page.getByText("Le soleil tape presque toute la journée").click();
+  // Le simulateur de soleil : l'orientation, puis l'ombre ; les heures se recalculent à chaque case.
+  await page.getByText("Plein sud").click();
+  await expect(page.getByText("Ton balcon a-t-il de l’ombre ?")).toBeVisible();
+  await expect(page.getByText(/de soleil par jour, d’avril à septembre : plein soleil\./)).toBeVisible();
+  await page.getByText("Il est couvert").click();
+  await page.getByText("Un immeuble ou un arbre en face").click();
+  await expect(page.getByText(/de soleil par jour, d’avril à septembre : mi-ombre\./)).toBeVisible();
+  await page.getByText("Il est couvert").click();
+  await page.getByText("Un immeuble ou un arbre en face").click();
+  await expect(page.getByText(/: plein soleil\./)).toBeVisible();
+  await page.getByText("Continuer", { exact: true }).click();
   await page.getByText("Un petit balcon").click();
   await page.getByText("Tomates cerises").click();
   await page.getByText("Continuer", { exact: true }).click();
@@ -27,11 +37,21 @@ test("onboarding « Pas encore » : soleil, espace, envies, puis des plantes de 
     await expect(page.getByRole("checkbox", { name: /Tomates cerises/ })).toHaveCount(0);
   }
   await page.getByText(/^Créer mon balcon/).click();
+  // Le diagnostic de son balcon pour finir (étape 3b), puis Aujourd'hui.
+  await expect(page.getByText("Ton balcon", { exact: true })).toBeVisible();
+  await expect(page.getByText("de soleil par jour, d’avril à septembre")).toBeVisible();
+  await expect(page.getByText("Chaud l’été")).toBeVisible();
+  await expect(page.getByText("Ce qui y poussera bien")).toBeVisible();
+  await page.getByRole("button", { name: "Voir mon balcon" }).click();
   await expect(page.getByText("Aujourd’hui").first()).toBeVisible();
   await expect(page.getByText("Météo de Paris par défaut")).toHaveCount(0);
   // Choisies, pas encore en terre : leur premier geste est de les semer ou planter.
   await expect(page.getByRole("checkbox", { name: /^Marquer comme fait : (Sème|Plante) / }).first()).toBeVisible();
   await expect(page.getByText(/Vérifie la terre/)).toHaveCount(0);
+  // Première tâche liée au pot (étape 3c) : le pot et le terreau de chaque plante à planter.
+  await page.getByRole("button", { name: /^Prépare le pot (de \d+ plantes|: )/u }).click();
+  await expect(page.getByText(/Un pot percé d’au moins \d+ cm de large, du terreau/u).first()).toBeVisible();
+  await page.getByRole("button", { name: "Fermer la fiche" }).click();
   // Carte d'arrivée, jusqu'au premier geste coché.
   await expect(page.getByText("Bienvenue, voici ton balcon 🌱")).toBeVisible();
   await page.getByRole("checkbox", { name: /^Marquer comme fait : (Sème|Plante) / }).first().click();
@@ -58,12 +78,25 @@ test("onboarding « Oui » : lesquelles (raccourci + recherche), soleil, espace,
   await page.getByRole("button", { name: "⌖ Utiliser ma position" }).click();
   await expect(page.getByText("Position indisponible : cherche ta ville, ou passe pour l’instant.")).toBeVisible();
   await page.getByRole("button", { name: "Plus tard" }).click();
+  await page.getByRole("button", { name: "Voir mon balcon" }).click();
   await expect(page.getByText("Aujourd’hui").first()).toBeVisible();
   await expect(page.getByText("Tes plantes", { exact: true })).toBeVisible();
   await expect(page.getByText("Météo de Paris par défaut")).toBeVisible();
   // Déjà en terre : pas de « Plante le basilic », l'arrosage est proposé.
   await expect(page.getByRole("checkbox", { name: /Plante le basilic|Plante le romarin/ })).toHaveCount(0);
   await expect(page.getByText(/Vérifie la terre de 2 plantes|Arrose/).first()).toBeVisible();
+  // « Vérifie tes pots » (étape 3c) : le pot noté d'office, qu'on change depuis la fiche, puis « C'est bon ».
+  // Une seule ligne, quel que soit le nombre de plantes ; le détail dans la feuille du bas.
+  await page.getByRole("button", { name: /^Vérifie le pot de 2 plantes, / }).click();
+  await page.getByRole("button", { name: /^Basilic : / }).click();
+  await expect(page.getByText("Dans quel pot ?")).toBeVisible();
+  await page.getByText("Grand (30 à 40 cm)").click();
+  await expect(page.getByText("Dans quel pot ?")).toHaveCount(0);
+  await page.goBack();
+  await page.getByRole("button", { name: /^Vérifie le pot de 2 plantes, / }).click();
+  await expect(page.getByRole("button", { name: "Basilic : Grand (30 à 40 cm)" })).toBeVisible();
+  await page.getByRole("button", { name: "C’est bon" }).click();
+  await expect(page.getByRole("button", { name: /^Vérifie le pot de 2 plantes, / })).toHaveCount(0);
   expect(errors).toEqual([]);
 });
 
@@ -78,9 +111,12 @@ test("« Passer » : Aujourd'hui avec des plantes de saison et « Quelques quest
   await page.getByText("Oui", { exact: true }).click();
   await page.getByRole("checkbox", { name: "Menthe" }).click();
   await page.getByText("Continuer · 1 plante").click();
-  await page.getByText("Presque jamais").click();
+  await page.getByText("Au nord").click();
+  await expect(page.getByText(/: ombre\./)).toBeVisible();
+  await page.getByText("Continuer", { exact: true }).click();
   await page.getByText("Un rebord de fenêtre", { exact: true }).click();
   await page.getByRole("button", { name: "Plus tard" }).click();
+  await page.getByRole("button", { name: "Voir mon balcon" }).click();
   await expect(page.getByText("Tes plantes", { exact: true })).toBeVisible();
   await expect(page.getByText("Quelques questions")).toHaveCount(0);
   // « Refaire l'accueil » (Réglages → Version de test) ne retire aucune plante.

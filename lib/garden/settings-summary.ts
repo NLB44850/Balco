@@ -5,6 +5,7 @@
 import { getCatalogPlant, type CatalogPlant, type OnboardingAnswers } from "../plants/catalog";
 import { relativeDay } from "./garden-logic";
 import { GOAL_OPTIONS, SPACE_OPTIONS, SUNLIGHT_OPTIONS, SUNLIGHT_UNKNOWN, type OnboardingOption } from "./onboarding";
+import { SUN_CLASS_LABELS, seasonSunHours, sunClass, type Orientation, type SunClass } from "./sun";
 
 /** Ligne « Soleil » : la réponse de l'accueil en quelques mots. */
 const SUNLIGHT_SHORT: Record<string, string> = { sunny: "Toute la journée", partial: "Matin ou après-midi", shade: "Presque jamais", [SUNLIGHT_UNKNOWN.id]: "Je ne sais pas" };
@@ -29,7 +30,21 @@ export function sunlightPatch(id: string): Pick<OnboardingAnswers, "sunlight" | 
   return id === SUNLIGHT_UNKNOWN.id ? { sunlight: "partial", sunlightUnknown: true } : { sunlight: id, sunlightUnknown: false };
 }
 
-export function sunlightValue(answers: Pick<OnboardingAnswers, "sunlight" | "sunlightUnknown"> | null | undefined) {
+/**
+ * Le simulateur de soleil (étape 3) : l'orientation (ou « Je ne sais pas »), balcon couvert, vis-à-vis ; `sunlight`
+ * en découle (heures de soleil d'avril à septembre à la latitude de la ville).
+ */
+export function sunPatch(orientation: Orientation | typeof SUNLIGHT_UNKNOWN.id, covered: boolean, facing: boolean, latitude: number): Partial<OnboardingAnswers> {
+  if (orientation === SUNLIGHT_UNKNOWN.id) return { sunlight: "partial", sunlightUnknown: true, orientation: undefined, covered: undefined, facing: undefined };
+  const hours = seasonSunHours({ orientation: orientation as Orientation, latitude, covered, facing });
+  return { orientation: orientation as Orientation, covered, facing, sunlight: sunClass(hours), sunlightUnknown: false };
+}
+
+const ORIENTATION_SHORT: Record<Orientation, string> = { S: "Plein sud", E: "Est", W: "Ouest", N: "Nord" };
+
+export function sunlightValue(answers: Pick<OnboardingAnswers, "sunlight" | "sunlightUnknown" | "orientation"> | null | undefined) {
+  // Avec le simulateur : « Plein sud · plein soleil ».
+  if (answers?.orientation && !answers.sunlightUnknown && answers.sunlight) return `${ORIENTATION_SHORT[answers.orientation]} · ${SUN_CLASS_LABELS[answers.sunlight as SunClass] ?? ""}`;
   const choice = sunlightChoice(answers);
   return (choice && SUNLIGHT_SHORT[choice]) ?? NOT_YET;
 }

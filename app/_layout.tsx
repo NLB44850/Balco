@@ -91,6 +91,7 @@ export default function RootLayout() {
             <Stack.Screen name="garden/add" />
             <Stack.Screen name="garden/[id]" />
             <Stack.Screen name="week" />
+            <Stack.Screen name="diagnostic" />
             <Stack.Screen name="settings" />
             <Stack.Screen name="credits" />
             <Stack.Screen name="illustrations" />

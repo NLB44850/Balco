@@ -11,13 +11,20 @@ test("Mon balcon : soleil « Je ne sais pas », espace, envies, envies du printe
   await open(page, "/settings", "Mon balcon");
   await expect(page.getByText("Gérer mes plantes")).toHaveCount(0);
 
-  // Soleil : la feuille, « Je ne sais pas » et son astuce.
+  // Soleil : le simulateur (orientation, ombre, heures recalculées), « Je ne sais pas » et son astuce.
   await page.getByRole("button", { name: "Soleil : Toute la journée" }).click();
   const sheet = page.getByRole("dialog");
-  await expect(sheet.getByText("Combien de soleil reçoit ton balcon ?")).toBeVisible();
+  await expect(sheet.getByText("De quel côté est ton balcon ?")).toBeVisible();
   await expect(sheet.getByText("Astuce : regarde ton balcon à 10 h, 14 h et 18 h.")).toBeVisible();
+  await sheet.getByRole("radio", { name: "Plein sud" }).click();
+  await expect(page.getByRole("button", { name: "Soleil : Plein sud · plein soleil" })).toBeVisible();
+  await sheet.getByRole("checkbox", { name: "Il est couvert" }).click();
+  await sheet.getByRole("checkbox", { name: "Un immeuble ou un arbre en face" }).click();
+  await expect(sheet.getByText(/: mi-ombre\./)).toBeVisible();
+  await expect(page.getByRole("button", { name: "Soleil : Plein sud · mi-ombre" })).toBeVisible();
   await sheet.getByRole("radio", { name: "Je ne sais pas" }).click();
   await expect(page.getByRole("button", { name: "Soleil : Je ne sais pas" })).toBeVisible();
+  await sheet.getByRole("button", { name: "Fermer la fiche" }).click();
 
   // Espace.
   await page.getByRole("button", { name: "Espace : Un petit balcon" }).click();

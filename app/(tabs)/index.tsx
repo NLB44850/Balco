@@ -58,6 +58,9 @@ import { AnticipateCard } from "@/components/today/anticipate-card";
 import { EventCard } from "@/components/today/event-card";
 import { EventIntro } from "@/components/today/event-intro";
 import { TipCard } from "@/components/today/tip-card";
+import { FirstPotsCard } from "@/components/today/first-pots-card";
+import { firstPotsCard } from "@/lib/garden/first-pots";
+import { potSizeOf } from "@/lib/plants/pot-size";
 import { useTipOfTheWeek } from "@/hooks/use-tip-of-the-week";
 import { tipQuestion } from "@/lib/tips/tips";
 import { useEventDismissals } from "@/hooks/use-event-dismissals";
@@ -430,8 +433,11 @@ export default function HomeScreen() {
   const weatherCauses = useMemo(() => [...new Set(visibleGroups.flatMap((group) => group.decisions.map((decision) => decision.cause)).filter((cause): cause is NonNullable<typeof cause> => Boolean(cause)))], [visibleGroups]);
   const ownedIds = useMemo(() => resolvedPlants.map(({ entry }) => entry.id), [resolvedPlants]);
   const { tip, dismiss: dismissTip } = useTipOfTheWeek({ now, climate, owned: ownedIds, weather: weatherCauses, enabled: loaded && !away });
+  // Juste après l'accueil : le pot de chaque plante, à préparer ou à vérifier (étape 3c).
+  const firstPots = useMemo(() => (loaded && dismissalsLoaded && !away ? firstPotsCard({ answers: onboarding, plants: resolvedPlants, dismissed, now }) : null), [away, dismissalsLoaded, dismissed, loaded, now, onboarding, resolvedPlants]);
+  const potSizes = useMemo(() => Object.fromEntries(resolvedPlants.map(({ plant }) => [plant.id, potSizeOf(plant)])), [resolvedPlants]);
   // Au plus deux cartes en plus sous la liste, par priorité (lib/garden/today-cards.ts).
-  const cards = pickTodayCards({ event: eventCard !== null, tip: tip !== null, spring: !away && springWishes.length > 0, anticipate: !away && anticipation !== null, idea: loaded && hasPlants && !away && monthIdea !== null });
+  const cards = pickTodayCards({ pots: firstPots !== null, event: eventCard !== null, tip: tip !== null, spring: !away && springWishes.length > 0, anticipate: !away && anticipation !== null, idea: loaded && hasPlants && !away && monthIdea !== null });
   const [anticipationOpen, setAnticipationOpen] = useState<Anticipation | null>(null);
   const openNeeds = (item: Anticipation) => {
     setAnticipationOpen(null);
@@ -611,6 +617,10 @@ export default function HomeScreen() {
               <Text style={[styles.pillText, { color: colors.primary }]}>Activer les rappels</Text>
             </Pressable>
           </View>
+        )}
+
+        {cards.includes("pots") && firstPots && (
+          <FirstPotsCard card={firstPots} potSizes={potSizes} onOpen={(plantId) => router.push({ pathname: "/garden/[id]", params: { id: plantId, pot: "1" } })} onDone={() => void dismiss(firstPots.key)} />
         )}
 
         {cards.includes("spring") && (
