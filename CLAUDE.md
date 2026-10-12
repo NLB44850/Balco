@@ -46,7 +46,7 @@ fusion (`.github/workflows/update.yml`, EAS Update canal `test`, `hooks/use-app-
 
 - `pnpm -s check`, `pnpm -s lint`, puis `TEST_DATABASE_URL=mysql://balco:balco@localhost:3306/balco_cal npx vitest run`
   (MariaDB locale : `service mariadb start` si elle s'est arrêtée, `apt-get install -y mariadb-server` si elle manque,
-  puis `DATABASE_URL=… npx drizzle-kit migrate` ; 632 tests à ce jour). Dans un conteneur
+  puis `DATABASE_URL=… npx drizzle-kit migrate` ; 638 tests à ce jour). Dans un conteneur
   neuf : `apt-get install -y mariadb-server`, `service mariadb start`, créer la base `balco_cal` et l'utilisateur
   `balco`/`balco`, puis `pnpm -s build && DATABASE_URL=mysql://balco:balco@localhost:3306/balco_cal node dist/migrate.mjs`.
 - `npx expo export --platform android` pour s'assurer que le bundle Android se construit.
@@ -96,7 +96,7 @@ Validé sur son téléphone le 08/10 : fin de saison des annuelles (point 5 bis)
 `docs/recap-pour-claude.md` + captures `docs/captures/` (refaites par `bash scripts/captures.sh`, spec
 `e2e/captures.spec.ts` sautée sans `CAPTURES=1`).**
 
-**Chantier « Pots et balcon » (validé le 11/10, 10 étapes) : tout est dans `docs/chantier-pots-et-balcon.md`.** Étape 1 (taille du pot) validée sur son téléphone le 11/10, PR vers `main` depuis la branche `ccr-301722b9-4da3s2`. Étape 2 (fiches « Spécial Pot », `lib/plants/pot-sheet.ts`, sources `docs/sources-pots.md`) validée sur son téléphone le 12/10 (tout en cm, conseil jardinière, pot trop petit en dessin), PR vers `main`. Prochaine : étape 3, accueil enrichi.
+**Chantier « Pots et balcon » (validé le 11/10, 10 étapes) : tout est dans `docs/chantier-pots-et-balcon.md`.** Étape 1 (taille du pot) validée sur son téléphone le 11/10, PR vers `main` depuis la branche `ccr-301722b9-4da3s2`. Étape 2 (fiches « Spécial Pot », `lib/plants/pot-sheet.ts`, sources `docs/sources-pots.md`) validée sur son téléphone le 12/10 (tout en cm, conseil jardinière, pot trop petit en dessin), PR vers `main`. Étape 2 fusionnée (PR #41). Étape 3 en trois livraisons : 3a simulateur de soleil (`lib/garden/sun.ts`) codé le 13/10, à valider ; puis 3b diagnostic, 3c première tâche pot.
 
 **Récap pour reprendre (07/10)** : ce bloc fait foi ; les paragraphes plus bas sont l'historique (certains
 décrivent un état ancien, par exemple Saisons « à cocher » ou une fête plein écran à chaque récolte).

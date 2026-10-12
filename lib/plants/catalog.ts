@@ -1439,6 +1439,10 @@ export type OnboardingAnswers = {
   sunlight?: string;
   /** « Je ne sais pas » (accueil, Réglages) : `sunlight` vaut alors « partial », le choix le plus prudent. */
   sunlightUnknown?: boolean;
+  /** Simulateur de soleil (« Pots et balcon », étape 3) : orientation, balcon couvert, vis-à-vis. `sunlight` en découle. */
+  orientation?: "S" | "E" | "W" | "N";
+  covered?: boolean;
+  facing?: boolean;
   space?: string;
   goals?: string[];
   skipped?: boolean;

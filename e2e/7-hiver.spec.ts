@@ -12,7 +12,8 @@ test("accueil en janvier : rebord intérieur et envies pour le printemps", async
   await open(page, "/", "Ton balcon, au bon moment.");
   await page.getByText("C’est parti").click();
   await page.getByText("Pas encore").click();
-  await page.getByText("Le soleil tape presque toute la journée").click();
+  await page.getByText("Plein sud").click();
+  await page.getByText("Continuer", { exact: true }).click();
   await page.getByText("Un petit balcon", { exact: true }).click();
   await page.getByText("Basilic & menthe").click();
   await page.getByText("Continuer", { exact: true }).click();

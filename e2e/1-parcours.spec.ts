@@ -11,7 +11,17 @@ test("onboarding « Pas encore » : soleil, espace, envies, puis des plantes de 
   await page.getByText("C’est parti").click();
   await expect(page.getByLabel("Étape 1 sur 6")).toBeVisible();
   await page.getByText("Pas encore").click();
-  await page.getByText("Le soleil tape presque toute la journée").click();
+  // Le simulateur de soleil : l'orientation, puis l'ombre ; les heures se recalculent à chaque case.
+  await page.getByText("Plein sud").click();
+  await expect(page.getByText("Ton balcon a-t-il de l’ombre ?")).toBeVisible();
+  await expect(page.getByText(/de soleil par jour, d’avril à septembre : plein soleil\./)).toBeVisible();
+  await page.getByText("Il est couvert").click();
+  await page.getByText("Un immeuble ou un arbre en face").click();
+  await expect(page.getByText(/de soleil par jour, d’avril à septembre : mi-ombre\./)).toBeVisible();
+  await page.getByText("Il est couvert").click();
+  await page.getByText("Un immeuble ou un arbre en face").click();
+  await expect(page.getByText(/: plein soleil\./)).toBeVisible();
+  await page.getByText("Continuer", { exact: true }).click();
   await page.getByText("Un petit balcon").click();
   await page.getByText("Tomates cerises").click();
   await page.getByText("Continuer", { exact: true }).click();
@@ -78,7 +88,9 @@ test("« Passer » : Aujourd'hui avec des plantes de saison et « Quelques quest
   await page.getByText("Oui", { exact: true }).click();
   await page.getByRole("checkbox", { name: "Menthe" }).click();
   await page.getByText("Continuer · 1 plante").click();
-  await page.getByText("Presque jamais").click();
+  await page.getByText("Au nord").click();
+  await expect(page.getByText(/: ombre\./)).toBeVisible();
+  await page.getByText("Continuer", { exact: true }).click();
   await page.getByText("Un rebord de fenêtre", { exact: true }).click();
   await page.getByRole("button", { name: "Plus tard" }).click();
   await expect(page.getByText("Tes plantes", { exact: true })).toBeVisible();

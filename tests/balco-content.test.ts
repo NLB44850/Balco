@@ -38,7 +38,7 @@ describe("Balco MVP content", () => {
 
     expect(onboarding).toContain("Tu as déjà des plantes sur ton balcon ?");
     expect(onboarding).toContain("Lesquelles ?");
-    expect(onboarding).toContain("Combien de soleil");
+    expect(onboarding).toContain("De quel côté est ton balcon ?");
     expect(onboarding).toContain("Le soleil tape presque toute la journée");
     expect(onboarding).toContain("Je ne sais pas");
     expect(onboarding).toContain("Quelle place as-tu ?");
