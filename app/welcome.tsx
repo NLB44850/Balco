@@ -201,7 +201,8 @@ export default function OnboardingScreen() {
       void scheduleDatedReminder(SPRING_REMINDER_SOURCE, springReminderContent(entries), nextSpringReminder(new Date())).catch(() => undefined);
     }
     await garden.reloadOnboarding();
-    leave();
+    // Le diagnostic de son balcon pour finir (« Pots et balcon », étape 3b), puis « Voir mon balcon ».
+    router.replace("/diagnostic?first=1");
   };
 
   // Accueil refait : il s'était ouvert par-dessus les onglets, on revient dessus (sans en empiler d'autres).
@@ -223,7 +224,8 @@ export default function OnboardingScreen() {
 
   // Onboarding déjà fait : on ne repose pas les questions à chaque lancement.
   if (!garden.loaded) return null;
-  if (garden.onboarding && !again) return <Redirect href="/(tabs)" />;
+  // Pendant l'enregistrement de la fin, on reste ici : le diagnostic s'ouvre ensuite (pas Aujourd'hui).
+  if (garden.onboarding && !again && !saving) return <Redirect href="/(tabs)" />;
 
   const plantRow = (entry: CatalogPlant, active: boolean, onPress: () => void, last: boolean, text = entry.pitch) => (
     <Pressable key={entry.id} accessibilityRole="checkbox" accessibilityState={{ checked: active }} accessibilityLabel={entry.name} onPress={onPress} style={({ pressed }) => [styles.plant, !last && glass.line, pressed && styles.pressed]}>

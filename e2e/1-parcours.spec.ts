@@ -37,6 +37,12 @@ test("onboarding « Pas encore » : soleil, espace, envies, puis des plantes de 
     await expect(page.getByRole("checkbox", { name: /Tomates cerises/ })).toHaveCount(0);
   }
   await page.getByText(/^Créer mon balcon/).click();
+  // Le diagnostic de son balcon pour finir (étape 3b), puis Aujourd'hui.
+  await expect(page.getByText("Ton balcon", { exact: true })).toBeVisible();
+  await expect(page.getByText("de soleil par jour, d’avril à septembre")).toBeVisible();
+  await expect(page.getByText("Chaud l’été")).toBeVisible();
+  await expect(page.getByText("Ce qui y poussera bien")).toBeVisible();
+  await page.getByRole("button", { name: "Voir mon balcon" }).click();
   await expect(page.getByText("Aujourd’hui").first()).toBeVisible();
   await expect(page.getByText("Météo de Paris par défaut")).toHaveCount(0);
   // Choisies, pas encore en terre : leur premier geste est de les semer ou planter.
@@ -68,6 +74,7 @@ test("onboarding « Oui » : lesquelles (raccourci + recherche), soleil, espace,
   await page.getByRole("button", { name: "⌖ Utiliser ma position" }).click();
   await expect(page.getByText("Position indisponible : cherche ta ville, ou passe pour l’instant.")).toBeVisible();
   await page.getByRole("button", { name: "Plus tard" }).click();
+  await page.getByRole("button", { name: "Voir mon balcon" }).click();
   await expect(page.getByText("Aujourd’hui").first()).toBeVisible();
   await expect(page.getByText("Tes plantes", { exact: true })).toBeVisible();
   await expect(page.getByText("Météo de Paris par défaut")).toBeVisible();
@@ -93,6 +100,7 @@ test("« Passer » : Aujourd'hui avec des plantes de saison et « Quelques quest
   await page.getByText("Continuer", { exact: true }).click();
   await page.getByText("Un rebord de fenêtre", { exact: true }).click();
   await page.getByRole("button", { name: "Plus tard" }).click();
+  await page.getByRole("button", { name: "Voir mon balcon" }).click();
   await expect(page.getByText("Tes plantes", { exact: true })).toBeVisible();
   await expect(page.getByText("Quelques questions")).toHaveCount(0);
   // « Refaire l'accueil » (Réglages → Version de test) ne retire aucune plante.

@@ -122,7 +122,7 @@ Règles qui valent pour toutes les étapes :
    feuille n'y marque plus que « ✓ Conseillé ». Les plantes déjà sur le balcon gardent leur taille (ou « Je ne sais pas »).
 3. **Accueil enrichi**, découpé en trois livraisons (13/10) : 3a simulateur de soleil, 3b diagnostic du balcon,
    3c première tâche liée au pot.
-   - **3a, simulateur de soleil : codé le 13/10, à valider.** `lib/garden/sun.ts` : position du soleil (déclinaison,
+   - **3a, simulateur de soleil : codé le 13/10, validé sur son téléphone le 13/10.** `lib/garden/sun.ts` : position du soleil (déclinaison,
      angle horaire, heure solaire), heures de soleil direct au quart d'heure selon l'orientation (S/E/O/N), la latitude
      de la ville (Paris par défaut) et la date ; soleil caché sous 10° (toits), sous 25° avec un vis-à-vis, au-dessus de
      55° si le balcon est couvert, et quand il rase la façade (plus de 75° de côté) ; moyenne du 15 de chaque mois
@@ -131,3 +131,10 @@ Règles qui valent pour toutes les étapes :
      pas ») puis « Ton balcon a-t-il de l'ombre ? » (couvert, vis-à-vis, résultat recalculé à chaque case). Réglages →
      Soleil : même simulateur, enregistré à chaque toucher, valeur « Plein sud · plein soleil ». Réponses
      `orientation`, `covered`, `facing` dans `OnboardingAnswers` (synchronisées), `sunlight` en découle (`sunPatch`).
+   - **3b, diagnostic du balcon : codé le 13/10, à valider.** `lib/garden/balcony-diagnosis.ts` (`diagnoseBalcony`, nos
+     règles, sans IA) : soleil en heures et ce qu'il permet, « Chaud l'été » (sud ou ouest en plein soleil, non couvert),
+     « La pluie passe à côté » (couvert), « Le soleil bas est caché » (vis-à-vis), « Peu pour les légumes-fruits »
+     (ombre), la place, le climat de la ville (`frostNote`), deux plantes déjà là qui voudraient plus de soleil, trois
+     plantes qui y pousseront bien (`recommendPlants`). Écran `app/diagnostic.tsx` : à la fin de l'accueil
+     (`/diagnostic?first=1`, « Voir mon balcon ») et Réglages → Mon balcon → « Diagnostic de ton balcon ». À reprendre à
+     l'étape 6 (arrosage météo) : un balcon couvert ne devrait pas recevoir « N'arrose pas, il pleut ».

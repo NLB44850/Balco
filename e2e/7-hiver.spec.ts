@@ -23,6 +23,7 @@ test("accueil en janvier : rebord intérieur et envies pour le printemps", async
   await page.getByRole("checkbox", { name: "Persil" }).click();
   await page.getByRole("checkbox", { name: "Envie pour le printemps : Basilic" }).click();
   await page.getByText(/^Créer mon balcon/).click();
+  await page.getByRole("button", { name: "Voir mon balcon" }).click();
   await expect(page.getByRole("checkbox", { name: "Marquer comme fait : Sème le persil à l’intérieur" })).toBeVisible();
   const stored = await page.evaluate(() => JSON.parse(window.localStorage.getItem("balco.onboarding.preferences.v1") ?? "{}"));
   expect(stored.springWishes).toEqual(["basil"]);

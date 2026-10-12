@@ -485,6 +485,7 @@ export default function SettingsScreen() {
           <SettingRow label="Espace" value={spaceValue(answers.space)} onPress={() => setSheet("space")} />
           <SettingRow label="Envies" value={goalsValue(answers.goals)} onPress={openGoals} />
           <SettingRow label="Envies du printemps" value={springWishesValue(onboarding?.springWishes)} onPress={() => setSheet("spring")} />
+          <SettingRow label="Diagnostic de ton balcon" onPress={() => router.push("/diagnostic")} />
         </SettingsGroup>
 
         <SettingsGroup title="Rappels">
