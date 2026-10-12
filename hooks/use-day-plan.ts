@@ -9,7 +9,7 @@ import { useLocalWeather } from "@/hooks/use-local-weather";
 import { planDay } from "@/lib/garden/day-plan";
 import { postponedStarts } from "@/lib/garden/postpone";
 import { skippedRepots } from "@/lib/garden/repot-skip";
-import { endsWithSeason, harvestEndStates, markHarvestAsked, markSeasonAsked, markSeasonFrost, potIsFree } from "@/lib/garden/harvest-end";
+import { endsWithSeason, harvestEndStates, markHarvestAsked, markSeasonAsked, markSeasonFrost, potIsFree, settleLongOverSeasons } from "@/lib/garden/harvest-end";
 import { dayKey } from "@/lib/garden/garden-logic";
 import { useGarden } from "@/lib/garden/garden-context";
 import { careProfileFor } from "@/lib/garden/garden-logic";
@@ -64,7 +64,8 @@ export function useDayPlan() {
   }, []);
 
   const climate = useMemo(() => (weather.isFallback ? null : climateZoneFor(weather.latitude, weather.longitude, weatherSnapshot.elevationM)), [weather.isFallback, weather.latitude, weather.longitude, weatherSnapshot.elevationM]);
-  const harvestEnds = useMemo(() => harvestEndStates(snoozes, now), [now, snoozes]);
+  // Une saison finie depuis plus de 6 mois sans réponse : tenue pour finie (pot libre), plus de question.
+  const harvestEnds = useMemo(() => settleLongOverSeasons(harvestEndStates(snoozes, now), resolvedPlants, events, now, climate), [climate, events, now, resolvedPlants, snoozes]);
   const reminderPlants = useMemo(
     // Une plante à planter n'est pas encore en terre, un pot libre est vide : ni soif ni alerte météo.
     () => resolvedPlants.filter((resolved) => !resolved.plant.toPlant && !potIsFree(resolved, harvestEnds.get(resolved.plant.id))),

@@ -751,6 +751,8 @@ export default function HomeScreen() {
                 ? groupSheet.items.some((item) => item.feed)
                   ? "Enfonce ton doigt dans la terre de chaque pot : si elle est sèche, arrose au pied. Puis donne l’engrais à celles qui en ont besoin, et coche. Touche une ligne pour le détail."
                   : "Enfonce ton doigt dans la terre de chaque pot : si elle est sèche, arrose au pied et coche. Touche une ligne pour le détail."
+                : groupSheet.gesture === "season-end"
+                  ? "Coche une plante dont la saison est finie : Balco te propose quoi mettre dans son pot. Pas encore finie ? Laisse-la, tu as le temps."
                 : groupSheet.gesture === "feeding"
                   ? "Toujours sur une terre humide : arrose un peu d’abord si elle est sèche. Touche une ligne pour voir quel engrais donner."
                 : groupSheet.gesture === "planting"
@@ -767,11 +769,16 @@ export default function HomeScreen() {
                   subtitle={item.done ? doneSubtitle(item, events) : item.subtitle}
                   done={item.done}
                   picture={seasonPicture(item)}
-                  onToggle={() => void toggleItem(item)}
+                  onToggle={() => {
+                    // Fin de saison : la feuille du pot libre s'ouvre une fois celle du groupe repliée.
+                    if (item.kind !== "harvest-end") return void toggleItem(item);
+                    setOpenGroup(null);
+                    setTimeout(() => void toggleItem(item), 320);
+                  }}
                   onOpen={() => {
                     // Le détail s'ouvre une fois la feuille du groupe repliée.
                     setOpenGroup(null);
-                    setTimeout(() => setSheetKey(item.key), 320);
+                    setTimeout(() => (item.kind === "harvest-end" ? freePot.openQuestion(item.resolved.plant.id, item.subtitle) : setSheetKey(item.key)), 320);
                   }}
                 />
               ))}

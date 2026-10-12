@@ -30,7 +30,7 @@ export type TodayItem =
   | (TodayBase & { kind: "harvest-end"; done: false; stage: "question" | "free"; resolved: ResolvedPlant });
 
 /** Les gestes regroupés en une ligne dès qu'ils concernent deux plantes : arrosages, récoltes, semis, plantations, engrais. */
-export type GroupedGesture = "watering" | "harvest" | "planting" | "feeding";
+export type GroupedGesture = "watering" | "harvest" | "planting" | "feeding" | "season-end";
 
 /**
  * Une ligne de l'écran : un geste seul, les arrosages ou les récoltes regroupés (« Vérifie la terre de 3 plantes »,
@@ -48,6 +48,8 @@ const GROUP_LOOK: Record<GroupedGesture, { icon: string; tone: TodayTone; title:
   // 14/10 : « Plante l'aubergine », « Plante le chou-rave »… prenaient 7 lignes ; une seule, comme les arrosages.
   planting: { icon: "🌱", tone: "season", title: (count, members) => `${plantingVerb(members)} ${count} plantes de saison`, todo: () => "Ce mois-ci" },
   feeding: { icon: "🌿", tone: "care", title: (count) => `Nourris ${count} plantes`, todo: () => FEED_WHEN },
+  // 12/10 : « Ta saison de basilic est finie ? », « Tes radis sont-ils tous récoltés ? »… une ligne chacune, c'était trop.
+  "season-end": { icon: "🍂", tone: "care", title: (count) => `Fais le point sur ${count} plantes en fin de saison`, todo: () => "Saison finie ? Le pot est libre" },
 };
 
 /** Le sous-titre d'un groupe d'engrais : quand le donner. */
@@ -79,6 +81,7 @@ function groupedAs(item: TodayItem): GroupedGesture | null {
   // Semis et plantations du mois (pas le rempotage ni les gestes de suite, qui restent une ligne par plante).
   if (item.kind === "season" && (item.activity.kind === "sow" || item.activity.kind === "plant")) return "planting";
   if (item.gesture === "fertilizing" && item.kind === "task") return "feeding";
+  if (item.kind === "harvest-end" && item.stage === "question") return "season-end";
   return null;
 }
 
@@ -246,14 +249,15 @@ const NOT_URGENT: GestureKind[] = ["fertilizing", "care"];
 /**
  * La liste telle qu'elle s'affiche : alertes, arrosages, récoltes, semis, plantations et engrais regroupés dès qu'il y
  * en a deux (une seule ligne « Vérifie la terre de N plantes », « Récolte ce qui est prêt sur N plantes », « Plante ou
- * sème N plantes de saison », « Nourris N plantes »), autres gestes de saison, puis, au-delà de
+ * sème N plantes de saison », « Nourris N plantes », « Fais le point sur N plantes en fin de saison »), autres gestes
+ * de saison, puis, au-delà de
  * 5 lignes à faire, l'engrais et l'entretien repliés sous « X autres gestes, pas urgents ». Ce qui est fait passe à
  * la fin. Alertes, arrosages et récoltes restent toujours visibles.
  */
 export function layoutTodayList(items: TodayItem[]): TodayLine[] {
   const single = (item: TodayItem): TodayLine => ({ type: "item", key: item.key, item });
   const groups: Extract<TodayLine, { type: "group" }>[] = [];
-  for (const gesture of ["watering", "harvest", "planting", "feeding"] as const) {
+  for (const gesture of ["watering", "harvest", "planting", "feeding", "season-end"] as const) {
     const members = items.filter((item) => groupedAs(item) === gesture);
     if (members.length < 2) continue;
     const look = GROUP_LOOK[gesture];

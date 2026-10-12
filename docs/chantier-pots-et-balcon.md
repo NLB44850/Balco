@@ -176,3 +176,9 @@ Règles qui valent pour toutes les étapes :
      nourrir, à l'heure des rappels, hors plage calme et vacances, une seule pour toutes les plantes de ce jour
      (« Nourris 3 plantes 🌿 ») ; programmée par Aujourd'hui (source `balco-feeding`), seulement rappels activés. Pas de
      module natif. Saisons : « Une fois, mars–avril : … » pour les apports uniques. E2e `22-engrais`.
+   - **Retour du 12/10 (capture en juillet 2027 simulé, 13 « Ta saison de … est finie ? » à la suite), ses 2 choix :**
+     (1) dès deux questions de fin de saison ou de récolte en une fois, une seule ligne « Fais le point sur N plantes en fin
+     de saison » (groupe `season-end` de `layoutTodayList`) ; la feuille du bas ouvre le pot libre de la plante cochée ;
+     (2) une saison finie depuis plus de 6 mois sans réponse est tenue pour finie (`settleLongOverSeasons`,
+     `LONG_OVER_DAYS` = 183, harvest-end.ts, appliqué par `use-day-plan` et Réglages) : plus de question, « Ton pot est
+     libre » replié dans les gestes pas urgents.

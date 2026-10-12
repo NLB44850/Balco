@@ -172,3 +172,33 @@ describe("me le reproposer au printemps", () => {
   });
 });
 
+
+describe("fin de saison : une ligne pour toutes les questions, rien pour une saison très ancienne (12/10)", () => {
+  it("une saison finie depuis plus de 6 mois sans réponse est tenue pour finie : pot libre, replié", async () => {
+    const { settleLongOverSeasons } = await import("../lib/garden/harvest-end");
+    const basil = plant("basil", { addedAt: new Date(2026, 4, 15).toISOString() });
+    const sown = [started(new Date(2026, 4, 15))];
+    // Fin des récoltes fin septembre 2026 : la question en octobre, pas encore tenue pour finie en décembre.
+    expect(settleLongOverSeasons(new Map(), [basil], sown, new Date(2026, 11, 1)).get("p")).toBeUndefined();
+    const july = new Date(2027, 6, 15, 10);
+    const settled = settleLongOverSeasons(new Map(), [basil], sown, july);
+    expect(settled.get("p")).toMatchObject({ answered: true });
+    const day = planDay({ plants: [basil], events: sown, now: july, harvestEnds: settled })[0];
+    expect(day.first).toMatchObject({ title: "Ton pot est libre" });
+    expect(day.first?.source.type === "harvest-end" && day.first.source.quiet).toBe(true);
+  });
+
+  it("dès deux questions : « Fais le point sur N plantes en fin de saison »", async () => {
+    const { buildTodayList, layoutTodayList } = await import("../lib/garden/today");
+    const now = new Date(2026, 9, 5, 10);
+    const plants = resolvePlants([
+      { id: "a", catalogId: "basil", addedAt: new Date(2026, 4, 1).toISOString() },
+      { id: "b", catalogId: "basil", addedAt: new Date(2026, 4, 1).toISOString() },
+    ]);
+    const events: MaintenanceEvent[] = ["a", "b"].map((id) => ({ id: startEventId(id), plantId: id, type: "observation", completedAt: new Date(2026, 4, 1).toISOString(), source: "manual" }));
+    const lines = layoutTodayList(buildTodayList({ groups: [], plan: planDay({ plants, events, now }) }));
+    const group = lines.find((line) => line.type === "group" && line.gesture === "season-end");
+    expect(group).toMatchObject({ title: "Fais le point sur 2 plantes en fin de saison" });
+    expect(lines.filter((line) => line.type === "item" && line.item.kind === "harvest-end")).toHaveLength(0);
+  });
+});
