@@ -28,7 +28,7 @@ describe("« À anticiper » : 3 à 6 semaines devant", () => {
   it("annonce la plantation d'une plante choisie mais pas encore en terre", () => {
     const plants = resolvePlants([{ id: "garlic-1", catalogId: "garlic", addedAt: day(9, 1).toISOString(), toPlant: true }]);
     // L'ail se plante en octobre : en septembre, c'est à anticiper.
-    expect(anticipate({ plants, events: [], now: day(9, 5) })).toMatchObject({ kind: "plant", plantId: "garlic-1", title: "Plantation d’ail", prepare: "Il te faudra un pot d’au moins 8 L et du terreau." });
+    expect(anticipate({ plants, events: [], now: day(9, 5) })).toMatchObject({ kind: "plant", plantId: "garlic-1", title: "Plantation d’ail", prepare: "Il te faudra un pot d’au moins 10 L et du terreau." });
     // Déjà possible ce mois-ci : c'est sur Aujourd'hui, pas une annonce.
     expect(anticipate({ plants, events: [], now: day(10, 8) })).toBeNull();
   });

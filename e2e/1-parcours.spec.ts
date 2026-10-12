@@ -185,11 +185,15 @@ test("catalogue : ajouter une plante puis ouvrir sa fiche", async ({ page }) => 
   await page.getByRole("button", { name: "Voir mon balcon · 3 plantes" }).click();
   await page.getByRole("button", { name: /^Menthe, .*voir la fiche/ }).click();
   await expect(page.getByText(/Photo d’exemple|Ajoute ta photo/).first()).toBeVisible();
-  // Sa fiche montre le pot choisi ; la ligne ouvre la même feuille pour le changer.
-  await page.getByRole("button", { name: "Pot : Moyen (20 à 30 cm)" }).click();
+  // Sa fiche « Spécial pot » montre le pot choisi et s'il suffit (menthe : 15 L) ; la ligne ouvre la même feuille.
+  await expect(page.getByText("Spécial pot")).toBeVisible();
+  await expect(page.getByText("Un peu juste : vise au moins 15 L.")).toBeVisible();
+  await expect(page.getByText("Terreau universel")).toBeVisible();
+  await page.getByRole("button", { name: "Ton pot : Moyen (20 à 30 cm)" }).click();
   await expect(page.getByRole("radio", { name: "Moyen (20 à 30 cm)" })).toBeChecked();
   await page.getByRole("radio", { name: "Jardinière ou bac" }).click();
-  await expect(page.getByRole("button", { name: "Pot : Jardinière ou bac" })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Ton pot : Jardinière ou bac" })).toBeVisible();
+  await expect(page.getByText("Assez grand : il faut au moins 15 L.")).toBeVisible();
   const stored = await page.evaluate(() => JSON.parse(localStorage.getItem("balco.garden.plants.v1") ?? "[]"));
   expect(stored.find((plant: { catalogId: string }) => plant.catalogId === "mint")?.potSize).toBe("planter");
   expect(stored.find((plant: { catalogId: string }) => plant.catalogId === "lavender")?.potSize).toBeUndefined();

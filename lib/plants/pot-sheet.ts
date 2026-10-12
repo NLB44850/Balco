@@ -57,20 +57,28 @@ function monthSpan(months: Month[]) {
   return `${elides(first) ? "d’" : "de "}${first} à ${MONTH_LONG[months[months.length - 1] - 1]}`;
 }
 
-/** La valeur courte de la ligne « Engrais » : « Tous les 14 jours », « Au printemps », « Pas besoin ». */
+/** La valeur courte de la ligne « Engrais » : « Tous les 14 jours », « Un peu », « Pas besoin ». */
 export function feedingValue(feeding: PotFeeding) {
   if (feeding.need === "none") return "Pas besoin";
   if (feeding.need === "regular" && feeding.everyDays) return `Tous les ${feeding.everyDays} jours`;
-  return "Une fois par an";
+  return "Un peu";
 }
+
+/** « au printemps », « en juin » : déjà dit par les mois, on ne le répète pas. */
+const SEASON_ONLY = /^(au printemps|à l’automne|en [a-zéû]+|en début d’été)$/u;
 
 /** La phrase sous la ligne « Engrais » : quoi, à partir de quand, quels mois. */
 export function feedingDetail(plant: Agreeable, feeding: PotFeeding) {
   if (feeding.need === "none") return byForm(plant, "Il s’en passe très bien.", "Elle s’en passe très bien.", "Ils s’en passent très bien.", "Elles s’en passent très bien.");
   const what = feeding.kind ? feeding.kind.charAt(0).toUpperCase() + feeding.kind.slice(1) : "Engrais organique";
-  const when = [feeding.from, monthSpan(feeding.months)].filter(Boolean).join(", ");
+  const months = monthSpan(feeding.months);
+  const from = feeding.from && !(months && SEASON_ONLY.test(feeding.from)) ? feeding.from : null;
+  const when = [from, months].filter(Boolean).join(", ");
   return when ? `${what}, ${when}.` : `${what}.`;
 }
+
+/** Une fiche faite avec peu de sources (choix du porteur, 12/10 : on l'affiche, en le disant). */
+export const ESTIMATE_TEXT = "Estimation : peu de sources sur cette plante en pot.";
 
 /** Le pot choisi (étape 1) suffit-il ? Comparé au volume de la fiche. */
 export function potFit(sheet: PotSheet, size: PotSize): { tone: "ok" | "small" | "unknown"; text: string } {

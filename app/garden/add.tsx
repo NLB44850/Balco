@@ -16,6 +16,7 @@ import { CatalogPicture } from "@/components/plant-picture";
 import { BottomSheet } from "@/components/today/bottom-sheet";
 import { UndoToast, type ToastMessage } from "@/components/today/undo-toast";
 import { PotSizeSheet } from "@/components/pot-size-sheet";
+import { potSheetFor } from "@/lib/plants/pot-sheet";
 import { glass } from "@/components/ui/glass";
 import { Text, TextInput } from "@/components/ui/typography";
 import { useColors } from "@/hooks/use-colors";
@@ -188,7 +189,7 @@ export default function AddPlantScreen() {
                 sheetEntry.sowMonths.length > 0 ? `🌱  Semis : ${describeSowing(sheetEntry)}` : null,
                 sheetEntry.plantMonths.length > 0 ? `🪴  Plantation : ${formatMonthRange(sheetEntry.plantMonths)}` : null,
                 `🧺  Récolte : ${formatMonthRange(sheetEntry.harvestMonths)}`,
-                `🪣  Pot d’au moins ${sheetEntry.potLiters} L`,
+                `🪣  Pot d’au moins ${sheetEntry.potLiters} L${potSheetFor(sheetEntry.id) ? `, ${potSheetFor(sheetEntry.id)!.depthCm} cm de terre` : ""}`,
                 sheetEntry.melliferous ? "🐝  Aimée des abeilles" : null,
               ].filter(Boolean).map((fact) => (
                 <View key={fact} style={[styles.fact, { backgroundColor: colors.surface }]}><Text style={[styles.factText, { color: colors.foreground }]}>{fact}</Text></View>

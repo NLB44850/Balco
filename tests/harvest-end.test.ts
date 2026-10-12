@@ -126,7 +126,7 @@ describe("« Oui » : ton pot est libre", () => {
     expect(choices[0].label).toBe("Ressemer des radis");
     expect(choices.at(-1)?.label).toBe("Laisser le pot vide");
     const other = choices.find((choice) => choice.kind === "plant");
-    expect(other?.kind === "plant" && other.entry.potLiters).toBeLessThanOrEqual(3);
+    expect(other?.kind === "plant" && other.entry.potLiters).toBeLessThanOrEqual(plant("radish").entry.potLiters);
     expect(other?.label).toMatch(/^(Semer|Planter) (le |la |les |l’)/u);
   });
 

@@ -40,7 +40,7 @@ describe("modèles de guide et « Ce qu'il te faut »", () => {
 
   it("la liste dit quoi acheter, avec des mesures concrètes", () => {
     const lettuce = supplies(plant("lambs-lettuce"), "sow-pot");
-    expect(lettuce.map((item) => item.label)).toEqual(["Un sachet de graines de mâche", "Un pot percé d’au moins 4 L", "Une poignée de billes d’argile", "Du terreau", "Un vaporisateur ou un arrosoir à pomme fine"]);
+    expect(lettuce.map((item) => item.label)).toEqual(["Un sachet de graines de mâche", "Un pot percé d’au moins 20 L", "Une poignée de billes d’argile", "Du terreau", "Un vaporisateur ou un arrosoir à pomme fine"]);
     // Terreau, billes, arrosoir : communs à toutes les plantes (« J'ai déjà » vaut partout).
     expect(lettuce.filter((item) => item.shared).map((item) => item.id)).toEqual(["clay-balls", "soil", "spray"]);
     expect(supplies(plant("blueberry"), "perennial-pot").map((item) => item.label)).toContain("De la terre de bruyère");
@@ -161,6 +161,6 @@ describe("les étapes du pas-à-pas (P7) : règles d'écriture", () => {
     expect(hasItem(have, "basil", supplies(plant("basil"), "sow-pot").find((item) => item.id === "soil")!)).toBe(true);
     expect(hasItem(have, "basil", supplies(plant("basil"), "sow-pot").find((item) => item.id === "seeds")!)).toBe(false);
     const missing = lettuce.filter((item) => !hasItem(have, "lambs-lettuce", item));
-    expect(shareText(plant("lambs-lettuce"), "sow-pot", missing)).toBe("Pour semer la mâche, il me faut :\n• Un pot percé d’au moins 4 L\n• Une poignée de billes d’argile\n• Un vaporisateur ou un arrosoir à pomme fine");
+    expect(shareText(plant("lambs-lettuce"), "sow-pot", missing)).toBe("Pour semer la mâche, il me faut :\n• Un pot percé d’au moins 20 L\n• Une poignée de billes d’argile\n• Un vaporisateur ou un arrosoir à pomme fine");
   });
 });

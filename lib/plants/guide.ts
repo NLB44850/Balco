@@ -55,8 +55,8 @@ export function plantingOf(entry: CatalogPlant): Planting {
   return PLANTING[entry.id];
 }
 
-/** Une vivace qui demande un grand pot (arbuste, petit fruitier) : on l'installe pour des années. */
-const BIG_POT_LITERS = 15;
+/** Une vivace qui demande un grand pot (arbuste, petit fruitier) : on l’installe pour des années. 25 L depuis les fiches Spécial Pot (12/10) : les aromatiques vivaces demandent jusqu’à 20 L sans être des arbustes. */
+const BIG_POT_LITERS = 25;
 
 /** Le modèle du guide, d'après le premier geste du mois (« Sème… au chaud », « Plante… »). */
 export function guideModelFor(entry: CatalogPlant, month: number, climate?: ClimateInfo | null): GuideModel {

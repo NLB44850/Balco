@@ -86,3 +86,14 @@ Règles qui valent pour toutes les étapes :
    « Dans quel pot ? » après l'ajout depuis le catalogue (« Passer », « Annuler » par-dessus). Pas dans l'accueil, ni
    dans les ajouts depuis Saisons, Aujourd'hui ou un temps fort (la fiche suffit). Tests `tests/pot-size.test.ts`,
    synchro, e2e « catalogue : ajouter une plante puis ouvrir sa fiche ».
+2. **Fiches « Spécial Pot » : codées le 12/10, à valider sur son téléphone.** Recherche web en deux passages (consignes
+   dans `scripts/pots/`) : 90 plantes vérifiées sur 2 sources au moins, 11 estimations affichées comme telles (son choix
+   « A » du 12/10 : « Estimation : peu de sources sur cette plante en pot. »). Données `lib/plants/pot-sheets-data.ts`,
+   logique `lib/plants/pot-sheet.ts` (`potSheetFor`, `SOIL_LABELS`, `feedingValue`, `feedingDetail`, `potFit`), sources
+   lisibles `docs/sources-pots.md`. Fiche : carte « Spécial pot » (`components/pot-sheet-card.tsx`) : Ton pot (avec
+   « Assez grand » / « Un peu juste »), Profondeur, Volume, Terreau (+ conseil), Engrais. Les volumes vérifiés
+   remplacent le « pot conseillé » du catalogue (`potLiters`, souvent plus grand : menthe 5 → 15 L) ; seuil du
+   pas-à-pas « grand pot pour des années » relevé de 15 à 25 L (`BIG_POT_LITERS`) pour le garder aux petits fruits.
+   Catalogue : « Pot d’au moins 15 L, 20 cm de terre ». À reprendre à l'étape 4 : les rappels d'engrais actuels
+   (`lib/plants/fertilizing.ts`, 33 plantes) ne suivent pas encore les fiches (ex. tournesol nain : rappel tous les
+   21 jours, fiche « Un peu »).
