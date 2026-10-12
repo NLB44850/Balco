@@ -8,7 +8,7 @@ import { Text } from "@/components/ui/typography";
 import { useColors } from "@/hooks/use-colors";
 
 /** `art` : un petit dessin à la place de l'emoji (la taille du pot). */
-export type Choice = { id: string; title: string; icon?: string; art?: React.ReactNode };
+export type Choice = { id: string; title: string; icon?: string; art?: React.ReactNode; /** Une courte mention verte dans la ligne (« ✓ Conseillé »). */ badge?: string };
 
 type Props = {
   choices: Choice[];
@@ -16,11 +16,9 @@ type Props = {
   onPick: (id: string) => void;
   multiple?: boolean;
   hints?: Record<string, string>;
-  /** La couleur d'un conseil : vert (« Le plus adapté »), orange (« Trop petit pour elle »), sinon gris. */
-  hintTones?: Record<string, "ok" | "warning">;
 };
 
-export function ChoiceList({ choices, selected, onPick, multiple = false, hints, hintTones }: Props) {
+export function ChoiceList({ choices, selected, onPick, multiple = false, hints }: Props) {
   const colors = useColors();
   return (
     <View style={styles.list}>
@@ -38,11 +36,12 @@ export function ChoiceList({ choices, selected, onPick, multiple = false, hints,
             >
               {choice.art ?? (choice.icon ? <Text style={styles.icon}>{choice.icon}</Text> : null)}
               <Text style={[styles.text, { color: colors.foreground }]}>{choice.title}</Text>
+              {choice.badge ? <Text style={[styles.badge, { color: colors.primary }]}>{choice.badge}</Text> : null}
               <View style={[multiple ? styles.box : styles.radio, { borderColor: active ? colors.primary : colors.border, backgroundColor: active && multiple ? colors.primary : "transparent" }]}>
                 {active && (multiple ? <Text style={styles.mark}>✓</Text> : <View style={[styles.dot, { backgroundColor: colors.primary }]} />)}
               </View>
             </Pressable>
-            {hints?.[choice.id] ? <Text style={[styles.hint, { color: hintTones?.[choice.id] === "ok" ? colors.primary : hintTones?.[choice.id] === "warning" ? colors.warning : colors.muted }, hintTones?.[choice.id] && styles.toned]}>{hints[choice.id]}</Text> : null}
+            {hints?.[choice.id] ? <Text style={[styles.hint, { color: colors.muted }]}>{hints[choice.id]}</Text> : null}
           </View>
         );
       })}
@@ -61,6 +60,6 @@ const styles = StyleSheet.create({
   box: { width: 22, height: 22, borderRadius: 6, borderWidth: 2, alignItems: "center", justifyContent: "center" },
   mark: { color: "#FFFFFF", fontSize: 14, fontWeight: "800", marginTop: -1 },
   hint: { fontSize: 13, lineHeight: 18, paddingHorizontal: 4 },
-  toned: { fontWeight: "600" },
+  badge: { fontSize: 13, fontWeight: "700" },
   pressed: { opacity: 0.7 },
 });

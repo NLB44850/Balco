@@ -66,23 +66,17 @@ type SheetProps = {
   entry?: CatalogPlant;
 };
 
-/** Un seul repère, sous la taille conseillée par sa fiche (13/10 : le détail chargeait trop la feuille). */
-function sizeHints(entry: CatalogPlant) {
-  return { hints: { [recommendedPotSize(entry)]: "✓ Conseillé" }, tones: { [recommendedPotSize(entry)]: "ok" as const } };
-}
-
 /** « Dans quel pot ? » : les 5 tailles, chacune avec son dessin. Choisir referme la feuille. */
 export function PotSizeSheet({ visible, onClose, value, onPick, entry }: SheetProps) {
-  const advice = entry ? sizeHints(entry) : null;
+  // Un seul repère, dans la ligne de la taille conseillée par sa fiche (13/10 : sous la ligne, il prêtait à confusion).
+  const recommended = entry ? recommendedPotSize(entry) : null;
   return (
     <BottomSheet visible={visible} onClose={onClose}>
       <SheetHeading title="Dans quel pot ?" intro={entry ? potNeedText(potNeedFor(entry)) : "Mesure le haut du pot, d’un bord à l’autre."} />
       <ChoiceList
-        choices={POT_SIZE_CHOICES.map((choice) => ({ id: choice.id, title: potSizeLabel(choice.id), art: <PotSizeArt size={choice.id} /> }))}
+        choices={POT_SIZE_CHOICES.map((choice) => ({ id: choice.id, title: potSizeLabel(choice.id), art: <PotSizeArt size={choice.id} />, badge: choice.id === recommended ? "✓ Conseillé" : undefined }))}
         selected={(id) => id === value}
         onPick={(id) => onPick(id as PotSize)}
-        hints={advice?.hints}
-        hintTones={advice?.tones}
       />
     </BottomSheet>
   );
