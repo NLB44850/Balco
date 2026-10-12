@@ -1,5 +1,7 @@
-# Publie le nouveau code de l'app (EAS Update) à chaque fusion dans main : les téléphones qui ont l'APK de test le
-# reçoivent à la réouverture de l'app (« Nouvelle version de Balco… Redémarrer »), sans réinstaller.
+# Publie le nouveau code de l'app (EAS Update) à chaque fusion dans main, et aussi à l'ouverture d'une demande de fusion
+# vers main et à chaque nouveau commit poussé dessus (pour la tester avant de fusionner, demandé le 12/10) : les
+# téléphones qui ont l'APK de test le reçoivent à la réouverture de l'app (« Nouvelle version de Balco… Redémarrer »),
+# sans réinstaller. Un seul canal « test » : le dernier publié gagne (la PR, puis main à la fusion).
 # Mêmes réglages que « Construire l'APK de test » : secret EXPO_TOKEN et variable BALCO_API_URL.
 # Seul le code de l'app voyage ainsi ; le serveur et l'app web se mettent à jour de leur côté (Railway).
 name: Publier une mise à jour
@@ -7,6 +9,10 @@ name: Publier une mise à jour
 on:
   push:
     branches: [main]
+    paths-ignore: ["docs/**", "*.md", "e2e/**", "tests/**", "server/**", "drizzle/**", ".github/**"]
+  pull_request:
+    branches: [main]
+    types: [opened, synchronize, reopened, ready_for_review]
     paths-ignore: ["docs/**", "*.md", "e2e/**", "tests/**", "server/**", "drizzle/**", ".github/**"]
   workflow_dispatch:
 
@@ -17,6 +23,8 @@ concurrency:
 jobs:
   update:
     runs-on: ubuntu-latest
+    # Pas les brouillons, ni les demandes venues d'un autre dépôt (Dependabot n'a de toute façon pas le secret).
+    if: github.event_name != 'pull_request' || (!github.event.pull_request.draft && github.event.pull_request.head.repo.full_name == github.repository)
     steps:
       - name: Vérifier la configuration
         id: config
@@ -32,6 +40,9 @@ jobs:
           fi
       - uses: actions/checkout@v7
         if: steps.config.outputs.ready == 'true'
+        with:
+          # Demande de fusion : le code de sa branche tel quel (pas la fusion d'essai avec main).
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
       - uses: pnpm/action-setup@v6
         if: steps.config.outputs.ready == 'true'
       - uses: actions/setup-node@v7
@@ -47,7 +58,7 @@ jobs:
           EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
           BALCO_API_URL: ${{ vars.BALCO_API_URL }}
           EXPO_PUBLIC_WEATHER_SIMULATION: "1"
-          COMMIT_MESSAGE: ${{ github.event.head_commit.message || 'Publication manuelle' }}
+          COMMIT_MESSAGE: ${{ github.event.pull_request && format('PR #{0} : {1}', github.event.pull_request.number, github.event.pull_request.title) || github.event.head_commit.message || 'Publication manuelle' }}
         run: |
           export EXPO_PUBLIC_API_BASE_URL="${BALCO_API_URL%/}"
           message=$(printf '%s' "$COMMIT_MESSAGE" | head -n 1 | cut -c1-200)
