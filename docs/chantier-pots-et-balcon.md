@@ -97,3 +97,10 @@ Règles qui valent pour toutes les étapes :
    Catalogue : « Pot d’au moins 15 L, 20 cm de terre ». À reprendre à l'étape 4 : les rappels d'engrais actuels
    (`lib/plants/fertilizing.ts`, 33 plantes) ne suivent pas encore les fiches (ex. tournesol nain : rappel tous les
    21 jours, fiche « Un peu »).
+   **Retours du 12/10, corrigés** : (1) tout en centimètres, plus aucun litre de pot à l'écran (fiche, catalogue,
+   pas-à-pas, À anticiper, rempotage : `potNeedFor`, `potNeedShort`, `potNeedText`, `roundPotWidthCm`, largeur arrondie
+   aux 5 cm d'un pot aussi haut que large) ; (2) conseil propre à la jardinière (`potFit` : « Place pour 4 pieds dans
+   60 cm », « Jardinière trop peu profonde : il lui faut 30 cm de terre ») ; (3) pot trop petit en visuel : dessin des
+   deux pots à la même échelle (le sien en orange, celui qu'il faut en pointillés verts), titre « ⚠︎ Pot trop petit »,
+   « Prends un grand pot » (ou « un bac de 45 cm ou plus »), carte bordée d'orange, « Changer › ». Formes types des
+   tailles : `POT_SHAPES` (pot-sheet.ts).

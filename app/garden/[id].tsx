@@ -38,6 +38,7 @@ import { byForm } from "@/lib/plants/grammar";
 import { PotSizeSheet } from "@/components/pot-size-sheet";
 import { PotSheetCard } from "@/components/pot-sheet-card";
 import { potSizeOf } from "@/lib/plants/pot-size";
+import { potNeedFor } from "@/lib/plants/pot-sheet";
 
 
 const clock = (iso: string) => new Date(iso).toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" });
@@ -232,7 +233,7 @@ export default function PlantScreen() {
           </Text>
 
           <View style={styles.pills}>
-            {[`☀️  ${sunlightLabel(entry)}`, `🪴  Pot conseillé : ${entry.potLiters} L`, `🌱  ${growingSince(plant.addedAt, now)}`].map((label) => (
+            {[`☀️  ${sunlightLabel(entry)}`, `🪴  Pot de ${potNeedFor(entry).widthCm} cm`, `🌱  ${growingSince(plant.addedAt, now)}`].map((label) => (
               <View key={label} style={[styles.fact, { backgroundColor: colors.surface }]}><Text style={[styles.factText, { color: colors.foreground }]}>{label}</Text></View>
             ))}
           </View>

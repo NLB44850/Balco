@@ -10,6 +10,7 @@ import { ofName } from "../plants/guide";
 import { PLANTING } from "../plants/planting";
 import type { MaintenanceEvent } from "../reminders/reminder-engine";
 import { startEventId, type ResolvedPlant } from "./garden-logic";
+import { potNeedShort } from "../plants/pot-sheet";
 
 export type FollowUp = "thin" | "outdoors" | "pinch";
 
@@ -61,7 +62,7 @@ export function followUpsFor(resolved: ResolvedPlant, events: MaintenanceEvent[]
       kind: "plant",
       typeLabel: "PLANTATION",
       title: `Sors tes plants ${ofName(entry.name)} sur le balcon`,
-      description: `Installe chaque plant dans un pot d’au moins ${entry.potLiters} L, avec du terreau frais, puis arrose bien. Les premiers jours, mets-les à l’abri du plein soleil de midi.`,
+      description: `Installe chaque plant dans ${potNeedShort(entry)}, avec du terreau frais, puis arrose bien. Les premiers jours, mets-les à l’abri du plein soleil de midi.`,
       eventType: "observation",
       followUp: "outdoors",
     });

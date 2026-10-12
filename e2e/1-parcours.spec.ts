@@ -185,15 +185,22 @@ test("catalogue : ajouter une plante puis ouvrir sa fiche", async ({ page }) => 
   await page.getByRole("button", { name: "Voir mon balcon · 3 plantes" }).click();
   await page.getByRole("button", { name: /^Menthe, .*voir la fiche/ }).click();
   await expect(page.getByText(/Photo d’exemple|Ajoute ta photo/).first()).toBeVisible();
-  // Sa fiche « Spécial pot » montre le pot choisi et s'il suffit (menthe : 15 L) ; la ligne ouvre la même feuille.
+  // Sa fiche « Spécial pot » compare son pot à celui qu'il lui faut, en centimètres (menthe : 30 cm de large).
   await expect(page.getByText("Spécial pot")).toBeVisible();
-  await expect(page.getByText("Un peu juste : vise au moins 15 L.")).toBeVisible();
+  await expect(page.getByText("Ton pot lui convient", { exact: false })).toBeVisible();
+  await expect(page.getByText("Il lui faut un pot de 30 cm de large, 20 cm de profondeur.")).toBeVisible();
   await expect(page.getByText("Terreau universel")).toBeVisible();
+  // Trop petit : un titre orange et ce qu'il faut prendre.
   await page.getByRole("button", { name: "Ton pot : Moyen (20 à 30 cm)" }).click();
   await expect(page.getByRole("radio", { name: "Moyen (20 à 30 cm)" })).toBeChecked();
+  await page.getByRole("radio", { name: "Petit (moins de 20 cm)" }).click();
+  await expect(page.getByText("Pot trop petit", { exact: false })).toBeVisible();
+  await expect(page.getByText("Il lui faut un pot de 30 cm de large, 20 cm de profondeur. Prends un pot moyen.")).toBeVisible();
+  // Jardinière : combien de pieds y tiennent.
+  await page.getByRole("button", { name: "Ton pot : Petit (moins de 20 cm)" }).click();
   await page.getByRole("radio", { name: "Jardinière ou bac" }).click();
-  await expect(page.getByRole("button", { name: "Ton pot : Jardinière ou bac" })).toBeVisible();
-  await expect(page.getByText("Assez grand : il faut au moins 15 L.")).toBeVisible();
+  await expect(page.getByText("Ta jardinière lui convient", { exact: false })).toBeVisible();
+  await expect(page.getByText("Place pour un seul pied dans 60 cm.")).toBeVisible();
   const stored = await page.evaluate(() => JSON.parse(localStorage.getItem("balco.garden.plants.v1") ?? "[]"));
   expect(stored.find((plant: { catalogId: string }) => plant.catalogId === "mint")?.potSize).toBe("planter");
   expect(stored.find((plant: { catalogId: string }) => plant.catalogId === "lavender")?.potSize).toBeUndefined();

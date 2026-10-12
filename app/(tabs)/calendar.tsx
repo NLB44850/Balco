@@ -22,6 +22,7 @@ import { glass } from "@/components/ui/glass";
 import { Text } from "@/components/ui/typography";
 import { useDayPlan } from "@/hooks/use-day-plan";
 import { useColors } from "@/hooks/use-colors";
+import { potNeedShort } from "@/lib/plants/pot-sheet";
 import { useGarden } from "@/lib/garden/garden-context";
 import { skippedRepots } from "@/lib/garden/repot-skip";
 import { dayKey, plantDisplayName, potHistory, type ResolvedPlant } from "@/lib/garden/garden-logic";
@@ -359,7 +360,7 @@ export default function CalendarScreen() {
                 sheetSuggestion.entry.sowMonths.length > 0 ? `🌱 Semis : ${describeSowing(sheetSuggestion.entry)}` : null,
                 sheetSuggestion.entry.plantMonths.length > 0 ? `🪴 Plantation : ${formatMonthRange(sheetSuggestion.entry.plantMonths)}` : null,
                 `${sheetSuggestion.entry.category === "flower" ? "🌸 Floraison" : "🧺 Récolte"} : ${formatMonthRange(sheetSuggestion.entry.harvestMonths)}`,
-                `🪣 Pot d’au moins ${sheetSuggestion.entry.potLiters} L`,
+                `🪣 ${capitalize(potNeedShort(sheetSuggestion.entry))}`,
               ].filter(Boolean).join("\n")}
             </Text>
             {sheetSuggestion.lastChance && <Text style={[styles.small, { color: colors.terracotta }]}>C’est le dernier mois pour le faire cette année.</Text>}

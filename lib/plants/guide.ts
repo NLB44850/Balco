@@ -12,6 +12,7 @@ import { ofLabel, potSizes, startActivity } from "./calendar";
 import { REPOTTING } from "./repotting";
 import type { ClimateInfo } from "./climate";
 import { agree, byForm, elides, capitalize, objectBefore, objectPronoun, stressedPronoun, subjectPronoun, verb } from "./grammar";
+import { potNeedFor, potNeedShort } from "./pot-sheet";
 
 export type GuideModel = "sow-pot" | "sow-indoor" | "plant-seedling" | "plant-bulb" | "perennial-pot" | GuideTask;
 
@@ -90,7 +91,7 @@ export function supplies(entry: CatalogPlant, model: GuideModel, options: GuideO
   if (model === "repot" || model === "topdress") return potCareSupplies(entry, model, options);
   if (model === "thin") return [{ id: "scissors", label: "Une petite paire de ciseaux", detail: "Des ciseaux à ongles font très bien l’affaire.", shared: true }, { id: "spray", label: "Un vaporisateur ou un arrosoir à pomme fine", detail: "Une pluie fine ne couche pas les pousses.", shared: true }];
   if (model === "pinch") return [{ id: "fingers", label: "Tes doigts, ou de petits ciseaux propres", detail: "Rien d’autre : c’est un geste de quelques secondes.", shared: true }];
-  const potLabel = model === "perennial-pot" ? `Un grand pot percé de ${entry.potLiters} L ou plus` : `Un pot percé d’au moins ${entry.potLiters} L`;
+  const potLabel = model === "perennial-pot" ? `Un grand pot percé de ${potNeedFor(entry).widthCm} cm de large ou plus` : capitalize(potNeedShort(entry, { pierced: true }));
   const pot: Supply = isDenseSowing(planting)
     ? { id: "tray", label: "Une barquette ou une assiette creuse", detail: "Quelques centimètres de terreau suffisent.", shared: false }
     : { id: "pot", label: potLabel, detail: planting.perPot > 1 ? `Pour ${planting.perPot} plants, à ${planting.spacingCm} cm l’un de l’autre.` : "Avec des trous au fond, et une soucoupe.", shared: false };
@@ -110,7 +111,7 @@ export function supplies(entry: CatalogPlant, model: GuideModel, options: GuideO
       : { id: "plant", label: model === "perennial-pot" ? `Un pied ${ofName(entry.name)} en pot` : `Un plant ${ofName(entry.name)} en godet`, detail: planting.perPot > 1 ? `${planting.perPot} pour ce pot.` : undefined, shared: false };
   if (model === "outdoors") {
     return [
-      { id: "pot", label: `Un pot percé d’au moins ${entry.potLiters} L`, detail: planting.perPot > 1 ? `Pour ${planting.perPot} plants, à ${planting.spacingCm} cm l’un de l’autre.` : "Un par plant, avec des trous au fond et une soucoupe.", shared: false },
+      { id: "pot", label: capitalize(potNeedShort(entry, { pierced: true })), detail: planting.perPot > 1 ? `Pour ${planting.perPot} plants, à ${planting.spacingCm} cm l’un de l’autre.` : "Un par plant, avec des trous au fond et une soucoupe.", shared: false },
       clay,
       soil,
       { id: "watering-can", label: "Un arrosoir", shared: true },
@@ -142,7 +143,7 @@ function potCareSupplies(entry: CatalogPlant, task: PotTask, { repots = 0 }: Gui
   }
   const pot = potSizes(entry, repots);
   return [
-    { id: "next-pot", label: `Un pot percé d’environ ${pot.next} L`, detail: `${pot.nextWidthCm} cm de large : un tiers de plus que l’actuel.`, shared: false },
+    { id: "next-pot", label: `Un pot percé d’environ ${pot.nextWidthCm} cm de large`, detail: "Un peu plus large que l’actuel.", shared: false },
     { id: "clay-balls", label: "Une poignée de billes d’argile", detail: "Au fond du pot, l’eau s’écoule mieux.", shared: true },
     acid ? { id: "heath-soil", label: "De la terre de bruyère", detail: "Il ne pousse que dans une terre acide.", shared: true } : { id: "soil", label: "Du terreau", detail: "Un sac de 20 L remplit deux ou trois pots moyens.", shared: true },
     can,

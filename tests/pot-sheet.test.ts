@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import { PLANT_CATALOG, getCatalogPlant } from "../lib/plants/catalog";
-import { ESTIMATE_TEXT, feedingDetail, feedingValue, potFit, potSheetFor, type PotSheet } from "../lib/plants/pot-sheet";
+import { ESTIMATE_TEXT, feedingDetail, feedingValue, potFit, potNeedFor, potNeedShort, potSheetFor, smallestFit, type PotSheet } from "../lib/plants/pot-sheet";
 
 describe("fiches Spécial Pot", () => {
   it("couvrent les 101 plantes, avec des valeurs plausibles et leurs sources", () => {
@@ -44,12 +44,27 @@ describe("fiches Spécial Pot", () => {
     expect(feedingDetail(getCatalogPlant("sage")!, { ...light, months: [4] })).toBe("Compost en surface, en avril.");
   });
 
-  it("disent si le pot choisi suffit", () => {
-    const tomato = potSheetFor("cherry-tomato")!;
-    expect(potFit(tomato, "unknown")).toEqual({ tone: "unknown", text: "Choisis sa taille pour vérifier qu’il suffit." });
-    expect(potFit(tomato, "small").tone).toBe("small");
-    expect(potFit(tomato, "small").text).toBe(`Un peu juste : vise au moins ${tomato.liters} L.`);
+  it("disent en centimètres si le pot choisi suffit, avec un conseil pour la jardinière", () => {
+    const tomato = getCatalogPlant("cherry-tomato")!;
+    expect(potNeedFor(tomato)).toMatchObject({ widthCm: 35, depthCm: 30, planter: false });
+    expect(potFit(tomato, "unknown")).toEqual({ tone: "unknown", title: "Quel est ton pot ?", detail: "Il lui faut un pot de 35 cm de large, 30 cm de profondeur." });
+    expect(potFit(tomato, "medium")).toEqual({ tone: "small", title: "Pot trop petit", detail: "Il lui faut un pot de 35 cm de large, 30 cm de profondeur. Prends un grand pot." });
     expect(potFit(tomato, "large").tone).toBe("ok");
+    // Jardinière : trop peu profonde pour une tomate, place pour 4 basilics, et la culture conseillée pour la salade à couper.
+    expect(potFit(tomato, "planter")).toEqual({ tone: "small", title: "Jardinière trop peu profonde", detail: "Il lui faut 30 cm de terre. Prends un grand pot." });
+    expect(potFit(getCatalogPlant("basil")!, "planter")).toEqual({ tone: "ok", title: "Ta jardinière lui convient", detail: "Place pour 4 pieds dans 60 cm." });
+    expect(potFit(getCatalogPlant("cut-lettuce")!, "planter")).toEqual({ tone: "ok", title: "Ta jardinière lui convient", detail: "C’est la culture conseillée en pot." });
+    expect(potFit(getCatalogPlant("cut-lettuce")!, "unknown").detail).toBe("Il lui faut une jardinière de 60 cm, 20 cm de profondeur.");
+    // Plus grand qu'un grand pot : un bac.
+    expect(potFit(getCatalogPlant("zucchini")!, "large")).toMatchObject({ tone: "small", detail: expect.stringContaining("Prends un bac de 45 cm ou plus.") });
+    expect(potNeedShort(tomato, { pierced: true })).toBe("un pot percé d’au moins 35 cm de large");
     expect(ESTIMATE_TEXT).toContain("Estimation");
+  });
+
+  it("ont un pot conseillé atteignable pour chaque plante (ou un bac au-delà d'un grand pot)", () => {
+    for (const entry of PLANT_CATALOG) {
+      const fit = smallestFit(potNeedFor(entry));
+      if (fit) expect(potFit(entry, fit).tone, entry.id).toBe("ok");
+    }
   });
 });

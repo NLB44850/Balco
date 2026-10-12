@@ -35,7 +35,7 @@ import { activityDone, activityEventId, describeMonths, eventForActivity, season
 import { adaptToClimate, climateSummary, climateZoneFor } from "../lib/plants/climate";
 import { potHistory, sessionEventId } from "../lib/garden/garden-logic";
 import { skippedRepots, skipRepotThisYear, unskipRepot } from "../lib/garden/repot-skip";
-import { genericRepotSign, potSizes } from "../lib/plants/calendar";
+import { genericRepotSign, potSizes, potWidthCm } from "../lib/plants/calendar";
 
 /** Une plante sur le balcon, dans son pot depuis cette date. */
 const potted = (catalogId: string, since: Date, id = catalogId, extra: { lastTopdress?: string; repots?: number; repotSkippedUntil?: string } = {}) => ({ ...subject(catalogId, id), addedAt: since.toISOString(), inPotSince: since.toISOString(), ...extra });
@@ -80,7 +80,7 @@ describe("rempotage selon le besoin", () => {
     const [sage] = calendarActivities([potted("sage", old)], 3, { now: MARCH_2027 }).filter((activity) => activity.kind === "repot");
     const liters = getCatalogPlant("sage")!.potLiters;
     expect(sage.description).toContain("racines sortent par les trous du pot, ta sauge");
-    expect(sage.description).toContain(`Si son pot fait environ ${liters} L, prends-en un d’environ ${potSizes({ potLiters: liters }, 0).next} L`);
+    expect(sage.description).toContain(`Si son pot fait environ ${potWidthCm(liters)} cm de large, prends-en un d’environ ${potSizes({ potLiters: liters }, 0).nextWidthCm} cm`);
     // Sans signe propre à la plante : le signe commun.
     const [oregano] = calendarActivities([potted("oregano", old)], 3, { now: MARCH_2027 }).filter((activity) => activity.kind === "repot");
     expect(oregano.description).toContain(genericRepotSign(oregano.entry));

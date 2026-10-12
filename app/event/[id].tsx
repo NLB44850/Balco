@@ -16,6 +16,8 @@ import { UndoToast, type ToastMessage } from "@/components/today/undo-toast";
 import { glass } from "@/components/ui/glass";
 import { Text } from "@/components/ui/typography";
 import { useColors } from "@/hooks/use-colors";
+import { capitalize } from "@/lib/plants/grammar";
+import { potNeedShort } from "@/lib/plants/pot-sheet";
 import { useDayPlan } from "@/hooks/use-day-plan";
 import { coldMode, eventAwardKey, eventById, eventMoment, eventPlanted, eventPlantings, protectionDone, protectionEvents } from "@/lib/events/events";
 import { addSpringWish, nextSpringReminder, SPRING_REMINDER_SOURCE, springReminderContent } from "@/lib/garden/spring";
@@ -123,7 +125,7 @@ export default function EventScreen() {
             <CatalogPicture entry={entry} style={styles.picture} />
             <View style={styles.flex}>
               <Text style={[styles.rowTitle, { color: colors.foreground }]}>{entry.name}</Text>
-              <Text style={[styles.rowText, { color: colors.muted }]}>{waiting ? "Sur ton balcon, à planter" : `Un pot d’au moins ${entry.potLiters} L`}</Text>
+              <Text style={[styles.rowText, { color: colors.muted }]}>{waiting ? "Sur ton balcon, à planter" : capitalize(potNeedShort(entry))}</Text>
             </View>
             {waiting ? (
               <Pressable accessibilityRole="button" accessibilityLabel={`Pas à pas : ${entry.name}`} onPress={() => guide(entry.id, waiting.plant.id)} style={({ pressed }) => [styles.pill, { borderColor: colors.primary }, pressed && styles.pressed]}>

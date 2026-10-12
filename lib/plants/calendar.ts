@@ -5,6 +5,7 @@ import { adaptToClimate, type ClimateInfo } from "./climate";
 import { capitalize, objectPronoun, subjectPronoun, verb, type Agreeable } from "./grammar";
 import { sowsOnWindowsill } from "./indoor";
 import { REPOTTING } from "./repotting";
+import { potNeedShort } from "./pot-sheet";
 
 export type CalendarActivityKind = "sow" | "plant" | "repot" | "harvest" | "care";
 
@@ -89,8 +90,8 @@ export function calendarActivities(subjects: CalendarSubject[], month: number, o
       // Semis précoce d'une plante frileuse : au chaud dans la maison, pas encore sur le balcon.
       const indoors = sowsIndoors(entry, m);
       const description = indoors
-        ? `Sème en godets à l’intérieur, au chaud (18 à 22 °C), près d’une fenêtre lumineuse : il fait encore trop froid sur le balcon.${entry.plantMonths.length > 0 ? ` Installe les plants dehors en ${formatMonthRange(entry.plantMonths)}, dans un pot d’au moins ${entry.potLiters} L.` : ""}`
-        : `Période de semis : ${describeSowing(entry)}. Prévois un pot d’au moins ${entry.potLiters} L.`;
+        ? `Sème en godets à l’intérieur, au chaud (18 à 22 °C), près d’une fenêtre lumineuse : il fait encore trop froid sur le balcon.${entry.plantMonths.length > 0 ? ` Installe les plants dehors en ${formatMonthRange(entry.plantMonths)}, dans ${potNeedShort(entry)}.` : ""}`
+        : `Période de semis : ${describeSowing(entry)}. Prévois ${potNeedShort(entry)}.`;
       activities.push({ ...base, key: `${id}:sow`, kind: "sow", typeLabel: "SEMIS", title: indoors ? `Sème ${entry.label} au chaud` : `Sème ${entry.label}`, description, tone: "lime", eventType: "observation" });
     }
     // Installée sur le balcon : elle est plantée, plus de « Plante … ».
@@ -138,10 +139,10 @@ export function startActivity(subject: CalendarSubject, month: number, options: 
   const period = kind === "plant" ? formatMonthRange(entry.plantMonths) : describeSowing(entry);
   const how =
     kind === "plant"
-      ? `Installe-${objectPronoun(entry)} dans un pot percé d’au moins ${entry.potLiters} L, avec un terreau frais, puis arrose bien.`
+      ? `Installe-${objectPronoun(entry)} dans ${potNeedShort(entry, { pierced: true })}, avec un terreau frais, puis arrose bien.`
       : indoors
         ? `Sème en godets à l’intérieur, au chaud (18 à 22 °C), près d’une fenêtre lumineuse.${entry.plantMonths.length > 0 ? ` Installe les plants dehors en ${formatMonthRange(entry.plantMonths)}.` : ""}`
-        : `Sème dans un pot d’au moins ${entry.potLiters} L de terreau fin, recouvre à peine et arrose en pluie fine.`;
+        : `Sème dans ${potNeedShort(entry)}, en terreau fin, recouvre à peine et arrose en pluie fine.`;
   const description = inSeason ? how : `${how} Meilleure période : ${period}.`;
   const title = kind === "plant" ? `Plante ${entry.label}` : indoors ? `Sème ${entry.label} au chaud` : `Sème ${entry.label}`;
   return {
@@ -220,7 +221,7 @@ export function potWidthCm(liters: number) {
 export function repotDescription(entry: CatalogPlant, repots: number) {
   const sign = REPOTTING[entry.id]?.sign?.replace(/'/gu, "’") ?? genericRepotSign(entry);
   const pot = potSizes(entry, repots);
-  return `${sign} Si son pot fait environ ${pot.now} L, prends-en un d’environ ${pot.next} L (${pot.nextWidthCm} cm de large), avec du terreau neuf. À faire en ${formatMonthRange(entry.repotMonths)}.`;
+  return `${sign} Si son pot fait environ ${potWidthCm(pot.now)} cm de large, prends-en un d’environ ${pot.nextWidthCm} cm, avec du terreau neuf. À faire en ${formatMonthRange(entry.repotMonths)}.`;
 }
 
 function monthKey(date: Date) {

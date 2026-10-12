@@ -3,10 +3,10 @@
  * terre, le volume du pot, le terreau et l'engrais en culture en pot. Chaque valeur vérifiée sur 2 sources au moins
  * (données dans pot-sheets-data.ts, détail et sources dans docs/sources-pots.md). Logique pure, sans React Native.
  */
-import { MONTH_LONG, type Month } from "./catalog";
+import { MONTH_LONG, type CatalogPlant, type Month } from "./catalog";
 import { byForm, elides, type Agreeable } from "./grammar";
 import { POT_SHEETS } from "./pot-sheets-data";
-import { potLitersOf, type PotSize } from "./pot-size";
+import type { KnownPotSize, PotSize } from "./pot-size";
 
 export type SoilKind = "universal" | "rich" | "draining" | "light" | "acid" | "citrus" | "seed";
 
@@ -80,11 +80,85 @@ export function feedingDetail(plant: Agreeable, feeding: PotFeeding) {
 /** Une fiche faite avec peu de sources (choix du porteur, 12/10 : on l'affiche, en le disant). */
 export const ESTIMATE_TEXT = "Estimation : peu de sources sur cette plante en pot.";
 
-/** Le pot choisi (étape 1) suffit-il ? Comparé au volume de la fiche. */
-export function potFit(sheet: PotSheet, size: PotSize): { tone: "ok" | "small" | "unknown"; text: string } {
-  const liters = potLitersOf(size);
-  if (liters === null) return { tone: "unknown", text: "Choisis sa taille pour vérifier qu’il suffit." };
-  return liters >= sheet.liters
-    ? { tone: "ok", text: `Assez grand : il faut au moins ${sheet.liters} L.` }
-    : { tone: "small", text: `Un peu juste : vise au moins ${sheet.liters} L.` };
+// --- Le pot qu'il lui faut, en centimètres (retour du porteur, 12/10 : jamais de litres à l'écran) ------------------
+
+/** La forme type de chaque taille de pot (étape 1) : largeur au bord et profondeur de terre, en cm. */
+export const POT_SHAPES: Record<KnownPotSize, { widthCm: number; depthCm: number }> = {
+  small: { widthCm: 18, depthCm: 18 },
+  medium: { widthCm: 27, depthCm: 27 },
+  large: { widthCm: 36, depthCm: 36 },
+  /** Jardinière de 60 cm vue de face : longue, peu profonde (environ 20 L). */
+  planter: { widthCm: 60, depthCm: 18 },
+};
+const PLANTER_LITERS = 20;
+const ROUND_SIZES = ["small", "medium", "large"] as const;
+/** Une profondeur un peu plus faible que conseillé passe encore (les pots du commerce varient). */
+const DEPTH_TOLERANCE = 0.9;
+/** Les tailles du choix « Dans quel pot ? », pour dire laquelle prendre. */
+const SIZE_WORDS: Record<KnownPotSize, string> = { small: "un petit pot", medium: "un pot moyen", large: "un grand pot", planter: "une jardinière" };
+
+/** Largeur d'un pot rond à peu près aussi haut que large, arrondie aux 5 cm du dessus (ce qu'on lit en magasin). */
+export function roundPotWidthCm(liters: number) {
+  return Math.max(15, Math.ceil(Math.cbrt((liters * 1000) / 0.707) / 5) * 5);
+}
+
+export type PotNeed = { widthCm: number; depthCm: number; liters: number; /** La fiche parle d'une jardinière (salade à couper…). */ planter: boolean };
+
+/** Le pot qu'il lui faut : largeur et profondeur, d'après sa fiche (sinon d'après le pot conseillé du catalogue). */
+export function potNeedFor(entry: Pick<CatalogPlant, "id" | "potLiters">): PotNeed {
+  const sheet = potSheetFor(entry.id);
+  const liters = sheet?.liters ?? entry.potLiters;
+  const widthCm = roundPotWidthCm(liters);
+  return { widthCm, depthCm: sheet?.depthCm ?? widthCm, liters, planter: Boolean(sheet && /jardinière/u.test(sheet.forWhat)) };
+}
+
+/** « un pot d’au moins 30 cm de large », « une jardinière de 60 cm » : pour les phrases des autres écrans. */
+export function potNeedShort(entry: Pick<CatalogPlant, "id" | "potLiters">, options: { pierced?: boolean } = {}) {
+  const need = potNeedFor(entry);
+  if (need.planter) return "une jardinière de 60 cm";
+  return `un pot${options.pierced ? " percé" : ""} d’au moins ${need.widthCm} cm de large`;
+}
+
+/** « Il lui faut un pot de 35 cm de large, 30 cm de profondeur. » */
+export function potNeedText(need: PotNeed) {
+  if (need.planter) return `Il lui faut une jardinière de 60 cm, ${need.depthCm} cm de profondeur.`;
+  return `Il lui faut un pot de ${need.widthCm} cm de large, ${need.depthCm} cm de profondeur.`;
+}
+
+const fitsRound = (size: (typeof ROUND_SIZES)[number], need: PotNeed) => POT_SHAPES[size].widthCm + 3 >= need.widthCm && POT_SHAPES[size].depthCm >= need.depthCm * DEPTH_TOLERANCE;
+const fitsPlanter = (need: PotNeed) => POT_SHAPES.planter.depthCm >= need.depthCm * DEPTH_TOLERANCE && PLANTER_LITERS >= need.liters * DEPTH_TOLERANCE;
+
+/** La plus petite taille du choix qui lui suffit (la jardinière d'abord si c'est sa culture), sinon null (plus grand qu'un grand pot). */
+export function smallestFit(need: PotNeed): KnownPotSize | null {
+  if (need.planter && fitsPlanter(need)) return "planter";
+  return ROUND_SIZES.find((size) => fitsRound(size, need)) ?? null;
+}
+
+export type PotFit = {
+  tone: "ok" | "small" | "unknown";
+  /** « Ton pot lui convient », « Pot trop petit », « Quel est ton pot ? ». */
+  title: string;
+  /** Ce qu'il lui faut, ou combien de pieds tiennent dans la jardinière. */
+  detail: string;
+};
+
+/** Le pot choisi (étape 1) lui suffit-il ? Tout en centimètres, avec un conseil propre à la jardinière. */
+export function potFit(entry: Pick<CatalogPlant, "id" | "potLiters">, size: PotSize): PotFit {
+  const need = potNeedFor(entry);
+  const wanted = smallestFit(need);
+  const advice = wanted ? `Prends ${SIZE_WORDS[wanted]}.` : `Prends un bac de ${need.widthCm} cm ou plus.`;
+  if (size === "unknown") return { tone: "unknown", title: "Quel est ton pot ?", detail: potNeedText(need) };
+  if (size === "planter") {
+    if (!fitsPlanter(need)) {
+      return need.depthCm * DEPTH_TOLERANCE > POT_SHAPES.planter.depthCm
+        ? { tone: "small", title: "Jardinière trop peu profonde", detail: `Il lui faut ${need.depthCm} cm de terre. ${advice}` }
+        : { tone: "small", title: "Jardinière trop petite", detail: `${potNeedText(need)} ${advice}` };
+    }
+    if (need.planter) return { tone: "ok", title: "Ta jardinière lui convient", detail: "C’est la culture conseillée en pot." };
+    const room = Math.max(1, Math.floor(PLANTER_LITERS / need.liters));
+    return { tone: "ok", title: "Ta jardinière lui convient", detail: room > 1 ? `Place pour ${room} pieds dans 60 cm.` : "Place pour un seul pied dans 60 cm." };
+  }
+  if (fitsRound(size, need)) return { tone: "ok", title: "Ton pot lui convient", detail: potNeedText(need) };
+  const shallow = POT_SHAPES[size].widthCm + 3 >= need.widthCm;
+  return { tone: "small", title: shallow ? "Pot trop peu profond" : "Pot trop petit", detail: `${potNeedText(need)} ${advice}` };
 }
