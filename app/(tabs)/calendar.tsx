@@ -22,7 +22,7 @@ import { glass } from "@/components/ui/glass";
 import { Text } from "@/components/ui/typography";
 import { useDayPlan } from "@/hooks/use-day-plan";
 import { useColors } from "@/hooks/use-colors";
-import { potNeedShort } from "@/lib/plants/pot-sheet";
+import { potNeedShort, potSizePhrase, recommendedPotSize } from "@/lib/plants/pot-sheet";
 import { useGarden } from "@/lib/garden/garden-context";
 import { skippedRepots } from "@/lib/garden/repot-skip";
 import { dayKey, plantDisplayName, potHistory, type ResolvedPlant } from "@/lib/garden/garden-logic";
@@ -157,7 +157,7 @@ export default function CalendarScreen() {
   const addSuggestion = async ({ entry }: SeasonalSuggestion) => {
     // Une idée de saison : choisie, à semer ou planter (premier geste sur Aujourd'hui).
     const created = await addPlant(entry.id, { toPlant: true });
-    showToast(`Ajouté à ton balcon : ${entry.name}`, () => void removePlant(created.id));
+    showToast(`Ajouté : ${entry.name} ${potSizePhrase(recommendedPotSize(entry))}`, () => void removePlant(created.id));
   };
 
   const addIdea = async (activity: CalendarActivity) => {

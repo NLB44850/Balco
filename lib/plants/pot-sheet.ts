@@ -234,3 +234,15 @@ export function feedingNext(entry: Agreeable & Pick<CatalogPlant, "id">): string
   if (feeding.need === "regular" && feeding.everyDays) return `Engrais tous les ${feeding.everyDays} jours${feeding.from ? `, ${feeding.from}` : ""} : ${kind}.`;
   return `Un peu d’engrais${feeding.from ? ` ${feeding.from}` : ""} : ${kind}.`;
 }
+
+// --- Le pot attribué à l'ajout (13/10 : choisi par Balco, signalé dans le message du bas) ------------------------
+
+/** La taille de pot qu'on lui donne à l'ajout : la plus petite qui lui suffit, sinon un grand pot (plus grand : un bac). */
+export function recommendedPotSize(entry: Pick<CatalogPlant, "id" | "potLiters">): KnownPotSize {
+  return smallestFit(potNeedFor(entry)) ?? "large";
+}
+
+/** « en grand pot (30 à 40 cm) », « en jardinière » : pour le message du bas après l'ajout. */
+export function potSizePhrase(size: KnownPotSize) {
+  return { small: "en petit pot (moins de 20 cm)", medium: "en pot moyen (20 à 30 cm)", large: "en grand pot (30 à 40 cm)", planter: "en jardinière" }[size];
+}

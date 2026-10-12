@@ -1,19 +1,15 @@
 /**
  * La taille du pot d'une plante (chantier « Pots et balcon », étape 1) : un petit dessin de pot de taille croissante
- * par choix, et la feuille du bas « Dans quel pot ? », ouverte depuis la fiche de la plante ou juste après son ajout
- * (facultative : « Passer »). Dessins en react-native-svg, déjà dans l'app : rien à réinstaller.
+ * par choix, et la feuille du bas « Dans quel pot ? », ouverte depuis la fiche de la plante. À l'ajout, Balco donne
+ * d'office la taille conseillée par sa fiche (13/10) : cette feuille sert à la changer. Dessins en react-native-svg.
  */
-import { Pressable, StyleSheet } from "react-native";
 import Svg, { Path, Rect, Text as SvgText } from "react-native-svg";
 
 import { ChoiceList } from "@/components/settings/choice-list";
 import { SheetHeading } from "@/components/settings/rows";
 import { BottomSheet } from "@/components/today/bottom-sheet";
-import { Text } from "@/components/ui/typography";
-import { useColors } from "@/hooks/use-colors";
 import type { CatalogPlant } from "@/lib/plants/catalog";
-import { byForm } from "@/lib/plants/grammar";
-import { potFit, potNeedFor, potNeedText, smallestFit } from "@/lib/plants/pot-sheet";
+import { potNeedFor, potNeedText, recommendedPotSize } from "@/lib/plants/pot-sheet";
 import { POT_SIZE_CHOICES, potSizeLabel, type PotSize } from "@/lib/plants/pot-size";
 
 const GREEN = "#1F7A4D";
@@ -66,39 +62,21 @@ type SheetProps = {
   onClose: () => void;
   value: PotSize;
   onPick: (size: PotSize) => void;
-  /** Juste après l'ajout d'une plante : la question se passe (« Passer »). */
-  onSkip?: () => void;
-  overlay?: React.ReactNode;
-  /** La plante : chaque taille dit si elle lui convient (« Le plus adapté », « Trop petit pour elle »). */
+  /** La plante : la taille conseillée par sa fiche est marquée « ✓ Conseillé ». */
   entry?: CatalogPlant;
 };
 
-/** Le conseil sous chaque taille, d'après sa fiche Spécial pot (même logique que la carte de la fiche). */
+/** Un seul repère, sous la taille conseillée par sa fiche (13/10 : le détail chargeait trop la feuille). */
 function sizeHints(entry: CatalogPlant) {
-  const best = smallestFit(potNeedFor(entry));
-  const hints: Record<string, string> = {};
-  const tones: Record<string, "ok" | "warning"> = {};
-  for (const choice of POT_SIZE_CHOICES) {
-    if (choice.id === "unknown") continue;
-    if (choice.id === best) {
-      hints[choice.id] = "✓ Le plus adapté";
-      tones[choice.id] = "ok";
-    } else if (potFit(entry, choice.id).tone === "small") {
-      const who = byForm(entry, "lui", "elle", "eux", "elles");
-      hints[choice.id] = potFit(entry, choice.id).title === "Jardinière trop peu profonde" ? `Trop peu profonde pour ${who}` : `Trop petit pour ${who}`;
-      tones[choice.id] = "warning";
-    }
-  }
-  return { hints, tones };
+  return { hints: { [recommendedPotSize(entry)]: "✓ Conseillé" }, tones: { [recommendedPotSize(entry)]: "ok" as const } };
 }
 
 /** « Dans quel pot ? » : les 5 tailles, chacune avec son dessin. Choisir referme la feuille. */
-export function PotSizeSheet({ visible, onClose, value, onPick, onSkip, overlay, entry }: SheetProps) {
-  const colors = useColors();
+export function PotSizeSheet({ visible, onClose, value, onPick, entry }: SheetProps) {
   const advice = entry ? sizeHints(entry) : null;
   return (
-    <BottomSheet visible={visible} onClose={onClose} overlay={overlay}>
-      <SheetHeading title="Dans quel pot ?" intro={entry ? `${potNeedText(potNeedFor(entry))} Mesure ton pot d’un bord à l’autre.` : "Mesure le haut du pot, d’un bord à l’autre."} />
+    <BottomSheet visible={visible} onClose={onClose}>
+      <SheetHeading title="Dans quel pot ?" intro={entry ? potNeedText(potNeedFor(entry)) : "Mesure le haut du pot, d’un bord à l’autre."} />
       <ChoiceList
         choices={POT_SIZE_CHOICES.map((choice) => ({ id: choice.id, title: potSizeLabel(choice.id), art: <PotSizeArt size={choice.id} /> }))}
         selected={(id) => id === value}
@@ -106,17 +84,6 @@ export function PotSizeSheet({ visible, onClose, value, onPick, onSkip, overlay,
         hints={advice?.hints}
         hintTones={advice?.tones}
       />
-      {onSkip && (
-        <Pressable accessibilityRole="button" onPress={onSkip} hitSlop={8} style={({ pressed }) => [styles.skip, pressed && styles.pressed]}>
-          <Text style={[styles.skipText, { color: colors.muted }]}>Passer</Text>
-        </Pressable>
-      )}
     </BottomSheet>
   );
 }
-
-const styles = StyleSheet.create({
-  skip: { alignSelf: "center", paddingVertical: 12, paddingHorizontal: 20, marginTop: 4 },
-  skipText: { fontSize: 15, fontWeight: "600" },
-  pressed: { opacity: 0.7 },
-});

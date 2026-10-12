@@ -115,3 +115,8 @@ Règles qui valent pour toutes les étapes :
    même la première saison (`potCareFor`, `CalendarSubject.potSize`). (4) Lenteurs du catalogue : feuillage animé en
    continu derrière 101 cartes translucides (redessin permanent) → décor immobile sur cet écran (`still` de
    `LightScreen`/`BalconySky`), lignes mémorisées (`CatalogRow`), recherche différée (`useDeferredValue`).
+   **Retour du 13/10** (« affichage trop dense ») : plus de feuille « Dans quel pot ? » à l'ajout. Balco donne d'office la
+   taille conseillée par la fiche (`recommendedPotSize` : la plus petite qui suffit, sinon un grand pot ; appliqué dans
+   `addPlant` de garden-context, donc pour tous les ajouts) et le dit dans le message du bas : « Ajouté : Menthe en pot
+   moyen (20 à 30 cm) » (`potSizePhrase` ; catalogue, Saisons, Aujourd'hui, temps forts). On la change sur la fiche ; la
+   feuille n'y marque plus que « ✓ Conseillé ». Les plantes déjà sur le balcon gardent leur taille (ou « Je ne sais pas »).

@@ -15,8 +15,7 @@ import { ScreenHeader } from "@/components/screen-header";
 import { CatalogPicture } from "@/components/plant-picture";
 import { BottomSheet } from "@/components/today/bottom-sheet";
 import { UndoToast, type ToastMessage } from "@/components/today/undo-toast";
-import { PotSizeSheet } from "@/components/pot-size-sheet";
-import { potFit, potNeedFor, potNeedText } from "@/lib/plants/pot-sheet";
+import { potNeedFor, potNeedText, potSizePhrase, recommendedPotSize } from "@/lib/plants/pot-sheet";
 import { glass } from "@/components/ui/glass";
 import { Text, TextInput } from "@/components/ui/typography";
 import { useColors } from "@/hooks/use-colors";
@@ -48,7 +47,7 @@ export default function AddPlantScreen() {
   const colors = useColors();
   const router = useRouter();
   const insets = useSafeAreaInsets();
-  const { plants, onboarding, addPlant, removePlant, setPlantPotSize } = useGarden();
+  const { plants, onboarding, addPlant, removePlant } = useGarden();
   const params = useLocalSearchParams<{ month?: string }>();
   const currentMonth = clockNow().getMonth() + 1;
   const askedMonth = Number(params.month);
@@ -61,8 +60,6 @@ export default function AddPlantScreen() {
   const [sheetId, setSheetId] = useState<string | null>(null);
   // « + » touché : la ligne propose « Déjà sur mon balcon » ou « À planter ».
   const [choosingId, setChoosingId] = useState<string | null>(null);
-  // La plante qu'on vient d'ajouter : « Dans quel pot ? », facultatif.
-  const [potPlantId, setPotPlantId] = useState<string | null>(null);
   const [toast, setToast] = useState<ToastMessage | null>(null);
   const toastId = useRef(0);
   const hideToast = useCallback(() => setToast(null), []);
@@ -93,8 +90,9 @@ export default function AddPlantScreen() {
     const created = await addPlant(catalogId, { toPlant: choice === "toPlant" });
     if (Platform.OS !== "web") void Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => undefined);
     toastId.current += 1;
-    setToast({ id: toastId.current, text: `${choice === "toPlant" ? "À planter sur ton balcon" : "Ajouté à ton balcon"} : ${entry?.name ?? "ta plante"}`, onUndo: () => { setPotPlantId(null); void removePlant(created.id); } });
-    setPotPlantId(created.id);
+    // Balco lui donne la taille de pot de sa fiche et le dit ; on la change sur sa fiche (13/10 : moins d'efforts).
+    const pot = entry ? ` ${potSizePhrase(recommendedPotSize(entry))}` : "";
+    setToast({ id: toastId.current, text: `${choice === "toPlant" ? "À planter" : "Ajouté"} : ${entry?.name ?? "ta plante"}${pot}`, onUndo: () => void removePlant(created.id) });
   };
   // Des fonctions stables pour les lignes : seules les lignes qui changent se redessinent (101 lignes avec photo).
   const addRef = useRef(add);
@@ -102,7 +100,6 @@ export default function AddPlantScreen() {
   const onAdd = useCallback((catalogId: string, choice: AddChoice) => void addRef.current(catalogId, choice), []);
   const onToggle = useCallback((catalogId: string) => setChoosingId((current) => (current === catalogId ? null : catalogId)), []);
   const onOpen = useCallback((catalogId: string) => setSheetId(catalogId), []);
-  const potEntry = potPlantId ? getCatalogPlant(plants.find((plant) => plant.id === potPlantId)?.catalogId ?? "") : undefined;
 
   return (
     <LightScreen still>
@@ -204,26 +201,7 @@ export default function AddPlantScreen() {
           </View>
         )}
       </BottomSheet>
-      <PotSizeSheet
-        visible={potPlantId !== null}
-        onClose={() => setPotPlantId(null)}
-        onSkip={() => setPotPlantId(null)}
-        value="unknown"
-        entry={potEntry}
-        onPick={(size) => {
-          setPotPlantId(null);
-          if (!potPlantId || size === "unknown") return;
-          void setPlantPotSize(potPlantId, size);
-          // Retour immédiat, avec la même logique que la fiche ; « Annuler » retire toujours la plante.
-          if (potEntry) {
-            const fit = potFit(potEntry, size);
-            toastId.current += 1;
-            setToast((current) => ({ id: toastId.current, text: fit.tone === "small" ? `Pot noté, mais trop petit : ${fit.detail.split(". ").pop()!.replace(/^P/, "p")}` : "Pot noté : il lui convient.", onUndo: current?.onUndo }));
-          }
-        }}
-        overlay={<UndoToast message={toast} onDone={hideToast} />}
-      />
-      {potPlantId === null && <UndoToast message={toast} onDone={hideToast} bottom={insets.bottom + (plants.length > 0 ? 86 : 16)} />}
+      <UndoToast message={toast} onDone={hideToast} bottom={insets.bottom + (plants.length > 0 ? 86 : 16)} />
     </LightScreen>
   );
 }

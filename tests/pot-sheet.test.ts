@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import { PLANT_CATALOG, getCatalogPlant } from "../lib/plants/catalog";
-import { ESTIMATE_TEXT, feedingDetail, feedingValue, potFit, potNeedFor, potNeedShort, potSheetFor, smallestFit, type PotSheet } from "../lib/plants/pot-sheet";
+import { ESTIMATE_TEXT, feedingDetail, feedingValue, potFit, potNeedFor, potNeedShort, potSheetFor, potSizePhrase, recommendedPotSize, smallestFit, type PotSheet } from "../lib/plants/pot-sheet";
 
 describe("fiches Spécial Pot", () => {
   it("couvrent les 101 plantes, avec des valeurs plausibles et leurs sources", () => {
@@ -66,5 +66,16 @@ describe("fiches Spécial Pot", () => {
       const fit = smallestFit(potNeedFor(entry));
       if (fit) expect(potFit(entry, fit).tone, entry.id).toBe("ok");
     }
+  });
+
+  it("donnent à l'ajout la taille conseillée, dite dans le message du bas", () => {
+    expect(recommendedPotSize(getCatalogPlant("cherry-tomato")!)).toBe("large");
+    expect(recommendedPotSize(getCatalogPlant("mint")!)).toBe("medium");
+    expect(recommendedPotSize(getCatalogPlant("thyme")!)).toBe("small");
+    expect(recommendedPotSize(getCatalogPlant("cut-lettuce")!)).toBe("planter");
+    // Plus grand qu'un grand pot (courgette) : un grand pot, et sa fiche dira de prendre un bac.
+    expect(recommendedPotSize(getCatalogPlant("zucchini")!)).toBe("large");
+    expect(potSizePhrase("large")).toBe("en grand pot (30 à 40 cm)");
+    expect(potSizePhrase("planter")).toBe("en jardinière");
   });
 });

@@ -22,6 +22,7 @@ import { WeatherBanner } from "@/components/today/weather-banner";
 import { useFreePot } from "@/components/free-pot-sheet";
 import { useDayPlan } from "@/hooks/use-day-plan";
 import { useColors } from "@/hooks/use-colors";
+import { potSizePhrase, recommendedPotSize } from "@/lib/plants/pot-sheet";
 import { useVacation } from "@/hooks/use-vacation";
 import { useWeatherSimulation } from "@/hooks/use-weather-simulation";
 import { cameraWasInterrupted } from "@/lib/ai/camera-interrupt";
@@ -374,7 +375,7 @@ export default function HomeScreen() {
   const addMonthIdea = async ({ entry }: SeasonalSuggestion) => {
     const created = await addPlant(entry.id, { toPlant: true });
     haptic();
-    showToast(`Ajouté à ton balcon : ${entry.name}`, () => void removePlant(created.id));
+    showToast(`Ajouté : ${entry.name} ${potSizePhrase(recommendedPotSize(entry))}`, () => void removePlant(created.id));
   };
 
   const closeSheet = () => setSheetKey(null);

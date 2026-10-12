@@ -17,7 +17,7 @@ import { glass } from "@/components/ui/glass";
 import { Text } from "@/components/ui/typography";
 import { useColors } from "@/hooks/use-colors";
 import { capitalize } from "@/lib/plants/grammar";
-import { potNeedShort } from "@/lib/plants/pot-sheet";
+import { potNeedShort, potSizePhrase, recommendedPotSize } from "@/lib/plants/pot-sheet";
 import { useDayPlan } from "@/hooks/use-day-plan";
 import { coldMode, eventAwardKey, eventById, eventMoment, eventPlanted, eventPlantings, protectionDone, protectionEvents } from "@/lib/events/events";
 import { addSpringWish, nextSpringReminder, SPRING_REMINDER_SOURCE, springReminderContent } from "@/lib/garden/spring";
@@ -65,7 +65,8 @@ export default function EventScreen() {
   const add = async (catalogId: string, name: string) => {
     const created = await addPlant(catalogId, { toPlant: true });
     if (Platform.OS !== "web") void Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-    showToast(`Ajouté à ton balcon : ${name}`, () => void removePlant(created.id));
+    const entry = getCatalogPlant(catalogId);
+    showToast(`Ajouté : ${name}${entry ? ` ${potSizePhrase(recommendedPotSize(entry))}` : ""}`, () => void removePlant(created.id));
   };
   const protect = async () => {
     const logged = protectionEvents(event, year, resolvedPlants, now);

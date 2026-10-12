@@ -46,6 +46,8 @@ import { seasonAwards } from "./season-badges";
 import { BACKFILL_VERSION, backfillAwards, badgesEarnedNow, capAwards, mergeAwards, newAwards, unseenAwards, type Awards } from "./awards";
 import { now as clockNow } from "@/lib/clock";
 import type { PotSize } from "@/lib/plants/pot-size";
+import { recommendedPotSize } from "@/lib/plants/pot-sheet";
+import { getCatalogPlant } from "@/lib/plants/catalog";
 
 export const GARDEN_PLANTS_STORAGE_KEY = "balco.garden.plants.v1";
 export const GARDEN_EVENTS_STORAGE_KEY = "balco.garden.events.v1";
@@ -390,7 +392,10 @@ export function GardenProvider({ children }: { children: ReactNode }) {
   // --- Actions -----------------------------------------------------------------------
 
   const addPlant = useCallback(async (catalogId: string, options: { toPlant?: boolean } = {}) => {
-    const created = createGardenPlant(catalogId, clockNow(), options);
+    // La taille de pot de sa fiche Spécial pot, choisie par Balco (13/10) : on la change sur la fiche.
+    const entry = getCatalogPlant(catalogId);
+    const plant = createGardenPlant(catalogId, clockNow(), options);
+    const created = entry ? { ...plant, potSize: recommendedPotSize(entry) } : plant;
     await savePlants([...plantsRef.current, created]);
     queue((outbox) => recordPlant(outbox, created));
     return created;
