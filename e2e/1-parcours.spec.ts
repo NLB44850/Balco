@@ -1,6 +1,6 @@
 import { expect, test } from "@playwright/test";
 
-import { atDate, checkboxOf, denyGeolocation, mockWeather, open, openHarvests, seedBalcony, trackErrors, wateringGroup } from "./helpers";
+import { atDate, checkboxOf, denyGeolocation, mockWeather, open, openHarvests, openPlantings, seedBalcony, trackErrors, wateringGroup } from "./helpers";
 
 /** Le parcours de tous les jours : arriver, créer son balcon, cocher, annuler, ajouter une plante. */
 
@@ -45,8 +45,8 @@ test("onboarding « Pas encore » : soleil, espace, envies, puis des plantes de 
   await page.getByRole("button", { name: "Voir mon balcon" }).click();
   await expect(page.getByText("Aujourd’hui").first()).toBeVisible();
   await expect(page.getByText("Météo de Paris par défaut")).toHaveCount(0);
-  // Choisies, pas encore en terre : leur premier geste est de les semer ou planter.
-  await expect(page.getByRole("checkbox", { name: /^Marquer comme fait : (Sème|Plante) / }).first()).toBeVisible();
+  // Choisies, pas encore en terre : leur premier geste est de les semer ou planter, regroupés en une ligne.
+  await expect(page.getByRole("button", { name: /^(Sème|Plante|Plante ou sème) \d+ plantes de saison, détail$/u })).toBeVisible();
   await expect(page.getByText(/Vérifie la terre/)).toHaveCount(0);
   // Première tâche liée au pot (étape 3c) : le pot et le terreau de chaque plante à planter.
   await page.getByRole("button", { name: /^Prépare le pot (de \d+ plantes|: )/u }).click();
@@ -54,7 +54,10 @@ test("onboarding « Pas encore » : soleil, espace, envies, puis des plantes de 
   await page.getByRole("button", { name: "Fermer la fiche" }).click();
   // Carte d'arrivée, jusqu'au premier geste coché.
   await expect(page.getByText("Bienvenue, voici ton balcon 🌱")).toBeVisible();
+  await openPlantings(page);
   await page.getByRole("checkbox", { name: /^Marquer comme fait : (Sème|Plante) / }).first().click();
+  await expect(page.getByText(/1 sur \d+ faites/u).first()).toBeVisible();
+  await page.getByRole("button", { name: "Fermer la fiche" }).click();
   await expect(page.getByText("Bienvenue, voici ton balcon 🌱")).toHaveCount(0);
   expect(errors).toEqual([]);
 });

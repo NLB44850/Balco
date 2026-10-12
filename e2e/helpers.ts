@@ -115,6 +115,12 @@ export async function openHarvests(page: Page) {
   await expect(page.getByText(/sur \d+ faites$/u).first()).toBeVisible();
 }
 
+/** Ouvre la feuille des semis et plantations du mois, regroupés dès deux plantes (« Plante ou sème N plantes de saison »). */
+export async function openPlantings(page: Page) {
+  await page.getByRole("button", { name: /^(Sème|Plante|Plante ou sème) \d+ plantes de saison, détail$/u }).click();
+  await expect(page.getByText(/sur \d+ faites$/u).first()).toBeVisible();
+}
+
 /** Le rond à cocher d'une ligne de la liste (Aujourd'hui, Saisons), retrouvé par le titre de la ligne. */
 export function checkboxOf(page: Page, title: string | RegExp) {
   return page.getByRole("checkbox", { name: title }).first();
