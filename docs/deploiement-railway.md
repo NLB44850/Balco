@@ -127,5 +127,8 @@ secondes, « Nouvelle version de Balco » → **Redémarrer**.
   (`.github/workflows/apk.yml`, `EAS_NO_VCS=1` pour envoyer le fichier modifié) ; profil `codespace` = l'ancien
   profil de test vers le Codespace (canal `codespace`, sans mises à jour).
 - `.github/workflows/update.yml` : `eas update --channel test` à chaque push sur `main` qui touche l'app (pas les
-  documents, le serveur seul ni les tests), avec `EXPO_PUBLIC_API_BASE_URL` = `BALCO_API_URL` et la simulation météo.
+  documents, le serveur seul ni les tests), **et à chaque demande de fusion vers `main` (ouverture, nouveau commit ; pas
+  les brouillons), pour la tester avant la fusion** (depuis le 12/10 ; le dernier publié gagne, `main` reprend la main à
+  la fusion ; une PR fermée sans fusion reste sur le téléphone jusqu'à la publication suivante : relancer alors le
+  workflow sur `main`), avec `EXPO_PUBLIC_API_BASE_URL` = `BALCO_API_URL` et la simulation météo.
   Ne fait rien tant que `EXPO_TOKEN` ou `BALCO_API_URL` manquent.

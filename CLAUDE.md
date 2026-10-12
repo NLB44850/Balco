@@ -23,7 +23,7 @@ tout le pas-à-pas est dans **`docs/deploiement-railway.md`**. Serveur + app web
 chaque fusion dans `main` (`railway.json`) ; APK de test construit par le bouton GitHub « Construire l'APK de test »
 (`.github/workflows/apk.yml`, secret `EXPO_TOKEN`, variable `BALCO_API_URL`) ; nouveau code de l'app publié à chaque
 fusion (`.github/workflows/update.yml`, EAS Update canal `test`, `hooks/use-app-updates.tsx` propose « Redémarrer »). E-mails par l'API de Brevo (`BREVO_API_KEY`, `server/auth/mailer.ts`) : Railway Hobby bloque le SMTP (« Connection timeout »).
-**Il n'utilise plus le Codespace (12/10)** : pour tester une PR avant la fusion, il lance GitHub → Actions → « Publier une mise à jour » → Run workflow en choisissant la branche de la PR (`workflow_dispatch`), puis rouvre l'app (« Redémarrer »). Seul le code de l'app voyage ainsi : un changement du serveur n'est en ligne qu'après la fusion (Railway). Ne plus lui donner d'étapes Codespace.
+**Il n'utilise plus le Codespace (12/10)** : pour tester une PR avant la fusion, la mise à jour de l'app est publiée toute seule à l'ouverture de la PR vers `main` et à chaque nouveau commit (`update.yml`, depuis le 12/10) : il rouvre l'app (« Redémarrer »). Ouvrir donc la PR dès qu'une étape est prête à tester (pas en brouillon). Seul le code de l'app voyage ainsi : un changement du serveur n'est en ligne qu'après la fusion (Railway). Ne plus lui donner d'étapes Codespace.
 **Changer `version` dans `app.config.ts` dès qu'on ajoute un module natif, une permission ou un plugin** (runtime
 `appVersion`), puis lui demander un nouvel APK. Le Codespace reste possible en secours
 (profil EAS `codespace` pour un APK qui parle au Codespace) :
