@@ -111,7 +111,11 @@ export function calendarActivities(subjects: CalendarSubject[], month: number, o
     for (const task of entry.tasks) {
       if (GENERIC_TASK_IDS.has(task.id) || !task.months?.includes(m)) continue;
       const feed = task.type === "fertilizing";
-      const description = feed && task.everyDays && task.months ? `${task.instruction.replace(/ À refaire dans \d+ jours\.$/u, "")} Tous les ${task.everyDays} jours, ${formatMonthRange(task.months)}.` : task.instruction;
+      const description = !feed || !task.months
+        ? task.instruction
+        : task.oncePerSeason
+          ? task.instruction.replace(/^Une fois en ce moment/u, `Une fois, ${formatMonthRange(task.months)}`)
+          : `${task.instruction.replace(/ À refaire dans \d+ jours\.$/u, "")} Tous les ${task.everyDays} jours, ${formatMonthRange(task.months)}.`;
       activities.push({ ...base, key: `${id}:${task.id}`, kind: "care", typeLabel: feed ? "ENGRAIS" : "ENTRETIEN", title: taskHeadline(task.title), description, tone: "lime", eventType: task.type, taskId: task.id });
     }
   }

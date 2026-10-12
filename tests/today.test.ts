@@ -87,8 +87,10 @@ describe("liste « Aujourd'hui »", () => {
     const pending = items.filter((item) => !item.done);
     // Le basilic se récolte en septembre : sa récolte est proposée une fois arrosé.
     expect(pending.find((item) => item.plantName === "Basilic")).toMatchObject({ gesture: "harvest", title: "Récolte le basilic" });
-    // Chaque plante garde au plus une ligne à faire ; ses arrosages faits restent, cochés, à la fin.
-    const names = pending.map((item) => item.plantName);
+    // Chaque plante garde au plus une ligne à faire (sauf l'engrais quand une récolte attend : la tomate, nourrie il y a
+    // 28 jours) ; ses arrosages faits restent, cochés, à la fin.
+    expect(pending.find((item) => item.gesture === "fertilizing")).toMatchObject({ plantName: "Tomates cerises" });
+    const names = pending.filter((item) => item.gesture !== "fertilizing").map((item) => item.plantName);
     expect(new Set(names).size).toBe(names.length);
     expect(items.filter((item) => item.done && item.gesture === "watering")).toHaveLength(plants.length);
     expect(items.slice(-plants.length).every((item) => item.done)).toBe(true);

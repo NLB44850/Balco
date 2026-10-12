@@ -157,3 +157,22 @@ Règles qui valent pour toutes les étapes :
      type), « Ce mois-ci · aubergine, chou-rave… ». Feuille du bas commune avec l'arrosage et la récolte : « Pas besoin
      de tout faire aujourd'hui : tu as le mois », chaque plante se coche, la ligne ouvre son détail et son pas-à-pas.
      Rempotage, terre du dessus et gestes de suite restent une ligne par plante. E2e : `openPlantings` (helpers).
+4. **Rappels d'engrais tirés des fiches : codés le 12/10, à valider sur son téléphone.** `lib/plants/fertilizing.ts`
+   (`feedingFor`, `fertilizeTask`) lit la fiche Spécial pot de chaque plante au lieu de l'ancienne table de 33 plantes :
+   « Tous les N jours » (rythme et mois de la fiche, ex. courgette tous les 7 jours de juin à août, tomates tous les
+   14 jours de juin à septembre) ; « Un peu » = une seule fois dans la période (compost de la menthe en mars-avril,
+   `oncePerSeason`, `periodStart`) ; rien quand l'apport se fait au semis ou à la plantation (mêlé au terreau, le
+   pas-à-pas le dit : tournesol nain, roquette…) ; « Pas besoin » = rien. Jamais de novembre à février.
+   - Départ : compté depuis le dernier engrais, sinon depuis l'arrivée **ou la mise en terre** (événement `<id>:start`) ;
+     une fois par période : dû au début, sauf pour une plante arrivée depuis (terreau neuf) — `spacedTaskDue` (garden-logic).
+   - Pas la veille d'une pluie ni par forte chaleur (`badDayToFeed`, `planDay`) : il revient le lendemain.
+   - Aujourd'hui (`buildTodayList`) : engrais et arrosage le même jour = une ligne « Arrose et nourris tes tomates
+     cerises » (`feed` de `TodayItem`, les deux gestes notés ensemble, « Annuler » retire les deux ; feuille du bas avec
+     les deux consignes) ; engrais seul : « Nourris ton basilic », sous-titre = l'engrais de la fiche ; dès deux plantes,
+     « Nourris 2 plantes » (groupe `feeding`, feuille commune) ; arrosages regroupés : « Sèche ? Arrose · engrais pour 1 ».
+     Choix fait en codant : l'engrais s'affiche aussi quand une récolte attend (sinon, la récolte revenant chaque jour
+     de l'été, il ne serait jamais venu).
+   - Notification (`lib/garden/feeding-reminder.ts`, `nextFeedingReminder`) : le prochain jour où une plante suivie est à
+     nourrir, à l'heure des rappels, hors plage calme et vacances, une seule pour toutes les plantes de ce jour
+     (« Nourris 3 plantes 🌿 ») ; programmée par Aujourd'hui (source `balco-feeding`), seulement rappels activés. Pas de
+     module natif. Saisons : « Une fois, mars–avril : … » pour les apports uniques. E2e `22-engrais`.

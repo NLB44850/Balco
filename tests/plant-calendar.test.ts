@@ -10,7 +10,7 @@ describe("calendar activities", () => {
     const july = calendarActivities([subject("cherry-tomato")], 7);
     expect(july.map((activity) => activity.kind)).toEqual(["harvest", "care", "care", "care"]);
     expect(july[0]).toMatchObject({ title: "Récolte les tomates cerises", eventType: "harvest" });
-    expect(july.map((activity) => activity.title)).toEqual(expect.arrayContaining(["Retire les gourmands des tomates", "Vérifie le tuteur des tomates", "Nourris les tomates cerises (engrais)"]));
+    expect(july.map((activity) => activity.title)).toEqual(expect.arrayContaining(["Retire les gourmands des tomates", "Vérifie le tuteur des tomates", "Nourris tes tomates cerises"]));
 
     const march = calendarActivities([subject("cherry-tomato")], 3);
     expect(march.map((activity) => activity.kind)).toEqual(["sow"]);
