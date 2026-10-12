@@ -1,11 +1,16 @@
 # Tous les pas-à-pas de Balco
 
-Mis à jour le 7 octobre 2026. Ce document est tiré directement du code (`lib/plants/guide.ts`) : c'est
+Mis à jour le 12 octobre 2026. Ce document est tiré directement du code (`lib/plants/guide.ts`) : c'est
 exactement ce que l'app affiche. Les chiffres (taille du pot, profondeur, nombre de graines, délais) changent
 selon la plante ; chaque modèle est montré ici avec une plante d'exemple.
 
 Les phrases qui parlent de la plante s'accordent à son genre et à son nombre (`lib/plants/grammar.ts`) : « Garde-le » pour
 le thym, « Garde-la » pour la menthe, « Garde-les » pour les radis.
+
+Depuis le 12 octobre (chantier « Pots et balcon ») : la taille du pot se dit en centimètres, le terreau et l'engrais
+viennent de la fiche « Spécial pot » de la plante (sable pour celles qui craignent l'eau, compost pour les gourmandes,
+terre de bruyère pour le myrtillier), et le pot du rempotage suit la taille de son pot (celui de la fiche s'il est trop
+petit, sinon 5 cm de plus). Ce document se refait avec `pnpm exec tsx scripts/pas-a-pas/mettre-a-jour.ts`.
 
 ## Ce qui existe, et où le trouver
 
@@ -40,7 +45,7 @@ Exemple : **Semer la mâche**. Utilisé pour 37 plantes du catalogue (les chiffr
 **Ce qu'il te faut**
 
 - Un sachet de graines de mâche
-- Un pot percé d’au moins 4 L : Pour 10 plants, à 8 cm l’un de l’autre.
+- Une jardinière de 60 cm : 20 cm de profondeur. Pour 10 plants, à 8 cm l’un de l’autre.
 - Une poignée de billes d’argile : Au fond du pot, l’eau s’écoule mieux.
 - Du terreau : Un sac de 20 L remplit deux ou trois pots moyens.
 - Un vaporisateur ou un arrosoir à pomme fine : Une pluie fine ne déplace pas les graines.
@@ -63,20 +68,21 @@ Exemple : **Semer la mâche**. Utilisé pour 37 plantes du catalogue (les chiffr
 
 - Les pousses sortent dans 7 à 15 jours. Garde la terre humide.
 - Première récolte dans 8 à 12 semaines.
+- Pas d’engrais : elle s’en passe très bien.
 - Une semaine après la levée, tu éclairciras : Balco te le dira.
 
 ## 2. Semer au chaud, à l'intérieur
 
-Exemple : **Semer le basilic**. Utilisé pour 33 plantes du catalogue (les chiffres changent selon la plante).
+Exemple : **Semer le basilic**. Utilisé pour 34 plantes du catalogue (les chiffres changent selon la plante).
 
 **Ce qu'il te faut**
 
 - Un sachet de graines de basilic
 - Des godets ou de petits pots : Un par graine ou par pincée de graines.
-- Du terreau : Un sac de 20 L remplit deux ou trois pots moyens.
+- Du terreau : Un terreau fin, sans cailloux, pour les godets.
 - Un sac transparent ou un film : Il garde l’humidité jusqu’à la levée.
 - Un vaporisateur ou un arrosoir à pomme fine : Une pluie fine ne déplace pas les graines.
-- Plus tard : un pot percé d’au moins 3 L : Avec des trous au fond, et une soucoupe.
+- Plus tard : un pot percé d’au moins 20 cm de large : 20 cm de profondeur, des trous au fond et une soucoupe.
 
 **Les étapes** (une par écran, avec un dessin)
 
@@ -98,6 +104,7 @@ Exemple : **Semer le basilic**. Utilisé pour 33 plantes du catalogue (les chiff
 
 - Les pousses sortent dans 5 à 15 jours. Garde la terre humide.
 - Première récolte dans 6 à 10 semaines.
+- Engrais tous les 30 jours, un mois après la plantation : engrais liquide organique (algues) à demi-dose.
 - Une semaine après la levée, tu éclairciras : Balco te le dira.
 - Les plants iront sur le balcon en mai.
 - Plus tard, tu le pinceras pour qu’il soit plus touffu.
@@ -109,16 +116,17 @@ Exemple : **Planter la lavande**. Utilisé pour 57 plantes du catalogue (les chi
 **Ce qu'il te faut**
 
 - Un plant de lavande en godet
-- Un pot percé d’au moins 10 L : Avec des trous au fond, et une soucoupe.
+- Un pot percé d’au moins 30 cm de large : 30 cm de profondeur, des trous au fond et une soucoupe.
 - Une poignée de billes d’argile : Au fond du pot, l’eau s’écoule mieux.
 - Du terreau : Un sac de 20 L remplit deux ou trois pots moyens.
+- Du sable de rivière : Un tiers de sable, mêlé au terreau.
 - Un arrosoir
 
 **Les étapes** (une par écran, avec un dessin)
 
 1. **Mets une poignée de billes d’argile au fond.** Les racines ne baigneront pas dans l’eau.  
    _Dessin : des billes d’argile au fond du pot._
-2. **Remplis le pot de terreau aux deux tiers.**  
+2. **Remplis de terreau mêlé d’un tiers de sable.** Jusqu’aux deux tiers du pot.  
    _Dessin : le terreau versé dans le pot._
 3. **Sors la motte du godet, sans tirer sur la tige.** Retourne le godet et tapote le fond.  
    _Dessin : la motte sort du godet._
@@ -133,6 +141,7 @@ Exemple : **Planter la lavande**. Utilisé pour 57 plantes du catalogue (les chi
 **Et après ?**
 
 - Premières fleurs dans 1 à 9 mois.
+- Pas d’engrais : elle s’en passe très bien.
 
 ## 4. Planter un bulbe ou un tubercule
 
@@ -141,9 +150,10 @@ Exemple : **Planter l’ail**. Utilisé pour 5 plantes du catalogue (les chiffre
 **Ce qu'il te faut**
 
 - Des gousses d’ail à planter : 4 pour ce pot.
-- Un pot percé d’au moins 8 L : Pour 4 plants, à 12 cm l’un de l’autre.
+- Un pot percé d’au moins 25 cm de large : 20 cm de profondeur. Pour 4 plants, à 12 cm l’un de l’autre.
 - Une poignée de billes d’argile : Au fond du pot, l’eau s’écoule mieux.
 - Du terreau : Un sac de 20 L remplit deux ou trois pots moyens.
+- Du sable de rivière : Un tiers de sable, mêlé au terreau.
 - Un arrosoir
 
 **Les étapes** (une par écran, avec un dessin)
@@ -164,24 +174,26 @@ Exemple : **Planter l’ail**. Utilisé pour 5 plantes du catalogue (les chiffre
 
 - Les premières pousses sortent en quelques semaines. Arrose peu tant qu’elles ne sont pas sorties.
 - Première récolte dans 4 à 9 mois.
+- Pas d’engrais : il s’en passe très bien.
 
 ## 5. Installer une vivace dans un grand pot
 
-Exemple : **Planter la citronnelle**. Utilisé pour 10 plantes du catalogue (les chiffres changent selon la plante).
+Exemple : **Planter le groseillier**. Utilisé pour 11 plantes du catalogue (les chiffres changent selon la plante).
 
 **Ce qu'il te faut**
 
-- Un pied de citronnelle en pot
-- Un grand pot percé de 15 L ou plus : Avec des trous au fond, et une soucoupe.
+- Un pied de groseillier en pot
+- Un grand pot percé de 40 cm de large ou plus : 40 cm de profondeur, des trous au fond et une soucoupe.
 - Une poignée de billes d’argile : Au fond du pot, l’eau s’écoule mieux.
 - Du terreau : Un sac de 20 L remplit deux ou trois pots moyens.
+- Du compost : Un tiers de compost, mêlé au terreau.
 - Un arrosoir
 
 **Les étapes** (une par écran, avec un dessin)
 
 1. **Mets 3 cm de billes d’argile au fond.** Les racines ne baigneront pas dans l’eau.  
    _Dessin : des billes d’argile au fond du pot._
-2. **Remplis le grand pot de terreau à moitié.**  
+2. **Remplis de terreau mêlé d’un tiers de compost.** Jusqu’à la moitié du pot.  
    _Dessin : le terreau versé dans le pot._
 3. **Sors la motte du godet, sans tirer sur la tige.** Retourne le godet et tapote le fond.  
    _Dessin : la motte sort du godet._
@@ -195,7 +207,8 @@ Exemple : **Planter la citronnelle**. Utilisé pour 10 plantes du catalogue (les
 
 **Et après ?**
 
-- Première récolte dans 3 à 4 mois.
+- Première récolte dans 7 mois à plus d’un an.
+- Un peu d’engrais au printemps : compost en surface et engrais organique pour petits fruits.
 
 ## 6. Rempoter
 
@@ -203,16 +216,17 @@ Exemple : **Rempoter le thym**. Pour les 37 vivaces qui restent plusieurs année
 
 **Ce qu'il te faut**
 
-- Un pot percé d’environ 4 L : 18 cm de large : un tiers de plus que l’actuel.
+- Un pot percé d’environ 20 cm de large : Un peu plus large que l’actuel.
 - Une poignée de billes d’argile : Au fond du pot, l’eau s’écoule mieux.
 - Du terreau : Un sac de 20 L remplit deux ou trois pots moyens.
+- Du sable de rivière : Un tiers de sable, mêlé au terreau.
 - Un arrosoir
 
 **Les étapes** (une par écran, avec un dessin)
 
 1. **Regarde sous le pot si des racines sortent.** Ou si l’eau ressort tout de suite : il manque de place.  
    _Dessin : des racines sortent sous le pot._
-2. **Mets des billes d’argile au fond du nouveau pot.** Environ 4 L, 18 cm de large.  
+2. **Mets des billes d’argile au fond du nouveau pot.** Environ 20 cm de large.  
    _Dessin : des billes d’argile au fond du pot._  
    ⚠️ Erreur à éviter : un pot bien plus grand. La terre resterait trempée.
 3. **Sors la plante en tapotant le pot retourné.** Arrosée la veille, la motte sort plus facilement.  
@@ -221,7 +235,7 @@ Exemple : **Rempoter le thym**. Pour les 37 vivaces qui restent plusieurs année
    _Dessin : des doigts démêlent les racines de la motte._
 5. **Pose la motte au centre, au même niveau qu’avant.** Mets un peu de terreau dessous pour la remonter.  
    _Dessin : le plant posé dans le trou._
-6. **Ajoute du terreau autour, puis tasse avec les mains.**  
+6. **Ajoute du terreau autour, puis tasse avec les mains.** Avec du terreau neuf mêlé de sable.  
    _Dessin : deux mains tassent la terre._
 7. **Arrose bien, jusqu’à ce que l’eau coule dessous.** La terre neuve se colle aux racines.  
    _Dessin : on arrose au pied._
@@ -230,6 +244,7 @@ Exemple : **Rempoter le thym**. Pour les 37 vivaces qui restent plusieurs année
 
 - Garde-le quelques jours à l’ombre légère : ses racines s’installent.
 - Arrose un peu moins les deux premières semaines.
+- Pas d’engrais : il s’en passe très bien.
 - Prochain rempotage dans 2 à 4 ans : Balco te le dira.
 - Entre-temps, tu changeras la terre du dessus.
 
@@ -241,6 +256,7 @@ Exemple : **Changer la terre du thym**. Pour les 37 vivaces qui restent plusieur
 
 - Une vieille fourchette ou une petite griffe : Pour gratter sans abîmer les racines.
 - Du terreau : Quelques poignées suffisent.
+- Du sable de rivière : Un tiers de sable, mêlé au terreau.
 - Un arrosoir
 
 **Les étapes** (une par écran, avec un dessin)
@@ -342,9 +358,10 @@ Exemple : **Sortir tes plants de basilic**. Pour les plantes semées au chaud, q
 
 **Ce qu'il te faut**
 
-- Un pot percé d’au moins 3 L : Un par plant, avec des trous au fond et une soucoupe.
+- Un pot percé d’au moins 20 cm de large : Un par plant, avec des trous au fond et une soucoupe.
 - Une poignée de billes d’argile : Au fond du pot, l’eau s’écoule mieux.
 - Du terreau : Un sac de 20 L remplit deux ou trois pots moyens.
+- Du compost : Un tiers de compost, mêlé au terreau.
 - Un arrosoir
 
 **Les étapes** (une par écran, avec un dessin)
@@ -369,5 +386,6 @@ Exemple : **Sortir tes plants de basilic**. Pour les plantes semées au chaud, q
 
 - Les premiers jours, garde-les à l’abri du plein soleil de midi.
 - Première récolte dans 3 à 5 semaines.
+- Engrais tous les 30 jours, un mois après la plantation : engrais liquide organique (algues) à demi-dose.
 - Dans deux semaines, tu le pinceras pour qu’il soit plus touffu.
 

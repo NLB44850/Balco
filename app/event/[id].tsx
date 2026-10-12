@@ -16,6 +16,8 @@ import { UndoToast, type ToastMessage } from "@/components/today/undo-toast";
 import { glass } from "@/components/ui/glass";
 import { Text } from "@/components/ui/typography";
 import { useColors } from "@/hooks/use-colors";
+import { capitalize } from "@/lib/plants/grammar";
+import { potNeedShort, potSizePhrase, recommendedPotSize } from "@/lib/plants/pot-sheet";
 import { useDayPlan } from "@/hooks/use-day-plan";
 import { coldMode, eventAwardKey, eventById, eventMoment, eventPlanted, eventPlantings, protectionDone, protectionEvents } from "@/lib/events/events";
 import { addSpringWish, nextSpringReminder, SPRING_REMINDER_SOURCE, springReminderContent } from "@/lib/garden/spring";
@@ -63,7 +65,8 @@ export default function EventScreen() {
   const add = async (catalogId: string, name: string) => {
     const created = await addPlant(catalogId, { toPlant: true });
     if (Platform.OS !== "web") void Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-    showToast(`Ajouté à ton balcon : ${name}`, () => void removePlant(created.id));
+    const entry = getCatalogPlant(catalogId);
+    showToast(`Ajouté : ${name}${entry ? ` ${potSizePhrase(recommendedPotSize(entry))}` : ""}`, () => void removePlant(created.id));
   };
   const protect = async () => {
     const logged = protectionEvents(event, year, resolvedPlants, now);
@@ -123,7 +126,7 @@ export default function EventScreen() {
             <CatalogPicture entry={entry} style={styles.picture} />
             <View style={styles.flex}>
               <Text style={[styles.rowTitle, { color: colors.foreground }]}>{entry.name}</Text>
-              <Text style={[styles.rowText, { color: colors.muted }]}>{waiting ? "Sur ton balcon, à planter" : `Un pot d’au moins ${entry.potLiters} L`}</Text>
+              <Text style={[styles.rowText, { color: colors.muted }]}>{waiting ? "Sur ton balcon, à planter" : capitalize(potNeedShort(entry))}</Text>
             </View>
             {waiting ? (
               <Pressable accessibilityRole="button" accessibilityLabel={`Pas à pas : ${entry.name}`} onPress={() => guide(entry.id, waiting.plant.id)} style={({ pressed }) => [styles.pill, { borderColor: colors.primary }, pressed && styles.pressed]}>

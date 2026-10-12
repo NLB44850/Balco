@@ -14,9 +14,9 @@ test("pas-à-pas : ce qu'il te faut, les étapes, puis « C'est planté » coche
 
   // Ce qu'il te faut : « J'ai déjà » retire l'objet de ce qui manque.
   await expect(page.getByText("Planter la lavande")).toBeVisible();
-  await expect(page.getByRole("button", { name: "Partager ce qui manque · 5" })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Partager ce qui manque · 6" })).toBeVisible();
   await page.getByRole("checkbox", { name: "J’ai déjà : Du terreau" }).click();
-  await expect(page.getByRole("button", { name: "Partager ce qui manque · 4" })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Partager ce qui manque · 5" })).toBeVisible();
 
   // Les étapes, une par écran, jusqu'à « Et après ? ».
   await page.getByRole("button", { name: "Commencer le pas-à-pas" }).click();
@@ -24,7 +24,7 @@ test("pas-à-pas : ce qu'il te faut, les étapes, puis « C'est planté » coche
 
   // Glisser du doigt change d'étape, comme « Suivant » et « Retour » : le texte et le compteur suivent.
   const swipe = async (fromX: number, toX: number) => {
-    const box = (await page.getByText(/^Mets une poignée|^Remplis le pot/).first().boundingBox())!;
+    const box = (await page.getByText(/^Mets une poignée|^Remplis de terreau/).first().boundingBox())!;
     const y = box.y - 60;
     await page.mouse.move(fromX, y);
     await page.mouse.down();
@@ -33,7 +33,7 @@ test("pas-à-pas : ce qu'il te faut, les étapes, puis « C'est planté » coche
   };
   await swipe(320, 60);
   await expect(page.getByText("Étape 2 sur 6")).toBeVisible();
-  await expect(page.getByText("Remplis le pot de terreau aux deux tiers.")).toBeVisible();
+  await expect(page.getByText("Remplis de terreau mêlé d’un tiers de sable.")).toBeVisible();
   await swipe(60, 320);
   await expect(page.getByText("Étape 1 sur 6")).toBeVisible();
   await page.getByRole("button", { name: "Suivant" }).click();
@@ -64,7 +64,7 @@ test("catalogue : « Ce qu'il te faut » seulement, et « J'ai déjà » commun 
   await page.getByRole("button", { name: "🧺  Ce qu’il te faut pour la planter ›" }).click();
   await expect(page.getByText("Ce qu’il te faut").first()).toBeVisible();
   // Le terreau coché pour une autre plante l'est ici aussi.
-  await expect(page.getByRole("button", { name: "Partager ce qui manque · 4" })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Partager ce qui manque · 5" })).toBeVisible();
   await expect(page.getByRole("button", { name: "Commencer le pas-à-pas" })).toHaveCount(0);
   expect(errors).toEqual([]);
 });

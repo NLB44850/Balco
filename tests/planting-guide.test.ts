@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import { getCatalogPlant, PLANT_CATALOG } from "../lib/plants/catalog";
-import { delayText, guideModelFor, ofName, supplies, whatsNext } from "../lib/plants/guide";
+import { delayText, guideModelFor, guideSteps, ofName, supplies, whatsNext } from "../lib/plants/guide";
 import { PLANTING } from "../lib/plants/planting";
 
 const plant = (id: string) => getCatalogPlant(id)!;
@@ -40,19 +40,26 @@ describe("modèles de guide et « Ce qu'il te faut »", () => {
 
   it("la liste dit quoi acheter, avec des mesures concrètes", () => {
     const lettuce = supplies(plant("lambs-lettuce"), "sow-pot");
-    expect(lettuce.map((item) => item.label)).toEqual(["Un sachet de graines de mâche", "Un pot percé d’au moins 4 L", "Une poignée de billes d’argile", "Du terreau", "Un vaporisateur ou un arrosoir à pomme fine"]);
+    expect(lettuce.map((item) => item.label)).toEqual(["Un sachet de graines de mâche", "Une jardinière de 60 cm", "Une poignée de billes d’argile", "Du terreau", "Un vaporisateur ou un arrosoir à pomme fine"]);
     // Terreau, billes, arrosoir : communs à toutes les plantes (« J'ai déjà » vaut partout).
     expect(lettuce.filter((item) => item.shared).map((item) => item.id)).toEqual(["clay-balls", "soil", "spray"]);
     expect(supplies(plant("blueberry"), "perennial-pot").map((item) => item.label)).toContain("De la terre de bruyère");
     expect(supplies(plant("basil"), "sow-indoor").map((item) => item.id)).toEqual(["seeds", "cells", "soil", "cover", "spray", "pot-later"]);
-    expect(supplies(plant("microgreens"), "sow-pot").map((item) => item.id)).toEqual(["seeds", "tray", "soil", "spray"]);
+    expect(supplies(plant("microgreens"), "sow-pot").map((item) => item.id)).toEqual(["seeds", "tray", "seed-soil", "spray"]);
+    // Gourmande : du compost en plus du terreau ; le pot dit sa profondeur.
+    const tomato = supplies(plant("cherry-tomato"), "plant-seedling");
+    expect(tomato.map((item) => item.id)).toEqual(["plant", "pot", "clay-balls", "soil", "compost", "watering-can"]);
+    expect(tomato.find((item) => item.id === "pot")?.detail).toBe("30 cm de profondeur, des trous au fond et une soucoupe.");
     expect(supplies(plant("garlic"), "plant-bulb")[0].label).toBe("Des gousses d’ail à planter");
     expect(ofName("Agastache")).toBe("d’agastache");
     expect(ofName("Tomates cerises")).toBe("de tomates cerises");
   });
 
   it("« Et après ? » : la levée et la première récolte, en mots simples", () => {
-    expect(whatsNext(plant("radish"), "sow-pot")).toEqual(["Les pousses sortent dans 3 à 7 jours. Garde la terre humide.", "Première récolte dans 3 à 6 semaines."]);
+    expect(whatsNext(plant("radish"), "sow-pot")).toEqual(["Les pousses sortent dans 3 à 7 jours. Garde la terre humide.", "Première récolte dans 3 à 6 semaines.", "Pas d’engrais : ils s’en passent très bien."]);
+    // L'engrais de sa fiche Spécial pot.
+    expect(whatsNext(plant("cherry-tomato"), "plant-seedling").at(-1)).toBe("Engrais tous les 14 jours, dès les premières fleurs : engrais liquide organique pour tomates.");
+    expect(guideSteps(plant("cherry-tomato"), "plant-seedling").find((step) => step.illustration === "fill-soil")?.text).toBe("Remplis de terreau mêlé d’un tiers de compost.");
     expect(whatsNext(plant("lavender"), "plant-seedling")[0]).toMatch(/^Premières fleurs dans /);
     expect(delayText([8, 12], "weeks")).toBe("8 à 12 semaines");
     expect(delayText([13, 26], "weeks")).toBe("3 à 6 mois");
@@ -97,16 +104,23 @@ describe("les étapes du pas-à-pas (P7) : règles d'écriture", () => {
 
   it("rempoter et changer la terre du dessus : le pot suivant, l'erreur à éviter, la suite", async () => {
     const { guideSteps, guideTitle, nextGestures, shareText, supplies, whatsNext } = await import("../lib/plants/guide");
-    const { potSizes } = await import("../lib/plants/calendar");
+    const { nextPotFor } = await import("../lib/plants/pot-sheet");
     const thyme = plant("thyme");
-    const next = potSizes(thyme, 1);
+    const next = nextPotFor(thyme, undefined, 1);
     expect(guideTitle(thyme, "repot")).toBe("Rempoter le thym");
     expect(guideTitle(thyme, "topdress")).toBe("Changer la terre du thym");
     const repot = guideSteps(thyme, "repot", { repots: 1 });
     expect(repot[0].text).toBe("Regarde sous le pot si des racines sortent.");
-    expect(repot.find((step) => step.mistake)?.why).toBe(`Environ ${next.next} L, ${next.nextWidthCm} cm de large.`);
-    expect(supplies(thyme, "repot", { repots: 1 })[0]).toMatchObject({ id: "next-pot", label: `Un pot percé d’environ ${next.next} L` });
-    expect(supplies(thyme, "topdress").map((item) => item.id)).toEqual(["fork", "soil", "watering-can"]);
+    expect(repot.find((step) => step.mistake)?.why).toBe(`Environ ${next.widthCm} cm de large.`);
+    expect(supplies(thyme, "repot", { repots: 1 })[0]).toMatchObject({ id: "next-pot", label: `Un pot percé d’environ ${next.widthCm} cm de large` });
+    // Le terreau de sa fiche Spécial pot : le thym veut du sable.
+    expect(supplies(thyme, "topdress").map((item) => item.id)).toEqual(["fork", "soil", "sand", "watering-can"]);
+    // Son pot (étape 1) trop petit pour sa fiche : le pot de la fiche, sans « erreur à éviter » d'un pot trop grand.
+    const rosemary = plant("rosemary");
+    expect(supplies(rosemary, "repot", { potSize: "small" })[0]).toMatchObject({ label: "Un pot percé d’environ 30 cm de large", detail: "Le tien est trop petit : 30 cm de profondeur au moins." });
+    expect(guideSteps(rosemary, "repot", { potSize: "small" }).some((step) => step.mistake)).toBe(false);
+    // Son pot suffit : 5 cm de plus que le sien.
+    expect(supplies(rosemary, "repot", { potSize: "large" })[0].label).toBe("Un pot percé d’environ 45 cm de large");
     expect(supplies(plant("blueberry"), "repot").map((item) => item.id)).toContain("heath-soil");
     expect(guideSteps(thyme, "topdress")[0].mistake).toBe("Erreur à éviter : gratter trop profond. Tu abîmerais les racines.");
     expect(whatsNext(thyme, "repot")[0]).toContain("ombre légère");
@@ -161,6 +175,6 @@ describe("les étapes du pas-à-pas (P7) : règles d'écriture", () => {
     expect(hasItem(have, "basil", supplies(plant("basil"), "sow-pot").find((item) => item.id === "soil")!)).toBe(true);
     expect(hasItem(have, "basil", supplies(plant("basil"), "sow-pot").find((item) => item.id === "seeds")!)).toBe(false);
     const missing = lettuce.filter((item) => !hasItem(have, "lambs-lettuce", item));
-    expect(shareText(plant("lambs-lettuce"), "sow-pot", missing)).toBe("Pour semer la mâche, il me faut :\n• Un pot percé d’au moins 4 L\n• Une poignée de billes d’argile\n• Un vaporisateur ou un arrosoir à pomme fine");
+    expect(shareText(plant("lambs-lettuce"), "sow-pot", missing)).toBe("Pour semer la mâche, il me faut :\n• Une jardinière de 60 cm\n• Une poignée de billes d’argile\n• Un vaporisateur ou un arrosoir à pomme fine");
   });
 });

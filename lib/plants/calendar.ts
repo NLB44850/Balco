@@ -2,9 +2,11 @@ import { dayKey, sessionEventId, startEventId } from "../garden/garden-logic";
 import type { MaintenanceEvent, MaintenanceTaskType } from "../reminders/reminder-engine";
 import { describeSowing, formatMonthRange, MONTH_LONG, sowsIndoors, type CatalogPlant, type Month } from "./catalog";
 import { adaptToClimate, type ClimateInfo } from "./climate";
-import { capitalize, objectPronoun, subjectPronoun, verb, type Agreeable } from "./grammar";
+import { byForm, capitalize, objectPronoun, subjectPronoun, verb, type Agreeable } from "./grammar";
 import { sowsOnWindowsill } from "./indoor";
 import { REPOTTING } from "./repotting";
+import { nextPotFor, potFit, potNeedShort, soilPhrase } from "./pot-sheet";
+import type { PotSize } from "./pot-size";
 
 export type CalendarActivityKind = "sow" | "plant" | "repot" | "harvest" | "care";
 
@@ -55,6 +57,8 @@ export type CalendarSubject = {
   repots?: number;
   /** « Pas besoin cette année » : pas de rempotage avant cette date (la terre du dessus à la place). */
   repotSkippedUntil?: string;
+  /** La taille de son pot (étape 1 de « Pots et balcon ») : un pot trop petit avance le rempotage. */
+  potSize?: PotSize;
 };
 export type CalendarOptions = { climate?: ClimateInfo | null; now?: Date };
 
@@ -89,8 +93,8 @@ export function calendarActivities(subjects: CalendarSubject[], month: number, o
       // Semis précoce d'une plante frileuse : au chaud dans la maison, pas encore sur le balcon.
       const indoors = sowsIndoors(entry, m);
       const description = indoors
-        ? `Sème en godets à l’intérieur, au chaud (18 à 22 °C), près d’une fenêtre lumineuse : il fait encore trop froid sur le balcon.${entry.plantMonths.length > 0 ? ` Installe les plants dehors en ${formatMonthRange(entry.plantMonths)}, dans un pot d’au moins ${entry.potLiters} L.` : ""}`
-        : `Période de semis : ${describeSowing(entry)}. Prévois un pot d’au moins ${entry.potLiters} L.`;
+        ? `Sème en godets à l’intérieur, au chaud (18 à 22 °C), près d’une fenêtre lumineuse : il fait encore trop froid sur le balcon.${entry.plantMonths.length > 0 ? ` Installe les plants dehors en ${formatMonthRange(entry.plantMonths)}, dans ${potNeedShort(entry)}.` : ""}`
+        : `Période de semis : ${describeSowing(entry)}. Prévois ${potNeedShort(entry)}.`;
       activities.push({ ...base, key: `${id}:sow`, kind: "sow", typeLabel: "SEMIS", title: indoors ? `Sème ${entry.label} au chaud` : `Sème ${entry.label}`, description, tone: "lime", eventType: "observation" });
     }
     // Installée sur le balcon : elle est plantée, plus de « Plante … ».
@@ -138,10 +142,10 @@ export function startActivity(subject: CalendarSubject, month: number, options: 
   const period = kind === "plant" ? formatMonthRange(entry.plantMonths) : describeSowing(entry);
   const how =
     kind === "plant"
-      ? `Installe-${objectPronoun(entry)} dans un pot percé d’au moins ${entry.potLiters} L, avec un terreau frais, puis arrose bien.`
+      ? `Installe-${objectPronoun(entry)} dans ${potNeedShort(entry, { pierced: true })}, avec un terreau frais, puis arrose bien.`
       : indoors
         ? `Sème en godets à l’intérieur, au chaud (18 à 22 °C), près d’une fenêtre lumineuse.${entry.plantMonths.length > 0 ? ` Installe les plants dehors en ${formatMonthRange(entry.plantMonths)}.` : ""}`
-        : `Sème dans un pot d’au moins ${entry.potLiters} L de terreau fin, recouvre à peine et arrose en pluie fine.`;
+        : `Sème dans ${potNeedShort(entry)}, en terreau fin, recouvre à peine et arrose en pluie fine.`;
   const description = inSeason ? how : `${how} Meilleure période : ${period}.`;
   const title = kind === "plant" ? `Plante ${entry.label}` : indoors ? `Sème ${entry.label} au chaud` : `Sème ${entry.label}`;
   return {
@@ -161,10 +165,10 @@ export function startActivity(subject: CalendarSubject, month: number, options: 
 
 /** « du romarin », « de la menthe », « des fraisiers », « de l’ail des ours ». */
 /** Le geste du pot : « Rempote le thym » ou « Change la terre du dessus du thym ». Aussi pour le pas-à-pas. */
-export function potCareActivity(subject: Pick<CalendarSubject, "id" | "displayName" | "repots">, entry: CatalogPlant, care: "repot" | "topdress"): CalendarActivity {
+export function potCareActivity(subject: Pick<CalendarSubject, "id" | "displayName" | "repots" | "potSize">, entry: CatalogPlant, care: "repot" | "topdress"): CalendarActivity {
   const base = { subjectId: subject.id, entry, tag: subject.displayName.toUpperCase(), kind: "repot" as const, tone: "coral" as const, eventType: "repotting" as const };
-  if (care === "repot") return { ...base, key: `${subject.id}:repot`, typeLabel: "REMPOTAGE", title: `Rempote ${entry.label}`, description: repotDescription(entry, subject.repots ?? 0) };
-  return { ...base, key: `${subject.id}:topdress`, typeLabel: "TERRE NEUVE", title: `Change la terre du dessus ${ofLabel(entry.label)}`, description: "Gratte les 5 cm de terre du dessus sans abîmer les racines, puis remets du terreau neuf. Pas besoin de changer de pot cette année.", topdress: true };
+  if (care === "repot") return { ...base, key: `${subject.id}:repot`, typeLabel: "REMPOTAGE", title: `Rempote ${entry.label}`, description: repotDescription(entry, subject.repots ?? 0, subject.potSize) };
+  return { ...base, key: `${subject.id}:topdress`, typeLabel: "TERRE NEUVE", title: `Change la terre du dessus ${ofLabel(entry.label)}`, description: `Gratte les 5 cm de terre du dessus sans abîmer les racines, puis remets ${soilPhrase(entry)}. Pas besoin de changer de pot cette année.`, topdress: true };
 }
 
 /** « du thym », « de la menthe », « des fraisiers ». */
@@ -182,7 +186,7 @@ const MONTH_MS = 30.44 * 86_400_000;
  * Le soin du pot d'une vivace installée, ce mois-là : « repot » quand son rythme est atteint (tous les N ans),
  * « topdress » (changer la terre du dessus) les autres années, rien la première saison ni hors de ses mois.
  */
-export function potCareFor(subject: Pick<CalendarSubject, "id" | "addedAt" | "toPlant" | "inPotSince" | "lastTopdress" | "lastRepot" | "repotSkippedUntil">, entry: CatalogPlant, month: number, now: Date): "repot" | "topdress" | null {
+export function potCareFor(subject: Pick<CalendarSubject, "id" | "addedAt" | "toPlant" | "inPotSince" | "lastTopdress" | "lastRepot" | "repotSkippedUntil" | "potSize">, entry: CatalogPlant, month: number, now: Date): "repot" | "topdress" | null {
   const data = REPOTTING[entry.id];
   if (!entry.perennial || !data || subject.addedAt === undefined || subject.toPlant || !entry.repotMonths.includes(month as Month)) return null;
   // Le mois regardé : ce mois-ci, sinon sa prochaine occurrence (Saisons montre les mois à venir).
@@ -193,8 +197,12 @@ export function potCareFor(subject: Pick<CalendarSubject, "id" | "addedAt" | "to
   if (sameMonth(subject.lastRepot)) return "repot";
   if (sameMonth(subject.lastTopdress)) return "topdress";
   const age = (when.getTime() - new Date(subject.inPotSince ?? subject.addedAt).getTime()) / MONTH_MS;
-  if (age < FIRST_SEASON_MONTHS) return null;
   const skipped = subject.repotSkippedUntil !== undefined && when.getTime() < new Date(subject.repotSkippedUntil).getTime();
+  // Son pot est plus petit que sa fiche Spécial pot (12/10) : rempoter dès la bonne saison, même la première année
+  // (un plant acheté en petit pot). Après un rempotage noté, on attend de nouveau une saison.
+  const tooSmall = subject.potSize !== undefined && potFit(entry, subject.potSize).tone === "small";
+  if (tooSmall && !skipped && (!subject.lastRepot || age >= FIRST_SEASON_MONTHS)) return "repot";
+  if (age < FIRST_SEASON_MONTHS) return null;
   if (age >= data.everyYears[0] * 12 - 2 && !skipped) return "repot";
   if (!data.topdress) return null;
   const sinceTopdress = subject.lastTopdress ? (when.getTime() - new Date(subject.lastTopdress).getTime()) / MONTH_MS : Infinity;
@@ -216,11 +224,16 @@ export function potWidthCm(liters: number) {
   return Math.round(Math.cbrt((liters * 1000) / 0.707));
 }
 
-/** « Le signe… Si son pot fait environ 10 L, prends-en un d'environ 13 L (27 cm de large)… » */
-export function repotDescription(entry: CatalogPlant, repots: number) {
+/**
+ * « Le signe… Prends un pot d'environ 35 cm de large, avec du terreau neuf mêlé de sable. » Pot trop petit pour sa
+ * fiche : on le dit d'abord, et le pot à prendre est celui de la fiche.
+ */
+export function repotDescription(entry: CatalogPlant, repots: number, potSize?: PotSize) {
+  const next = nextPotFor(entry, potSize, repots);
+  const when = `À faire en ${formatMonthRange(entry.repotMonths)}.`;
+  if (next.tooSmall) return `Ton pot est trop petit pour ${byForm(entry, "lui", "elle", "eux", "elles")}. Prends un pot d’environ ${next.widthCm} cm de large, avec ${soilPhrase(entry)}. ${when}`;
   const sign = REPOTTING[entry.id]?.sign?.replace(/'/gu, "’") ?? genericRepotSign(entry);
-  const pot = potSizes(entry, repots);
-  return `${sign} Si son pot fait environ ${pot.now} L, prends-en un d’environ ${pot.next} L (${pot.nextWidthCm} cm de large), avec du terreau neuf. À faire en ${formatMonthRange(entry.repotMonths)}.`;
+  return `${sign} Prends un pot d’environ ${next.widthCm} cm de large, avec ${soilPhrase(entry)}. ${when}`;
 }
 
 function monthKey(date: Date) {

@@ -1,16 +1,15 @@
 /**
  * La taille du pot d'une plante (chantier « Pots et balcon », étape 1) : un petit dessin de pot de taille croissante
- * par choix, et la feuille du bas « Dans quel pot ? », ouverte depuis la fiche de la plante ou juste après son ajout
- * (facultative : « Passer »). Dessins en react-native-svg, déjà dans l'app : rien à réinstaller.
+ * par choix, et la feuille du bas « Dans quel pot ? », ouverte depuis la fiche de la plante. À l'ajout, Balco donne
+ * d'office la taille conseillée par sa fiche (13/10) : cette feuille sert à la changer. Dessins en react-native-svg.
  */
-import { Pressable, StyleSheet } from "react-native";
 import Svg, { Path, Rect, Text as SvgText } from "react-native-svg";
 
 import { ChoiceList } from "@/components/settings/choice-list";
 import { SheetHeading } from "@/components/settings/rows";
 import { BottomSheet } from "@/components/today/bottom-sheet";
-import { Text } from "@/components/ui/typography";
-import { useColors } from "@/hooks/use-colors";
+import type { CatalogPlant } from "@/lib/plants/catalog";
+import { potNeedFor, potNeedText, recommendedPotSize } from "@/lib/plants/pot-sheet";
 import { POT_SIZE_CHOICES, potSizeLabel, type PotSize } from "@/lib/plants/pot-size";
 
 const GREEN = "#1F7A4D";
@@ -63,33 +62,22 @@ type SheetProps = {
   onClose: () => void;
   value: PotSize;
   onPick: (size: PotSize) => void;
-  /** Juste après l'ajout d'une plante : la question se passe (« Passer »). */
-  onSkip?: () => void;
-  overlay?: React.ReactNode;
+  /** La plante : la taille conseillée par sa fiche est marquée « ✓ Conseillé ». */
+  entry?: CatalogPlant;
 };
 
 /** « Dans quel pot ? » : les 5 tailles, chacune avec son dessin. Choisir referme la feuille. */
-export function PotSizeSheet({ visible, onClose, value, onPick, onSkip, overlay }: SheetProps) {
-  const colors = useColors();
+export function PotSizeSheet({ visible, onClose, value, onPick, entry }: SheetProps) {
+  // Un seul repère, dans la ligne de la taille conseillée par sa fiche (13/10 : sous la ligne, il prêtait à confusion).
+  const recommended = entry ? recommendedPotSize(entry) : null;
   return (
-    <BottomSheet visible={visible} onClose={onClose} overlay={overlay}>
-      <SheetHeading title="Dans quel pot ?" intro="Mesure le haut du pot, d’un bord à l’autre." />
+    <BottomSheet visible={visible} onClose={onClose}>
+      <SheetHeading title="Dans quel pot ?" intro={entry ? potNeedText(potNeedFor(entry)) : "Mesure le haut du pot, d’un bord à l’autre."} />
       <ChoiceList
-        choices={POT_SIZE_CHOICES.map((choice) => ({ id: choice.id, title: potSizeLabel(choice.id), art: <PotSizeArt size={choice.id} /> }))}
+        choices={POT_SIZE_CHOICES.map((choice) => ({ id: choice.id, title: potSizeLabel(choice.id), art: <PotSizeArt size={choice.id} />, badge: choice.id === recommended ? "✓ Conseillé" : undefined }))}
         selected={(id) => id === value}
         onPick={(id) => onPick(id as PotSize)}
       />
-      {onSkip && (
-        <Pressable accessibilityRole="button" onPress={onSkip} hitSlop={8} style={({ pressed }) => [styles.skip, pressed && styles.pressed]}>
-          <Text style={[styles.skipText, { color: colors.muted }]}>Passer</Text>
-        </Pressable>
-      )}
     </BottomSheet>
   );
 }
-
-const styles = StyleSheet.create({
-  skip: { alignSelf: "center", paddingVertical: 12, paddingHorizontal: 20, marginTop: 4 },
-  skipText: { fontSize: 15, fontWeight: "600" },
-  pressed: { opacity: 0.7 },
-});

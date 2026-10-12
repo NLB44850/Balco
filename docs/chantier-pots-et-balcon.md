@@ -86,3 +86,37 @@ Règles qui valent pour toutes les étapes :
    « Dans quel pot ? » après l'ajout depuis le catalogue (« Passer », « Annuler » par-dessus). Pas dans l'accueil, ni
    dans les ajouts depuis Saisons, Aujourd'hui ou un temps fort (la fiche suffit). Tests `tests/pot-size.test.ts`,
    synchro, e2e « catalogue : ajouter une plante puis ouvrir sa fiche ».
+2. **Fiches « Spécial Pot » : codées le 12/10, validées sur son téléphone le 12/10 (« parfait et très lisible »).** Recherche web en deux passages (consignes
+   dans `scripts/pots/`) : 90 plantes vérifiées sur 2 sources au moins, 11 estimations affichées comme telles (son choix
+   « A » du 12/10 : « Estimation : peu de sources sur cette plante en pot. »). Données `lib/plants/pot-sheets-data.ts`,
+   logique `lib/plants/pot-sheet.ts` (`potSheetFor`, `SOIL_LABELS`, `feedingValue`, `feedingDetail`, `potFit`), sources
+   lisibles `docs/sources-pots.md`. Fiche : carte « Spécial pot » (`components/pot-sheet-card.tsx`) : Ton pot (avec
+   « Assez grand » / « Un peu juste »), Profondeur, Volume, Terreau (+ conseil), Engrais. Les volumes vérifiés
+   remplacent le « pot conseillé » du catalogue (`potLiters`, souvent plus grand : menthe 5 → 15 L) ; seuil du
+   pas-à-pas « grand pot pour des années » relevé de 15 à 25 L (`BIG_POT_LITERS`) pour le garder aux petits fruits.
+   Catalogue : « Pot d’au moins 15 L, 20 cm de terre ». À reprendre à l'étape 4 : les rappels d'engrais actuels
+   (`lib/plants/fertilizing.ts`, 33 plantes) ne suivent pas encore les fiches (ex. tournesol nain : rappel tous les
+   21 jours, fiche « Un peu »).
+   **Retours du 12/10, corrigés** : (1) tout en centimètres, plus aucun litre de pot à l'écran (fiche, catalogue,
+   pas-à-pas, À anticiper, rempotage : `potNeedFor`, `potNeedShort`, `potNeedText`, `roundPotWidthCm`, largeur arrondie
+   aux 5 cm d'un pot aussi haut que large) ; (2) conseil propre à la jardinière (`potFit` : « Place pour 4 pieds dans
+   60 cm », « Jardinière trop peu profonde : il lui faut 30 cm de terre ») ; (3) pot trop petit en visuel : dessin des
+   deux pots à la même échelle (le sien en orange, celui qu'il faut en pointillés verts), titre « ⚠︎ Pot trop petit »,
+   « Prends un grand pot » (ou « un bac de 45 cm ou plus »), carte bordée d'orange, « Changer › ». Formes types des
+   tailles : `POT_SHAPES` (pot-sheet.ts).
+   **Retours du 12/10 (après validation), faits le 13/10** : (1) pas-à-pas selon les fiches : terreau de la fiche dans
+   « Ce qu'il te faut » (`soilSupplies` : compost, sable, terre de bruyère…), étape « Remplis de terreau mêlé d'un tiers
+   de sable », profondeur du pot, engrais dans « Et après ? » (`feedingNext`) ; `docs/pas-a-pas.md` refait par
+   `scripts/pas-a-pas/mettre-a-jour.ts`. (2) Ajout d'une plante : « Dans quel pot ? » dit ce qu'il lui faut, « ✓ Le plus
+   adapté » / « Trop petit pour elle » sous chaque taille (`hintTones` de `ChoiceList`), puis « Pot noté : il lui
+   convient » ou « Pot noté, mais trop petit : prends un grand pot » (avec « Annuler »). (3) Rempotage : pot suivant
+   `nextPotFor` (celui de la fiche si son pot est trop petit, sinon 5 cm de plus ; inconnu : fiche + 5 cm par rempotage),
+   terreau de la fiche (`soilPhrase`) ; un pot trop petit avance le rempotage d'une vivace dès ses mois de rempotage,
+   même la première saison (`potCareFor`, `CalendarSubject.potSize`). (4) Lenteurs du catalogue : feuillage animé en
+   continu derrière 101 cartes translucides (redessin permanent) → décor immobile sur cet écran (`still` de
+   `LightScreen`/`BalconySky`), lignes mémorisées (`CatalogRow`), recherche différée (`useDeferredValue`).
+   **Retour du 13/10** (« affichage trop dense ») : plus de feuille « Dans quel pot ? » à l'ajout. Balco donne d'office la
+   taille conseillée par la fiche (`recommendedPotSize` : la plus petite qui suffit, sinon un grand pot ; appliqué dans
+   `addPlant` de garden-context, donc pour tous les ajouts) et le dit dans le message du bas : « Ajouté : Menthe en pot
+   moyen (20 à 30 cm) » (`potSizePhrase` ; catalogue, Saisons, Aujourd'hui, temps forts). On la change sur la fiche ; la
+   feuille n'y marque plus que « ✓ Conseillé ». Les plantes déjà sur le balcon gardent leur taille (ou « Je ne sais pas »).

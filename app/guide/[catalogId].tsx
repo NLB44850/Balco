@@ -72,8 +72,9 @@ export default function GuideScreen() {
   const model = task ?? (entry ? guideModelFor(entry, month) : "sow-pot");
   // Rempotage : le pot suivant dépend des rempotages déjà notés.
   const repots = plant && potTask ? potHistory(plant, events).repots : 0;
-  const items = useMemo(() => (entry ? supplies(entry, model, { repots }) : []), [entry, model, repots]);
-  const steps = useMemo(() => (entry ? guideSteps(entry, model, { repots }) : []), [entry, model, repots]);
+  const potSize = plant?.potSize;
+  const items = useMemo(() => (entry ? supplies(entry, model, { repots, potSize }) : []), [entry, model, repots, potSize]);
+  const steps = useMemo(() => (entry ? guideSteps(entry, model, { repots, potSize }) : []), [entry, model, repots, potSize]);
 
   const [have, setHave] = useState<HaveState>(emptyHave);
   const [phase, setPhase] = useState<Phase>("need");
@@ -121,7 +122,7 @@ export default function GuideScreen() {
   // « C'est planté » : le même geste que sur Aujourd'hui ; la plante passe « installée ».
   // « C'est rempoté » / « C'est fait » : le geste du pot de ce mois, s'il n'est pas déjà noté.
   const displayName = plant?.nickname?.trim() || entry.name;
-  const potActivity = plant && potTask && !plant.toPlant ? potCareActivity({ id: plant.id, displayName, repots }, entry, potTask) : null;
+  const potActivity = plant && potTask && !plant.toPlant ? potCareActivity({ id: plant.id, displayName, repots, potSize: plant.potSize }, entry, potTask) : null;
   // Geste de suite (éclaircir, pincer, sortir les plants) : seulement quand Balco le propose, une seule fois.
   const followUpActivity = plant && followUp ? followUpsFor({ plant, entry }, events, clockNow()).find((activity) => activity.followUp === followUp) ?? null : null;
   const taskActivity = potActivity ?? followUpActivity;

@@ -22,6 +22,7 @@ import { glass } from "@/components/ui/glass";
 import { Text } from "@/components/ui/typography";
 import { useDayPlan } from "@/hooks/use-day-plan";
 import { useColors } from "@/hooks/use-colors";
+import { potNeedShort, potSizePhrase, recommendedPotSize } from "@/lib/plants/pot-sheet";
 import { useGarden } from "@/lib/garden/garden-context";
 import { skippedRepots } from "@/lib/garden/repot-skip";
 import { dayKey, plantDisplayName, potHistory, type ResolvedPlant } from "@/lib/garden/garden-logic";
@@ -106,7 +107,7 @@ export default function CalendarScreen() {
   const subjects = useMemo<CalendarSubject[]>(
     () => starters
       ? starters.plants.map((entry) => ({ id: entry.id, entry, displayName: entry.name }))
-      : resolvedPlants.map((resolved) => ({ id: resolved.plant.id, entry: resolved.entry, displayName: plantDisplayName(resolved), addedAt: resolved.plant.addedAt, toPlant: resolved.plant.toPlant, ...potHistory(resolved.plant, events), repotSkippedUntil: repotSkips.get(resolved.plant.id) })),
+      : resolvedPlants.map((resolved) => ({ id: resolved.plant.id, entry: resolved.entry, displayName: plantDisplayName(resolved), addedAt: resolved.plant.addedAt, toPlant: resolved.plant.toPlant, ...potHistory(resolved.plant, events), repotSkippedUntil: repotSkips.get(resolved.plant.id), potSize: resolved.plant.potSize })),
     [events, repotSkips, resolvedPlants, starters],
   );
   const resolvedById = useMemo(() => new Map<string, ResolvedPlant>(resolvedPlants.map((resolved) => [resolved.plant.id, resolved])), [resolvedPlants]);
@@ -156,7 +157,7 @@ export default function CalendarScreen() {
   const addSuggestion = async ({ entry }: SeasonalSuggestion) => {
     // Une idée de saison : choisie, à semer ou planter (premier geste sur Aujourd'hui).
     const created = await addPlant(entry.id, { toPlant: true });
-    showToast(`Ajouté à ton balcon : ${entry.name}`, () => void removePlant(created.id));
+    showToast(`Ajouté : ${entry.name} ${potSizePhrase(recommendedPotSize(entry))}`, () => void removePlant(created.id));
   };
 
   const addIdea = async (activity: CalendarActivity) => {
@@ -359,7 +360,7 @@ export default function CalendarScreen() {
                 sheetSuggestion.entry.sowMonths.length > 0 ? `🌱 Semis : ${describeSowing(sheetSuggestion.entry)}` : null,
                 sheetSuggestion.entry.plantMonths.length > 0 ? `🪴 Plantation : ${formatMonthRange(sheetSuggestion.entry.plantMonths)}` : null,
                 `${sheetSuggestion.entry.category === "flower" ? "🌸 Floraison" : "🧺 Récolte"} : ${formatMonthRange(sheetSuggestion.entry.harvestMonths)}`,
-                `🪣 Pot d’au moins ${sheetSuggestion.entry.potLiters} L`,
+                `🪣 ${capitalize(potNeedShort(sheetSuggestion.entry))}`,
               ].filter(Boolean).join("\n")}
             </Text>
             {sheetSuggestion.lastChance && <Text style={[styles.small, { color: colors.terracotta }]}>C’est le dernier mois pour le faire cette année.</Text>}

@@ -6,7 +6,7 @@
  */
 import * as Haptics from "expo-haptics";
 import { useLocalSearchParams, useRouter } from "expo-router";
-import { useCallback, useMemo, useRef, useState } from "react";
+import { memo, useCallback, useDeferredValue, useMemo, useRef, useState } from "react";
 import { Platform, Pressable, ScrollView, StyleSheet, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
@@ -15,7 +15,7 @@ import { ScreenHeader } from "@/components/screen-header";
 import { CatalogPicture } from "@/components/plant-picture";
 import { BottomSheet } from "@/components/today/bottom-sheet";
 import { UndoToast, type ToastMessage } from "@/components/today/undo-toast";
-import { PotSizeSheet } from "@/components/pot-size-sheet";
+import { potNeedFor, potNeedText, potSizePhrase, recommendedPotSize } from "@/lib/plants/pot-sheet";
 import { glass } from "@/components/ui/glass";
 import { Text, TextInput } from "@/components/ui/typography";
 import { useColors } from "@/hooks/use-colors";
@@ -32,6 +32,7 @@ import {
   MONTH_LONG,
   recommendPlants,
   searchCatalog,
+  type CatalogPlant,
   type PlantCategory,
   type SpaceSize,
   type Sunlight,
@@ -46,7 +47,7 @@ export default function AddPlantScreen() {
   const colors = useColors();
   const router = useRouter();
   const insets = useSafeAreaInsets();
-  const { plants, onboarding, addPlant, removePlant, setPlantPotSize } = useGarden();
+  const { plants, onboarding, addPlant, removePlant } = useGarden();
   const params = useLocalSearchParams<{ month?: string }>();
   const currentMonth = clockNow().getMonth() + 1;
   const askedMonth = Number(params.month);
@@ -59,8 +60,6 @@ export default function AddPlantScreen() {
   const [sheetId, setSheetId] = useState<string | null>(null);
   // « + » touché : la ligne propose « Déjà sur mon balcon » ou « À planter ».
   const [choosingId, setChoosingId] = useState<string | null>(null);
-  // La plante qu'on vient d'ajouter : « Dans quel pot ? », facultatif.
-  const [potPlantId, setPotPlantId] = useState<string | null>(null);
   const [toast, setToast] = useState<ToastMessage | null>(null);
   const toastId = useRef(0);
   const hideToast = useCallback(() => setToast(null), []);
@@ -71,11 +70,13 @@ export default function AddPlantScreen() {
     return counts;
   }, [plants]);
 
+  // La liste suit la frappe sans la bloquer : sur un téléphone moyen, la refaire à chaque lettre figeait le clavier.
+  const deferredQuery = useDeferredValue(query);
   const results = useMemo(() => {
-    const matching = new Set(searchCatalog(query, category).map((entry) => entry.id));
+    const matching = new Set(searchCatalog(deferredQuery, category).map((entry) => entry.id));
     const ordered = onlyFitting ? recommendPlants(onboarding, { month: clockNow().getMonth() + 1 }) : [...PLANT_CATALOG].sort((a, b) => a.name.localeCompare(b.name, "fr"));
     return ordered.filter((entry) => matching.has(entry.id) && (!inSeason || suggestionFor(entry, seasonMonth) !== null));
-  }, [category, inSeason, onboarding, onlyFitting, query, seasonMonth]);
+  }, [category, inSeason, onboarding, onlyFitting, deferredQuery, seasonMonth]);
 
   const fitLabel = hasBalconyInfo
     ? [onboarding?.sunlight && SUNLIGHT_LABELS[onboarding.sunlight as Sunlight], onboarding?.space && SPACE_LABELS[onboarding.space as SpaceSize]].filter(Boolean).join(" · ").toLowerCase()
@@ -89,12 +90,19 @@ export default function AddPlantScreen() {
     const created = await addPlant(catalogId, { toPlant: choice === "toPlant" });
     if (Platform.OS !== "web") void Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => undefined);
     toastId.current += 1;
-    setToast({ id: toastId.current, text: `${choice === "toPlant" ? "À planter sur ton balcon" : "Ajouté à ton balcon"} : ${entry?.name ?? "ta plante"}`, onUndo: () => { setPotPlantId(null); void removePlant(created.id); } });
-    setPotPlantId(created.id);
+    // Balco lui donne la taille de pot de sa fiche et le dit ; on la change sur sa fiche (13/10 : moins d'efforts).
+    const pot = entry ? ` ${potSizePhrase(recommendedPotSize(entry))}` : "";
+    setToast({ id: toastId.current, text: `${choice === "toPlant" ? "À planter" : "Ajouté"} : ${entry?.name ?? "ta plante"}${pot}`, onUndo: () => void removePlant(created.id) });
   };
+  // Des fonctions stables pour les lignes : seules les lignes qui changent se redessinent (101 lignes avec photo).
+  const addRef = useRef(add);
+  addRef.current = add;
+  const onAdd = useCallback((catalogId: string, choice: AddChoice) => void addRef.current(catalogId, choice), []);
+  const onToggle = useCallback((catalogId: string) => setChoosingId((current) => (current === catalogId ? null : catalogId)), []);
+  const onOpen = useCallback((catalogId: string) => setSheetId(catalogId), []);
 
   return (
-    <LightScreen>
+    <LightScreen still>
       <ScrollView style={styles.flex} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled" contentContainerStyle={[styles.content, { paddingTop: insets.top + 14, paddingBottom: plants.length > 0 ? 20 : insets.bottom + 40 }]}>
         <ScreenHeader back title="Ajouter une plante" subtitle={`${PLANT_CATALOG.length} plantes pour le balcon`} />
 
@@ -132,32 +140,7 @@ export default function AddPlantScreen() {
               const owned = countByCatalogId.get(entry.id) ?? 0;
               const seasonal = inSeason ? suggestionFor(entry, seasonMonth) : null;
               const meta = owned ? `✓ Sur ton balcon${owned > 1 ? ` (${owned})` : ""}` : seasonal ? `${suggestionActionLabel(seasonal)} · ${seasonal.reason}` : effortLabel(entry);
-              const choosing = choosingId === entry.id;
-              return (
-                <View key={entry.id} style={index < results.length - 1 && glass.line}>
-                <View style={styles.row}>
-                  <Pressable accessibilityRole="button" accessibilityLabel={`${entry.name}, voir le détail`} onPress={() => setSheetId(entry.id)} style={({ pressed }) => [styles.rowMain, pressed && styles.pressed]}>
-                    <CatalogPicture entry={entry} style={styles.bubble} />
-                    <View style={styles.flex}>
-                      <Text style={[styles.name, { color: colors.foreground }]} numberOfLines={1}>{entry.name}</Text>
-                      <Text style={[styles.meta, { color: owned ? colors.primary : colors.muted }]} numberOfLines={seasonal && !owned ? 2 : 1}>{meta}</Text>
-                    </View>
-                  </Pressable>
-                  <Pressable accessibilityRole="button" accessibilityLabel={`Ajouter ${entry.name}`} hitSlop={8} onPress={() => setChoosingId(choosing ? null : entry.id)} style={({ pressed }) => [styles.add, { backgroundColor: owned || choosing ? colors.leaf : colors.primary }, pressed && styles.pressed]}>
-                    <Text style={[styles.addText, { color: owned || choosing ? colors.primary : "#FFFFFF" }]}>{choosing ? "×" : "+"}</Text>
-                  </Pressable>
-                </View>
-                {choosing && (
-                  <View style={styles.choices}>
-                    {addChoices(entry, currentMonth).map((choice, position) => (
-                      <Pressable key={choice} accessibilityRole="button" accessibilityLabel={`${entry.name} : ${ADD_CHOICE_LABELS[choice]}`} onPress={() => void add(entry.id, choice)} style={({ pressed }) => [styles.choice, position === 0 ? { backgroundColor: colors.primary } : { borderColor: colors.primary, borderWidth: 1 }, pressed && styles.pressed]}>
-                        <Text style={[styles.choiceText, { color: position === 0 ? "#FFFFFF" : colors.primary }]}>{ADD_CHOICE_LABELS[choice]}</Text>
-                      </Pressable>
-                    ))}
-                  </View>
-                )}
-                </View>
-              );
+              return <CatalogRow key={entry.id} entry={entry} owned={owned > 0} meta={meta} metaLines={seasonal && !owned ? 2 : 1} choosing={choosingId === entry.id} month={currentMonth} last={index === results.length - 1} onOpen={onOpen} onToggle={onToggle} onAdd={onAdd} />;
             })}
           </View>
         )}
@@ -188,7 +171,7 @@ export default function AddPlantScreen() {
                 sheetEntry.sowMonths.length > 0 ? `🌱  Semis : ${describeSowing(sheetEntry)}` : null,
                 sheetEntry.plantMonths.length > 0 ? `🪴  Plantation : ${formatMonthRange(sheetEntry.plantMonths)}` : null,
                 `🧺  Récolte : ${formatMonthRange(sheetEntry.harvestMonths)}`,
-                `🪣  Pot d’au moins ${sheetEntry.potLiters} L`,
+                `🪣  ${potNeedText(potNeedFor(sheetEntry)).replace("Il lui faut u", "U")}`,
                 sheetEntry.melliferous ? "🐝  Aimée des abeilles" : null,
               ].filter(Boolean).map((fact) => (
                 <View key={fact} style={[styles.fact, { backgroundColor: colors.surface }]}><Text style={[styles.factText, { color: colors.foreground }]}>{fact}</Text></View>
@@ -218,21 +201,53 @@ export default function AddPlantScreen() {
           </View>
         )}
       </BottomSheet>
-      <PotSizeSheet
-        visible={potPlantId !== null}
-        onClose={() => setPotPlantId(null)}
-        onSkip={() => setPotPlantId(null)}
-        value="unknown"
-        onPick={(size) => {
-          setPotPlantId(null);
-          if (potPlantId && size !== "unknown") void setPlantPotSize(potPlantId, size);
-        }}
-        overlay={<UndoToast message={toast} onDone={hideToast} />}
-      />
-      {potPlantId === null && <UndoToast message={toast} onDone={hideToast} bottom={insets.bottom + (plants.length > 0 ? 86 : 16)} />}
+      <UndoToast message={toast} onDone={hideToast} bottom={insets.bottom + (plants.length > 0 ? 86 : 16)} />
     </LightScreen>
   );
 }
+
+type RowProps = {
+  entry: CatalogPlant;
+  owned: boolean;
+  meta: string;
+  metaLines: number;
+  choosing: boolean;
+  month: number;
+  last: boolean;
+  onOpen: (catalogId: string) => void;
+  onToggle: (catalogId: string) => void;
+  onAdd: (catalogId: string, choice: AddChoice) => void;
+};
+
+/** Une ligne du catalogue, redessinée seulement quand elle change (« + » touché, plante ajoutée). */
+const CatalogRow = memo(function CatalogRow({ entry, owned, meta, metaLines, choosing, month, last, onOpen, onToggle, onAdd }: RowProps) {
+  const colors = useColors();
+  return (
+    <View style={!last && glass.line}>
+      <View style={styles.row}>
+        <Pressable accessibilityRole="button" accessibilityLabel={`${entry.name}, voir le détail`} onPress={() => onOpen(entry.id)} style={({ pressed }) => [styles.rowMain, pressed && styles.pressed]}>
+          <CatalogPicture entry={entry} style={styles.bubble} />
+          <View style={styles.flex}>
+            <Text style={[styles.name, { color: colors.foreground }]} numberOfLines={1}>{entry.name}</Text>
+            <Text style={[styles.meta, { color: owned ? colors.primary : colors.muted }]} numberOfLines={metaLines}>{meta}</Text>
+          </View>
+        </Pressable>
+        <Pressable accessibilityRole="button" accessibilityLabel={`Ajouter ${entry.name}`} hitSlop={8} onPress={() => onToggle(entry.id)} style={({ pressed }) => [styles.add, { backgroundColor: owned || choosing ? colors.leaf : colors.primary }, pressed && styles.pressed]}>
+          <Text style={[styles.addText, { color: owned || choosing ? colors.primary : "#FFFFFF" }]}>{choosing ? "×" : "+"}</Text>
+        </Pressable>
+      </View>
+      {choosing && (
+        <View style={styles.choices}>
+          {addChoices(entry, month).map((choice, position) => (
+            <Pressable key={choice} accessibilityRole="button" accessibilityLabel={`${entry.name} : ${ADD_CHOICE_LABELS[choice]}`} onPress={() => onAdd(entry.id, choice)} style={({ pressed }) => [styles.choice, position === 0 ? { backgroundColor: colors.primary } : { borderColor: colors.primary, borderWidth: 1 }, pressed && styles.pressed]}>
+              <Text style={[styles.choiceText, { color: position === 0 ? "#FFFFFF" : colors.primary }]}>{ADD_CHOICE_LABELS[choice]}</Text>
+            </Pressable>
+          ))}
+        </View>
+      )}
+    </View>
+  );
+});
 
 const styles = StyleSheet.create({
   content: { paddingHorizontal: 20, gap: 14 },

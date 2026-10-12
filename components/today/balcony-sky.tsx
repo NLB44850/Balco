@@ -29,6 +29,11 @@ type Props = {
   scene: SkyScene;
   /** Écrans autres que l'accueil : seulement la lumière et le feuillage, plus discrets. */
   quiet?: boolean;
+  /**
+   * Décor immobile : pour les longues listes (catalogue), où le feuillage qui se balance faisait redessiner tout
+   * l'écran et ses cartes translucides à chaque image (grosses lenteurs sur Android, 12/10).
+   */
+  still?: boolean;
   pots?: PotShape[];
   topInset: number;
   scrollY?: Animated.Value;
@@ -92,9 +97,9 @@ const STILL = new Animated.Value(0);
 /** Force minimale des ombres (ciel couvert, pluie, nuit) : assez pour garder le balcon en filigrane. */
 const SHADOW_FLOOR = 0.6;
 
-export function BalconySky({ scene, quiet = false, pots = [], topInset, scrollY = STILL }: Props) {
+export function BalconySky({ scene, quiet = false, still = false, pots = [], topInset, scrollY = STILL }: Props) {
   const reduce = useReduceMotion();
-  const animate = !reduce;
+  const animate = !reduce && !still;
   const [size, setSize] = useState({ width: 390, height: 760 });
   const { width, height } = size;
   const onLayout = (event: LayoutChangeEvent) => {
