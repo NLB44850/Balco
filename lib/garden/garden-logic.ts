@@ -245,16 +245,41 @@ export function sessionEventId(plantId: string, taskId: string, now: Date) {
 }
 
 /**
- * Un geste espacé est dû quand le dernier date d'au moins `everyDays` jours (gestes d'aujourd'hui
- * exclus, pour qu'il reste coché dans la liste du jour). Jamais fait : on compte depuis l'arrivée de
- * la plante, dont le terreau neuf la nourrit déjà.
+ * Un geste espacé (engrais) est dû quand le dernier date d'au moins `everyDays` jours (gestes d'aujourd'hui exclus,
+ * pour qu'il reste coché dans la liste du jour). Jamais fait : on compte depuis l'arrivée de la plante ou sa mise en
+ * terre, dont le terreau neuf la nourrit déjà. Un geste d'une fois par période (`oncePerSeason`, un peu de compost au
+ * printemps) est dû dès le début de la période s'il n'a pas encore été fait, sauf pour une plante arrivée depuis.
  */
 export function spacedTaskDue(resolved: ResolvedPlant, task: CareTask, events: MaintenanceEvent[], now = new Date()) {
-  if (!task.everyDays) return true;
+  if (!task.everyDays && !task.oncePerSeason) return true;
   const today = startOfDay(now);
-  const since = lastEventDate(events, resolved.plant.id, task.type, today) ?? new Date(resolved.plant.addedAt);
-  if (!Number.isFinite(since.getTime())) return true;
-  return daysBetween(since, today) >= task.everyDays;
+  const plantId = resolved.plant.id;
+  const last = lastEventDate(events, plantId, task.type, today);
+  const started = events.find((event) => event.id === startEventId(plantId));
+  const arrivals = [new Date(resolved.plant.addedAt), started ? new Date(started.completedAt) : null].filter((date): date is Date => date !== null && Number.isFinite(date.getTime()) && date < today);
+  const arrived = arrivals.length > 0 ? new Date(Math.max(...arrivals.map((date) => date.getTime()))) : null;
+  if (task.oncePerSeason) {
+    const opened = periodStart(task.months ?? [], today);
+    if (!opened || (last && last >= opened)) return false;
+    return !arrived || arrived < opened;
+  }
+  const since = [last, arrived].filter((date): date is Date => date !== null).sort((a, b) => b.getTime() - a.getTime())[0];
+  if (!since) return true;
+  return daysBetween(since, today) >= (task.everyDays ?? 0);
+}
+
+/** Le 1ᵉʳ jour de la suite de mois (de `months`) en cours : 1ᵉʳ mars pour [3, 4] le 20 avril ; null hors de ces mois. */
+export function periodStart(months: number[], day: Date) {
+  let month = day.getMonth() + 1;
+  if (!months.includes(month)) return null;
+  let year = day.getFullYear();
+  for (let step = 0; step < 11; step += 1) {
+    const previous = month === 1 ? 12 : month - 1;
+    if (!months.includes(previous)) break;
+    if (month === 1) year -= 1;
+    month = previous;
+  }
+  return new Date(year, month - 1, 1);
 }
 
 export function eventForSessionTask({ resolved, task, eventId }: SessionTask, now = new Date()): MaintenanceEvent {

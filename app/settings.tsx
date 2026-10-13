@@ -32,7 +32,7 @@ import { useEventDismissals } from "@/hooks/use-event-dismissals";
 import { addDays, clockPresets, longDayText } from "@/lib/clock";
 import { useGarden } from "@/lib/garden/garden-context";
 import { dayKey, plantDisplayName } from "@/lib/garden/garden-logic";
-import { harvestEndStates, potIsFree } from "@/lib/garden/harvest-end";
+import { harvestEndStates, potIsFree, settleLongOverSeasons } from "@/lib/garden/harvest-end";
 import { GOAL_OPTIONS, SPACE_OPTIONS, SUNLIGHT_UNKNOWN } from "@/lib/garden/onboarding";
 import { NORA_LEVELS } from "@/lib/ai/memory";
 import { backupStatus, cityValue, goalsValue, NOT_YET, spaceValue, springWishEntries, springWishesValue, SUNLIGHT_TIP, sunlightValue, sunPatch } from "@/lib/garden/settings-summary";
@@ -66,7 +66,7 @@ export default function SettingsScreen() {
   const insets = useSafeAreaInsets();
   const colors = useColors();
   const router = useRouter();
-  const { resolvedPlants, profile, onboarding, account, updateProfile, updateOnboarding, signIn, signOut, syncNow, claimThisDevice, deleteAccount } = useGarden();
+  const { resolvedPlants, events, profile, onboarding, account, updateProfile, updateOnboarding, signIn, signOut, syncNow, claimThisDevice, deleteAccount } = useGarden();
   const answers = onboarding?.skipped ? {} : onboarding ?? {};
   const [reminderSettings, setReminderSettings] = useState<LocalReminderSettings>(defaultLocalReminderSettings);
   const [settingsLoaded, setSettingsLoaded] = useState(false);
@@ -187,7 +187,7 @@ export default function SettingsScreen() {
     void loadReminderSnoozes().then(setSnoozes);
     return subscribeReminderSnoozes(setSnoozes);
   }, []);
-  const harvestEnds = harvestEndStates(snoozes, new Date());
+  const harvestEnds = settleLongOverSeasons(harvestEndStates(snoozes, new Date()), resolvedPlants, events, new Date());
   const eligiblePlants = resolvedPlants.filter((resolved) => !resolved.plant.toPlant && !potIsFree(resolved, harvestEnds.get(resolved.plant.id)));
 
   // L'autorisation du téléphone, relue au retour dans l'app (après un passage par ses réglages).

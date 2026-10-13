@@ -222,6 +222,25 @@ export function seasonQuestionDue(resolved: ResolvedPlant, events: MaintenanceEv
   return now.getTime() >= new Date(year, month - 1, day + SEASON_RETRY_DAYS).getTime();
 }
 
+/** Au-delà, une saison finie sans réponse est tenue pour finie : plus de question, le pot est libre (décidé le 12/10). */
+export const LONG_OVER_DAYS = 183;
+
+/**
+ * Les réponses du téléphone, plus « Oui » d'office pour une saison (ou une récolte en une fois) finie depuis plus de
+ * 6 mois sans réponse : une tomate de l'an dernier ne repose pas la question l'été suivant, son pot est libre (replié
+ * dans les gestes pas urgents, `answeredOn` absent).
+ */
+export function settleLongOverSeasons(states: Map<string, HarvestEndState>, plants: ResolvedPlant[], events: MaintenanceEvent[], now: Date, climate?: ClimateInfo | null) {
+  const settled = new Map(states);
+  for (const resolved of plants) {
+    const state = states.get(resolved.plant.id);
+    if (state?.answered) continue;
+    const date = endsWithSeason(resolved.entry) ? seasonQuestionDate(resolved, events, state, climate) : harvestQuestionDate(resolved, events, climate);
+    if (date && now.getTime() - date.getTime() > LONG_OVER_DAYS * DAY_MS) settled.set(resolved.plant.id, { ...state, answered: true });
+  }
+  return settled;
+}
+
 /** La question d'aujourd'hui est-elle la relance ? */
 export const isSeasonRetry = (state: HarvestEndState | undefined, now: Date) => (state?.seasonAsked ?? []).some((day) => day !== dayKey(now));
 

@@ -23,6 +23,7 @@ tout le pas-à-pas est dans **`docs/deploiement-railway.md`**. Serveur + app web
 chaque fusion dans `main` (`railway.json`) ; APK de test construit par le bouton GitHub « Construire l'APK de test »
 (`.github/workflows/apk.yml`, secret `EXPO_TOKEN`, variable `BALCO_API_URL`) ; nouveau code de l'app publié à chaque
 fusion (`.github/workflows/update.yml`, EAS Update canal `test`, `hooks/use-app-updates.tsx` propose « Redémarrer »). E-mails par l'API de Brevo (`BREVO_API_KEY`, `server/auth/mailer.ts`) : Railway Hobby bloque le SMTP (« Connection timeout »).
+**Il n'utilise plus le Codespace (12/10)** : pour tester une PR avant la fusion, la mise à jour de l'app est publiée toute seule à l'ouverture de la PR vers `main` et à chaque nouveau commit (`update.yml`, depuis le 12/10) : il rouvre l'app (« Redémarrer »). Ouvrir donc la PR dès qu'une étape est prête à tester (pas en brouillon). Seul le code de l'app voyage ainsi : un changement du serveur n'est en ligne qu'après la fusion (Railway). Ne plus lui donner d'étapes Codespace.
 **Changer `version` dans `app.config.ts` dès qu'on ajoute un module natif, une permission ou un plugin** (runtime
 `appVersion`), puis lui demander un nouvel APK. Le Codespace reste possible en secours
 (profil EAS `codespace` pour un APK qui parle au Codespace) :
@@ -46,18 +47,18 @@ fusion (`.github/workflows/update.yml`, EAS Update canal `test`, `hooks/use-app-
 
 - `pnpm -s check`, `pnpm -s lint`, puis `TEST_DATABASE_URL=mysql://balco:balco@localhost:3306/balco_cal npx vitest run`
   (MariaDB locale : `service mariadb start` si elle s'est arrêtée, `apt-get install -y mariadb-server` si elle manque,
-  puis `DATABASE_URL=… npx drizzle-kit migrate` ; 648 tests à ce jour). Dans un conteneur
+  puis `DATABASE_URL=… npx drizzle-kit migrate` ; 661 tests à ce jour). Dans un conteneur
   neuf : `apt-get install -y mariadb-server`, `service mariadb start`, créer la base `balco_cal` et l'utilisateur
   `balco`/`balco`, puis `pnpm -s build && DATABASE_URL=mysql://balco:balco@localhost:3306/balco_cal node dist/migrate.mjs`.
 - `npx expo export --platform android` pour s'assurer que le bundle Android se construit.
 - **Tests de bout en bout** (à lancer quand le porteur le demande, et avant chaque grosse évolution) :
   `bash scripts/e2e.sh` (≈ 4 min : construit l'app web avec la simulation météo, migre la base, démarre
   le vrai serveur sur le port 3100, lance Playwright). `bash scripts/e2e.sh meteo` pour un seul fichier,
-  `E2E_SKIP_BUILD=1` pour ne pas reconstruire. Scénarios dans `e2e/` (61 aujourd'hui, avec un faux service d'IA pour Observer et Nora) : parcours
+  `E2E_SKIP_BUILD=1` pour ne pas reconstruire. Scénarios dans `e2e/` (63 aujourd'hui, avec un faux service d'IA pour Observer et Nora) : parcours
   (onboarding, écrans, cocher/Annuler, fête, catalogue, fiche d'une nouvelle plante, feuille du bas qui se ferme,
   suggestions de saison, Saisons rangé par type), météo (pluie + eau économisée, gel + Saisons,
   orage, vent, canicule, « Pas aujourd'hui », retour météo réelle), compte (code de connexion lu dans
-  `dist/e2e-server.log`, balcon retrouvé sur un 2ᵉ téléphone, le 1ᵉʳ prévenu « sauvegardé depuis un autre téléphone ») et vacances, rempotage (`10-rempotage`), gestes de suite (`11-gestes-de-suite`), Nora quand la connexion se coupe (`12-nora-erreur`), Saisons en octobre (`13-saisons-octobre`), après-récolte (`14-apres-recolte`), fin de saison (`15-fin-de-saison`), Réglages (`16-reglages`), date simulée (`17-date-simulee`), badges acquis (`18-badges-acquis`), Aujourd'hui en hiver (`19-toute-l-annee`), Sainte-Catherine (`20-sainte-catherine`), autres temps forts (`21-temps-forts`). Un test qui dépend de la saison fixe sa date avec `atDate(page, date)` et passe `now` à `seedBalcony`. Open-Meteo est simulé
+  `dist/e2e-server.log`, balcon retrouvé sur un 2ᵉ téléphone, le 1ᵉʳ prévenu « sauvegardé depuis un autre téléphone ») et vacances, rempotage (`10-rempotage`), gestes de suite (`11-gestes-de-suite`), Nora quand la connexion se coupe (`12-nora-erreur`), Saisons en octobre (`13-saisons-octobre`), après-récolte (`14-apres-recolte`), fin de saison (`15-fin-de-saison`), Réglages (`16-reglages`), date simulée (`17-date-simulee`), badges acquis (`18-badges-acquis`), Aujourd'hui en hiver (`19-toute-l-annee`), Sainte-Catherine (`20-sainte-catherine`), autres temps forts (`21-temps-forts`), engrais (`22-engrais`). Un test qui dépend de la saison fixe sa date avec `atDate(page, date)` et passe `now` à `seedBalcony`. Open-Meteo est simulé
   (`e2e/helpers.ts`, `mockWeather`), le balcon est posé dans le stockage (`seedBalcony`). Les cases à
   cocher s'appellent « Marquer comme fait : <titre> ». Échecs : captures dans `dist/e2e-results/`.
 - Rendu web : `npx expo export --platform web`, serveur `node dist/standalone/index.mjs` avec
@@ -96,7 +97,7 @@ Validé sur son téléphone le 08/10 : fin de saison des annuelles (point 5 bis)
 `docs/recap-pour-claude.md` + captures `docs/captures/` (refaites par `bash scripts/captures.sh`, spec
 `e2e/captures.spec.ts` sautée sans `CAPTURES=1`).**
 
-**Chantier « Pots et balcon » (validé le 11/10, 10 étapes) : tout est dans `docs/chantier-pots-et-balcon.md`.** Étape 1 (taille du pot) validée sur son téléphone le 11/10, PR vers `main` depuis la branche `ccr-301722b9-4da3s2`. Étape 2 (fiches « Spécial Pot », `lib/plants/pot-sheet.ts`, sources `docs/sources-pots.md`) validée sur son téléphone le 12/10 (tout en cm, conseil jardinière, pot trop petit en dessin), PR vers `main`. Étape 2 fusionnée (PR #41). Étape 3 en trois livraisons : 3a simulateur de soleil (`lib/garden/sun.ts`) validé le 13/10 ; 3b diagnostic (`lib/garden/balcony-diagnosis.ts`, `app/diagnostic.tsx`) validé le 13/10 ; 3c première tâche pot (une ligne « Vérifie le pot de N plantes » + feuille du bas, `lib/garden/first-pots.ts`) validée le 14/10 ; étape 3 fusionnée dans `main` (PR #42). Plantations de saison regroupées sur Aujourd'hui dès 2 plantes (groupe `planting` de `layoutTodayList`) validées le 14/10 (PR vers `main`) ; puis étape 4 (rappels d'engrais).
+**Chantier « Pots et balcon » (validé le 11/10, 10 étapes) : tout est dans `docs/chantier-pots-et-balcon.md`.** Étape 1 (taille du pot) validée sur son téléphone le 11/10, PR vers `main` depuis la branche `ccr-301722b9-4da3s2`. Étape 2 (fiches « Spécial Pot », `lib/plants/pot-sheet.ts`, sources `docs/sources-pots.md`) validée sur son téléphone le 12/10 (tout en cm, conseil jardinière, pot trop petit en dessin), PR vers `main`. Étape 2 fusionnée (PR #41). Étape 3 en trois livraisons : 3a simulateur de soleil (`lib/garden/sun.ts`) validé le 13/10 ; 3b diagnostic (`lib/garden/balcony-diagnosis.ts`, `app/diagnostic.tsx`) validé le 13/10 ; 3c première tâche pot (une ligne « Vérifie le pot de N plantes » + feuille du bas, `lib/garden/first-pots.ts`) validée le 14/10 ; étape 3 fusionnée dans `main` (PR #42). Plantations de saison regroupées sur Aujourd'hui dès 2 plantes (groupe `planting` de `layoutTodayList`) validées le 14/10 (PR #43, fusionnée). **Étape 4 (rappels d'engrais tirés des fiches, « Arrose et nourris… », « Nourris N plantes », notification) codée le 12/10 sur la branche `ccr-11417a6c-joxwdl`, avec les fins de saison regroupées (« Fais le point sur N plantes en fin de saison ») et une saison de plus de 6 mois tenue pour finie ; validée sur son téléphone le 13/10, PR https://github.com/NLB44850/Balco/pull/44 fusionnée**. Suite : étape 5 (liste de courses pour la jardinerie) (détail dans le document du chantier).
 
 **Récap pour reprendre (07/10)** : ce bloc fait foi ; les paragraphes plus bas sont l'historique (certains
 décrivent un état ancien, par exemple Saisons « à cocher » ou une fête plein écran à chaque récolte).

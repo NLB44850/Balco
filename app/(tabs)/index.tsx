@@ -33,6 +33,7 @@ import { trpc } from "@/lib/trpc";
 import { deviceId as loadDeviceId } from "@/lib/sync/device-id";
 import { usePlantPhotos } from "@/lib/garden/photos-context";
 import { awardCelebration, celebrationFor, formatLiters, litersPerWatering, withCheer } from "@/lib/garden/progress";
+import { FEEDING_REMINDER_SOURCE, nextFeedingReminder } from "@/lib/garden/feeding-reminder";
 import { awayOn, preparationSteps, vacationRange, vacationState } from "@/lib/garden/vacation";
 import {
   POINTS_PER_GESTURE,
@@ -40,6 +41,7 @@ import {
   eventForSessionTask,
   plantDisplayName,
   followedDays,
+  type SessionTask,
 } from "@/lib/garden/garden-logic";
 import { potsFor, skyScene } from "@/lib/garden/sky";
 import { publishSky } from "@/lib/garden/sky-store";
@@ -194,6 +196,14 @@ export default function HomeScreen() {
     void scheduleDatedReminder(eventNotificationSource(next.event), { ...next.event.notification, url: `/event/${next.event.id}` }, date).catch(() => undefined);
   }, [climate, reminderSettings, reminderSettingsLoaded, vacation]);
 
+  // L'engrais : une notification le prochain jour où une plante suivie est à nourrir (heure des rappels, plage calme,
+  // vacances ; heure réelle du téléphone).
+  useEffect(() => {
+    if (!reminderSettingsLoaded) return;
+    const next = reminderSettings.enabled ? nextFeedingReminder(resolvedPlants, events, { ...reminderSettings, vacation }, new Date()) : null;
+    void scheduleDatedReminder(FEEDING_REMINDER_SOURCE, { title: next?.title ?? "", body: next?.body ?? "" }, next?.date ?? null).catch(() => undefined);
+  }, [events, reminderSettings, reminderSettingsLoaded, resolvedPlants, vacation]);
+
   const trip = vacationState(vacation, now);
   const away = trip.phase === "away";
   const tripPlan = useMemo(() => (vacation ? preparationSteps(resolvedPlants, vacation, now) : []), [now, resolvedPlants, vacation]);
@@ -274,15 +284,18 @@ export default function HomeScreen() {
     };
   };
 
-  /** « C'est fait » sur une alerte : le geste est noté pour chaque plante concernée, et l'alerte se tait jusqu'à demain. */
-  const completeAlert = async (group: ReminderGroup) => {
+  /**
+   * « C'est fait » sur une alerte : le geste est noté pour chaque plante concernée, et l'alerte se tait jusqu'à demain.
+   * Arrosage demandé par la météo et engrais du jour sur la même ligne : l'engrais est noté avec.
+   */
+  const completeAlert = async (group: ReminderGroup, feed?: SessionTask) => {
     const previous = snoozes;
     const moment = clockNow();
-    const logged = group.decisions.map((decision) => eventForReminder(decision, moment));
+    const logged = [...group.decisions.map((decision) => eventForReminder(decision, moment)), ...(feed ? [eventForSessionTask(feed, moment)] : [])];
     const undoEvents = await logAll(logged);
     await saveReminderSnoozes(group.decisions.reduce((current, decision) => addSnooze(current, decision, "skip", reminderSettings, moment), snoozes));
     haptic();
-    showToast(withCheer(cheer(logged), `C’est noté · +${POINTS_PER_GESTURE * group.decisions.length} points`), () => {
+    showToast(withCheer(cheer(logged), `C’est noté · +${POINTS_PER_GESTURE * logged.length} points`), () => {
       undoEvents();
       void saveReminderSnoozes(previous);
     });
@@ -300,7 +313,7 @@ export default function HomeScreen() {
     if (isInfoBanner(item)) return;
     // « Tes radis sont-ils tous récoltés ? » cochée : oui ; « Ton pot est libre » : ses choix.
     if (item.kind === "harvest-end") return item.stage === "question" ? freePot.answerYes(item.resolved.plant.id) : freePot.openFreePot(item.resolved.plant.id);
-    if (item.kind === "alert") return completeAlert(item.group);
+    if (item.kind === "alert") return completeAlert(item.group, item.feed);
     if (item.kind === "season") {
       if (item.done) {
         const id = eventForActivity(item.activity, now).id;
@@ -315,13 +328,16 @@ export default function HomeScreen() {
     }
     if (item.done) {
       const previous = events.find((event) => event.id === item.task.eventId);
+      const previousFeed = item.feed ? events.find((event) => event.id === item.feed?.eventId) : undefined;
       const previousSnoozes = snoozes;
       await removeEvent(item.task.eventId);
+      if (previousFeed) await removeEvent(previousFeed.id);
       // Noté depuis un conseil météo (« Arrose la menthe ») : décoché, le conseil revient.
       if (previous) await saveReminderSnoozes(wakeSnoozeFor(snoozes, previous));
-      return showToast("Geste retiré de ta journée", previous ? () => { void logEvent(previous); void saveReminderSnoozes(previousSnoozes); } : undefined);
+      return showToast("Geste retiré de ta journée", previous ? () => { void logEvent(previous); if (previousFeed) void logEvent(previousFeed); void saveReminderSnoozes(previousSnoozes); } : undefined);
     }
-    const logged = [eventForSessionTask(item.task, clockNow())];
+    // « Arrose et nourris tes tomates » : l'arrosage et l'engrais sont notés ensemble.
+    const logged = [eventForSessionTask(item.task, clockNow()), ...(item.feed ? [eventForSessionTask(item.feed, clockNow())] : [])];
     const undo = await logAll(logged);
     haptic();
     // Une plante récoltée en une fois : « Radis récoltés : noté · Tout récolté ? » avec « Oui » à la place de « Annuler ».
@@ -329,7 +345,7 @@ export default function HomeScreen() {
     if (item.task.task.type === "harvest" && isHarvestedOnce(resolved.entry)) {
       return showToast(withCheer(cheer(logged), harvestedToastText(resolved.entry)), () => void freePot.answerYes(resolved.plant.id), "Oui");
     }
-    showToast(withCheer(cheer(logged), `${item.title} : noté · +${POINTS_PER_GESTURE} points`), undo);
+    showToast(withCheer(cheer(logged), `${item.title} : noté · +${POINTS_PER_GESTURE * logged.length} points`), undo);
   };
 
   // L'autorisation du téléphone d'abord : rien n'est enregistré tant qu'elle n'est pas donnée.
@@ -732,7 +748,13 @@ export default function HomeScreen() {
             <Text style={[styles.sheetTitle, { color: colors.foreground }]}>{groupSheet.title}</Text>
             <Text style={[styles.sheetBody, { color: colors.muted }]}>
               {groupSheet.gesture === "watering"
-                ? "Enfonce ton doigt dans la terre de chaque pot : si elle est sèche, arrose au pied et coche. Touche une ligne pour le détail."
+                ? groupSheet.items.some((item) => item.feed)
+                  ? "Enfonce ton doigt dans la terre de chaque pot : si elle est sèche, arrose au pied. Puis donne l’engrais à celles qui en ont besoin, et coche. Touche une ligne pour le détail."
+                  : "Enfonce ton doigt dans la terre de chaque pot : si elle est sèche, arrose au pied et coche. Touche une ligne pour le détail."
+                : groupSheet.gesture === "season-end"
+                  ? "Coche une plante dont la saison est finie : Balco te propose quoi mettre dans son pot. Pas encore finie ? Laisse-la, tu as le temps."
+                : groupSheet.gesture === "feeding"
+                  ? "Toujours sur une terre humide : arrose un peu d’abord si elle est sèche. Touche une ligne pour voir quel engrais donner."
                 : groupSheet.gesture === "planting"
                   ? "Pas besoin de tout faire aujourd’hui : tu as le mois. Touche une ligne pour le pas-à-pas, coche quand c’est fait."
                   : "Passe d’un pot à l’autre et cueille ce qui est prêt, puis coche. Touche une ligne pour le détail."}
@@ -747,11 +769,16 @@ export default function HomeScreen() {
                   subtitle={item.done ? doneSubtitle(item, events) : item.subtitle}
                   done={item.done}
                   picture={seasonPicture(item)}
-                  onToggle={() => void toggleItem(item)}
+                  onToggle={() => {
+                    // Fin de saison : la feuille du pot libre s'ouvre une fois celle du groupe repliée.
+                    if (item.kind !== "harvest-end") return void toggleItem(item);
+                    setOpenGroup(null);
+                    setTimeout(() => void toggleItem(item), 320);
+                  }}
                   onOpen={() => {
                     // Le détail s'ouvre une fois la feuille du groupe repliée.
                     setOpenGroup(null);
-                    setTimeout(() => setSheetKey(item.key), 320);
+                    setTimeout(() => (item.kind === "harvest-end" ? freePot.openQuestion(item.resolved.plant.id, item.subtitle) : setSheetKey(item.key)), 320);
                   }}
                 />
               ))}
@@ -811,7 +838,8 @@ function SheetContent({ item, events, onToggle, onSnooze, onOpenPlant, onOpenCal
   const colors = useColors();
   const alertTone = item.tone === "frost" || item.tone === "rain" || item.tone === "storm" || item.tone === "wind" ? colors.frost : item.tone === "heat" ? colors.terracotta : colors.primary;
   const info = item.kind === "alert" && item.group.action === "skip";
-  const body = item.kind === "alert" ? item.group.body : item.kind === "task" ? item.task.task.instruction : item.kind === "season" ? item.activity.description : item.subtitle;
+  const main = item.kind === "alert" ? item.group.body : item.kind === "task" ? item.task.task.instruction : item.kind === "season" ? item.activity.description : item.subtitle;
+  const body = item.feed ? `${main}\n\n${item.feed.task.instruction}` : main;
 
   return (
     <View style={styles.sheet}>

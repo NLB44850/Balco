@@ -255,8 +255,13 @@ export function planDay({ plants, events, now, decisions = [], allDecisions = de
       }
     }
 
-    // 5. Engrais, quand il est dû.
-    for (const task of tasks.filter((candidate) => candidate.type === "fertilizing")) gestures.push(taskGesture("fertilizing", resolved, task, now, eventIds));
+    // 5. Engrais, quand il est dû : pas la veille d'une pluie (tout serait lessivé) ni par forte chaleur, sauf s'il
+    // est déjà fait aujourd'hui.
+    const badDayToFeed = rainComing || ownAll.some((decision) => decision.cause === "heat");
+    for (const task of tasks.filter((candidate) => candidate.type === "fertilizing")) {
+      const gesture = taskGesture("fertilizing", resolved, task, now, eventIds);
+      if (gesture.done || !badDayToFeed) gestures.push(gesture);
+    }
 
     // 6. Entretien : un seul par jour, qui tourne d'un jour à l'autre.
     const care = tasks.filter((task) => !["watering", "harvest", "fertilizing"].includes(task.type));

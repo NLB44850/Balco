@@ -12,12 +12,15 @@ import { GESTURE_ORDER, type GestureKind, type PlantDay } from "./day-plan";
 import { dayKey, plantDisplayName, type ResolvedPlant, type SessionTask } from "./garden-logic";
 import { isAvoidedWatering } from "./progress";
 import { endsWithSeason } from "../plants/season-end";
+import { feedingFor } from "../plants/fertilizing";
+import { capitalize, possessive } from "../plants/grammar";
 
 export type TodayTone = "frost" | "heat" | "rain" | "storm" | "wind" | "water" | "care" | "season";
 
 /** Ce que toutes les lignes ont en commun : le type de geste (pour l'ordre et le regroupement) et la plante. */
 /** `quiet` : toujours replié avec les gestes pas urgents, et pas compté dans ce qui reste à faire (pot libre de la veille). */
-type TodayBase = { key: string; tone: TodayTone; icon: string; title: string; subtitle: string; gesture: GestureKind; plantName?: string; quiet?: boolean };
+/** `feed` : l'engrais dû le même jour que l'arrosage, fait avec lui (« Arrose et nourris tes tomates »). */
+type TodayBase = { key: string; tone: TodayTone; icon: string; title: string; subtitle: string; gesture: GestureKind; plantName?: string; quiet?: boolean; feed?: SessionTask };
 
 export type TodayItem =
   | (TodayBase & { kind: "alert"; done: false; group: ReminderGroup })
@@ -26,8 +29,8 @@ export type TodayItem =
   /** « Tes radis sont-ils tous récoltés ? » ou « Ton pot est libre » : la ligne ouvre la feuille du pot libre. */
   | (TodayBase & { kind: "harvest-end"; done: false; stage: "question" | "free"; resolved: ResolvedPlant });
 
-/** Les gestes regroupés en une ligne dès qu'ils concernent deux plantes : arrosages, récoltes, semis et plantations. */
-export type GroupedGesture = "watering" | "harvest" | "planting";
+/** Les gestes regroupés en une ligne dès qu'ils concernent deux plantes : arrosages, récoltes, semis, plantations, engrais. */
+export type GroupedGesture = "watering" | "harvest" | "planting" | "feeding" | "season-end";
 
 /**
  * Une ligne de l'écran : un geste seul, les arrosages ou les récoltes regroupés (« Vérifie la terre de 3 plantes »,
@@ -39,12 +42,30 @@ export type TodayLine =
   | { type: "group"; key: GroupedGesture; gesture: GroupedGesture; icon: string; tone: TodayTone; title: string; subtitle: string; done: boolean; items: TodayItem[] }
   | { type: "more"; key: "more"; title: string; subtitle: string; items: TodayItem[] };
 
-const GROUP_LOOK: Record<GroupedGesture, { icon: string; tone: TodayTone; title: (count: number, members: TodayItem[]) => string; todo: string }> = {
-  watering: { icon: "💧", tone: "water", title: (count) => `Vérifie la terre de ${count} plantes`, todo: "Sèche ? Arrose" },
-  harvest: { icon: "🧺", tone: "care", title: (count) => `Récolte ce qui est prêt sur ${count} plantes`, todo: "Cueille ce qui est mûr" },
+const GROUP_LOOK: Record<GroupedGesture, { icon: string; tone: TodayTone; title: (count: number, members: TodayItem[]) => string; todo: (members: TodayItem[]) => string }> = {
+  watering: { icon: "💧", tone: "water", title: (count) => `Vérifie la terre de ${count} plantes`, todo: (members) => feedingNote(members) },
+  harvest: { icon: "🧺", tone: "care", title: (count) => `Récolte ce qui est prêt sur ${count} plantes`, todo: () => "Cueille ce qui est mûr" },
   // 14/10 : « Plante l'aubergine », « Plante le chou-rave »… prenaient 7 lignes ; une seule, comme les arrosages.
-  planting: { icon: "🌱", tone: "season", title: (count, members) => `${plantingVerb(members)} ${count} plantes de saison`, todo: "Ce mois-ci" },
+  planting: { icon: "🌱", tone: "season", title: (count, members) => `${plantingVerb(members)} ${count} plantes de saison`, todo: () => "Ce mois-ci" },
+  feeding: { icon: "🌿", tone: "care", title: (count) => `Nourris ${count} plantes`, todo: () => FEED_WHEN },
+  // 12/10 : « Ta saison de basilic est finie ? », « Tes radis sont-ils tous récoltés ? »… une ligne chacune, c'était trop.
+  "season-end": { icon: "🍂", tone: "care", title: (count) => `Fais le point sur ${count} plantes en fin de saison`, todo: () => "Saison finie ? Le pot est libre" },
 };
+
+/** Le sous-titre d'un groupe d'engrais : quand le donner. */
+const FEED_WHEN = "Sur une terre humide";
+
+/** Le sous-titre d'un engrais seul : lequel donner (« Engrais liquide organique pour tomates »). */
+function feedSubtitle(resolved: ResolvedPlant) {
+  const kind = feedingFor(resolved.entry.id)?.kind;
+  return kind ? capitalize(kind) : FEED_WHEN;
+}
+
+/** « Sèche ? Arrose », ou « Sèche ? Arrose · engrais pour 2 » quand des plantes sont aussi à nourrir. */
+function feedingNote(members: TodayItem[]) {
+  const fed = members.filter((item) => item.feed).length;
+  return fed > 0 ? `Sèche ? Arrose · engrais pour ${fed}` : "Sèche ? Arrose";
+}
 
 /** « Sème », « Plante » ou « Plante ou sème », selon les gestes du groupe. */
 function plantingVerb(members: TodayItem[]) {
@@ -59,6 +80,8 @@ function groupedAs(item: TodayItem): GroupedGesture | null {
   if (item.gesture === "harvest" && item.kind !== "harvest-end" && !item.quiet) return "harvest";
   // Semis et plantations du mois (pas le rempotage ni les gestes de suite, qui restent une ligne par plante).
   if (item.kind === "season" && (item.activity.kind === "sow" || item.activity.kind === "plant")) return "planting";
+  if (item.gesture === "fertilizing" && item.kind === "task") return "feeding";
+  if (item.kind === "harvest-end" && item.stage === "question") return "season-end";
   return null;
 }
 
@@ -117,8 +140,10 @@ const KIND_RANK = Object.fromEntries(GESTURE_ORDER.map((kind, index) => [kind, i
  * Les alertes météo d'abord, puis une ligne à faire par plante au plus : son premier geste hors alerte
  * encore à faire (arrosage, récolte, plantation / semis / rempotage, engrais, entretien), dans cet ordre.
  * Une fois ce geste fait, le suivant prend sa place : les gestes du mois se font tous depuis Aujourd'hui.
- * Seule exception (décidée le 11/10) : une récolte s'affiche aussi quand l'arrosage de la plante attend encore
- * (la terre encore humide, on ne le coche pas) ; arrosages et récoltes étant regroupés, la liste ne s'allonge pas.
+ * Exceptions : une récolte s'affiche aussi quand l'arrosage de la plante attend encore (décidé le 11/10 : la terre
+ * encore humide, on ne le coche pas), et l'engrais quand une récolte attend (elle revient chaque jour de la saison).
+ * Arrosages, récoltes et engrais étant regroupés, la liste ne s'allonge pas.
+ * L'engrais dû le même jour que l'arrosage se fait avec lui : une seule ligne « Arrose et nourris tes tomates ».
  * Ce qui est déjà fait aujourd'hui passe à la fin.
  */
 export function buildTodayList({ groups, plan }: BuildTodayInput): TodayItem[] {
@@ -133,13 +158,26 @@ export function buildTodayList({ groups, plan }: BuildTodayInput): TodayItem[] {
     const gestures = day.gestures.filter((candidate) => candidate.kind !== "alert");
     const next = gestures.find((candidate) => !candidate.done);
     const harvest = next?.kind === "watering" ? gestures.find((candidate) => !candidate.done && candidate.kind === "harvest") : undefined;
-    for (const gesture of gestures.filter((candidate) => candidate.done || candidate === next || candidate === harvest)) {
+    // Arrosage et engrais tous deux à faire, ou tous deux faits aujourd'hui : une seule ligne.
+    const water = gestures.find((candidate) => candidate.kind === "watering");
+    const feed = gestures.find((candidate) => candidate.kind === "fertilizing");
+    const together = water && feed?.source.type === "task" && water.done === feed.done ? feed : undefined;
+    // Une récolte attend (elle revient chaque jour de la saison) : l'engrais passe quand même, sinon il ne viendrait
+    // jamais. Récoltes et engrais étant regroupés, la liste ne s'allonge pas.
+    const feedToo = next?.kind === "harvest" && feed && !feed.done ? feed : undefined;
+    for (const gesture of gestures.filter((candidate) => (candidate.done || candidate === next || candidate === harvest || candidate === feedToo) && candidate !== together)) {
       const item = rowFor(day, gesture, groups);
-      if (item) rows.push({ rank: KIND_RANK[gesture.kind], item });
+      if (!item) continue;
+      rows.push({ rank: KIND_RANK[gesture.kind], item: gesture === water && together?.source.type === "task" ? withFeed(day, item, together.source.task, together.doneEventId) : item });
     }
   }
   const sorted = rows.sort((a, b) => a.rank - b.rank).map(({ item }) => item);
   return [...alerts, ...sorted.filter((item) => !item.done), ...sorted.filter((item) => item.done)];
+}
+
+/** La ligne d'arrosage qui porte aussi l'engrais du jour : « Arrose et nourris tes tomates ». */
+function withFeed(day: PlantDay, item: TodayItem, feed: SessionTask, doneEventId: string | undefined): TodayItem {
+  return { ...item, title: `Arrose et nourris ${possessive(day.resolved.entry)}`, subtitle: item.done ? item.subtitle : "Arrose si la terre est sèche, puis l’engrais", feed: { ...feed, eventId: doneEventId ?? feed.eventId } };
 }
 
 /** La ligne d'un geste du plan du jour. */
@@ -161,7 +199,7 @@ function rowFor(day: PlantDay, gesture: PlantDay["gestures"][number], groups: Re
       tone: gesture.kind === "watering" ? "water" : "care",
       icon: TASK_ICONS[item.task.type] ?? "•",
       title: gesture.title,
-      subtitle: gesture.kind === "watering" ? soilCheckText(soilCheckDepthCm(item.resolved.entry)) : `${plantDisplayName(item.resolved)} · ${item.task.minutes} min`,
+      subtitle: gesture.kind === "watering" ? soilCheckText(soilCheckDepthCm(item.resolved.entry)) : gesture.kind === "fertilizing" ? feedSubtitle(item.resolved) : `${plantDisplayName(item.resolved)} · ${item.task.minutes} min`,
       done: gesture.done,
       task: { ...item, done: gesture.done, eventId: gesture.doneEventId ?? item.eventId },
     };
@@ -209,16 +247,17 @@ export const MAX_TODAY_LINES = 5;
 const NOT_URGENT: GestureKind[] = ["fertilizing", "care"];
 
 /**
- * La liste telle qu'elle s'affiche : alertes, arrosages, récoltes, semis et plantations regroupés dès qu'il y en a deux
- * (une seule ligne « Vérifie la terre de N plantes », « Récolte ce qui est prêt sur N plantes », « Plante ou sème N
- * plantes de saison »), autres gestes de saison, puis, au-delà de
+ * La liste telle qu'elle s'affiche : alertes, arrosages, récoltes, semis, plantations et engrais regroupés dès qu'il y
+ * en a deux (une seule ligne « Vérifie la terre de N plantes », « Récolte ce qui est prêt sur N plantes », « Plante ou
+ * sème N plantes de saison », « Nourris N plantes », « Fais le point sur N plantes en fin de saison »), autres gestes
+ * de saison, puis, au-delà de
  * 5 lignes à faire, l'engrais et l'entretien repliés sous « X autres gestes, pas urgents ». Ce qui est fait passe à
  * la fin. Alertes, arrosages et récoltes restent toujours visibles.
  */
 export function layoutTodayList(items: TodayItem[]): TodayLine[] {
   const single = (item: TodayItem): TodayLine => ({ type: "item", key: item.key, item });
   const groups: Extract<TodayLine, { type: "group" }>[] = [];
-  for (const gesture of ["watering", "harvest", "planting"] as const) {
+  for (const gesture of ["watering", "harvest", "planting", "feeding", "season-end"] as const) {
     const members = items.filter((item) => groupedAs(item) === gesture);
     if (members.length < 2) continue;
     const look = GROUP_LOOK[gesture];
@@ -231,7 +270,7 @@ export function layoutTodayList(items: TodayItem[]): TodayLine[] {
       icon: look.icon,
       tone: look.tone,
       title: look.title(members.length, members),
-      subtitle: doneCount > 0 ? `${doneCount} sur ${members.length} faites · ${names}` : `${look.todo} · ${names}`,
+      subtitle: doneCount > 0 ? `${doneCount} sur ${members.length} faites · ${names}` : `${look.todo(members)} · ${names}`,
       done: doneCount === members.length,
       items: members,
     });

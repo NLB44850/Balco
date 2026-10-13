@@ -30,6 +30,8 @@ export type CareTask = {
   months?: Month[];
   /** Geste espacé (engrais) : proposé seulement si le dernier date d'au moins ce nombre de jours. */
   everyDays?: number;
+  /** Geste d'une seule fois par période de `months` (un peu d'engrais au printemps). */
+  oncePerSeason?: boolean;
   doneTitle: string;
   doneText: string;
 };
@@ -163,7 +165,7 @@ type PlantInput = Omit<CatalogPlant, "tasks" | "varieties" | "repotMonths" | "in
 
 function plant({ extraTasks = [], wateringMonths, wateringInstruction, varieties, repotMonths, ...data }: PlantInput): CatalogPlant {
   const activeMonths = wateringMonths ?? GROWING_SEASON;
-  const feed = fertilizeTask(data.id, data.label);
+  const feed = fertilizeTask(data);
   return {
     ...data,
     // Une vivace se rempote à la reprise de végétation, avant la pousse de printemps.
