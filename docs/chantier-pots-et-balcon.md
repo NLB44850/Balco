@@ -235,7 +235,7 @@ Règles qui valent pour toutes les étapes :
      plante, « Récolte souvent » ; engrais = « 14 jours » entre deux engrais (ou « 1 fois »), arroser d'abord, l'engrais,
      au pied ; entretien, gestes de suite et alertes météo = leur texte découpé en gestes courts. Tests
      `tests/gesture-detail.test.ts`, e2e `25-gestes`.
-   - **6b, coach d'arrosage Balco+ : codé le 13/10, à valider sur son téléphone.** Moteur `lib/plants/watering-coach.ts`
+   - **6b, coach d'arrosage Balco+ : codé le 13/10, validé et fusionné (PR #48).** Prochaine étape : 7 (consignes pour le voisin). Moteur `lib/plants/watering-coach.ts`
      (`coachAdvice`, `coachSummary` ; paramètres et sources dans `docs/sources-pots.md`) : eau restante dans le pot,
      arroser ou non aujourd'hui, quantité au demi-litre, prochain arrosage, rythme du jour. Calculé dans l'app
      (`use-day-plan` : `coach`, `isPlus`), avec la météo déjà chargée et le soleil du balcon (orientation, couvert,

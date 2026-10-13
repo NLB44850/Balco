@@ -111,12 +111,20 @@ marque citée, jamais de produit chimique, tout en centimètres (jamais de litre
   - étape 3, accueil enrichi : simulateur de soleil (orientation, couvert, vis-à-vis → heures de soleil), « Diagnostic de
     ton balcon », et une ligne « Vérifie le pot de N plantes » après l'accueil (détail dans une feuille du bas) ;
   - en plus (14/10) : sur Aujourd'hui, semis et plantations du mois regroupés dès deux plantes
-    (« Plante ou sème 7 plantes de saison »), PR #43.
-- **Prochaine étape, 4 : rappels d'engrais** tirés des fiches (rythme, rien en hiver ni en vacances, « Arrose et nourris
-  tes tomates » quand les deux tombent le même jour, « Nourris 3 plantes » dès deux plantes, réglages de rappels respectés).
-- Ensuite : 5 liste de courses pour la jardinerie, 6 arrosage selon la météo et la taille du pot (puis coach Balco+ ;
-  un balcon couvert ne doit pas recevoir « N'arrose pas, il pleut »), 7 consignes pour le voisin qui arrose,
-  8 « Que planter à la place ? » et traitement naturel, 9 calculateur de poids, 10 écran Balco+.
+    (« Plante ou sème 7 plantes de saison »), PR #43 ;
+  - étape 4, rappels d'engrais tirés des fiches (« Arrose et nourris tes tomates », « Nourris 3 plantes », notification),
+    et fins de saison regroupées (« Fais le point sur N plantes en fin de saison »), PR #44 ;
+  - étape 5, liste de courses pour la jardinerie (pots, terreau en litres avec le sac à prendre, billes d'argile,
+    godets, engrais par famille ; on coche en magasin, partage par SMS ou WhatsApp), PR #46 ;
+  - étape 6a, arrosage selon la taille du pot (rythme, quantité « 💧 2 L » avec des bouteilles dessinées, balcon couvert
+    sans « N'arrose pas »), et le même format de détail pour tous les gestes (un repère en grand, des gestes courts avec
+    icône), PR #47 ;
+  - étape 6b, coach d'arrosage Balco+ (eau restante dans le pot selon la chaleur, le soleil du balcon, le vent, le pot ;
+    carte avec jauge dans la fiche) et interrupteur « Simuler Balco+ » dans la version de test, PR #48.
+- Depuis le 12/10, chaque demande de fusion vers `main` publie toute seule la mise à jour de l'app pour la tester.
+- **Prochaine étape, 7 : consignes pour le voisin qui arrose** (bouton dans le mode vacances, texte plante par plante selon
+  les règles d'arrosage, dates des vacances, modifiable, partage du téléphone, « Préparé avec Balco » qu'on peut retirer).
+- Ensuite : 8 « Que planter à la place ? » et traitement naturel, 9 calculateur de poids, 10 écran Balco+.
 
 ## Ce qu'il reste à faire, dans l'ordre
 
