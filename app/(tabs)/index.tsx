@@ -797,6 +797,9 @@ export default function HomeScreen() {
             <Pressable accessibilityRole="button" onPress={() => openNeeds(anticipationOpen)} style={({ pressed }) => [styles.cta, { backgroundColor: colors.foreground }, pressed && styles.pressed]}>
               <Text style={[styles.ctaText, { color: colors.background }]}>Ce qu’il te faut ›</Text>
             </Pressable>
+            <Pressable accessibilityRole="button" onPress={() => { setAnticipationOpen(null); router.push("/shopping"); }} style={({ pressed }) => [styles.secondaryButton, { borderColor: colors.border }, pressed && styles.pressed]}>
+              <Text style={[styles.secondaryText, { color: colors.foreground }]}>🛒  Ma liste de courses</Text>
+            </Pressable>
           </View>
         )}
       </BottomSheet>
