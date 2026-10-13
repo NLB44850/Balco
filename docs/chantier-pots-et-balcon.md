@@ -157,7 +157,7 @@ Règles qui valent pour toutes les étapes :
      type), « Ce mois-ci · aubergine, chou-rave… ». Feuille du bas commune avec l'arrosage et la récolte : « Pas besoin
      de tout faire aujourd'hui : tu as le mois », chaque plante se coche, la ligne ouvre son détail et son pas-à-pas.
      Rempotage, terre du dessus et gestes de suite restent une ligne par plante. E2e : `openPlantings` (helpers).
-4. **Rappels d'engrais tirés des fiches : codés le 12/10, à valider sur son téléphone.** `lib/plants/fertilizing.ts`
+4. **Rappels d'engrais tirés des fiches : codés le 12/10, validés sur son téléphone le 13/10 (PR #44).** `lib/plants/fertilizing.ts`
    (`feedingFor`, `fertilizeTask`) lit la fiche Spécial pot de chaque plante au lieu de l'ancienne table de 33 plantes :
    « Tous les N jours » (rythme et mois de la fiche, ex. courgette tous les 7 jours de juin à août, tomates tous les
    14 jours de juin à septembre) ; « Un peu » = une seule fois dans la période (compost de la menthe en mars-avril,
