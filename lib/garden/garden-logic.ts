@@ -111,15 +111,16 @@ export function wateringLitersOf(resolved: ResolvedPlant) {
 }
 
 /** `balcony.covered` : balcon couvert, la pluie annoncée ne dispense pas d'arroser (étape 6a). */
-export function careProfileFor(resolved: ResolvedPlant, balcony?: { covered?: boolean } | null): PlantCareProfile {
+export function careProfileFor(resolved: ResolvedPlant, balcony?: { covered?: boolean } | null, coach?: { intervalHours: number; liters: number }): PlantCareProfile {
   const { plant, entry } = resolved;
   return {
     plantId: plant.id,
     displayName: plantDisplayName(resolved),
     label: plant.nickname?.trim() || entry.label,
     ...entry.care,
-    wateringIntervalHours: wateringIntervalOf(resolved),
-    wateringLiters: wateringLitersOf(resolved),
+    // Balco+ : le rythme du jour et la quantité du coach d'arrosage (étape 6b).
+    wateringIntervalHours: coach?.intervalHours ?? wateringIntervalOf(resolved),
+    wateringLiters: coach?.liters ?? wateringLitersOf(resolved),
     ...(balcony?.covered ? { sheltered: true } : {}),
     allowedTaskTypes: Array.from(new Set<MaintenanceTaskType>([...entry.tasks.map((task) => task.type), "observation", "protection"])),
     soilCheckCm: soilCheckDepthCm(entry),

@@ -10,7 +10,9 @@ import { planDay } from "@/lib/garden/day-plan";
 import { postponedStarts } from "@/lib/garden/postpone";
 import { skippedRepots } from "@/lib/garden/repot-skip";
 import { endsWithSeason, harvestEndStates, markHarvestAsked, markSeasonAsked, markSeasonFrost, potIsFree, settleLongOverSeasons } from "@/lib/garden/harvest-end";
-import { dayKey } from "@/lib/garden/garden-logic";
+import { dayKey, lastEventDate } from "@/lib/garden/garden-logic";
+import { useBalcoPlus } from "@/hooks/use-balco-plus";
+import { coachAdvice } from "@/lib/plants/watering-coach";
 import { useGarden } from "@/lib/garden/garden-context";
 import { careProfileFor } from "@/lib/garden/garden-logic";
 import { climateZoneFor } from "@/lib/plants/climate";
@@ -71,13 +73,21 @@ export function useDayPlan() {
     () => resolvedPlants.filter((resolved) => !resolved.plant.toPlant && !potIsFree(resolved, harvestEnds.get(resolved.plant.id))),
     [harvestEnds, resolvedPlants],
   );
+  // Balco+ (ou « Simuler Balco+ ») : le coach d'arrosage, plante par plante, avec la météo du jour (étape 6b).
+  const { isPlus } = useBalcoPlus();
+  const coach = useMemo(() => {
+    if (!isPlus || weather.isFallback) return undefined;
+    const balcony = onboarding?.skipped ? {} : { orientation: onboarding?.orientation, covered: onboarding?.covered, facing: onboarding?.facing };
+    const coachWeather = { latitude: weather.latitude, today: weatherSnapshot.today };
+    return new Map(reminderPlants.map((resolved) => [resolved.plant.id, coachAdvice({ entry: resolved.entry, potSize: resolved.plant.potSize, lastWatering: lastEventDate(events, resolved.plant.id, "watering"), weather: coachWeather, balcony, now })] as const));
+  }, [events, isPlus, now, onboarding, reminderPlants, weather.isFallback, weather.latitude, weatherSnapshot.today]);
   // Tous les conseils météo du moment (« rappels activés » ne décide que des notifications).
   const allDecisions = useMemo(() => {
     if (!reminderSettingsLoaded || weather.isFallback) return [];
     const settings = { enabled: true, skipWateringWhenRainExpected: reminderSettings.skipWateringWhenRainExpected, maxNormalRemindersPerDay: reminderSettings.maxNormalRemindersPerDay };
     // Balcon couvert (accueil) : la pluie annoncée ne dispense pas d'arroser.
-    return decideReminders(reminderPlants.map((resolved) => ({ plant: careProfileFor(resolved, onboarding), history: events, weather: weatherSnapshot, settings })));
-  }, [events, onboarding, reminderPlants, reminderSettings, reminderSettingsLoaded, weather.isFallback, weatherSnapshot]);
+    return decideReminders(reminderPlants.map((resolved) => ({ plant: careProfileFor(resolved, onboarding, coach?.get(resolved.plant.id)), history: events, weather: weatherSnapshot, settings })));
+  }, [coach, events, onboarding, reminderPlants, reminderSettings, reminderSettingsLoaded, weather.isFallback, weatherSnapshot]);
   // Pour les notifications : toutes les alertes importantes, puis au plus N conseils ordinaires.
   // « Plantes suivies » (Réglages) ne coupe que les notifications : gestes et alertes restent à l'écran.
   const reminderDecisions = useMemo(
@@ -88,7 +98,7 @@ export function useDayPlan() {
   const visibleGroups = useMemo(() => groupReminders(visibleDecisions), [visibleDecisions]);
   const postponed = useMemo(() => postponedStarts(snoozes, now), [now, snoozes]);
   const repotSkips = useMemo(() => skippedRepots(snoozes, now), [now, snoozes]);
-  const plan = useMemo(() => planDay({ plants: resolvedPlants, events, now, decisions: visibleDecisions, allDecisions, climate, postponed, repotSkips, harvestEnds }), [allDecisions, climate, events, harvestEnds, now, postponed, repotSkips, resolvedPlants, visibleDecisions]);
+  const plan = useMemo(() => planDay({ plants: resolvedPlants, events, now, decisions: visibleDecisions, allDecisions, climate, postponed, repotSkips, harvestEnds, coach }), [allDecisions, climate, coach, events, harvestEnds, now, postponed, repotSkips, resolvedPlants, visibleDecisions]);
 
   // « Tes radis sont-ils tous récoltés ? » ne se pose qu'un jour, « Ta saison de basilic est finie ? » un jour puis
   // une relance : on note le jour où elle s'affiche. Et le soir de gel qui finit la saison d'une annuelle frileuse.
@@ -128,5 +138,7 @@ export function useDayPlan() {
     reminderDecisions,
     visibleGroups,
     plan,
+    coach,
+    isPlus,
   };
 }

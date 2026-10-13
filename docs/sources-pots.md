@@ -746,3 +746,17 @@ ne donnent pas de coefficient. Règles maison validées par le porteur le 13/10,
   jardinière 4 L (taille inconnue : le pot de la fiche). « Arrose environ 1 L, jusqu'à ce que ça coule » : la ligne dit
   toujours de vérifier la terre avant.
 - Repère dit une fois : 1,5 L = une grande bouteille d'eau ; vider la soucoupe après 30 min.
+
+## Coach d'arrosage Balco+ (étape 6b, 13/10) : estimations Balco
+
+Bilan d'eau du pot, sans service extérieur (`lib/plants/watering-coach.ts`) :
+- Évaporation de référence du jour : formule de Hargreaves (FAO-56, bulletin 56, équations 21 et 52), à partir des
+  températures mini/maxi du jour et de la latitude (≈ 4,8 mm un jour de 26 °C en juillet à Paris, ≈ 1,4 mm en octobre).
+- Eau utile d'un terreau : 25 % du volume du pot ; on arrose quand la moitié est partie (« ALLOWED_DEPLETION »).
+- Soif de la plante : 40 / rythme d'arrosage de base (basilic 36 h → 1,1 ; thym 96 h → 0,42), bornée de 0,4 à 1,2.
+- Soleil du balcon : 0,35 + 0,65 × (heures de soleil du jour / 8, au plus 1), d'après le simulateur de soleil ;
+  orientation inconnue : 0,75. Rafales ≥ 40 km/h : × 1,15. Pluie du jour : remplit le pot (surface × mm), sauf balcon
+  couvert.
+- Pot : surface de terre (largeur de la taille choisie, sinon de la fiche ; jardinière 60 × 18 cm) × un facteur pot
+  (petit 3,5, moyen 3, grand 2,6, jardinière 3) calé pour retrouver, un jour d'été ordinaire plein sud, le rythme de la
+  version gratuite (basilic : 27 h, 36 h, 51 h). Quantité = l'eau partie, arrondie au demi-litre.

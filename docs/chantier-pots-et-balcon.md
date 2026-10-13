@@ -205,7 +205,7 @@ Règles qui valent pour toutes les étapes :
    coefficients proposés notés comme estimation Balco, litres arrondis au demi-litre, interrupteur unique « Simuler
    Balco+ » (version de test, doit marcher même si le coach est calculé par le serveur), 6a puis 6b, soleil réservé au
    coach, coach en valeur arrondie (« environ 1,5 L »), balcon couvert = pas d'eau économisée les jours de pluie.
-   - **6a, gratuit : codée le 13/10, à valider sur son téléphone.** `lib/plants/watering.ts` (`POT_WATERING_FACTOR`,
+   - **6a, gratuit : codée le 13/10, validée et fusionnée (PR #47, avec le même format de détail pour tous les gestes).** `lib/plants/watering.ts` (`POT_WATERING_FACTOR`,
      `wateringIntervalHours`, `wateringLiters`, `wateringSubtitle`, `WATERING_ONCE_NOTE`) ; `wateringIntervalOf` /
      `wateringLitersOf` (garden-logic) servent au plan du jour, à la série de jours suivis, à la fraîcheur et à l'eau
      économisée (`litersPerWatering`). Profil de soin (`careProfileFor(resolved, balcony)`) : rythme du pot,
@@ -235,3 +235,15 @@ Règles qui valent pour toutes les étapes :
      plante, « Récolte souvent » ; engrais = « 14 jours » entre deux engrais (ou « 1 fois »), arroser d'abord, l'engrais,
      au pied ; entretien, gestes de suite et alertes météo = leur texte découpé en gestes courts. Tests
      `tests/gesture-detail.test.ts`, e2e `25-gestes`.
+   - **6b, coach d'arrosage Balco+ : codé le 13/10, à valider sur son téléphone.** Moteur `lib/plants/watering-coach.ts`
+     (`coachAdvice`, `coachSummary` ; paramètres et sources dans `docs/sources-pots.md`) : eau restante dans le pot,
+     arroser ou non aujourd'hui, quantité au demi-litre, prochain arrosage, rythme du jour. Calculé dans l'app
+     (`use-day-plan` : `coach`, `isPlus`), avec la météo déjà chargée et le soleil du balcon (orientation, couvert,
+     vis-à-vis de l'accueil). Balco+ = forfait du compte ou interrupteur « Simuler Balco+ » (Réglages → Version de test,
+     `hooks/use-balco-plus.ts`, sur ce téléphone seulement, ne change ni le compte ni les limites du serveur). En Balco+ :
+     le plan du jour suit le coach (`coach` de `planDay` : arrosage proposé seulement quand la terre a soif, sa quantité ;
+     les rappels utilisent son rythme et sa quantité via `careProfileFor(…, coach)`), bandeau « ✨ Coach Balco+ » dans le
+     détail, carte « Coach d'arrosage Balco+ » dans la fiche (« Arrose environ 3 L ce soir » ou « Pas besoin aujourd'hui ·
+     prochain arrosage dans 2 jours », jauge d'eau). En gratuit : carte « Coach d'arrosage · bientôt avec Balco+ ».
+     Les rappels du serveur gardent la version gratuite (le coach n'y est pas encore). Tests `tests/watering-coach.test.ts`,
+     e2e `26-coach`.
