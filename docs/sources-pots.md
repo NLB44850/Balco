@@ -720,3 +720,17 @@ Estimations (confiance faible) : Ail des ours, Alysse odorante, Arroche, Clayton
 - Confiance moyenne · Nains : 20 à 25 cm de large et 15 à 20 cm de profondeur suffisent, variétés hautes 30 cm ; engrais pour plantes fleuries pendant la saison, sans rythme précis dans les sources.
 - Sources : [jardiner-malin.fr](https://www.jardiner-malin.fr/fiche/zinnia.html), [promessedefleurs.com](https://www.promessedefleurs.com/conseil-plantes-jardin/fichefamille/zinnia-semis-plantation-entretien/), [biologyinsights.com](https://biologyinsights.com/how-to-plant-zinnia-seeds-in-a-pot/), [horticulture.co.uk](https://horticulture.co.uk/blogs/growing/zinnia-in-pots)
 
+
+## Billes d'argile au fond du pot (liste de courses, 13/10)
+
+Une couche de **2 à 3 cm** au fond d'un pot percé, jusqu'à **4 à 5 cm** dans un grand contenant ; on complète avec le
+terreau. Sacs du commerce : 3, 5, 6, 10, 20 et 50 L.
+- Truffaut (billes d'argile calibre 8/16) : 2 à 3 cm pour le drainage du fond des pots, 2 à 5 cm selon la taille du
+  contenant, pot percé d'abord. https://www.truffaut.com/billes-argile-calibre-8-16-sac-10-l-111078.html
+- Or Brun (fabricant, billes d'argile 6 L) : environ 2 à 3 cm. https://www.bricomarche.com/p/billes-d-argile-6l/3664715069218
+- Jardiner Malin : 3 à 4 cm. https://www.jardiner-malin.fr/fiche/billes-argile.html
+- Avis plus prudent (Lerava) : pas plus de 2 cm, une couche épaisse prend la place du terreau.
+  https://intercom.help/lerava/fr/articles/9941496-qu-est-ce-que-l-argile-expansee-et-comment-l-utiliser
+
+Retenu : 2,5 cm d'ordinaire (petit pot ≈ 0,5 L, moyen ≈ 1,5 L, grand et jardinière ≈ 3 L), 4 cm dans un bac de plus
+de 40 cm.

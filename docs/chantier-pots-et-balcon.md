@@ -192,6 +192,8 @@ Règles qui valent pour toutes les étapes :
      identiques regroupés (« 2 × Grand pot (30 à 40 cm) »), « Percé au fond ».
    - Terre : litres de ces pots (`POT_LITERS`, sinon la fiche) selon le terreau de la fiche (compost ou sable pour un
      tiers, terreau léger, terre de bruyère, terreau pour agrumes), avec le sac à prendre (10, 20, 40, 50 L).
+   - Billes d'argile (ajoutées le 13/10, à sa demande) : une couche de 2,5 cm au fond de chaque pot de la liste (4 cm
+     dans un bac de plus de 40 cm), sac de 3, 5, 10, 20 ou 50 L ; sources dans `docs/sources-pots.md`.
    - Semis : godets (« une dizaine par semis ») et terreau de semis (3 L par semis) des semis au chaud ; si la plantation
      tombe aussi dans la fenêtre, le pot en plus.
    - Engrais : celui des fiches pendant ses mois seulement, un par famille (tomates/potasse, fleurs, purin d'ortie /
