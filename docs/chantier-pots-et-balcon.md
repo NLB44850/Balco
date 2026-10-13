@@ -235,7 +235,7 @@ Règles qui valent pour toutes les étapes :
      plante, « Récolte souvent » ; engrais = « 14 jours » entre deux engrais (ou « 1 fois »), arroser d'abord, l'engrais,
      au pied ; entretien, gestes de suite et alertes météo = leur texte découpé en gestes courts. Tests
      `tests/gesture-detail.test.ts`, e2e `25-gestes`.
-   - **6b, coach d'arrosage Balco+ : codé le 13/10, à valider sur son téléphone.** Moteur `lib/plants/watering-coach.ts`
+   - **6b, coach d'arrosage Balco+ : codé le 13/10, validé et fusionné (PR #48).** Prochaine étape : 7 (consignes pour le voisin). Moteur `lib/plants/watering-coach.ts`
      (`coachAdvice`, `coachSummary` ; paramètres et sources dans `docs/sources-pots.md`) : eau restante dans le pot,
      arroser ou non aujourd'hui, quantité au demi-litre, prochain arrosage, rythme du jour. Calculé dans l'app
      (`use-day-plan` : `coach`, `isPlus`), avec la météo déjà chargée et le soleil du balcon (orientation, couvert,
@@ -247,3 +247,26 @@ Règles qui valent pour toutes les étapes :
      prochain arrosage dans 2 jours », jauge d'eau). En gratuit : carte « Coach d'arrosage · bientôt avec Balco+ ».
      Les rappels du serveur gardent la version gratuite (le coach n'y est pas encore). Tests `tests/watering-coach.test.ts`,
      e2e `26-coach`.
+7. **Consignes pour le voisin qui arrose : codées le 13/10, à valider sur son téléphone.** Logique
+   `lib/garden/helper-note.ts` (`helperPlants`, `helperPlantWatering`, `helperVisits`, `heatNow`, `helperNoteText`,
+   `helperNoteMessage`), écran `app/helper-note.tsx` (route `/helper-note`). Mode vacances avec « Oui, un proche passera » :
+   la liste « Pour la personne qui arrose » suit maintenant les règles de l'étape 6a, et le bouton « Prépare les consignes
+   pour qui arrose » ouvre le texte, modifiable.
+   - Plante par plante (sans les plantes « à planter ») : taille du pot (« pot moyen »), quantité (`wateringLitersOf`,
+     « environ 2 L ») et rythme : rythme du pot (`wateringIntervalOf`) × saison (×1 en juin-août, ×1,5 en mai et
+     septembre, ×2 en avril et octobre, ×3 l'hiver, comme l'ancienne liste), « presque rien » hors des mois d'arrosage ;
+     de mai à septembre, le rythme par forte chaleur (moitié du rythme, « chaque jour s'il fait plus de 30 °C ») ; quoi
+     récolter si c'est la saison.
+   - Quand passer : premier passage après l'arrosage copieux du départ, au rythme de la plante la plus assoiffée
+     (« Premier passage jeudi 15 juillet, puis tous les 2 jours jusqu'au 19 juillet », « Un passage suffit », ou « Pas
+     besoin de passer avant mon retour, sauf forte chaleur »).
+   - Chaleur annoncée : la prévision ne couvre que deux jours, donc « Il fait chaud en ce moment (32 °C) : arrose le
+     soir… » seulement si le départ est aujourd'hui ou demain et que le maximum du jour dépasse 30 °C.
+   - Comment arroser : le doigt dans la terre (sèche sur 2 cm), au pied jusqu'à ce que ça coule, la grande bouteille de
+     1,5 L ; balcon couvert : « arrose même s'il pleut », sinon « s'il a bien plu, tu peux sauter un arrosage ».
+   - Texte modifiable, brouillon gardé sur le téléphone pour ces dates-là (`balco.vacation.helper-note.v1`), « Revenir
+     au texte de Balco » ; case « Ajouter « Préparé avec Balco » à la fin » (cochée d'office) ; « Envoyer les consignes »
+     par le partage du téléphone (sinon le texte s'affiche à copier). Aucun module natif.
+   - Choix faits en codant : version gratuite (pot et saison) même en Balco+, le coach dépendant de la météo du jour ;
+     écran à part plutôt qu'une feuille du bas (texte long à modifier). Tests `tests/helper-note.test.ts`, e2e
+     « mode vacances : les consignes pour qui arrose… » (`3-compte-et-vacances`).

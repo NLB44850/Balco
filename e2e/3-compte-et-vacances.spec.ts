@@ -1,6 +1,6 @@
 import { expect, test } from "@playwright/test";
 
-import { loginCodes, mockWeather, open, seedBalcony, trackErrors } from "./helpers";
+import { atDate, loginCodes, mockWeather, open, seedBalcony, trackErrors } from "./helpers";
 
 /** Le compte (code par e-mail, balcon retrouvé sur un autre téléphone) et le mode vacances. */
 
@@ -72,5 +72,44 @@ test("mode vacances : préparer son départ, la carte s'affiche sur Aujourd'hui"
   await page.getByRole("button", { name: "Préparer mon départ" }).click();
   await open(page, "/", "Tes plantes");
   await expect(page.getByText(/Départ demain|Départ dans \d+ jours|Bonnes vacances !/)).toBeVisible();
+  expect(errors).toEqual([]);
+});
+
+test("mode vacances : les consignes pour qui arrose, plante par plante, modifiables avant l'envoi", async ({ page }) => {
+  const errors = trackErrors(page);
+  // En juillet (le rythme dépend de la saison).
+  const now = await atDate(page, new Date(2027, 6, 10, 9));
+  await mockWeather(page);
+  await seedBalcony(page, { plants: ["basil", "cherry-tomato"], wateredDaysAgo: 1, now });
+  await open(page, "/vacation", "Mode vacances");
+  await page.getByRole("radio", { name: /Oui, un proche passera/ }).click();
+  await page.getByRole("button", { name: "Préparer mon départ" }).click();
+  await expect(page.getByText("Pour la personne qui arrose")).toBeVisible();
+  await expect(page.getByText(/💧 Environ \d/).first()).toBeVisible();
+  await page.getByRole("button", { name: "Prépare les consignes pour qui arrose" }).click();
+
+  const note = page.getByLabel("Texte des consignes");
+  await expect(note).toHaveValue(/Merci de t’occuper de mon balcon du 13 au 19 juillet/);
+  await expect(note).toHaveValue(/Quand passer\nPremier passage jeudi 15 juillet, puis tous les 2 jours jusqu’au 19 juillet\./);
+  await expect(note).toHaveValue(/• Basilic : environ 1 L tous les 2 jours, chaque jour s’il fait plus de 30 °C\./);
+  await expect(note).toHaveValue(/Merci !$/);
+  await expect(page.getByText("Préparé avec Balco", { exact: true })).toBeVisible();
+
+  // Modifier le texte, retirer la signature : c'est gardé en revenant sur l'écran.
+  await note.fill("Merci pour les plantes !");
+  await page.getByRole("checkbox", { name: "Ajouter « Préparé avec Balco » à la fin" }).click();
+  await expect(page.getByText("Préparé avec Balco", { exact: true })).toHaveCount(0);
+  await page.waitForTimeout(300);
+  await page.reload();
+  await expect(page.getByLabel("Texte des consignes")).toHaveValue("Merci pour les plantes !");
+  await expect(page.getByText("Préparé avec Balco", { exact: true })).toHaveCount(0);
+
+  // Pas de partage dans ce navigateur : le message s'affiche pour être copié.
+  await page.getByRole("button", { name: "Envoyer les consignes" }).click();
+  await expect(page.getByText("Copie ce message et envoie-le par SMS ou messagerie :")).toBeVisible();
+
+  // Revenir au texte de Balco.
+  await page.getByRole("button", { name: "Revenir au texte de Balco" }).click();
+  await expect(page.getByLabel("Texte des consignes")).toHaveValue(/Plante par plante/);
   expect(errors).toEqual([]);
 });
