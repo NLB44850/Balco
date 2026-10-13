@@ -17,6 +17,8 @@ type TodayRowProps = {
   checkLabel?: string;
   /** La photo de la plante concernée, à la place de l'icône quand il y en a une. */
   picture?: React.ReactNode;
+  /** Une pastille qui se voit d'un coup d'œil, avant le rond (« 💧 2 L »). */
+  badge?: string;
 };
 
 /** Une ligne de la liste du jour : toucher la ligne ouvre le détail, toucher le rond valide le geste. */
@@ -30,7 +32,7 @@ const SPARKS = Array.from({ length: 8 }, (_, index) => {
   return { x: Math.cos(angle) * distance, y: Math.sin(angle) * distance, angle };
 });
 
-export function TodayRow({ icon, tone, title, subtitle, done, onToggle, onOpen, checkLabel, picture }: TodayRowProps) {
+export function TodayRow({ icon, tone, title, subtitle, done, onToggle, onOpen, checkLabel, picture, badge }: TodayRowProps) {
   const colors = useColors();
   const scale = useRef(new Animated.Value(1)).current;
   const burst = useRef(new Animated.Value(1)).current;
@@ -68,6 +70,11 @@ export function TodayRow({ icon, tone, title, subtitle, done, onToggle, onOpen, 
           <Text style={[styles.subtitle, { color: alert && !done ? toneColor : colors.muted }, alert && !done && styles.subtitleStrong]} numberOfLines={1}>{subtitle}</Text>
         </View>
       </Pressable>
+      {badge && !done && (
+        <View style={[styles.badge, { backgroundColor: colors.frostSoft }]}>
+          <Text style={[styles.badgeText, { color: colors.frost }]}>{badge}</Text>
+        </View>
+      )}
       {onToggle ? (
         <Pressable accessibilityRole="checkbox" accessibilityState={{ checked: done }} accessibilityLabel={`${checkLabel ?? (done ? "Annuler ce geste" : "Marquer comme fait")} : ${title}`} onPress={onToggle} hitSlop={12} style={styles.checkZone}>
           <View pointerEvents="none" style={styles.burst}>
@@ -113,6 +120,8 @@ const styles = StyleSheet.create({
   subtitle: { fontSize: 13 },
   subtitleStrong: { fontWeight: "600" },
   checkZone: { paddingLeft: 12 },
+  badge: { borderRadius: 999, paddingHorizontal: 10, paddingVertical: 5, marginLeft: 8 },
+  badgeText: { fontSize: 14, fontWeight: "800" },
   flash: { position: "absolute", left: -12, right: -12, top: 0, bottom: 0, borderRadius: 12 },
   burst: { position: "absolute", right: 15, top: 15, width: 0, height: 0, alignItems: "center", justifyContent: "center" },
   ring: { position: "absolute", width: 30, height: 30, borderRadius: 15, borderWidth: 2 },

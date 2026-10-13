@@ -122,6 +122,8 @@ export const REMINDER_COOLDOWN_HOURS = 24;
 export const STRONG_WIND_KMH = 60;
 export const HEAVY_RAIN_PROBABILITY = 60;
 export const MAX_BODY_LENGTH = 120;
+/** Début du message d'arrosage d'un balcon couvert quand la pluie est annoncée (l'écran en fait un bandeau). */
+export const SHELTERED_PREFIX = "Balcon couvert : la pluie n’arrive pas à tes pots.";
 
 const HOUR_MS = 60 * 60 * 1000;
 const PRIORITY_RANK: Record<ReminderPriority, number> = { urgent: 0, important: 1, normal: 2 };
@@ -296,7 +298,7 @@ function wateringDecision(
   if (due) {
     const check = `Sèche sur ${plant.soilCheckCm ?? 2} cm ?${plant.wateringLiters ? ` Arrose environ ${String(plant.wateringLiters).replace(".", ",")} L, jusqu’à ce que ça coule.` : " Arrose."}`;
     // Le message tient en 120 caractères : balcon couvert, on dit pourquoi on arrose malgré la pluie.
-    const body = rainAnnounced && plant.sheltered ? `Balcon couvert : la pluie n’arrive pas à tes pots. ${check}` : `Dernier arrosage il y a ${formatElapsed(elapsed)}, pas de pluie prévue. ${check}`;
+    const body = rainAnnounced && plant.sheltered ? `${SHELTERED_PREFIX} ${check}` : `Dernier arrosage il y a ${formatElapsed(elapsed)}, pas de pluie prévue. ${check}`;
     return {
       taskType: "watering",
       priority: "normal",

@@ -35,13 +35,28 @@ export function waterAmountText(liters: number) {
   return `Arrose environ ${litersText(liters)}, jusqu’à ce que ça coule.`;
 }
 
-/** Le sous-titre court d'une ligne d'arrosage : « Sèche sur 2 cm ? Arrose environ 1 L ». */
-export function wateringSubtitle(depthCm: number, liters: number) {
-  return `Sèche sur ${depthCm} cm ? Arrose environ ${litersText(liters)}`;
+/** Le sous-titre court d'une ligne d'arrosage (la quantité est dans la pastille « 💧 2 L ») : « Sèche sur 2 cm ? Arrose au pied ». */
+export function wateringSubtitle(depthCm: number) {
+  return `Sèche sur ${depthCm} cm ? Arrose au pied`;
 }
 
-/** Dit une seule fois, dans le détail d'un arrosage : le repère de la bouteille et la soucoupe. */
-export const WATERING_ONCE_NOTE = "Repère : 1,5 L, c’est une grande bouteille d’eau. Vide la soucoupe après 30 min : les racines n’aiment pas tremper.";
+/** Une grande bouteille d'eau : le repère de la quantité, dessiné dans le détail d'un arrosage. */
+export const BOTTLE_LITERS = 1.5;
+
+/** Les bouteilles à dessiner : pleines, puis un tiers ou deux tiers de la dernière (les litres vont par demi-litre). */
+export function bottleParts(liters: number) {
+  const thirds = Math.max(1, Math.round(liters / (BOTTLE_LITERS / 3)));
+  return { full: Math.floor(thirds / 3), thirds: thirds % 3 };
+}
+
+/** « 1 grande bouteille et ⅓ », « ⅔ de grande bouteille », « 3 grandes bouteilles ». */
+export function bottlesText(liters: number) {
+  const { full, thirds } = bottleParts(liters);
+  const part = thirds === 1 ? "⅓" : "⅔";
+  if (full === 0) return `${part} de grande bouteille`;
+  const whole = `${full} grande${full > 1 ? "s" : ""} bouteille${full > 1 ? "s" : ""}`;
+  return thirds === 0 ? whole : `${whole} et ${part}`;
+}
 
 /** Balcon couvert : la pluie annoncée n'arrive pas jusqu'aux pots. */
 export const SHELTERED_TEXT = "Ton balcon est couvert : la pluie n’arrive pas jusqu’à tes pots.";

@@ -34,8 +34,9 @@ import { deviceId as loadDeviceId } from "@/lib/sync/device-id";
 import { usePlantPhotos } from "@/lib/garden/photos-context";
 import { awardCelebration, celebrationFor, formatLiters, litersPerWatering, withCheer } from "@/lib/garden/progress";
 import { FEEDING_REMINDER_SOURCE, nextFeedingReminder } from "@/lib/garden/feeding-reminder";
-import { loadSeenNotes, markNoteSeen } from "@/lib/garden/once-notes";
-import { WATERING_ONCE_NOTE } from "@/lib/plants/watering";
+import { WaterDose } from "@/components/today/water-dose";
+import { feedingFor } from "@/lib/plants/fertilizing";
+import { litersText } from "@/lib/plants/watering";
 import { awayOn, preparationSteps, vacationRange, vacationState } from "@/lib/garden/vacation";
 import {
   POINTS_PER_GESTURE,
@@ -89,9 +90,6 @@ import {
 import { scenarioLabel } from "@/lib/weather/simulation";
 import { longDayText, now as clockNow } from "@/lib/clock";
 import { useDateSimulation } from "@/hooks/use-date-simulation";
-
-/** L'explication du repère de la bouteille, dite une seule fois. */
-const WATERING_NOTE_KEY = "watering-liters";
 
 const haptic = () => {
   if (Platform.OS !== "web") void Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
@@ -403,24 +401,6 @@ export default function HomeScreen() {
   };
 
   const closeSheet = () => setSheetKey(null);
-
-  // « 1,5 L, c'est une grande bouteille… » : dit une seule fois, dans le premier détail d'arrosage ouvert (étape 6a).
-  const [notesSeen, setNotesSeen] = useState<string[] | null>(null);
-  useEffect(() => {
-    void loadSeenNotes().then(setNotesSeen);
-  }, []);
-  const wateringSheetOpen = sheetItem?.gesture === "watering" || groupSheet?.gesture === "watering";
-  const wateringNote = notesSeen !== null && !notesSeen.includes(WATERING_NOTE_KEY) ? WATERING_ONCE_NOTE : undefined;
-  const noteShown = useRef(false);
-  useEffect(() => {
-    if (wateringSheetOpen && wateringNote) {
-      noteShown.current = true;
-      void markNoteSeen(WATERING_NOTE_KEY);
-    } else if (!wateringSheetOpen && noteShown.current) {
-      noteShown.current = false;
-      setNotesSeen((current) => [...(current ?? []), WATERING_NOTE_KEY]);
-    }
-  }, [wateringNote, wateringSheetOpen]);
   const itemRow = (item: TodayItem) => (
     <TodayRow
       key={item.key}
@@ -428,6 +408,7 @@ export default function HomeScreen() {
       tone={item.tone}
       title={item.title}
       subtitle={item.done ? doneSubtitle(item, events) : item.subtitle}
+      badge={item.liters !== undefined ? `💧 ${litersText(item.liters)}` : undefined}
       done={item.done}
       picture={seasonPicture(item)}
       onToggle={() => void toggleItem(item)}
@@ -637,7 +618,7 @@ export default function HomeScreen() {
             {lines.map((line) => {
               if (line.type === "item") return itemRow(line.item);
               if (line.type === "group") {
-                return <TodayRow key={line.key} icon={line.icon} tone={line.tone} title={line.title} subtitle={line.subtitle} done={line.done} onOpen={() => setOpenGroup(line.gesture)} />;
+                return <TodayRow key={line.key} icon={line.icon} tone={line.tone} title={line.title} subtitle={line.subtitle} done={line.done} badge={line.liters ? `💧 ${litersText(line.liters)}` : undefined} onOpen={() => setOpenGroup(line.gesture)} />;
               }
               return (
                 <View key={line.key}>
@@ -757,7 +738,7 @@ export default function HomeScreen() {
       </Animated.ScrollView>
 
       <BottomSheet visible={sheetItem !== null} onClose={closeSheet}>
-        {sheetItem && <SheetContent item={sheetItem} events={events} note={sheetItem.gesture === "watering" ? wateringNote : undefined} onClose={closeSheet} onToggle={() => { closeSheet(); void toggleItem(sheetItem); }} onSnooze={(kind) => { closeSheet(); if (sheetItem.kind === "alert") void snoozeAlert(sheetItem.group, kind); }} onOpenPlant={(id) => { closeSheet(); router.push({ pathname: "/garden/[id]", params: { id } }); }} onOpenCalendar={() => { closeSheet(); router.push("/(tabs)/calendar"); }} onPostpone={() => { closeSheet(); if (sheetItem.kind === "season") void postponeToSaturday(sheetItem.activity); }} onSkipRepot={() => { closeSheet(); if (sheetItem.kind === "season") void skipRepot(sheetItem.activity); }} onGuide={() => { closeSheet(); if (sheetItem.kind === "season") router.push({ pathname: "/guide/[catalogId]", params: { catalogId: sheetItem.activity.entry.id, plantId: sheetItem.activity.subjectId, ...(guideTaskOf(sheetItem.activity) ? { task: guideTaskOf(sheetItem.activity) } : {}) } }); }} />}
+        {sheetItem && <SheetContent item={sheetItem} events={events} onClose={closeSheet} onToggle={() => { closeSheet(); void toggleItem(sheetItem); }} onSnooze={(kind) => { closeSheet(); if (sheetItem.kind === "alert") void snoozeAlert(sheetItem.group, kind); }} onOpenPlant={(id) => { closeSheet(); router.push({ pathname: "/garden/[id]", params: { id } }); }} onOpenCalendar={() => { closeSheet(); router.push("/(tabs)/calendar"); }} onPostpone={() => { closeSheet(); if (sheetItem.kind === "season") void postponeToSaturday(sheetItem.activity); }} onSkipRepot={() => { closeSheet(); if (sheetItem.kind === "season") void skipRepot(sheetItem.activity); }} onGuide={() => { closeSheet(); if (sheetItem.kind === "season") router.push({ pathname: "/guide/[catalogId]", params: { catalogId: sheetItem.activity.entry.id, plantId: sheetItem.activity.subjectId, ...(guideTaskOf(sheetItem.activity) ? { task: guideTaskOf(sheetItem.activity) } : {}) } }); }} />}
       </BottomSheet>
 
       <BottomSheet
@@ -782,7 +763,6 @@ export default function HomeScreen() {
                   ? "Pas besoin de tout faire aujourd’hui : tu as le mois. Touche une ligne pour le pas-à-pas, coche quand c’est fait."
                   : "Passe d’un pot à l’autre et cueille ce qui est prêt, puis coche. Touche une ligne pour le détail."}
             </Text>
-            {groupSheet.gesture === "watering" && wateringNote && <Text style={[styles.why, { backgroundColor: colors.surface, color: colors.muted }]}>{wateringNote}</Text>}
             <View>
               {groupSheet.items.map((item) => (
                 <TodayRow
@@ -791,6 +771,7 @@ export default function HomeScreen() {
                   tone={item.tone}
                   title={item.title}
                   subtitle={item.done ? doneSubtitle(item, events) : item.subtitle}
+                  badge={item.liters !== undefined ? `💧 ${litersText(item.liters)}` : undefined}
                   done={item.done}
                   picture={seasonPicture(item)}
                   onToggle={() => {
@@ -858,30 +839,58 @@ type SheetContentProps = {
   onGuide: () => void;
   /** Rempotage : « Pas besoin cette année ». */
   onSkipRepot: () => void;
-  /** Une explication dite une seule fois (repère de la bouteille d'eau). */
-  note?: string;
 };
 
 /** Le détail d'un geste : pourquoi, comment, et les choix possibles. */
-function SheetContent({ item, events, note, onToggle, onSnooze, onOpenPlant, onOpenCalendar, onPostpone, onGuide, onSkipRepot }: SheetContentProps) {
+function SheetContent({ item, events, onToggle, onSnooze, onOpenPlant, onOpenCalendar, onPostpone, onGuide, onSkipRepot }: SheetContentProps) {
   const colors = useColors();
   const alertTone = item.tone === "frost" || item.tone === "rain" || item.tone === "storm" || item.tone === "wind" ? colors.frost : item.tone === "heat" ? colors.terracotta : colors.primary;
   const info = item.kind === "alert" && item.group.action === "skip";
   const main = item.kind === "alert" ? item.group.body : item.kind === "task" ? item.task.task.instruction : item.kind === "season" ? item.activity.description : item.subtitle;
   const body = item.feed ? `${main}\n\n${item.feed.task.instruction}` : main;
+  // Un arrosage (retour du 13/10, « pas assez visible ») : la quantité en grand, puis les gestes en lignes courtes.
+  const watering = item.gesture === "watering" && item.liters !== undefined && !item.done;
+  const plantNote = item.kind === "task" ? item.task.task.instruction.replace(/ Arrose environ .*$/u, "") : "";
+  const feeding = item.feed ? feedingFor(item.feed.resolved.entry.id) : null;
 
   return (
     <View style={styles.sheet}>
-      <Text style={[styles.sheetKind, { color: alertTone }]}>{item.icon}  {item.done ? doneSubtitle(item, events) : item.subtitle}</Text>
+      <Text style={[styles.sheetKind, { color: alertTone }]}>{item.icon}  {watering ? `Arrosage${item.feed ? " et engrais" : ""}` : item.done ? doneSubtitle(item, events) : item.subtitle}</Text>
       <Text style={[styles.sheetTitle, { color: colors.foreground }]}>{item.title}</Text>
-      <Text style={[styles.sheetBody, { color: colors.foreground }]}>{body}</Text>
-      {note && <Text style={[styles.why, { backgroundColor: colors.surface, color: colors.muted }]}>{note}</Text>}
+      {watering && item.liters !== undefined ? (
+        <>
+          {item.sheltered && (
+            <View style={[styles.shelter, { backgroundColor: colors.frostSoft }]}>
+              <Text style={[styles.shelterText, { color: colors.frost }]}>☂️  Balcon couvert : la pluie n’arrive pas à tes pots</Text>
+            </View>
+          )}
+          <WaterDose liters={item.liters} />
+          <View style={styles.steps}>
+            {([["👆", `Enfonce ton doigt : sèche sur ${item.checkCm ?? 2} cm ?`], ["💧", "Arrose au pied, jusqu’à ce que ça coule"], ["🍽️", "Vide la soucoupe après 30 min"]] as const).map(([icon, text]) => (
+              <View key={icon} style={styles.step}>
+                <Text style={styles.stepIcon}>{icon}</Text>
+                <Text style={[styles.stepText, { color: colors.foreground }]}>{text}</Text>
+              </View>
+            ))}
+          </View>
+          {plantNote && !plantNote.startsWith("Enfonce un doigt") && <Text style={[styles.sheetBody, { color: colors.muted }]}>{plantNote}</Text>}
+          {item.feed && (
+            <View style={[styles.feedBox, { backgroundColor: colors.surface }]}>
+              <Text style={[styles.feedTitle, { color: colors.foreground }]}>🌿  Puis l’engrais</Text>
+              <Text style={[styles.stepText, { color: colors.foreground }]}>{feeding ? feeding.kind.charAt(0).toUpperCase() + feeding.kind.slice(1) : "Engrais organique"}</Text>
+              <Text style={[styles.small, { color: colors.muted }]}>{item.feed.task.everyDays ? `Sur la terre humide · à refaire dans ${item.feed.task.everyDays} jours` : "Sur la terre humide · une fois cette saison"}</Text>
+            </View>
+          )}
+        </>
+      ) : (
+        <Text style={[styles.sheetBody, { color: colors.foreground }]}>{body}</Text>
+      )}
       {item.kind === "alert" && (
         <>
           {item.group.decisions.length > 1 && (
             <View style={styles.chips}>{item.group.decisions.map((decision) => <Pressable key={decision.plantId} onPress={() => onOpenPlant(decision.plantId)} style={[styles.chip, { backgroundColor: colors.surface }]}><Text style={[styles.chipText, { color: colors.foreground }]}>{decision.plantLabel ?? decision.plantId}</Text></Pressable>)}</View>
           )}
-          <Text style={[styles.why, { backgroundColor: colors.surface, color: colors.muted }]}>Pourquoi : {item.group.reason}</Text>
+          {!watering && <Text style={[styles.why, { backgroundColor: colors.surface, color: colors.muted }]}>Pourquoi : {item.group.reason}</Text>}
         </>
       )}
       <Pressable accessibilityRole="button" onPress={onToggle} style={({ pressed }) => [styles.cta, { backgroundColor: item.done ? colors.surface : colors.foreground }, pressed && styles.pressed]}>
@@ -976,6 +985,14 @@ const styles = StyleSheet.create({
   chip: { borderRadius: 999, paddingHorizontal: 12, paddingVertical: 6 },
   chipText: { fontSize: 13, fontWeight: "600" },
   why: { fontSize: 13, lineHeight: 18, borderRadius: 12, padding: 12, overflow: "hidden" },
+  shelter: { borderRadius: 12, paddingHorizontal: 12, paddingVertical: 10 },
+  shelterText: { fontSize: 15, fontWeight: "700" },
+  steps: { gap: 10 },
+  step: { flexDirection: "row", alignItems: "center", gap: 12 },
+  stepIcon: { fontSize: 20, width: 28, textAlign: "center" },
+  stepText: { flex: 1, fontSize: 16, lineHeight: 22, fontWeight: "600" },
+  feedBox: { borderRadius: 14, padding: 14, gap: 4 },
+  feedTitle: { fontSize: 15, fontWeight: "800" },
   secondary: { flexDirection: "row", gap: 10 },
   secondaryButton: { flex: 1, borderWidth: 1, borderRadius: 14, paddingVertical: 12, alignItems: "center" },
   secondaryText: { fontSize: 14, fontWeight: "600" },

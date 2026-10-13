@@ -216,3 +216,10 @@ Règles qui valent pour toutes les étapes :
      de la plante + « Arrose environ 2 L, jusqu'à ce que ça coule. » ; repère « 1,5 L, c'est une grande bouteille… vide
      la soucoupe après 30 min » dans le premier détail d'arrosage ouvert, une seule fois (`lib/garden/once-notes.ts`).
      Sources : estimations notées dans `docs/sources-pots.md`. Tests `tests/watering.test.ts`, e2e `24-arrosage`.
+     **Retour du 13/10** (« le contenu est bon, mais pas assez visible ») : pastille « 💧 2 L » sur chaque ligne
+     d'arrosage (`badge` de `TodayRow`, total sur « Vérifie la terre de N plantes »), sous-titre raccourci « Sèche sur
+     2 cm ? Arrose au pied » ; détail d'un arrosage refait : bandeau « ☂️ Balcon couvert », quantité en grand avec des
+     grandes bouteilles dessinées (`components/today/water-dose.tsx`, `bottlesText` : « ≈ 1 grande bouteille et ⅓ »),
+     trois gestes courts avec icônes (doigt, arroser jusqu'à ce que ça coule, vider la soucoupe après 30 min), l'engrais
+     dans un encadré à part, plus de « Pourquoi : Délai de 48 h dépassé » technique. Le repère de la bouteille est
+     désormais dessiné à chaque fois (plus de phrase dite une seule fois).

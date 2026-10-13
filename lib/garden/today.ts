@@ -7,7 +7,7 @@ import { activityGroupSummary, type CalendarActivity } from "../plants/calendar"
 import { soilCheckDepthCm } from "../plants/catalog";
 import { wateringSubtitle } from "../plants/watering";
 import { eventForReminder } from "../reminders/reminder-actions";
-import type { MaintenanceEvent } from "../reminders/reminder-engine";
+import { SHELTERED_PREFIX, type MaintenanceEvent } from "../reminders/reminder-engine";
 import type { ReminderGroup } from "../reminders/reminder-groups";
 import { GESTURE_ORDER, type GestureKind, type PlantDay } from "./day-plan";
 import { dayKey, plantDisplayName, wateringLitersOf, type ResolvedPlant, type SessionTask } from "./garden-logic";
@@ -21,7 +21,8 @@ export type TodayTone = "frost" | "heat" | "rain" | "storm" | "wind" | "water" |
 /** Ce que toutes les lignes ont en commun : le type de geste (pour l'ordre et le regroupement) et la plante. */
 /** `quiet` : toujours replié avec les gestes pas urgents, et pas compté dans ce qui reste à faire (pot libre de la veille). */
 /** `feed` : l'engrais dû le même jour que l'arrosage, fait avec lui (« Arrose et nourris tes tomates »). */
-type TodayBase = { key: string; tone: TodayTone; icon: string; title: string; subtitle: string; gesture: GestureKind; plantName?: string; quiet?: boolean; feed?: SessionTask };
+/** `liters` : la quantité d'un arrosage selon le pot (pastille « 💧 2 L ») ; `sheltered` : balcon couvert un jour de pluie annoncée. */
+type TodayBase = { key: string; tone: TodayTone; icon: string; title: string; subtitle: string; gesture: GestureKind; plantName?: string; quiet?: boolean; feed?: SessionTask; liters?: number; checkCm?: number; sheltered?: boolean };
 
 export type TodayItem =
   | (TodayBase & { kind: "alert"; done: false; group: ReminderGroup })
@@ -40,7 +41,8 @@ export type GroupedGesture = "watering" | "harvest" | "planting" | "feeding" | "
  */
 export type TodayLine =
   | { type: "item"; key: string; item: TodayItem }
-  | { type: "group"; key: GroupedGesture; gesture: GroupedGesture; icon: string; tone: TodayTone; title: string; subtitle: string; done: boolean; items: TodayItem[] }
+  /** `liters` : arrosages regroupés, le total à verser sur ce qui reste à faire. */
+  | { type: "group"; key: GroupedGesture; gesture: GroupedGesture; icon: string; tone: TodayTone; title: string; subtitle: string; done: boolean; items: TodayItem[]; liters?: number }
   | { type: "more"; key: "more"; title: string; subtitle: string; items: TodayItem[] };
 
 const GROUP_LOOK: Record<GroupedGesture, { icon: string; tone: TodayTone; title: (count: number, members: TodayItem[]) => string; todo: (members: TodayItem[]) => string }> = {
@@ -178,7 +180,7 @@ export function buildTodayList({ groups, plan }: BuildTodayInput): TodayItem[] {
 
 /** La ligne d'arrosage qui porte aussi l'engrais du jour : « Arrose et nourris tes tomates ». */
 function withFeed(day: PlantDay, item: TodayItem, feed: SessionTask, doneEventId: string | undefined): TodayItem {
-  return { ...item, title: `Arrose et nourris ${possessive(day.resolved.entry)}`, subtitle: item.done ? item.subtitle : `${wateringSubtitle(soilCheckDepthCm(day.resolved.entry), wateringLitersOf(day.resolved))}, puis l’engrais`, feed: { ...feed, eventId: doneEventId ?? feed.eventId } };
+  return { ...item, title: `Arrose et nourris ${possessive(day.resolved.entry)}`, subtitle: item.done ? item.subtitle : `Sèche sur ${soilCheckDepthCm(day.resolved.entry)} cm ? Arrose, puis l’engrais`, feed: { ...feed, eventId: doneEventId ?? feed.eventId } };
 }
 
 /** La ligne d'un geste du plan du jour. */
@@ -189,7 +191,7 @@ function rowFor(day: PlantDay, gesture: PlantDay["gestures"][number], groups: Re
     const group = groups.find((candidate) => candidate.decisions.some((decision) => decision.plantId === source.decision.plantId && decision.cause === source.decision.cause));
     if (!group) return null;
     // Le titre dit l'action (« Arrose le basilic ») ; le sous-titre, comment vérifier.
-    return { kind: "alert", key: `alert:${group.key}`, ...common, ...ALERT_LOOK.thirst, title: group.title, subtitle: wateringSubtitle(soilCheckDepthCm(day.resolved.entry), wateringLitersOf(day.resolved)), done: false, group };
+    return { kind: "alert", key: `alert:${group.key}`, ...common, ...ALERT_LOOK.thirst, title: group.title, subtitle: wateringSubtitle(soilCheckDepthCm(day.resolved.entry)), done: false, group, liters: wateringLitersOf(day.resolved), checkCm: soilCheckDepthCm(day.resolved.entry), ...(group.body.startsWith(SHELTERED_PREFIX) ? { sheltered: true } : {}) };
   }
   if (source.type === "task") {
     const item = source.task;
@@ -200,9 +202,10 @@ function rowFor(day: PlantDay, gesture: PlantDay["gestures"][number], groups: Re
       tone: gesture.kind === "watering" ? "water" : "care",
       icon: TASK_ICONS[item.task.type] ?? "•",
       title: gesture.title,
-      subtitle: gesture.kind === "watering" ? wateringSubtitle(soilCheckDepthCm(item.resolved.entry), wateringLitersOf(item.resolved)) : gesture.kind === "fertilizing" ? feedSubtitle(item.resolved) : `${plantDisplayName(item.resolved)} · ${item.task.minutes} min`,
+      subtitle: gesture.kind === "watering" ? wateringSubtitle(soilCheckDepthCm(item.resolved.entry)) : gesture.kind === "fertilizing" ? feedSubtitle(item.resolved) : `${plantDisplayName(item.resolved)} · ${item.task.minutes} min`,
       done: gesture.done,
       task: { ...item, done: gesture.done, eventId: gesture.doneEventId ?? item.eventId },
+      ...(gesture.kind === "watering" ? { liters: wateringLitersOf(item.resolved), checkCm: soilCheckDepthCm(item.resolved.entry) } : {}),
     };
   }
   if (source.type === "harvest-end") {
@@ -274,6 +277,7 @@ export function layoutTodayList(items: TodayItem[]): TodayLine[] {
       subtitle: doneCount > 0 ? `${doneCount} sur ${members.length} faites · ${names}` : `${look.todo(members)} · ${names}`,
       done: doneCount === members.length,
       items: members,
+      ...(gesture === "watering" ? { liters: members.filter((item) => !item.done).reduce((total, item) => total + (item.liters ?? 0), 0) } : {}),
     });
   }
   const inGroup = new Set(groups.flatMap((group) => group.items));

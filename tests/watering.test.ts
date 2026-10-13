@@ -5,7 +5,7 @@ import { careProfileFor, resolvePlants, wateringIntervalOf } from "../lib/garden
 import { litersPerWatering } from "../lib/garden/progress";
 import { buildTodayList, rainSavingsToLog, splitTodayList } from "../lib/garden/today";
 import { getCatalogPlant } from "../lib/plants/catalog";
-import { litersText, wateringIntervalHours, wateringLiters } from "../lib/plants/watering";
+import { bottlesText, litersText, wateringIntervalHours, wateringLiters } from "../lib/plants/watering";
 import { decideReminder, decideReminders, type MaintenanceEvent, type WeatherSnapshot } from "../lib/reminders/reminder-engine";
 import { groupReminders } from "../lib/reminders/reminder-groups";
 
@@ -47,12 +47,14 @@ describe("arrosage selon le pot et la météo (étape 6a)", () => {
     expect(wateringLiters(basil, "large")).toBe(4.5);
     expect(wateringLiters(basil, "planter")).toBe(4);
     expect(litersText(4.5)).toBe("4,5 L");
+    // Le repère dessiné : des grandes bouteilles de 1,5 L.
+    expect([0.5, 1, 2, 3, 4, 4.5].map(bottlesText)).toEqual(["⅓ de grande bouteille", "⅔ de grande bouteille", "1 grande bouteille et ⅓", "2 grandes bouteilles", "2 grandes bouteilles et ⅔", "3 grandes bouteilles"]);
     expect(litersPerWatering(plant("large"))).toBe(4.5);
     const day = planDay({ plants: [plant("medium")], events: [wateredHoursAgo(40), fed], now: NOW })[0];
     const water = day.gestures.find((gesture) => gesture.kind === "watering")!;
     expect(water.instruction).toMatch(/Arrose environ 2 L, jusqu’à ce que ça coule\.$/u);
     const [row] = buildTodayList({ groups: [], plan: [day] });
-    expect(row.subtitle).toBe("Sèche sur 2 cm ? Arrose environ 2 L");
+    expect(row).toMatchObject({ subtitle: "Sèche sur 2 cm ? Arrose au pied", liters: 2, checkCm: 2 });
     const decision = decideReminder({ plant: careProfileFor(plant("medium")), history: [wateredHoursAgo(40)], weather: weather(), now: NOW });
     expect(decision?.body).toContain("Arrose environ 2 L, jusqu’à ce que ça coule.");
     expect(decision!.body.length).toBeLessThanOrEqual(120);
