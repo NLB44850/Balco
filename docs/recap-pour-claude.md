@@ -122,8 +122,10 @@ marque citée, jamais de produit chimique, tout en centimètres (jamais de litre
   - étape 6b, coach d'arrosage Balco+ (eau restante dans le pot selon la chaleur, le soleil du balcon, le vent, le pot ;
     carte avec jauge dans la fiche) et interrupteur « Simuler Balco+ » dans la version de test, PR #48.
 - Depuis le 12/10, chaque demande de fusion vers `main` publie toute seule la mise à jour de l'app pour la tester.
-- **Prochaine étape, 7 : consignes pour le voisin qui arrose** (bouton dans le mode vacances, texte plante par plante selon
-  les règles d'arrosage, dates des vacances, modifiable, partage du téléphone, « Préparé avec Balco » qu'on peut retirer).
+- **Étape 7, consignes pour le voisin qui arrose : codée le 13/10, à valider sur mon téléphone** (mode vacances → « Oui,
+  un proche passera » → « Prépare les consignes pour qui arrose » : quand passer, plante par plante la quantité et le
+  rythme selon le pot et la saison, « chaque jour s'il fait plus de 30 °C », balcon couvert, quoi récolter ; texte
+  modifiable, gardé sur le téléphone, « Préparé avec Balco » à décocher, envoi par le partage du téléphone).
 - Ensuite : 8 « Que planter à la place ? » et traitement naturel, 9 calculateur de poids, 10 écran Balco+.
 
 ## Ce qu'il reste à faire, dans l'ordre

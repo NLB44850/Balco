@@ -6,7 +6,7 @@
  */
 import { useRouter } from "expo-router";
 import { useMemo, useState } from "react";
-import { Pressable, ScrollView, Share, StyleSheet, View } from "react-native";
+import { Pressable, ScrollView, StyleSheet, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { LightScreen } from "@/components/light-screen";
@@ -16,9 +16,11 @@ import { glass } from "@/components/ui/glass";
 import { Text } from "@/components/ui/typography";
 import { useColors } from "@/hooks/use-colors";
 import { useVacation } from "@/hooks/use-vacation";
+import { now as clockNow } from "@/lib/clock";
 import { useGarden } from "@/lib/garden/garden-context";
 import { dayKey, plantDisplayName } from "@/lib/garden/garden-logic";
-import { MOISTURE_TIPS, RETURN_STEPS, addDays, dayLabel, helperMessage, helperTasks, preparationSteps, vacationDays, vacationRange, vacationState, type Vacation } from "@/lib/garden/vacation";
+import { helperPlantWatering, helperPlants } from "@/lib/garden/helper-note";
+import { MOISTURE_TIPS, RETURN_STEPS, addDays, dayLabel, preparationSteps, vacationDays, vacationRange, vacationState, type Vacation } from "@/lib/garden/vacation";
 
 const START_CHOICES = [
   { label: "Demain", offset: 1 },
@@ -33,13 +35,15 @@ const DURATION_CHOICES = [
 ];
 const MAX_DAYS = 60;
 
+const capitalize = (text: string) => text.charAt(0).toUpperCase() + text.slice(1);
+
 export default function VacationScreen() {
   const colors = useColors();
   const router = useRouter();
   const insets = useSafeAreaInsets();
-  const { resolvedPlants, profile } = useGarden();
+  const { resolvedPlants } = useGarden();
   const { vacation, loaded, setVacation } = useVacation();
-  const now = useMemo(() => new Date(), []);
+  const now = useMemo(() => clockNow(), []);
   const today = dayKey(now);
   const state = vacationState(vacation, now);
   const active = vacation && state.phase !== "none" ? vacation : null;
@@ -49,7 +53,6 @@ export default function VacationScreen() {
   const [days, setDays] = useState(7);
   const [helper, setHelper] = useState(false);
   const [confirmStop, setConfirmStop] = useState(false);
-  const [showMessage, setShowMessage] = useState(false);
 
   const draftStart = addDays(today, startOffset);
   const draftEnd = addDays(draftStart, days - 1);
@@ -80,16 +83,6 @@ export default function VacationScreen() {
     if (!active) return;
     const done = active.done.includes(id) ? active.done.filter((item) => item !== id) : [...active.done, id];
     void setVacation({ ...active, done });
-  };
-
-  const share = async (message: string) => {
-    try {
-      const result = await Share.share({ message });
-      if (result.action === Share.dismissedAction) return;
-    } catch {
-      // Pas de partage possible (certains navigateurs) : le message s'affiche pour être copié.
-      setShowMessage(true);
-    }
   };
 
   const stepper = (label: string, value: string, onMinus: () => void, onPlus: () => void, minusDisabled: boolean, plusDisabled: boolean) => (
@@ -158,7 +151,7 @@ export default function VacationScreen() {
 
   const plan = active ? preparationSteps(resolvedPlants, active, now) : [];
   const doneCount = plan.filter((step) => active?.done.includes(step.id)).length;
-  const message = active ? helperMessage(resolvedPlants, active, profile.firstName) : "";
+  const helped = active ? helperPlants(resolvedPlants, active) : [];
 
   const summary = active && (
     <>
@@ -208,30 +201,24 @@ export default function VacationScreen() {
         </View>
       )}
 
-      {state.phase !== "back" && active.helper && resolvedPlants.length > 0 && (
+      {state.phase !== "back" && active.helper && helped.length > 0 && (
         <View style={styles.section}>
           <Text style={[styles.sectionTitle, { color: colors.foreground }]}>Pour la personne qui arrose</Text>
           <View style={[glass.card, styles.list]}>
-            {helperTasks(resolvedPlants, active).map(({ resolved, rhythm, harvest }, index, all) => (
-              <View key={resolved.plant.id} style={[styles.stepRow, index < all.length - 1 && glass.line]}>
-                <PlantPicture resolved={resolved} style={styles.thumb} />
+            {helped.map((item, index) => (
+              <View key={item.resolved.plant.id} style={[styles.stepRow, index < helped.length - 1 && glass.line]}>
+                <PlantPicture resolved={item.resolved} style={styles.thumb} />
                 <View style={styles.flex}>
-                  <Text style={[styles.stepTitle, { color: colors.foreground }]}>{plantDisplayName(resolved)}</Text>
-                  <Text style={[styles.small, { color: colors.muted }]}>💧 Arroser {rhythm}</Text>
-                  {harvest && <Text style={[styles.small, { color: colors.muted }]}>🧺 {harvest}</Text>}
+                  <Text style={[styles.stepTitle, { color: colors.foreground }]}>{plantDisplayName(item.resolved)}</Text>
+                  <Text style={[styles.small, { color: colors.muted }]}>💧 {capitalize(helperPlantWatering(item))}</Text>
+                  {item.harvest && <Text style={[styles.small, { color: colors.muted }]}>🧺 {item.harvest}</Text>}
                 </View>
               </View>
             ))}
           </View>
-          <Pressable accessibilityRole="button" onPress={() => void share(message)} style={({ pressed }) => [styles.primary, { backgroundColor: colors.primary }, pressed && styles.pressed]}>
-            <Text style={styles.primaryText}>Envoyer la liste</Text>
+          <Pressable accessibilityRole="button" onPress={() => router.push("/helper-note")} style={({ pressed }) => [styles.primary, { backgroundColor: colors.primary }, pressed && styles.pressed]}>
+            <Text style={styles.primaryText}>Prépare les consignes pour qui arrose</Text>
           </Pressable>
-          {showMessage && (
-            <View style={[glass.card, styles.card]}>
-              <Text style={[styles.small, { color: colors.muted }]}>Copie ce message et envoie-le par SMS ou messagerie :</Text>
-              <Text selectable style={[styles.text, { color: colors.foreground }]}>{message}</Text>
-            </View>
-          )}
         </View>
       )}
 

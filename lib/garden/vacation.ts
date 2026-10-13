@@ -117,7 +117,7 @@ export function preparationSteps(plants: ResolvedPlant[], vacation: Vacation, no
   }
   steps.push({ id: "water", when: "Le jour du départ", title: "Arrose copieusement", detail: "Jusqu’à ce que l’eau coule sous le pot, puis laisse égoutter. Le matin du départ si possible." });
   if (vacation.helper) {
-    steps.push({ id: "share", when: "Avant de partir", title: "Envoie la liste à la personne qui arrose", detail: "Plante par plante : quand arroser, et quoi récolter. Tout est prêt plus bas." });
+    steps.push({ id: "share", when: "Avant de partir", title: "Envoie la liste à la personne qui arrose", detail: "Plante par plante : quand passer, combien d’eau verser, quoi récolter. Balco les prépare plus bas." });
   }
   return steps;
 }
@@ -129,41 +129,7 @@ export const MOISTURE_TIPS = [
   "Pas d’engrais juste avant de partir : il pousse la plante à boire davantage.",
 ];
 
-// --- Pour la personne qui arrose ------------------------------------------------------
-
-/** « chaque jour », « tous les 2 jours » : le rythme d'arrosage à donner à un proche, selon la saison. */
-export function wateringRhythm(resolved: ResolvedPlant, month: Month) {
-  const watering = resolved.entry.tasks.find((task) => task.type === "watering");
-  if (watering?.months && !watering.months.includes(month)) return "presque rien : un peu d’eau par semaine si la terre est sèche";
-  const factor = month >= 6 && month <= 8 ? 1 : month === 5 || month === 9 ? 1.5 : month === 4 || month === 10 ? 2 : 3;
-  const days = Math.max(1, Math.round((resolved.entry.care.wateringIntervalHours / 24) * factor));
-  return days === 1 ? "chaque jour" : `tous les ${days} jours`;
-}
-
-export type HelperTask = { resolved: ResolvedPlant; rhythm: string; harvest: string | null };
-
-export function helperTasks(plants: ResolvedPlant[], vacation: Vacation): HelperTask[] {
-  const month = (parseDay(vacation.start).getMonth() + 1) as Month;
-  return plants.map((resolved) => ({
-    resolved,
-    rhythm: wateringRhythm(resolved, month),
-    harvest: resolved.entry.harvestMonths.includes(month) ? resolved.entry.harvestTip : null,
-  }));
-}
-
-/** Le message prêt à envoyer (SMS, WhatsApp, e-mail) à la personne qui arrose. */
-export function helperMessage(plants: ResolvedPlant[], vacation: Vacation, firstName?: string) {
-  const lines = helperTasks(plants, vacation).map(({ resolved, rhythm, harvest }) => `• ${plantDisplayName(resolved)} : arroser ${rhythm}, au pied, le matin ou le soir.${harvest ? ` Récolte : ${harvest}` : ""}`);
-  return [
-    `Bonjour ! Merci de t’occuper de mon balcon ${vacationRange(vacation)} 🌿`,
-    "",
-    ...lines,
-    "",
-    "Astuce : enfonce un doigt dans la terre. Si elle est sèche sur 2 cm, arrose ; sinon, attends. Mieux vaut un peu moins d’eau que trop.",
-    "",
-    `Merci !${firstName?.trim() ? ` ${firstName.trim()}` : ""}`,
-  ].join("\n");
-}
+// La personne qui arrose : ses consignes sont dans helper-note.ts.
 
 // --- Au retour --------------------------------------------------------------------
 

@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import { resolvePlants } from "../lib/garden/garden-logic";
-import { addDays, awayOn, helperMessage, helperTasks, isValidVacation, preparationSteps, vacationDays, vacationRange, vacationState, wateringRhythm, type Vacation } from "../lib/garden/vacation";
+import { addDays, awayOn, isValidVacation, preparationSteps, vacationDays, vacationRange, vacationState, type Vacation } from "../lib/garden/vacation";
 
 const plants = resolvePlants([
   { id: "tomato-1", catalogId: "cherry-tomato", addedAt: "2026-05-01T10:00:00.000Z" },
@@ -46,15 +46,5 @@ describe("mode vacances", () => {
     expect(ids).not.toContain("mulch");
     expect(ids).toContain("frost");
     expect(ids.at(-1)).toBe("share");
-  });
-
-  it("donne à la personne qui arrose un rythme par plante et un message prêt à envoyer", () => {
-    expect(wateringRhythm(plants[0], 7)).toBe("tous les 2 jours");
-    expect(wateringRhythm(plants[2], 7)).toBe("tous les 4 jours");
-    expect(helperTasks(plants, july)[0].harvest).toBeTruthy();
-    const message = helperMessage(plants, { ...july, helper: true }, "Nicolas");
-    expect(message).toContain("du 18 au 31 juillet");
-    expect(message).toContain("• Basilic cuisine : arroser");
-    expect(message.trim().endsWith("Merci ! Nicolas")).toBe(true);
   });
 });
