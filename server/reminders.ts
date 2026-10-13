@@ -369,13 +369,15 @@ export async function recalculateUserReminders(userId: number, now = new Date(),
   const weather = await cachedWeather(weatherCache, location, now);
   const history = events.map((event) => ({ id: event.eventId, plantId: event.plantId, type: event.type as MaintenanceEvent["type"], completedAt: event.completedAt.toISOString(), source: event.source as MaintenanceEvent["source"], note: event.note ?? undefined }));
   const enabled = settings.enabledPlantIds.length > 0 ? new Set(settings.enabledPlantIds) : null;
+  const balcony = parseJson<OnboardingAnswers | null>(profile.balconyJson, null);
   const profiles = plants
     // Une plante à planter n'est pas encore en terre : ni soif ni alerte météo.
     .filter((plant) => plant.toPlant !== 1 && (!enabled || enabled.has(plant.plantId)))
     .map((plant) => {
       // Le catalogue fait foi pour les seuils ; le JSON stocké ne sert qu'aux anciennes lignes.
-      const resolved = plant.catalogId ? resolvePlants([{ id: plant.plantId, catalogId: plant.catalogId, nickname: plant.nickname ?? undefined, addedAt: (plant.addedAt ?? plant.createdAt).toISOString() }])[0] : undefined;
-      return resolved ? careProfileFor(resolved) : parseJson<PlantCareProfile>(plant.profileJson, { plantId: plant.plantId, displayName: plant.displayName, wateringIntervalHours: 48, rainSkipMm: 2, heatThresholdC: 28, frostThresholdC: 3, windThresholdKmh: 35 });
+      // La taille du pot (rythme et quantité d'arrosage) et le balcon couvert (étape 6a) comptent aussi ici.
+      const resolved = plant.catalogId ? resolvePlants([{ id: plant.plantId, catalogId: plant.catalogId, nickname: plant.nickname ?? undefined, addedAt: (plant.addedAt ?? plant.createdAt).toISOString(), ...(isPotSize(plant.potSize) && plant.potSize !== "unknown" ? { potSize: plant.potSize } : {}) }])[0] : undefined;
+      return resolved ? careProfileFor(resolved, balcony) : parseJson<PlantCareProfile>(plant.profileJson, { plantId: plant.plantId, displayName: plant.displayName, wateringIntervalHours: 48, rainSkipMm: 2, heatThresholdC: 28, frostThresholdC: 3, windThresholdKmh: 35 });
     });
   const decisions = decideReminders(profiles.map((plant) => ({ plant, history, weather, settings, now })));
   // Une alerte par cause météo : la limite de conseils ordinaires compte des alertes, pas des plantes.

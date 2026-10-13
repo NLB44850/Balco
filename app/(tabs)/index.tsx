@@ -34,6 +34,8 @@ import { deviceId as loadDeviceId } from "@/lib/sync/device-id";
 import { usePlantPhotos } from "@/lib/garden/photos-context";
 import { awardCelebration, celebrationFor, formatLiters, litersPerWatering, withCheer } from "@/lib/garden/progress";
 import { FEEDING_REMINDER_SOURCE, nextFeedingReminder } from "@/lib/garden/feeding-reminder";
+import { loadSeenNotes, markNoteSeen } from "@/lib/garden/once-notes";
+import { WATERING_ONCE_NOTE } from "@/lib/plants/watering";
 import { awayOn, preparationSteps, vacationRange, vacationState } from "@/lib/garden/vacation";
 import {
   POINTS_PER_GESTURE,
@@ -87,6 +89,9 @@ import {
 import { scenarioLabel } from "@/lib/weather/simulation";
 import { longDayText, now as clockNow } from "@/lib/clock";
 import { useDateSimulation } from "@/hooks/use-date-simulation";
+
+/** L'explication du repère de la bouteille, dite une seule fois. */
+const WATERING_NOTE_KEY = "watering-liters";
 
 const haptic = () => {
   if (Platform.OS !== "web") void Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
@@ -398,6 +403,24 @@ export default function HomeScreen() {
   };
 
   const closeSheet = () => setSheetKey(null);
+
+  // « 1,5 L, c'est une grande bouteille… » : dit une seule fois, dans le premier détail d'arrosage ouvert (étape 6a).
+  const [notesSeen, setNotesSeen] = useState<string[] | null>(null);
+  useEffect(() => {
+    void loadSeenNotes().then(setNotesSeen);
+  }, []);
+  const wateringSheetOpen = sheetItem?.gesture === "watering" || groupSheet?.gesture === "watering";
+  const wateringNote = notesSeen !== null && !notesSeen.includes(WATERING_NOTE_KEY) ? WATERING_ONCE_NOTE : undefined;
+  const noteShown = useRef(false);
+  useEffect(() => {
+    if (wateringSheetOpen && wateringNote) {
+      noteShown.current = true;
+      void markNoteSeen(WATERING_NOTE_KEY);
+    } else if (!wateringSheetOpen && noteShown.current) {
+      noteShown.current = false;
+      setNotesSeen((current) => [...(current ?? []), WATERING_NOTE_KEY]);
+    }
+  }, [wateringNote, wateringSheetOpen]);
   const itemRow = (item: TodayItem) => (
     <TodayRow
       key={item.key}
@@ -734,7 +757,7 @@ export default function HomeScreen() {
       </Animated.ScrollView>
 
       <BottomSheet visible={sheetItem !== null} onClose={closeSheet}>
-        {sheetItem && <SheetContent item={sheetItem} events={events} onClose={closeSheet} onToggle={() => { closeSheet(); void toggleItem(sheetItem); }} onSnooze={(kind) => { closeSheet(); if (sheetItem.kind === "alert") void snoozeAlert(sheetItem.group, kind); }} onOpenPlant={(id) => { closeSheet(); router.push({ pathname: "/garden/[id]", params: { id } }); }} onOpenCalendar={() => { closeSheet(); router.push("/(tabs)/calendar"); }} onPostpone={() => { closeSheet(); if (sheetItem.kind === "season") void postponeToSaturday(sheetItem.activity); }} onSkipRepot={() => { closeSheet(); if (sheetItem.kind === "season") void skipRepot(sheetItem.activity); }} onGuide={() => { closeSheet(); if (sheetItem.kind === "season") router.push({ pathname: "/guide/[catalogId]", params: { catalogId: sheetItem.activity.entry.id, plantId: sheetItem.activity.subjectId, ...(guideTaskOf(sheetItem.activity) ? { task: guideTaskOf(sheetItem.activity) } : {}) } }); }} />}
+        {sheetItem && <SheetContent item={sheetItem} events={events} note={sheetItem.gesture === "watering" ? wateringNote : undefined} onClose={closeSheet} onToggle={() => { closeSheet(); void toggleItem(sheetItem); }} onSnooze={(kind) => { closeSheet(); if (sheetItem.kind === "alert") void snoozeAlert(sheetItem.group, kind); }} onOpenPlant={(id) => { closeSheet(); router.push({ pathname: "/garden/[id]", params: { id } }); }} onOpenCalendar={() => { closeSheet(); router.push("/(tabs)/calendar"); }} onPostpone={() => { closeSheet(); if (sheetItem.kind === "season") void postponeToSaturday(sheetItem.activity); }} onSkipRepot={() => { closeSheet(); if (sheetItem.kind === "season") void skipRepot(sheetItem.activity); }} onGuide={() => { closeSheet(); if (sheetItem.kind === "season") router.push({ pathname: "/guide/[catalogId]", params: { catalogId: sheetItem.activity.entry.id, plantId: sheetItem.activity.subjectId, ...(guideTaskOf(sheetItem.activity) ? { task: guideTaskOf(sheetItem.activity) } : {}) } }); }} />}
       </BottomSheet>
 
       <BottomSheet
@@ -749,8 +772,8 @@ export default function HomeScreen() {
             <Text style={[styles.sheetBody, { color: colors.muted }]}>
               {groupSheet.gesture === "watering"
                 ? groupSheet.items.some((item) => item.feed)
-                  ? "Enfonce ton doigt dans la terre de chaque pot : si elle est sèche, arrose au pied. Puis donne l’engrais à celles qui en ont besoin, et coche. Touche une ligne pour le détail."
-                  : "Enfonce ton doigt dans la terre de chaque pot : si elle est sèche, arrose au pied et coche. Touche une ligne pour le détail."
+                  ? "Enfonce ton doigt dans la terre de chaque pot : si elle est sèche, arrose au pied la quantité indiquée. Puis donne l’engrais à celles qui en ont besoin, et coche. Touche une ligne pour le détail."
+                  : "Enfonce ton doigt dans la terre de chaque pot : si elle est sèche, arrose au pied la quantité indiquée et coche. Touche une ligne pour le détail."
                 : groupSheet.gesture === "season-end"
                   ? "Coche une plante dont la saison est finie : Balco te propose quoi mettre dans son pot. Pas encore finie ? Laisse-la, tu as le temps."
                 : groupSheet.gesture === "feeding"
@@ -759,6 +782,7 @@ export default function HomeScreen() {
                   ? "Pas besoin de tout faire aujourd’hui : tu as le mois. Touche une ligne pour le pas-à-pas, coche quand c’est fait."
                   : "Passe d’un pot à l’autre et cueille ce qui est prêt, puis coche. Touche une ligne pour le détail."}
             </Text>
+            {groupSheet.gesture === "watering" && wateringNote && <Text style={[styles.why, { backgroundColor: colors.surface, color: colors.muted }]}>{wateringNote}</Text>}
             <View>
               {groupSheet.items.map((item) => (
                 <TodayRow
@@ -834,10 +858,12 @@ type SheetContentProps = {
   onGuide: () => void;
   /** Rempotage : « Pas besoin cette année ». */
   onSkipRepot: () => void;
+  /** Une explication dite une seule fois (repère de la bouteille d'eau). */
+  note?: string;
 };
 
 /** Le détail d'un geste : pourquoi, comment, et les choix possibles. */
-function SheetContent({ item, events, onToggle, onSnooze, onOpenPlant, onOpenCalendar, onPostpone, onGuide, onSkipRepot }: SheetContentProps) {
+function SheetContent({ item, events, note, onToggle, onSnooze, onOpenPlant, onOpenCalendar, onPostpone, onGuide, onSkipRepot }: SheetContentProps) {
   const colors = useColors();
   const alertTone = item.tone === "frost" || item.tone === "rain" || item.tone === "storm" || item.tone === "wind" ? colors.frost : item.tone === "heat" ? colors.terracotta : colors.primary;
   const info = item.kind === "alert" && item.group.action === "skip";
@@ -849,6 +875,7 @@ function SheetContent({ item, events, onToggle, onSnooze, onOpenPlant, onOpenCal
       <Text style={[styles.sheetKind, { color: alertTone }]}>{item.icon}  {item.done ? doneSubtitle(item, events) : item.subtitle}</Text>
       <Text style={[styles.sheetTitle, { color: colors.foreground }]}>{item.title}</Text>
       <Text style={[styles.sheetBody, { color: colors.foreground }]}>{body}</Text>
+      {note && <Text style={[styles.why, { backgroundColor: colors.surface, color: colors.muted }]}>{note}</Text>}
       {item.kind === "alert" && (
         <>
           {item.group.decisions.length > 1 && (

@@ -4,12 +4,13 @@
  * Logique pure.
  */
 import { activityGroupSummary, type CalendarActivity } from "../plants/calendar";
-import { soilCheckDepthCm, soilCheckText } from "../plants/catalog";
+import { soilCheckDepthCm } from "../plants/catalog";
+import { wateringSubtitle } from "../plants/watering";
 import { eventForReminder } from "../reminders/reminder-actions";
 import type { MaintenanceEvent } from "../reminders/reminder-engine";
 import type { ReminderGroup } from "../reminders/reminder-groups";
 import { GESTURE_ORDER, type GestureKind, type PlantDay } from "./day-plan";
-import { dayKey, plantDisplayName, type ResolvedPlant, type SessionTask } from "./garden-logic";
+import { dayKey, plantDisplayName, wateringLitersOf, type ResolvedPlant, type SessionTask } from "./garden-logic";
 import { isAvoidedWatering } from "./progress";
 import { endsWithSeason } from "../plants/season-end";
 import { feedingFor } from "../plants/fertilizing";
@@ -177,7 +178,7 @@ export function buildTodayList({ groups, plan }: BuildTodayInput): TodayItem[] {
 
 /** La ligne d'arrosage qui porte aussi l'engrais du jour : « Arrose et nourris tes tomates ». */
 function withFeed(day: PlantDay, item: TodayItem, feed: SessionTask, doneEventId: string | undefined): TodayItem {
-  return { ...item, title: `Arrose et nourris ${possessive(day.resolved.entry)}`, subtitle: item.done ? item.subtitle : "Arrose si la terre est sèche, puis l’engrais", feed: { ...feed, eventId: doneEventId ?? feed.eventId } };
+  return { ...item, title: `Arrose et nourris ${possessive(day.resolved.entry)}`, subtitle: item.done ? item.subtitle : `${wateringSubtitle(soilCheckDepthCm(day.resolved.entry), wateringLitersOf(day.resolved))}, puis l’engrais`, feed: { ...feed, eventId: doneEventId ?? feed.eventId } };
 }
 
 /** La ligne d'un geste du plan du jour. */
@@ -188,7 +189,7 @@ function rowFor(day: PlantDay, gesture: PlantDay["gestures"][number], groups: Re
     const group = groups.find((candidate) => candidate.decisions.some((decision) => decision.plantId === source.decision.plantId && decision.cause === source.decision.cause));
     if (!group) return null;
     // Le titre dit l'action (« Arrose le basilic ») ; le sous-titre, comment vérifier.
-    return { kind: "alert", key: `alert:${group.key}`, ...common, ...ALERT_LOOK.thirst, title: group.title, subtitle: soilCheckText(soilCheckDepthCm(day.resolved.entry)), done: false, group };
+    return { kind: "alert", key: `alert:${group.key}`, ...common, ...ALERT_LOOK.thirst, title: group.title, subtitle: wateringSubtitle(soilCheckDepthCm(day.resolved.entry), wateringLitersOf(day.resolved)), done: false, group };
   }
   if (source.type === "task") {
     const item = source.task;
@@ -199,7 +200,7 @@ function rowFor(day: PlantDay, gesture: PlantDay["gestures"][number], groups: Re
       tone: gesture.kind === "watering" ? "water" : "care",
       icon: TASK_ICONS[item.task.type] ?? "•",
       title: gesture.title,
-      subtitle: gesture.kind === "watering" ? soilCheckText(soilCheckDepthCm(item.resolved.entry)) : gesture.kind === "fertilizing" ? feedSubtitle(item.resolved) : `${plantDisplayName(item.resolved)} · ${item.task.minutes} min`,
+      subtitle: gesture.kind === "watering" ? wateringSubtitle(soilCheckDepthCm(item.resolved.entry), wateringLitersOf(item.resolved)) : gesture.kind === "fertilizing" ? feedSubtitle(item.resolved) : `${plantDisplayName(item.resolved)} · ${item.task.minutes} min`,
       done: gesture.done,
       task: { ...item, done: gesture.done, eventId: gesture.doneEventId ?? item.eventId },
     };

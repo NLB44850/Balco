@@ -182,7 +182,7 @@ Règles qui valent pour toutes les étapes :
      (2) une saison finie depuis plus de 6 mois sans réponse est tenue pour finie (`settleLongOverSeasons`,
      `LONG_OVER_DAYS` = 183, harvest-end.ts, appliqué par `use-day-plan` et Réglages) : plus de question, « Ton pot est
      libre » replié dans les gestes pas urgents.
-5. **Liste de courses pour la jardinerie : contenu validé le 13/10, codée le 13/10, à valider sur son téléphone.**
+5. **Liste de courses pour la jardinerie : contenu validé le 13/10, codée le 13/10, validée et fusionnée (PR #46).**
    Logique `lib/garden/shopping.ts` (`shoppingList`, `shoppingShareText`, `sackText`, `feedFamily`), écran `app/shopping.tsx`
    (route `/shopping`), coches `lib/garden/shopping-checks.ts` (sur le téléphone, effacées après 45 jours). Fenêtre : ce
    mois-ci et les 6 semaines qui viennent (`shoppingMonths`, comme « À anticiper »).
@@ -201,3 +201,18 @@ Règles qui valent pour toutes les étapes :
    - Entrées : feuille de « À anticiper » (« 🛒 Ma liste de courses ») et onglet Balcon. « Partager ma liste » par le
      partage du téléphone (texte affiché à copier si le partage échoue), « Préparé avec Balco » en bas, « Tout décocher ».
      Aucune marque. E2e `23-courses`.
+6. **Arrosage selon le pot et la météo.** Choix tranchés le 13/10 (avec claude.ai, document `docs/decisions-etape-6.md`) :
+   coefficients proposés notés comme estimation Balco, litres arrondis au demi-litre, interrupteur unique « Simuler
+   Balco+ » (version de test, doit marcher même si le coach est calculé par le serveur), 6a puis 6b, soleil réservé au
+   coach, coach en valeur arrondie (« environ 1,5 L »), balcon couvert = pas d'eau économisée les jours de pluie.
+   - **6a, gratuit : codée le 13/10, à valider sur son téléphone.** `lib/plants/watering.ts` (`POT_WATERING_FACTOR`,
+     `wateringIntervalHours`, `wateringLiters`, `wateringSubtitle`, `WATERING_ONCE_NOTE`) ; `wateringIntervalOf` /
+     `wateringLitersOf` (garden-logic) servent au plan du jour, à la série de jours suivis, à la fraîcheur et à l'eau
+     économisée (`litersPerWatering`). Profil de soin (`careProfileFor(resolved, balcony)`) : rythme du pot,
+     `wateringLiters`, `sheltered` (balcon couvert) ; moteur : pluie ignorée si `sheltered` (« Balcon couvert : la pluie
+     n'arrive pas à tes pots. Sèche sur 2 cm ? Arrose environ 2 L, jusqu'à ce que ça coule. »), donc ni « N'arrose pas »
+     ni eau économisée. Le serveur passe la taille du pot et le balcon couvert (après la fusion). Aujourd'hui :
+     sous-titre « Sèche sur 2 cm ? Arrose environ 2 L » (« …, puis l'engrais » avec l'engrais), détail avec la consigne
+     de la plante + « Arrose environ 2 L, jusqu'à ce que ça coule. » ; repère « 1,5 L, c'est une grande bouteille… vide
+     la soucoupe après 30 min » dans le premier détail d'arrosage ouvert, une seule fois (`lib/garden/once-notes.ts`).
+     Sources : estimations notées dans `docs/sources-pots.md`. Tests `tests/watering.test.ts`, e2e `24-arrosage`.

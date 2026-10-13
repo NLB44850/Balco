@@ -23,6 +23,7 @@ import {
 } from "./harvest-end";
 import { activityDone, calendarActivities, eventForActivity, startActivity, type CalendarActivity, type CalendarSubject } from "../plants/calendar";
 import { tasksForMonth, type CareTask } from "../plants/catalog";
+import { waterAmountText } from "../plants/watering";
 import type { ClimateInfo } from "../plants/climate";
 import { eventForReminder } from "../reminders/reminder-actions";
 import type { MaintenanceEvent, ReminderDecision } from "../reminders/reminder-engine";
@@ -37,6 +38,8 @@ import {
   startEventId,
   spacedTaskDue,
   startOfDay,
+  wateringIntervalOf,
+  wateringLitersOf,
   type ResolvedPlant,
   type SessionTask,
 } from "./garden-logic";
@@ -212,12 +215,14 @@ export function planDay({ plants, events, now, decisions = [], allDecisions = de
 
     // 2. Arrosage : déjà fait aujourd'hui, demandé par la météo (soif), ou dû selon son rythme.
     const tasks = tasksForMonth(resolved.entry, month).filter((task) => !task.everyDays || spacedTaskDue(resolved, task, events, today));
-    const wateringTask = tasks.find((task) => task.type === "watering");
+    // La consigne de la plante, puis la quantité selon son pot (étape 6a) : « Arrose environ 1 L, jusqu'à ce que ça coule. »
+    const baseWatering = tasks.find((task) => task.type === "watering");
+    const wateringTask = baseWatering && { ...baseWatering, instruction: `${baseWatering.instruction} ${waterAmountText(wateringLitersOf(resolved))}` };
     const wateredToday = events.find((event) => event.plantId === plantId && event.type === "watering" && dayKey(new Date(event.completedAt)) === todayKey);
     const thirst = own.find((decision) => decision.cause === "thirst");
     const thirstSnoozed = ownAll.some((decision) => decision.cause === "thirst" || decision.cause === "heat") && !thirst;
     const lastWatering = lastEventDate(events, plantId, "watering", today);
-    const wateringDue = !lastWatering || today.getTime() - lastWatering.getTime() >= resolved.entry.care.wateringIntervalHours * 3_600_000;
+    const wateringDue = !lastWatering || today.getTime() - lastWatering.getTime() >= wateringIntervalOf(resolved) * 3_600_000;
     if (wateredToday) {
       // Arrosée aujourd'hui : la ligne reste, cochée, même quand le conseil météo qui l'a demandée s'est tu.
       const task = wateringTask ?? { id: "check-soil", type: "watering" as const, title: `Arrose ${resolved.entry.label}`, instruction: "Enfonce un doigt sur 2 cm : arrose doucement au pied seulement si la terre est sèche.", minutes: 3, doneTitle: "Arrosage noté.", doneText: "" };

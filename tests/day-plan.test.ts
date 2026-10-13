@@ -133,7 +133,8 @@ describe("titres qui disent quoi faire", () => {
     const watering = items.filter((item) => item.title.startsWith("Arrose"));
     expect(watering.length).toBeGreaterThan(0);
     for (const item of watering) {
-      expect(item.subtitle).toMatch(/^Enfonce ton doigt : sèche sur \d cm \? Arrose\.$/u);
+      // Et combien verser, selon le pot (étape 6a), arrondi au demi-litre.
+      expect(item.subtitle).toMatch(/^Sèche sur \d cm \? Arrose environ \d+(,5)? L$/u);
       expect(item.subtitle.toLowerCase()).not.toContain(item.title.toLowerCase());
     }
   });

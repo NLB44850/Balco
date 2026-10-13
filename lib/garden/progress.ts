@@ -6,22 +6,21 @@
 import { MONTH_LONG, type Month } from "../plants/catalog";
 import { capitalize, objectPronoun, stressedPronoun, subjectPronoun, verb } from "../plants/grammar";
 import type { MaintenanceEvent } from "../reminders/reminder-engine";
-import { badgeTierKey, computeBadges, computeProgress, computeStats, TIER_NAMES, type Badge, dayKey, daysBetween, followedDays, isAvoidedWatering, plantDisplayName, type ResolvedPlant } from "./garden-logic";
+import { badgeTierKey, computeBadges, computeProgress, computeStats, TIER_NAMES, type Badge, dayKey, daysBetween, followedDays, isAvoidedWatering, plantDisplayName, wateringLitersOf, type ResolvedPlant } from "./garden-logic";
 import type { PlantPhoto } from "./photos";
 import { eventBadgeTitle, eventById } from "../events/events";
 import { getCatalogPlant } from "../plants/catalog";
 import { seasonBadgeTitle, seasonRuleById } from "./season-badges";
 
 const DAY_MS = 86_400_000;
-/** Un arrosage de balcon mouille environ un cinquième du volume du pot. */
-const WATERING_SHARE_OF_POT = 0.2;
 
 // --- Eau économisée -------------------------------------------------------------
 
 export { isAvoidedWatering } from "./garden-logic";
 
+/** Un arrosage : la quantité dite sur Aujourd'hui, selon la taille du pot (environ un cinquième de son volume). */
 export function litersPerWatering(resolved: ResolvedPlant) {
-  return Math.round(resolved.entry.potLiters * WATERING_SHARE_OF_POT * 10) / 10;
+  return wateringLitersOf(resolved);
 }
 
 /** Arrosages évités grâce à la pluie et litres économisés, sur la période donnée. */
