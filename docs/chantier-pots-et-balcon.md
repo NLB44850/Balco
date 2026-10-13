@@ -182,3 +182,20 @@ Règles qui valent pour toutes les étapes :
      (2) une saison finie depuis plus de 6 mois sans réponse est tenue pour finie (`settleLongOverSeasons`,
      `LONG_OVER_DAYS` = 183, harvest-end.ts, appliqué par `use-day-plan` et Réglages) : plus de question, « Ton pot est
      libre » replié dans les gestes pas urgents.
+5. **Liste de courses pour la jardinerie : contenu validé le 13/10, codée le 13/10, à valider sur son téléphone.**
+   Logique `lib/garden/shopping.ts` (`shoppingList`, `shoppingShareText`, `sackText`, `feedFamily`), écran `app/shopping.tsx`
+   (route `/shopping`), coches `lib/garden/shopping-checks.ts` (sur le téléphone, effacées après 45 jours). Fenêtre : ce
+   mois-ci et les 6 semaines qui viennent (`shoppingMonths`, comme « À anticiper »).
+   - Pots : plantes « à planter » dont le semis ou la plantation tombe dans la fenêtre (taille notée ; « Je ne sais pas » :
+     largeur de la fiche et « Touche pour choisir la taille du pot », qui ouvre la fiche sur « Dans quel pot ? ») et
+     envies du printemps ; pot plus grand des rempotages annoncés (`nextPotFor`, pas déjà rempoté ce mois-ci) ; pots
+     identiques regroupés (« 2 × Grand pot (30 à 40 cm) »), « Percé au fond ».
+   - Terre : litres de ces pots (`POT_LITERS`, sinon la fiche) selon le terreau de la fiche (compost ou sable pour un
+     tiers, terreau léger, terre de bruyère, terreau pour agrumes), avec le sac à prendre (10, 20, 40, 50 L).
+   - Semis : godets (« une dizaine par semis ») et terreau de semis (3 L par semis) des semis au chaud ; si la plantation
+     tombe aussi dans la fenêtre, le pot en plus.
+   - Engrais : celui des fiches pendant ses mois seulement, un par famille (tomates/potasse, fleurs, purin d'ortie /
+     légumes, petits fruits, agrumes, terre de bruyère, compost, liquide aux algues), pas pour un pot libre.
+   - Entrées : feuille de « À anticiper » (« 🛒 Ma liste de courses ») et onglet Balcon. « Partager ma liste » par le
+     partage du téléphone (texte affiché à copier si le partage échoue), « Préparé avec Balco » en bas, « Tout décocher ».
+     Aucune marque. E2e `23-courses`.

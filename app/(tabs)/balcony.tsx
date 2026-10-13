@@ -113,6 +113,11 @@ export default function BalconyScreen() {
         <Pressable accessibilityRole="button" onPress={() => router.push("/garden/add")} style={({ pressed }) => [styles.cta, { backgroundColor: colors.foreground }, pressed && styles.pressed]}>
           <Text style={[styles.ctaText, { color: colors.background }]}>Ajouter une plante</Text>
         </Pressable>
+        {resolvedPlants.length > 0 && (
+          <Pressable accessibilityRole="button" onPress={() => router.push("/shopping")} style={({ pressed }) => [styles.secondary, { borderColor: colors.border }, pressed && styles.pressed]}>
+            <Text style={[styles.secondaryText, { color: colors.foreground }]}>🛒  Ma liste de courses</Text>
+          </Pressable>
+        )}
         <Pressable accessibilityRole="button" onPress={() => router.push("/(tabs)/scanner")} style={({ pressed }) => [styles.secondary, { borderColor: colors.border }, pressed && styles.pressed]}>
           <Text style={[styles.secondaryText, { color: colors.foreground }]}>📷  Observer une plante avec Nora</Text>
         </Pressable>
