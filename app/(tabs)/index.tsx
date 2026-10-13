@@ -34,6 +34,9 @@ import { deviceId as loadDeviceId } from "@/lib/sync/device-id";
 import { usePlantPhotos } from "@/lib/garden/photos-context";
 import { awardCelebration, celebrationFor, formatLiters, litersPerWatering, withCheer } from "@/lib/garden/progress";
 import { FEEDING_REMINDER_SOURCE, nextFeedingReminder } from "@/lib/garden/feeding-reminder";
+import { GestureDetailView } from "@/components/today/gesture-detail-view";
+import { gestureDetail, gestureKindLabel } from "@/lib/garden/gesture-detail";
+import { litersText } from "@/lib/plants/watering";
 import { awayOn, preparationSteps, vacationRange, vacationState } from "@/lib/garden/vacation";
 import {
   POINTS_PER_GESTURE,
@@ -41,6 +44,7 @@ import {
   eventForSessionTask,
   plantDisplayName,
   followedDays,
+  type ResolvedPlant,
   type SessionTask,
 } from "@/lib/garden/garden-logic";
 import { potsFor, skyScene } from "@/lib/garden/sky";
@@ -405,6 +409,7 @@ export default function HomeScreen() {
       tone={item.tone}
       title={item.title}
       subtitle={item.done ? doneSubtitle(item, events) : item.subtitle}
+      badge={item.liters !== undefined ? `💧 ${litersText(item.liters)}` : undefined}
       done={item.done}
       picture={seasonPicture(item)}
       onToggle={() => void toggleItem(item)}
@@ -614,7 +619,7 @@ export default function HomeScreen() {
             {lines.map((line) => {
               if (line.type === "item") return itemRow(line.item);
               if (line.type === "group") {
-                return <TodayRow key={line.key} icon={line.icon} tone={line.tone} title={line.title} subtitle={line.subtitle} done={line.done} onOpen={() => setOpenGroup(line.gesture)} />;
+                return <TodayRow key={line.key} icon={line.icon} tone={line.tone} title={line.title} subtitle={line.subtitle} done={line.done} badge={line.liters ? `💧 ${litersText(line.liters)}` : undefined} onOpen={() => setOpenGroup(line.gesture)} />;
               }
               return (
                 <View key={line.key}>
@@ -734,7 +739,7 @@ export default function HomeScreen() {
       </Animated.ScrollView>
 
       <BottomSheet visible={sheetItem !== null} onClose={closeSheet}>
-        {sheetItem && <SheetContent item={sheetItem} events={events} onClose={closeSheet} onToggle={() => { closeSheet(); void toggleItem(sheetItem); }} onSnooze={(kind) => { closeSheet(); if (sheetItem.kind === "alert") void snoozeAlert(sheetItem.group, kind); }} onOpenPlant={(id) => { closeSheet(); router.push({ pathname: "/garden/[id]", params: { id } }); }} onOpenCalendar={() => { closeSheet(); router.push("/(tabs)/calendar"); }} onPostpone={() => { closeSheet(); if (sheetItem.kind === "season") void postponeToSaturday(sheetItem.activity); }} onSkipRepot={() => { closeSheet(); if (sheetItem.kind === "season") void skipRepot(sheetItem.activity); }} onGuide={() => { closeSheet(); if (sheetItem.kind === "season") router.push({ pathname: "/guide/[catalogId]", params: { catalogId: sheetItem.activity.entry.id, plantId: sheetItem.activity.subjectId, ...(guideTaskOf(sheetItem.activity) ? { task: guideTaskOf(sheetItem.activity) } : {}) } }); }} />}
+        {sheetItem && <SheetContent item={sheetItem} events={events} now={now} resolved={sheetItem.kind === "season" ? resolvedPlants.find(({ plant }) => plant.id === sheetItem.activity.subjectId) : undefined} onClose={closeSheet} onToggle={() => { closeSheet(); void toggleItem(sheetItem); }} onSnooze={(kind) => { closeSheet(); if (sheetItem.kind === "alert") void snoozeAlert(sheetItem.group, kind); }} onOpenPlant={(id) => { closeSheet(); router.push({ pathname: "/garden/[id]", params: { id } }); }} onOpenCalendar={() => { closeSheet(); router.push("/(tabs)/calendar"); }} onPostpone={() => { closeSheet(); if (sheetItem.kind === "season") void postponeToSaturday(sheetItem.activity); }} onSkipRepot={() => { closeSheet(); if (sheetItem.kind === "season") void skipRepot(sheetItem.activity); }} onGuide={() => { closeSheet(); if (sheetItem.kind === "season") router.push({ pathname: "/guide/[catalogId]", params: { catalogId: sheetItem.activity.entry.id, plantId: sheetItem.activity.subjectId, ...(guideTaskOf(sheetItem.activity) ? { task: guideTaskOf(sheetItem.activity) } : {}) } }); }} />}
       </BottomSheet>
 
       <BottomSheet
@@ -749,8 +754,8 @@ export default function HomeScreen() {
             <Text style={[styles.sheetBody, { color: colors.muted }]}>
               {groupSheet.gesture === "watering"
                 ? groupSheet.items.some((item) => item.feed)
-                  ? "Enfonce ton doigt dans la terre de chaque pot : si elle est sèche, arrose au pied. Puis donne l’engrais à celles qui en ont besoin, et coche. Touche une ligne pour le détail."
-                  : "Enfonce ton doigt dans la terre de chaque pot : si elle est sèche, arrose au pied et coche. Touche une ligne pour le détail."
+                  ? "Enfonce ton doigt dans la terre de chaque pot : si elle est sèche, arrose au pied la quantité indiquée. Puis donne l’engrais à celles qui en ont besoin, et coche. Touche une ligne pour le détail."
+                  : "Enfonce ton doigt dans la terre de chaque pot : si elle est sèche, arrose au pied la quantité indiquée et coche. Touche une ligne pour le détail."
                 : groupSheet.gesture === "season-end"
                   ? "Coche une plante dont la saison est finie : Balco te propose quoi mettre dans son pot. Pas encore finie ? Laisse-la, tu as le temps."
                 : groupSheet.gesture === "feeding"
@@ -767,6 +772,7 @@ export default function HomeScreen() {
                   tone={item.tone}
                   title={item.title}
                   subtitle={item.done ? doneSubtitle(item, events) : item.subtitle}
+                  badge={item.liters !== undefined ? `💧 ${litersText(item.liters)}` : undefined}
                   done={item.done}
                   picture={seasonPicture(item)}
                   onToggle={() => {
@@ -834,27 +840,31 @@ type SheetContentProps = {
   onGuide: () => void;
   /** Rempotage : « Pas besoin cette année ». */
   onSkipRepot: () => void;
+  /** La plante du balcon concernée par un geste de saison (taille du pot, rempotages). */
+  resolved?: ResolvedPlant;
+  now: Date;
 };
 
 /** Le détail d'un geste : pourquoi, comment, et les choix possibles. */
-function SheetContent({ item, events, onToggle, onSnooze, onOpenPlant, onOpenCalendar, onPostpone, onGuide, onSkipRepot }: SheetContentProps) {
+function SheetContent({ item, events, resolved, now, onToggle, onSnooze, onOpenPlant, onOpenCalendar, onPostpone, onGuide, onSkipRepot }: SheetContentProps) {
   const colors = useColors();
   const alertTone = item.tone === "frost" || item.tone === "rain" || item.tone === "storm" || item.tone === "wind" ? colors.frost : item.tone === "heat" ? colors.terracotta : colors.primary;
   const info = item.kind === "alert" && item.group.action === "skip";
-  const main = item.kind === "alert" ? item.group.body : item.kind === "task" ? item.task.task.instruction : item.kind === "season" ? item.activity.description : item.subtitle;
-  const body = item.feed ? `${main}\n\n${item.feed.task.instruction}` : main;
+  // Le même format pour tous les gestes (13/10) : repère en grand, gestes courts avec icône (lib/garden/gesture-detail.ts).
+  const watering = item.gesture === "watering" && item.liters !== undefined;
+  const detail = gestureDetail(item, { resolved, events, now, doneText: item.done ? doneSubtitle(item, events) : undefined });
 
   return (
     <View style={styles.sheet}>
-      <Text style={[styles.sheetKind, { color: alertTone }]}>{item.icon}  {item.done ? doneSubtitle(item, events) : item.subtitle}</Text>
+      <Text style={[styles.sheetKind, { color: alertTone }]}>{item.icon}  {gestureKindLabel(item)}</Text>
       <Text style={[styles.sheetTitle, { color: colors.foreground }]}>{item.title}</Text>
-      <Text style={[styles.sheetBody, { color: colors.foreground }]}>{body}</Text>
+      <GestureDetailView detail={detail} />
       {item.kind === "alert" && (
         <>
           {item.group.decisions.length > 1 && (
             <View style={styles.chips}>{item.group.decisions.map((decision) => <Pressable key={decision.plantId} onPress={() => onOpenPlant(decision.plantId)} style={[styles.chip, { backgroundColor: colors.surface }]}><Text style={[styles.chipText, { color: colors.foreground }]}>{decision.plantLabel ?? decision.plantId}</Text></Pressable>)}</View>
           )}
-          <Text style={[styles.why, { backgroundColor: colors.surface, color: colors.muted }]}>Pourquoi : {item.group.reason}</Text>
+          {!watering && <Text style={[styles.why, { backgroundColor: colors.surface, color: colors.muted }]}>Pourquoi : {item.group.reason}</Text>}
         </>
       )}
       <Pressable accessibilityRole="button" onPress={onToggle} style={({ pressed }) => [styles.cta, { backgroundColor: item.done ? colors.surface : colors.foreground }, pressed && styles.pressed]}>

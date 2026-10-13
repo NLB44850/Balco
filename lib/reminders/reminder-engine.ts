@@ -36,6 +36,10 @@ export type PlantCareProfile = {
   allowedTaskTypes?: MaintenanceTaskType[];
   /** Profondeur à laquelle tâter la terre avant d'arroser (2 cm par défaut). */
   soilCheckCm?: number;
+  /** Litres d'un arrosage selon le pot (étape 6a), arrondis au demi-litre. */
+  wateringLiters?: number;
+  /** Balcon couvert : la pluie annoncée n'arrive pas jusqu'au pot, elle ne dispense pas d'arroser (étape 6a). */
+  sheltered?: boolean;
   /**
    * Annuelle frileuse : en automne, un soir de gel finit sa saison. L'alerte dit alors de tout récolter
    * (« Récolte tout ton basilic avant cette nuit ») au lieu de protéger ; `{min}` reçoit la température.
@@ -118,6 +122,8 @@ export const REMINDER_COOLDOWN_HOURS = 24;
 export const STRONG_WIND_KMH = 60;
 export const HEAVY_RAIN_PROBABILITY = 60;
 export const MAX_BODY_LENGTH = 120;
+/** Début du message d'arrosage d'un balcon couvert quand la pluie est annoncée (l'écran en fait un bandeau). */
+export const SHELTERED_PREFIX = "Balcon couvert : la pluie n’arrive pas à tes pots.";
 
 const HOUR_MS = 60 * 60 * 1000;
 const PRIORITY_RANK: Record<ReminderPriority, number> = { urgent: 0, important: 1, normal: 2 };
@@ -251,8 +257,10 @@ function wateringDecision(
   // remplace par « n'arrose pas ». En revanche, sans historique, Balco n'invente pas de soif.
   const due = elapsed >= plant.wateringIntervalHours;
   const rainMm = weather.next12h.precipitationMm;
-  const rainExpected =
+  const rainAnnounced =
     rainMm >= plant.rainSkipMm || (weather.next12h.precipitationProbabilityMax >= HEAVY_RAIN_PROBABILITY && rainMm >= 1);
+  // Balcon couvert : la pluie annoncée ne compte pas (ni « N'arrose pas », ni eau économisée).
+  const rainExpected = rainAnnounced && !plant.sheltered;
   const maxTemp = Math.max(weather.today.temperatureMaxC, weather.current.temperatureC);
   const hot = maxTemp >= plant.heatThresholdC || weather.current.apparentTemperatureC >= plant.heatThresholdC + 2;
 
@@ -288,14 +296,17 @@ function wateringDecision(
   if (!lastWatering) return null;
 
   if (due) {
+    const check = `Sèche sur ${plant.soilCheckCm ?? 2} cm ?${plant.wateringLiters ? ` Arrose environ ${String(plant.wateringLiters).replace(".", ",")} L, jusqu’à ce que ça coule.` : " Arrose."}`;
+    // Le message tient en 120 caractères : balcon couvert, on dit pourquoi on arrose malgré la pluie.
+    const body = rainAnnounced && plant.sheltered ? `${SHELTERED_PREFIX} ${check}` : `Dernier arrosage il y a ${formatElapsed(elapsed)}, pas de pluie prévue. ${check}`;
     return {
       taskType: "watering",
       priority: "normal",
       action: "observe",
       cause: "thirst",
-      // Le titre dit l'action ; le texte dit comment vérifier, en une phrase concrète.
+      // Le titre dit l'action ; le texte dit comment vérifier et combien verser.
       title: `Arrose ${name}`,
-      body: `Dernier arrosage il y a ${formatElapsed(elapsed)}, pas de pluie prévue. Enfonce ton doigt : sèche sur ${plant.soilCheckCm ?? 2} cm ? Arrose.`,
+      body,
       reason: `Délai de ${plant.wateringIntervalHours} h dépassé, ${round(rainMm)} mm prévus d’ici 12 h.`,
     };
   }

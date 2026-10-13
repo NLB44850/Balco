@@ -7,6 +7,7 @@ import { endsWithSeason, seasonFrostText } from "../plants/season-end";
 import type { MaintenanceEvent, MaintenanceTaskType, PlantCareProfile } from "../reminders/reminder-engine";
 import { alertCauseOf } from "../reminders/alert-cause";
 import type { PotSize } from "../plants/pot-size";
+import { wateringIntervalHours, wateringLiters } from "../plants/watering";
 
 export type GardenPlant = {
   /** Identifiant d'instance : deux pieds de tomates ont deux ids différents. */
@@ -99,13 +100,27 @@ export function plantVariety({ plant, entry }: ResolvedPlant) {
   return plant.varietyId ? entry.varieties.find((variety) => variety.id === plant.varietyId) : undefined;
 }
 
-export function careProfileFor(resolved: ResolvedPlant): PlantCareProfile {
+/** Le rythme d'arrosage d'une plante dans son pot (étape 6a : petit pot plus souvent, grand pot moins souvent). */
+export function wateringIntervalOf(resolved: ResolvedPlant) {
+  return wateringIntervalHours(resolved.entry, resolved.plant.potSize);
+}
+
+/** Litres d'un arrosage selon son pot, arrondis au demi-litre. */
+export function wateringLitersOf(resolved: ResolvedPlant) {
+  return wateringLiters(resolved.entry, resolved.plant.potSize);
+}
+
+/** `balcony.covered` : balcon couvert, la pluie annoncée ne dispense pas d'arroser (étape 6a). */
+export function careProfileFor(resolved: ResolvedPlant, balcony?: { covered?: boolean } | null): PlantCareProfile {
   const { plant, entry } = resolved;
   return {
     plantId: plant.id,
     displayName: plantDisplayName(resolved),
     label: plant.nickname?.trim() || entry.label,
     ...entry.care,
+    wateringIntervalHours: wateringIntervalOf(resolved),
+    wateringLiters: wateringLitersOf(resolved),
+    ...(balcony?.covered ? { sheltered: true } : {}),
     allowedTaskTypes: Array.from(new Set<MaintenanceTaskType>([...entry.tasks.map((task) => task.type), "observation", "protection"])),
     soilCheckCm: soilCheckDepthCm(entry),
     ...(endsWithSeason(entry) && entry.care.frostSensitive ? { seasonFrost: seasonFrostText(entry) } : {}),
@@ -226,7 +241,7 @@ export function plantStatus(resolved: ResolvedPlant, events: MaintenanceEvent[],
   const last = lastEventDate(events, resolved.plant.id);
   if (!last) return { tone: "new", label: "NOUVELLE", meta: "Aucun soin noté", freshness: 0.1 };
   const lastWatering = lastEventDate(events, resolved.plant.id, "watering") ?? last;
-  const ratio = (now.getTime() - lastWatering.getTime()) / (resolved.entry.care.wateringIntervalHours * HOUR_MS);
+  const ratio = (now.getTime() - lastWatering.getTime()) / (wateringIntervalOf(resolved) * HOUR_MS);
   const watch = ratio > 1;
   return {
     tone: watch ? "watch" : "good",
@@ -366,7 +381,7 @@ export function followedDayChecker(plants: ResolvedPlant[], events: MaintenanceE
       if (!tasksForMonth(resolved.entry, month).some((task) => task.type === "watering")) return true;
       const last = waterings.filter((time) => time < start).at(-1);
       // Même règle que le plan du jour : à arroser si jamais arrosée, ou si son rythme est dépassé.
-      const due = last === undefined || start - last >= resolved.entry.care.wateringIntervalHours * HOUR_MS;
+      const due = last === undefined || start - last >= wateringIntervalOf(resolved) * HOUR_MS;
       return !due || coveredDays.has(key);
     });
   };

@@ -30,7 +30,7 @@ import {
 } from "@/lib/reminders/local-notifications";
 
 export function useDayPlan() {
-  const { resolvedPlants, events } = useGarden();
+  const { resolvedPlants, events, onboarding } = useGarden();
   const local = useLocalWeather();
   const { weather, weatherSnapshot } = local;
   const [now, setNow] = useState(clockNow);
@@ -75,8 +75,9 @@ export function useDayPlan() {
   const allDecisions = useMemo(() => {
     if (!reminderSettingsLoaded || weather.isFallback) return [];
     const settings = { enabled: true, skipWateringWhenRainExpected: reminderSettings.skipWateringWhenRainExpected, maxNormalRemindersPerDay: reminderSettings.maxNormalRemindersPerDay };
-    return decideReminders(reminderPlants.map((resolved) => ({ plant: careProfileFor(resolved), history: events, weather: weatherSnapshot, settings })));
-  }, [events, reminderPlants, reminderSettings, reminderSettingsLoaded, weather.isFallback, weatherSnapshot]);
+    // Balcon couvert (accueil) : la pluie annoncée ne dispense pas d'arroser.
+    return decideReminders(reminderPlants.map((resolved) => ({ plant: careProfileFor(resolved, onboarding), history: events, weather: weatherSnapshot, settings })));
+  }, [events, onboarding, reminderPlants, reminderSettings, reminderSettingsLoaded, weather.isFallback, weatherSnapshot]);
   // Pour les notifications : toutes les alertes importantes, puis au plus N conseils ordinaires.
   // « Plantes suivies » (Réglages) ne coupe que les notifications : gestes et alertes restent à l'écran.
   const reminderDecisions = useMemo(

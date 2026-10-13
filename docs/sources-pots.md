@@ -734,3 +734,15 @@ terreau. Sacs du commerce : 3, 5, 6, 10, 20 et 50 L.
 
 Retenu : 2,5 cm d'ordinaire (petit pot ≈ 0,5 L, moyen ≈ 1,5 L, grand et jardinière ≈ 3 L), 4 cm dans un bac de plus
 de 40 cm.
+
+## Arrosage selon le pot (étape 6a, 13/10) : estimations Balco
+
+Les sources disent seulement qu'un petit pot sèche plus vite et qu'un grand pot garde l'humidité plus longtemps ; elles
+ne donnent pas de coefficient. Règles maison validées par le porteur le 13/10, rien de plus à l'écran que la quantité :
+- Rythme d'arrosage de la plante × 0,7 en petit pot (≈ 30 % plus souvent), × 1 en pot moyen, × 1,3 en grand pot (≈ 30 %
+  moins souvent), × 0,85 en jardinière (peu profonde), × 1 si la taille est « Je ne sais pas » (`POT_WATERING_FACTOR`,
+  `lib/plants/watering.ts`).
+- Quantité d'un arrosage ≈ 20 % du volume du pot, arrondie au demi-litre : petit 1 L, moyen 2 L, grand 4,5 L,
+  jardinière 4 L (taille inconnue : le pot de la fiche). « Arrose environ 1 L, jusqu'à ce que ça coule » : la ligne dit
+  toujours de vérifier la terre avant.
+- Repère dit une fois : 1,5 L = une grande bouteille d'eau ; vider la soucoupe après 30 min.
