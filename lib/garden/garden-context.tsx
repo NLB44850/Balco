@@ -45,7 +45,7 @@ import { herbariumAwards } from "./herbarium";
 import { seasonAwards } from "./season-badges";
 import { BACKFILL_VERSION, backfillAwards, badgesEarnedNow, capAwards, mergeAwards, newAwards, unseenAwards, type Awards } from "./awards";
 import { now as clockNow } from "@/lib/clock";
-import type { PotSize } from "@/lib/plants/pot-size";
+import type { KnownPotSize, PotSize } from "@/lib/plants/pot-size";
 import { recommendedPotSize } from "@/lib/plants/pot-sheet";
 import { getCatalogPlant } from "@/lib/plants/catalog";
 
@@ -103,7 +103,7 @@ type GardenContextValue = {
   onboarding: OnboardingAnswers | null;
   account: AccountState;
   /** `toPlant` : choisie mais pas encore en terre (son premier geste sera « Sème… » ou « Plante… »). */
-  addPlant: (catalogId: string, options?: { toPlant?: boolean }) => Promise<GardenPlant>;
+  addPlant: (catalogId: string, options?: { toPlant?: boolean; potSize?: KnownPotSize }) => Promise<GardenPlant>;
   removePlant: (plantId: string) => Promise<void>;
   /** Ressemer ou replanter la même plante (pot libre) : une nouvelle saison, elle repasse « à planter ». */
   restartPlant: (plantId: string) => Promise<void>;
@@ -391,11 +391,13 @@ export function GardenProvider({ children }: { children: ReactNode }) {
 
   // --- Actions -----------------------------------------------------------------------
 
-  const addPlant = useCallback(async (catalogId: string, options: { toPlant?: boolean } = {}) => {
-    // La taille de pot de sa fiche Spécial pot, choisie par Balco (13/10) : on la change sur la fiche.
+  const addPlant = useCallback(async (catalogId: string, options: { toPlant?: boolean; potSize?: KnownPotSize } = {}) => {
+    // La taille de pot de sa fiche Spécial pot, choisie par Balco (13/10) : on la change sur la fiche. Dans un pot
+    // libéré (« Que planter à la place ? »), elle garde la taille de ce pot.
     const entry = getCatalogPlant(catalogId);
-    const plant = createGardenPlant(catalogId, clockNow(), options);
-    const created = entry ? { ...plant, potSize: recommendedPotSize(entry) } : plant;
+    const plant = createGardenPlant(catalogId, clockNow(), { toPlant: options.toPlant });
+    const potSize = options.potSize ?? (entry ? recommendedPotSize(entry) : undefined);
+    const created = potSize ? { ...plant, potSize } : plant;
     await savePlants([...plantsRef.current, created]);
     queue((outbox) => recordPlant(outbox, created));
     return created;

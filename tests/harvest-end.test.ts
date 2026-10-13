@@ -17,6 +17,7 @@ import {
 import { weekSummary } from "../lib/garden/week";
 import { PLANT_CATALOG } from "../lib/plants/catalog";
 import { DEFAULT_HARVEST_DAYS, HARVEST_ONCE } from "../lib/plants/harvest-once";
+import { potNeedFor } from "../lib/plants/pot-sheet";
 import type { MaintenanceEvent } from "../lib/reminders/reminder-engine";
 
 const plant = (catalogId: string, extra: Partial<GardenPlant> = {}) => resolvePlants([{ id: "p", catalogId, addedAt: new Date(2026, 2, 1).toISOString(), ...extra }])[0];
@@ -120,13 +121,13 @@ describe("« Oui » : ton pot est libre", () => {
     expect(balconyStatus(nextDay, events, new Date(2026, 4, 13, 9)).remaining).toBe(0);
   });
 
-  it("en mai : ressemer des radis, une plante de saison qui tient dans ce pot, laisser le pot vide", () => {
+  it("en mai : ressemer des radis, trois idées qui tiennent dans ce pot, laisser le pot vide", () => {
     const choices = freePotChoices(plant("radish"), null, { month: 5 });
-    expect(choices.map((choice) => choice.kind)).toEqual(["restart", "plant", "empty"]);
+    expect(choices.map((choice) => choice.kind)).toEqual(["restart", "plant", "plant", "plant", "empty"]);
     expect(choices[0].label).toBe("Ressemer des radis");
     expect(choices.at(-1)?.label).toBe("Laisser le pot vide");
     const other = choices.find((choice) => choice.kind === "plant");
-    expect(other?.kind === "plant" && other.entry.potLiters).toBeLessThanOrEqual(plant("radish").entry.potLiters);
+    for (const choice of choices) if (choice.kind === "plant") expect(potNeedFor(choice.entry).liters).toBeLessThanOrEqual(potNeedFor(plant("radish").entry).liters);
     expect(other?.label).toMatch(/^(Semer|Planter) (le |la |les |l’)/u);
   });
 
@@ -136,13 +137,12 @@ describe("« Oui » : ton pot est libre", () => {
     expect(freePotChoices(plant("round-carrot"), null, { month: 6 })[0].label).toBe("Ressemer des carottes");
   });
 
-  it("hors saison de semis : pas de « Ressemer », jusqu'à deux plantes de saison", () => {
+  it("hors saison de semis : pas de « Ressemer », jusqu'à trois idées", () => {
     const choices = freePotChoices(plant("round-carrot"), null, { month: 9 });
     expect(choices.some((choice) => choice.kind === "restart")).toBe(false);
-    expect(choices.filter((choice) => choice.kind === "plant").length).toBeLessThanOrEqual(2);
+    expect(choices.filter((choice) => choice.kind === "plant").length).toBeLessThanOrEqual(3);
     expect(choices.filter((choice) => choice.kind === "plant").length).toBeGreaterThan(0);
-    for (const choice of choices) if (choice.kind === "plant") expect(choice.entry.potLiters).toBeLessThanOrEqual(10);
-    expect(choices.length).toBeLessThanOrEqual(3);
+    for (const choice of choices) if (choice.kind === "plant") expect(potNeedFor(choice.entry).liters).toBeLessThanOrEqual(potNeedFor(plant("round-carrot").entry).liters);
   });
 
   it("l'hiver : laisser le pot au repos jusqu'au printemps", () => {
@@ -152,9 +152,9 @@ describe("« Oui » : ton pot est libre", () => {
     expect(january.some((choice) => choice.kind === "restart")).toBe(false);
   });
 
-  it("jamais plus de trois choix", () => {
+  it("jamais plus de cinq choix : ressemer, trois idées, laisser le pot vide", () => {
     for (const entry of PLANT_CATALOG.filter((candidate) => candidate.harvestOnceDays !== undefined)) {
-      for (let month = 1; month <= 12; month += 1) expect(freePotChoices(plant(entry.id), null, { month }).length).toBeLessThanOrEqual(3);
+      for (let month = 1; month <= 12; month += 1) expect(freePotChoices(plant(entry.id), null, { month }).length).toBeLessThanOrEqual(5);
     }
   });
 });

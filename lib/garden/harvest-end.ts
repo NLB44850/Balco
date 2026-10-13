@@ -5,8 +5,8 @@
  * 2. Sans réponse, à la fin de sa durée de récolte (comptée depuis la première récolte notée) ou à la fin de ses
  *    mois de récolte, au premier des deux, sa ligne d'Aujourd'hui devient une seule fois « Tes radis sont-ils
  *    tous récoltés ? ».
- * 3. Après « Oui » : « Ton pot est libre », trois choix au plus (ressemer, une plante de saison qui tient dans ce
- *    pot, laisser le pot vide ou au repos).
+ * 3. Après « Oui » : « Ton pot est libre » : ressemer, « Que planter à la place ? » (trois idées qui tiennent dans
+ *    ce pot, d'une autre famille), laisser le pot vide ou au repos.
  * La réponse et le jour de la question sont gardés avec les autres mises en sommeil du téléphone
  * (`ReminderSnooze`), comme « Pas besoin cette année ». Logique pure.
  */
@@ -16,10 +16,10 @@ import { agree, bareName, byForm, capitalize, ofBare, partitive, possessive } fr
 import { guideModelFor, isSowing } from "../plants/guide";
 import { DEFAULT_HARVEST_DAYS } from "../plants/harvest-once";
 import { endsWithSeason, freesItsPot, isHarvestedOnce } from "../plants/season-end";
-import { seasonalSuggestions } from "../plants/suggestions";
 import type { ReminderSnooze } from "../reminders/reminder-actions";
 import type { MaintenanceEvent } from "../reminders/reminder-engine";
 import { dayKey, inGroundSince, startEventId, type ResolvedPlant } from "./garden-logic";
+import { replantIdeas } from "./replant";
 
 const DAY_MS = 86_400_000;
 /** La réponse et la question restent en mémoire un an : bien plus qu'une saison de récolte. */
@@ -257,7 +257,7 @@ export const potIsFree = (resolved: ResolvedPlant, state: HarvestEndState | unde
 
 export type FreePotChoice =
   | { kind: "restart"; key: string; label: string; detail: string }
-  | { kind: "plant"; key: string; label: string; detail: string; entry: CatalogPlant }
+  | { kind: "plant"; key: string; label: string; detail: string; entry: CatalogPlant; month: number }
   | { kind: "empty"; key: string; label: string; detail: string };
 
 /** Octobre à février : le pot passe l'hiver au repos. */
@@ -282,9 +282,9 @@ export function canRestart(entry: CatalogPlant, month: number, climate?: Climate
 export type FreePotOptions = { month: number; climate?: ClimateInfo | null; ownedCatalogIds?: string[]; seed?: string };
 
 /**
- * Trois choix au plus : ressemer (seulement dans ses mois de semis ou de plantation), une ou deux plantes de
- * saison adaptées au balcon (soleil, espace, envies) et qui tiennent dans ce pot, puis laisser le pot vide
- * (au repos jusqu'au printemps d'octobre à février).
+ * Ressemer (seulement dans ses mois de semis ou de plantation), puis « Que planter à la place ? » : trois idées au
+ * plus (lib/garden/replant.ts : de saison, adaptées au balcon, qui tiennent dans ce pot, d'une autre famille), puis
+ * laisser le pot vide (au repos jusqu'au printemps d'octobre à février).
  */
 export function freePotChoices(resolved: ResolvedPlant, answers: OnboardingAnswers | null, { month, climate, ownedCatalogIds = [], seed }: FreePotOptions): FreePotChoice[] {
   const { entry } = resolved;
@@ -292,12 +292,8 @@ export function freePotChoices(resolved: ResolvedPlant, answers: OnboardingAnswe
   if (canRestart(entry, month, climate)) {
     choices.push({ kind: "restart", key: "restart", label: restartLabel(entry, month, climate), detail: "Dans le même pot, avec son pas-à-pas." });
   }
-  const room = entry.potLiters;
-  const plants = seasonalSuggestions(answers, { month, climate, ownedCatalogIds: [...ownedCatalogIds, entry.id], limit: 40, seed })
-    .filter((suggestion) => suggestion.entry.potLiters <= room && suggestion.entry.id !== entry.id)
-    .slice(0, choices.length > 0 ? 1 : 2);
-  for (const suggestion of plants) {
-    choices.push({ kind: "plant", key: `plant:${suggestion.entry.id}`, label: startLabel(suggestion.entry, month, climate), detail: suggestion.reason, entry: suggestion.entry });
+  for (const idea of replantIdeas(resolved, answers, { month, climate, ownedCatalogIds, seed })) {
+    choices.push({ kind: "plant", key: `plant:${idea.entry.id}`, label: startLabel(idea.entry, idea.month, climate), detail: idea.reason, entry: idea.entry, month: idea.month });
   }
   const resting = RESTING_MONTHS.includes(month);
   choices.push({

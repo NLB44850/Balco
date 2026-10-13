@@ -63,3 +63,31 @@ test("sans réponse, une semaine après la 1ʳᵉ récolte : la question remplac
   await expect(page.getByText("1 plante sur 101")).toBeVisible();
   expect(errors).toEqual([]);
 });
+
+test("pot libre : « Que planter à la place ? » propose une autre famille, et la nouvelle plante garde le pot", async ({ page }) => {
+  const errors = trackErrors(page);
+  await page.clock.install({ time: new Date(2027, 4, 18, 10) });
+  await page.clock.resume();
+  await mockWeather(page);
+  const harvested = { id: "h-radish", plantId: "radish-e2e", type: "harvest", completedAt: new Date(2027, 4, 10, 9).toISOString(), source: "manual" };
+  await seedBalcony(page, { plants: [], extra: { "balco.garden.plants.v1": JSON.stringify([{ ...radish, potSize: "small" }]), "balco.garden.events.v1": JSON.stringify([sown, harvested]) } });
+
+  await open(page, "/", "Tes radis sont-ils tous récoltés ?");
+  await page.getByRole("button", { name: "Tes radis sont-ils tous récoltés ?, détail" }).click();
+  await page.getByRole("button", { name: "Oui, tout est récolté" }).click();
+  const sheet = page.getByRole("dialog");
+  await expect(sheet.getByText("Que planter à la place ?")).toBeVisible();
+  await expect(sheet.getByText(/^Pas de la famille du chou : mêmes maladies dans la terre\. Avant de replanter/u)).toBeVisible();
+  const idea = sheet.getByRole("button", { name: /^(Semer|Planter) / }).first();
+  const label = (await idea.getAttribute("aria-label")) ?? "";
+  expect(label).not.toMatch(/radis|roquette|cresson|navets|pak choï|mizuna|chou/u);
+  await idea.click();
+  await expect(page.getByText(/à planter : le premier geste t’attend sur Aujourd’hui|notée : Balco te la proposera en/u)).toBeVisible();
+
+  // Les radis ont quitté le balcon ; la nouvelle plante est « à planter » dans le même petit pot.
+  const plants = await page.evaluate(() => JSON.parse(localStorage.getItem("balco.garden.plants.v1") ?? "[]") as { catalogId: string; potSize?: string; toPlant?: boolean; removedAt?: string }[]);
+  const added = plants.filter((plant) => plant.catalogId !== "radish" && !plant.removedAt);
+  expect(added).toHaveLength(1);
+  expect(added[0]).toMatchObject({ potSize: "small", toPlant: true });
+  expect(errors).toEqual([]);
+});

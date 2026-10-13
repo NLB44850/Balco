@@ -247,7 +247,7 @@ Règles qui valent pour toutes les étapes :
      prochain arrosage dans 2 jours », jauge d'eau). En gratuit : carte « Coach d'arrosage · bientôt avec Balco+ ».
      Les rappels du serveur gardent la version gratuite (le coach n'y est pas encore). Tests `tests/watering-coach.test.ts`,
      e2e `26-coach`.
-7. **Consignes pour le voisin qui arrose : codées le 13/10, à valider sur son téléphone.** Logique
+7. **Consignes pour le voisin qui arrose : codées le 13/10, validées et fusionnées (PR #49).** Logique
    `lib/garden/helper-note.ts` (`helperPlants`, `helperPlantWatering`, `helperVisits`, `heatNow`, `helperNoteText`,
    `helperNoteMessage`), écran `app/helper-note.tsx` (route `/helper-note`). Mode vacances avec « Oui, un proche passera » :
    la liste « Pour la personne qui arrose » suit maintenant les règles de l'étape 6a, et le bouton « Prépare les consignes
@@ -270,3 +270,22 @@ Règles qui valent pour toutes les étapes :
    - Choix faits en codant : version gratuite (pot et saison) même en Balco+, le coach dépendant de la météo du jour ;
      écran à part plutôt qu'une feuille du bas (texte long à modifier). Tests `tests/helper-note.test.ts`, e2e
      « mode vacances : les consignes pour qui arrose… » (`3-compte-et-vacances`).
+8. **« Que planter à la place ? » et traitement naturel**, en deux livraisons : 8a puis 8b (traitement naturel dans
+   Observer).
+   - **8a, « Que planter à la place ? » : codée le 13/10, à valider sur son téléphone.** Dans la feuille « Ton pot est
+     libre » (après une récolte en une fois ou une fin de saison, Aujourd'hui et fiche) : « Ressemer… » s'il est encore
+     temps, puis la section « Que planter à la place ? » avec trois idées au plus (au lieu d'une ou deux), puis « Laisser
+     le pot vide ». Logique `lib/garden/replant.ts` (`replantIdeas`, `fitsFreedPot`, `replantSoilTip`, `rotationNote`),
+     appelée par `freePotChoices` (harvest-end.ts).
+   - Les idées : suggestions de saison (soleil, espace, envies, climat) à semer ou planter ce mois-ci dans le pot (pas
+     de semis au chaud), sinon le mois suivant (« En novembre · … », message « Mâche notée : Balco te la proposera en
+     novembre ») ; qui tiennent dans ce pot (`potFit` de sa taille notée, sinon pas plus grand que la plante d'avant) ;
+     jamais de la même famille (`lib/plants/families.ts`, 12 familles, les autres plantes seules de leur famille) ; les
+     annuelles avant les vivaces ; après une gourmande (engrais régulier dans sa fiche), les sobres d'abord.
+   - Sous le titre : « Pas de la famille du chou : mêmes maladies dans la terre. » et le geste pour la terre (« remplace
+     un tiers de la terre par du terreau neuf mêlé de compost » après une gourmande, sinon « aère la terre et mêles-y une
+     poignée de compost »). Règles et sources : `docs/sources-rotation.md`.
+   - La nouvelle plante garde la taille du pot libéré (`addPlant(…, { potSize })`).
+   - Choix faits en codant : « Ressemer » reste proposé (semis échelonnés dans la même saison) ; pas de lien vers le
+     catalogue entier (la feuille resterait courte). Tests `tests/replant.test.ts`, e2e « pot libre : Que planter à la
+     place ? » (`14-apres-recolte`).
