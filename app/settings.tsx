@@ -24,6 +24,7 @@ import { freeForAllText, plusSheetBenefits } from "@/lib/plans";
 import { FEEDBACK_EMAIL, feedbackMailto, versionText } from "@/lib/feedback";
 import { currentUpdateDate } from "@/hooks/use-app-updates";
 import { trpc } from "@/lib/trpc";
+import { useBalcoPlus } from "@/hooks/use-balco-plus";
 import { useColors } from "@/hooks/use-colors";
 import { useLocalWeather } from "@/hooks/use-local-weather";
 import { useWeatherSimulation } from "@/hooks/use-weather-simulation";
@@ -63,6 +64,7 @@ const PLUS_NOTIFY_STORAGE_KEY = "balco.plus.notify.v1";
 const appVersion = Constants.expoConfig?.version ?? "1.0.0";
 
 export default function SettingsScreen() {
+  const balcoPlus = useBalcoPlus();
   const insets = useSafeAreaInsets();
   const colors = useColors();
   const router = useRouter();
@@ -559,6 +561,7 @@ export default function SettingsScreen() {
         {simulation.available && (
           <SettingsGroup title="Version de test">
             <SettingRow label="Simulation météo" value={WEATHER_SCENARIOS.find((item) => item.id === simulation.scenario)?.label} onPress={() => setSheet("simulation")} />
+            <SettingRow label="Simuler Balco+" value={balcoPlus.simulated ? "Oui" : "Non"} subtitle="Pour tester, sur ce téléphone : le coach d’arrosage et les avantages à venir. Ton compte ne change pas." onPress={() => void balcoPlus.setSimulated(!balcoPlus.simulated)} />
             <SettingRow label="Date simulée" value={dateSimulation.day ? longDayText(dateSimulation.day) : "Aujourd’hui"} onPress={() => setSheet("date")} />
             {notificationsSupported && (
               <SettingRow label="Envoyer une notification de test" subtitle={testStatus === "sent" ? "Elle arrive dans 5 secondes. Verrouille ton téléphone pour la voir comme un vrai rappel, puis essaie ses boutons." : testStatus === "denied" ? "Les notifications sont bloquées : autorise-les pour Balco dans les réglages du téléphone." : undefined} disabled={testStatus === "sending"} onPress={() => void sendTest()} />

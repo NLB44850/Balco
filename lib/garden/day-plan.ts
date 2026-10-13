@@ -24,6 +24,7 @@ import {
 import { activityDone, calendarActivities, eventForActivity, startActivity, type CalendarActivity, type CalendarSubject } from "../plants/calendar";
 import { tasksForMonth, type CareTask } from "../plants/catalog";
 import { waterAmountText } from "../plants/watering";
+import type { CoachAdvice } from "../plants/watering-coach";
 import type { ClimateInfo } from "../plants/climate";
 import { eventForReminder } from "../reminders/reminder-actions";
 import type { MaintenanceEvent, ReminderDecision } from "../reminders/reminder-engine";
@@ -69,6 +70,10 @@ export type PlanGesture = {
   /** L'événement qui le marque fait aujourd'hui (pour l'annuler). */
   doneEventId?: string;
   source: GestureSource;
+  /** Arrosage : litres à verser (selon le pot, ou calculés par le coach Balco+). */
+  liters?: number;
+  /** Arrosage décidé par le coach d'arrosage Balco+ (étape 6b). */
+  coached?: boolean;
 };
 
 /**
@@ -102,6 +107,8 @@ export type DayPlanInput = {
   repotSkips?: Map<string, string>;
   /** Plantes récoltées en une fois : question déjà posée (quel jour), « Oui » répondu (lib/garden/harvest-end.ts). */
   harvestEnds?: Map<string, HarvestEndState>;
+  /** Coach d'arrosage Balco+ (étape 6b) : plante → conseil du jour ; absent en offre gratuite. */
+  coach?: Map<string, CoachAdvice>;
 };
 
 /** L'état d'une plante choisie mais pas encore en terre (Balcon, fiche). */
@@ -162,7 +169,7 @@ function statusOf(resolved: ResolvedPlant, gestures: PlanGesture[], events: Main
   return { tone: "good", label: STATUS_LABEL.good };
 }
 
-export function planDay({ plants, events, now, decisions = [], allDecisions = decisions, climate, postponed, repotSkips, harvestEnds }: DayPlanInput): PlantDay[] {
+export function planDay({ plants, events, now, decisions = [], allDecisions = decisions, climate, postponed, repotSkips, harvestEnds, coach }: DayPlanInput): PlantDay[] {
   const today = startOfDay(now);
   const todayKey = dayKey(now);
   const month = now.getMonth() + 1;
@@ -216,20 +223,25 @@ export function planDay({ plants, events, now, decisions = [], allDecisions = de
     // 2. Arrosage : déjà fait aujourd'hui, demandé par la météo (soif), ou dû selon son rythme.
     const tasks = tasksForMonth(resolved.entry, month).filter((task) => !task.everyDays || spacedTaskDue(resolved, task, events, today));
     // La consigne de la plante, puis la quantité selon son pot (étape 6a) : « Arrose environ 1 L, jusqu'à ce que ça coule. »
+    // Balco+ : le coach dit si la terre a soif et combien verser ; sinon, le rythme et la quantité selon le pot.
+    const advice = coach?.get(plantId);
+    const liters = advice?.liters ?? wateringLitersOf(resolved);
     const baseWatering = tasks.find((task) => task.type === "watering");
-    const wateringTask = baseWatering && { ...baseWatering, instruction: `${baseWatering.instruction} ${waterAmountText(wateringLitersOf(resolved))}` };
+    const wateringTask = baseWatering && { ...baseWatering, instruction: `${baseWatering.instruction} ${waterAmountText(liters)}` };
+    const water = { liters, ...(advice ? { coached: true } : {}) };
     const wateredToday = events.find((event) => event.plantId === plantId && event.type === "watering" && dayKey(new Date(event.completedAt)) === todayKey);
     const thirst = own.find((decision) => decision.cause === "thirst");
     const thirstSnoozed = ownAll.some((decision) => decision.cause === "thirst" || decision.cause === "heat") && !thirst;
     const lastWatering = lastEventDate(events, plantId, "watering", today);
-    const wateringDue = !lastWatering || today.getTime() - lastWatering.getTime() >= wateringIntervalOf(resolved) * 3_600_000;
+    const wateringDue = advice ? advice.due : !lastWatering || today.getTime() - lastWatering.getTime() >= wateringIntervalOf(resolved) * 3_600_000;
     if (wateredToday) {
       // Arrosée aujourd'hui : la ligne reste, cochée, même quand le conseil météo qui l'a demandée s'est tu.
       const task = wateringTask ?? { id: "check-soil", type: "watering" as const, title: `Arrose ${resolved.entry.label}`, instruction: "Enfonce un doigt sur 2 cm : arrose doucement au pied seulement si la terre est sèche.", minutes: 3, doneTitle: "Arrosage noté.", doneText: "" };
-      gestures.push({ ...taskGesture("watering", resolved, task, now, eventIds), done: true, doneEventId: wateredToday.id });
+      gestures.push({ ...taskGesture("watering", resolved, task, now, eventIds), ...water, done: true, doneEventId: wateredToday.id });
     } else if (!rainComing && !own.some((decision) => decision.cause === "heat")) {
-      if (thirst) gestures.push(decisionGesture("watering", thirst));
-      else if (wateringTask && wateringDue && !thirstSnoozed) gestures.push(taskGesture("watering", resolved, wateringTask, now, eventIds));
+      // Avec le coach, c'est lui qui décide (la soif du moteur ne suit que le rythme moyen).
+      if (thirst && !advice) gestures.push({ ...decisionGesture("watering", thirst), ...water });
+      else if (wateringTask && wateringDue && !thirstSnoozed) gestures.push({ ...taskGesture("watering", resolved, wateringTask, now, eventIds), ...water });
     }
 
     // 3. Récolte.

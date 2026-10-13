@@ -22,7 +22,7 @@ export type TodayTone = "frost" | "heat" | "rain" | "storm" | "wind" | "water" |
 /** `quiet` : toujours replié avec les gestes pas urgents, et pas compté dans ce qui reste à faire (pot libre de la veille). */
 /** `feed` : l'engrais dû le même jour que l'arrosage, fait avec lui (« Arrose et nourris tes tomates »). */
 /** `liters` : la quantité d'un arrosage selon le pot (pastille « 💧 2 L ») ; `sheltered` : balcon couvert un jour de pluie annoncée. */
-type TodayBase = { key: string; tone: TodayTone; icon: string; title: string; subtitle: string; gesture: GestureKind; plantName?: string; quiet?: boolean; feed?: SessionTask; liters?: number; checkCm?: number; sheltered?: boolean };
+type TodayBase = { key: string; tone: TodayTone; icon: string; title: string; subtitle: string; gesture: GestureKind; plantName?: string; quiet?: boolean; feed?: SessionTask; liters?: number; checkCm?: number; sheltered?: boolean; coached?: boolean };
 
 export type TodayItem =
   | (TodayBase & { kind: "alert"; done: false; group: ReminderGroup })
@@ -191,7 +191,7 @@ function rowFor(day: PlantDay, gesture: PlantDay["gestures"][number], groups: Re
     const group = groups.find((candidate) => candidate.decisions.some((decision) => decision.plantId === source.decision.plantId && decision.cause === source.decision.cause));
     if (!group) return null;
     // Le titre dit l'action (« Arrose le basilic ») ; le sous-titre, comment vérifier.
-    return { kind: "alert", key: `alert:${group.key}`, ...common, ...ALERT_LOOK.thirst, title: group.title, subtitle: wateringSubtitle(soilCheckDepthCm(day.resolved.entry)), done: false, group, liters: wateringLitersOf(day.resolved), checkCm: soilCheckDepthCm(day.resolved.entry), ...(group.body.startsWith(SHELTERED_PREFIX) ? { sheltered: true } : {}) };
+    return { kind: "alert", key: `alert:${group.key}`, ...common, ...ALERT_LOOK.thirst, title: group.title, subtitle: wateringSubtitle(soilCheckDepthCm(day.resolved.entry)), done: false, group, liters: gesture.liters ?? wateringLitersOf(day.resolved), ...(gesture.coached ? { coached: true } : {}), checkCm: soilCheckDepthCm(day.resolved.entry), ...(group.body.startsWith(SHELTERED_PREFIX) ? { sheltered: true } : {}) };
   }
   if (source.type === "task") {
     const item = source.task;
@@ -205,7 +205,7 @@ function rowFor(day: PlantDay, gesture: PlantDay["gestures"][number], groups: Re
       subtitle: gesture.kind === "watering" ? wateringSubtitle(soilCheckDepthCm(item.resolved.entry)) : gesture.kind === "fertilizing" ? feedSubtitle(item.resolved) : `${plantDisplayName(item.resolved)} · ${item.task.minutes} min`,
       done: gesture.done,
       task: { ...item, done: gesture.done, eventId: gesture.doneEventId ?? item.eventId },
-      ...(gesture.kind === "watering" ? { liters: wateringLitersOf(item.resolved), checkCm: soilCheckDepthCm(item.resolved.entry) } : {}),
+      ...(gesture.kind === "watering" ? { liters: gesture.liters ?? wateringLitersOf(item.resolved), checkCm: soilCheckDepthCm(item.resolved.entry), ...(gesture.coached ? { coached: true } : {}) } : {}),
     };
   }
   if (source.type === "harvest-end") {

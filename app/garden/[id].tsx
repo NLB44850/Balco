@@ -37,6 +37,7 @@ import { bloomEvent, canMarkBloom, herbariumKey } from "@/lib/garden/herbarium";
 import { byForm } from "@/lib/plants/grammar";
 import { PotSizeSheet } from "@/components/pot-size-sheet";
 import { PotSheetCard } from "@/components/pot-sheet-card";
+import { WateringCoachCard } from "@/components/watering-coach-card";
 import { potSizeOf } from "@/lib/plants/pot-size";
 import { potNeedFor } from "@/lib/plants/pot-sheet";
 
@@ -50,7 +51,7 @@ export default function PlantScreen() {
   const { width } = useWindowDimensions();
   const { id, pot } = useLocalSearchParams<{ id: string; /** « 1 » : ouvrir « Dans quel pot ? » (carte « Vérifie tes pots »). */ pot?: string }>();
   const { loaded, resolvedPlants, pastPlants, events, awards, markAwardsSeen, logEvent, removeEvent, removePlant, renamePlant, setPlantVariety, setPlantPotSize } = useGarden();
-  const { plan, ready, snoozes, reminderSettings, climate } = useDayPlan();
+  const { plan, ready, snoozes, reminderSettings, climate, coach, isPlus } = useDayPlan();
   const { photos, removePhoto } = usePlantPhotos();
   const [shownPhotoId, setShownPhotoId] = useState<string | null>(null);
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
@@ -290,6 +291,9 @@ export default function PlantScreen() {
           </FadeIn>}
 
           {/* Son pot (Balco en tiendra compte : arrosage, terreau, poids) et sa fiche « Spécial pot ». */}
+          {/* Le coach d'arrosage (Balco+), ou ce qu'il apportera (étape 6b). Pas pour une plante pas encore en terre. */}
+          {!plant.toPlant && <WateringCoachCard advice={coach?.get(plant.id)} isPlus={isPlus} />}
+
           <PotSheetCard entry={entry} potSize={potSizeOf(plant)} onChoosePot={() => setPotSheet(true)} />
 
           {/* Tes photos : toucher une photo l'affiche en grand. */}

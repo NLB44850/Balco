@@ -156,6 +156,7 @@ export function gestureDetail(item: TodayItem, ctx: DetailContext): GestureDetai
     const plantNote = item.kind === "task" ? item.task.task.instruction.replace(/ Arrose environ .*$/u, "") : "";
     const feeding = item.feed ? feedingFor(item.feed.resolved.entry.id) : null;
     return {
+      ...(item.coached ? { banner: { text: "✨  Coach Balco+ : selon la chaleur du jour et le soleil de ton balcon", tone: "water" as const } } : {}),
       ...(item.sheltered ? { banner: { text: "☂️  Balcon couvert : la pluie n’arrive pas à tes pots", tone: "water" as const } } : {}),
       ...banner,
       hero: { art: "bottles", liters: item.liters },
