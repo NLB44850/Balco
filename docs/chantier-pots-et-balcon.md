@@ -223,3 +223,15 @@ Règles qui valent pour toutes les étapes :
      trois gestes courts avec icônes (doigt, arroser jusqu'à ce que ça coule, vider la soucoupe après 30 min), l'engrais
      dans un encadré à part, plus de « Pourquoi : Délai de 48 h dépassé » technique. Le repère de la bouteille est
      désormais dessiné à chaque fois (plus de phrase dite une seule fois).
+     **Puis (13/10, à sa demande « uniformiser ce nouveau design pour les autres gestes »)** : le détail de tous les
+     gestes d'Aujourd'hui suit le même format (`lib/garden/gesture-detail.ts`, `gestureDetail`, `gestureKindLabel` ;
+     dessin `components/today/gesture-detail-view.tsx`) : petite ligne du type de geste (« Plantation · ce mois-ci »,
+     « Récolte », « Engrais »…), bandeau éventuel (« ✓ Fait à 14 h 33 », « ☂️ Balcon couvert »), un repère en grand sur
+     fond vert pâle avec une grande icône, puis 2 à 4 gestes courts avec icône. Repères : planter = largeur du pot (fiche)
+     et profondeur de terre, gestes terreau de la fiche / motte au même niveau / tasser / « Arrose bien, environ 2 L » ;
+     semer = profondeur du semis (`PLANTING`), graines par trou et écart, pluie fine, levée ; semis au chaud = « 18 à
+     22 °C », godets, humidité, levée ; rempoter = largeur du pot suivant (`nextPotFor`), signe, racines, terreau,
+     arroser ; terre du dessus = « 5 cm » ; récolte = « Jusqu'en octobre » (fin de la période en cours), consigne de la
+     plante, « Récolte souvent » ; engrais = « 14 jours » entre deux engrais (ou « 1 fois »), arroser d'abord, l'engrais,
+     au pied ; entretien, gestes de suite et alertes météo = leur texte découpé en gestes courts. Tests
+     `tests/gesture-detail.test.ts`, e2e `25-gestes`.
