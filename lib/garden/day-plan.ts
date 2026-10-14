@@ -35,6 +35,7 @@ import {
   dayKey,
   dayOfYear,
   eventForSessionTask,
+  inGroundSince,
   lastEventDate,
   plantDisplayName,
   potHistory,
@@ -265,8 +266,11 @@ export function planDay({ plants, events, now, decisions = [], allDecisions = de
     const thirstSnoozed = ownAll.some((decision) => decision.cause === "thirst" || decision.cause === "heat") && !thirst;
     const lastWatering = lastEventDate(events, plantId, "watering", today);
     const wateringDue = advice ? advice.due : !lastWatering || today.getTime() - lastWatering.getTime() >= wateringIntervalOf(resolved) * 3_600_000;
-    // En retard de 3 jours ou plus sur son rythme (pas arrosée aujourd'hui, arrosage de saison) : orange.
-    const sinceWatering = lastWatering ? Math.round((today.getTime() - startOfDay(lastWatering).getTime()) / 86_400_000) : null;
+    // En retard de 3 jours ou plus sur son rythme (pas arrosée aujourd'hui, arrosage de saison) : orange. Jamais
+    // arrosée dans l'app : compté depuis son arrivée ou sa mise en terre (vu le 14/10, aucune carte ne passait en orange).
+    const arrival = inGroundSince(resolved.plant, events);
+    const wateringSince = lastWatering ?? (arrival === null ? null : new Date(arrival));
+    const sinceWatering = wateringSince ? Math.round((today.getTime() - startOfDay(wateringSince).getTime()) / 86_400_000) : null;
     const rhythmDays = Math.max(1, Math.round(wateringIntervalOf(resolved) / 24));
     const lateWateringDays = !wateredToday && wateringTask && sinceWatering !== null && sinceWatering >= rhythmDays + LATE_WATERING_DAYS ? sinceWatering : null;
     if (wateredToday) {

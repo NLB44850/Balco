@@ -45,7 +45,8 @@ téléphone avant la suivante. Pour chaque étape, on cherche aussi le même dé
      (`OBSERVER_PROBLEM_DAYS`), sauf nouvelle analyse qui va bien ; le verdict est gardé dans l'identifiant de
      l'analyse (`scanEventId`, `scan:<plante>:<ms>:<état>`) ;
   3. « Pot trop petit » (ou « trop peu profond ») : seulement pour une taille choisie ;
-  4. « Pas arrosée depuis N jours » : 3 jours de retard ou plus sur son rythme (`LATE_WATERING_DAYS`).
+  4. « Pas arrosée depuis N jours » : 3 jours de retard ou plus sur son rythme (`LATE_WATERING_DAYS`) ; jamais arrosée
+     dans l'app : compté depuis son arrivée ou sa mise en terre (vu en testant le 14/10).
 - Bleu : « Gel annoncé » (compté) et « Pluie annoncée » (plus comptée). Compteur du Balcon = `status.worry`.
 - Un arrosage ou une récolte du jour : « En forme ». E2e `27-a-surveiller`.
 

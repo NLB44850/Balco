@@ -106,6 +106,10 @@ describe("état d'une plante : une couleur, un sens", () => {
     // La menthe (accordée : « arrosée »), le thym au masculin.
     expect(dayOf(scene(old).plan, "mint-1")!.status).toEqual({ tone: "watch", label: "Pas arrosée depuis 12 jours", worry: true });
     expect(dayOf(scene(old).plan, "thyme-1")!.status.label).toBe("Pas arrosé depuis 12 jours");
+    // Jamais arrosée dans l'app : compté depuis son arrivée (12 jours) ; arrivée il y a 2 jours : pas en retard.
+    const mint = (days: number) => resolvePlants([{ id: "m", catalogId: "mint", addedAt: at(days) }]);
+    expect(planDay({ plants: mint(12), events: [], now: NOW })[0].status).toEqual({ tone: "watch", label: "Pas arrosée depuis 12 jours", worry: true });
+    expect(planDay({ plants: mint(2), events: [], now: NOW })[0].status.tone).toBe("new");
     // Arrosée aujourd'hui : plus en retard.
     const today = { ...watered[0], id: "t-mint", plantId: "mint-1", completedAt: at(0, 8) };
     expect(dayOf(scene([...old, today]).plan, "mint-1")!.status.tone).toBe("good");
