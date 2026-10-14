@@ -3,6 +3,8 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { Image } from "expo-image";
 import { ActivityIndicator, Pressable, ScrollView, StyleSheet, View } from "react-native";
 import { Button } from "@/components/ui/button";
+import { NaturalRemedyCard } from "@/components/natural-remedy-card";
+import { remedyFor } from "@/lib/plants/natural-remedies";
 import { Text } from "@/components/ui/typography";
 
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -49,7 +51,8 @@ const CONFIDENCE = { high: "Confiance élevée", medium: "Confiance moyenne", lo
 /** Ce qui reste dans l'historique de la plante : le constat et les gestes conseillés (500 caractères au plus côté serveur). */
 function scannerNote(diagnosis: Diagnosis) {
   const actions = diagnosis.actions.map((action) => action.title).join(" · ");
-  return `Scanner : ${diagnosis.summary}${actions ? ` À faire : ${actions}.` : ""}`.slice(0, 480);
+  const remedy = remedyFor(diagnosis.problem);
+  return `Scanner : ${diagnosis.summary}${actions ? ` À faire : ${actions}.` : ""}${remedy ? ` Traitement naturel : ${remedy.name}.` : ""}`.slice(0, 480);
 }
 
 export default function ScannerScreen() {
@@ -77,6 +80,8 @@ export default function ScannerScreen() {
   const noScansLeft = scan ? scan.remaining <= 0 : false;
   const diagnosis: Diagnosis | undefined = diagnose.data?.diagnosis;
   const entry = diagnosis?.catalogId ? getCatalogPlant(diagnosis.catalogId) : undefined;
+  // Étape 8b : le problème reconnu par Observer ouvre le traitement naturel vérifié de Balco.
+  const remedy = remedyFor(diagnosis?.problem);
   const owned = entry ? resolvedPlants.find((resolved) => resolved.entry.id === entry.id) : undefined;
 
   const choose = async (source: "camera" | "library") => {
@@ -274,7 +279,8 @@ export default function ScannerScreen() {
                     ))}
                   </View>
                 )}
-                {!!diagnosis.naturalRemedy && (
+                {remedy && <NaturalRemedyCard remedy={remedy} edible={entry?.category !== "flower"} />}
+                {!remedy && !!diagnosis.naturalRemedy && (
                   <View style={[styles.remedy, { backgroundColor: colors.leaf }]}>
                     <Text style={[styles.actionTitle, { color: colors.primary }]}>🌿 Solution naturelle</Text>
                     <Text style={[styles.text, { color: colors.foreground }]}>{diagnosis.naturalRemedy}</Text>

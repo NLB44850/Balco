@@ -23,6 +23,13 @@ test("Observer sans compte : une analyse offerte, puis l'invitation à créer un
 
   await expect(page.getByText("Basilic", { exact: true })).toBeVisible({ timeout: 20_000 });
   await expect(page.getByText("Laisse sécher la terre", { exact: true })).toBeVisible();
+  // Étape 8b : le problème reconnu ouvre le traitement naturel vérifié de Balco, avec ses précautions.
+  const remedy = page.getByLabel("Traitement naturel : pucerons");
+  await expect(remedy).toBeVisible();
+  await expect(remedy.getByText(/1 cuillère à soupe de savon noir liquide dans 1 litre d'eau, pas plus/)).toBeVisible();
+  await expect(remedy.getByText(/Essaie d'abord sur une feuille/)).toBeVisible();
+  await expect(remedy.getByText(/Rince bien avant de manger/)).toBeVisible();
+  await expect(remedy.getByText("Pas mieux dans 10 jours ? Montre-la en jardinerie.")).toBeVisible();
   await expect(page.getByText("Garde ce diagnostic")).toBeVisible();
   await expect(page.getByRole("button", { name: "Créer mon compte gratuit" })).toBeVisible();
 

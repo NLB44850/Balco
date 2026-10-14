@@ -32,7 +32,7 @@ Dans le code : `components/ui/button.tsx` (`Button`, variantes `primary`, `secon
    feuille « Supprimer ce geste », puis « Annuler »), « Renommer » et « Retirer du balcon » en lignes comme Réglages,
    photo retirée avec « Annuler », souvenir de Nora, conversation, « Tout décocher », mode vacances arrêté : même façon.
    Graphique de progression caché tant qu'il n'y a pas assez de semaines.
-3. **Cases, pastilles, « × », retours et textes (règles 6 et 7)** : codée le 14/10, à valider.
+3. **Cases, pastilles, « × », retours et textes (règles 6 et 7)** : codée le 14/10, validée le 14/10.
 
 ### Livraison 2, ce qui est fait (14/10)
 

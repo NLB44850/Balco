@@ -312,3 +312,12 @@ Règles qui valent pour toutes les étapes :
      (« C'est le moment » + « Le pas-à-pas t'attend sur Aujourd'hui », ou « À semer au chaud dès février : Balco te la
      reproposera au printemps. »). Un toucher ajoute ; le message du bas n'a plus que « Annuler ». Les mêmes cartes
      terminent la fiche du catalogue. `addQuestion`, `addOptions` (catalog-add.ts).
+
+   - **8b, traitement naturel dans Observer : codée le 14/10, à valider.** Observer reconnaît le problème (`problem`,
+     9 au choix : pucerons, cochenilles, araignées rouges, mouches blanches, oïdium, mildiou, limaces et escargots,
+     chenilles, moucherons du terreau) ; le traitement affiché vient de Balco (`lib/plants/natural-remedies.ts`,
+     carte `components/natural-remedy-card.tsx`) : gestes à la main d'abord, recette seulement si simple et sûre (savon
+     noir 1 c. à soupe par litre au plus, bicarbonate 5 g par litre), précautions (essai sur une feuille, le soir, ne pas
+     forcer la dose, rincer avant de manger), « Pas mieux dans 10 jours ? Montre-la en jardinerie. ». Le texte libre
+     « Solution naturelle » reste pour les autres cas, écarté par le serveur s'il parle d'un produit à éviter
+     (`isUnsafeRemedyText`). Sources : `docs/sources-traitements.md`. Côté serveur : en ligne après la fusion (Railway).
