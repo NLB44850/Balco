@@ -38,5 +38,8 @@ test("Balco+ simulé : arrosée ce matin, « Pas besoin aujourd'hui » ; sans Ba
   await page.evaluate(() => window.localStorage.setItem("balco.test.simulate-plus.v1", "0"));
   await page.reload();
   await expect(page.getByText("✨  Coach d’arrosage · bientôt avec Balco+")).toBeVisible();
+  // Étape 10 : le coach ouvre l'écran Balco+, avec sa phrase.
+  await page.getByRole("button", { name: "Découvrir Balco+ ›" }).click();
+  await expect(page.getByText("Le coach d’arrosage dit combien verser à chaque plante, chaque jour.")).toBeVisible();
   expect(errors).toEqual([]);
 });

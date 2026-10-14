@@ -325,6 +325,10 @@ export default function AssistantScreen() {
               </View>
             )}
             {chat && <Text style={[styles.quota, { color: noQuestionsLeft || paused ? colors.warning : colors.muted }]}>{unavailable ? "Nora arrive bientôt dans une mise à jour." : paused ?? `${quotaLabel(chat)}${noQuestionsLeft && status.data?.plan === "free" ? `. ${plusQuotaHint("chat")}` : ""}`}</Text>}
+            {/* Étape 10 : la 6ᵉ question du mois ouvre l'écran Balco+. */}
+            {chat && noQuestionsLeft && !paused && status.data?.plan === "free" && (
+              <Button variant="link" center label="Découvrir Balco+" onPress={() => router.push({ pathname: "/plus", params: { from: "nora" } })} style={styles.plusLink} />
+            )}
             <View style={[glass.card, styles.composer]}>
               <TextInput
                 value={draft}
@@ -369,6 +373,7 @@ const styles = StyleSheet.create({
   notice: { fontSize: 13, lineHeight: 18, fontWeight: "600" },
   retry: { alignSelf: "flex-start", borderRadius: 999, borderWidth: 1, paddingHorizontal: 14, paddingVertical: 7 },
   retryText: { fontSize: 13, fontWeight: "700" },
+  plusLink: { marginTop: -4, marginBottom: 4 },
   quota: { fontSize: 12, fontWeight: "600", textAlign: "center", marginBottom: 6, marginHorizontal: 20 },
   loginBar: { marginBottom: 12, marginHorizontal: 20 },
   quickLabel: { fontSize: 13, fontWeight: "600", marginBottom: 2, marginTop: 6 },

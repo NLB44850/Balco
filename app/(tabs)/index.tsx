@@ -22,6 +22,8 @@ import { UndoToast, type ToastMessage } from "@/components/today/undo-toast";
 import { WeatherBanner } from "@/components/today/weather-banner";
 import { useFreePot } from "@/components/free-pot-sheet";
 import { useDayPlan } from "@/hooks/use-day-plan";
+import { useBalcoPlus } from "@/hooks/use-balco-plus";
+import { useFirstFrostHint } from "@/hooks/use-first-frost-hint";
 import { useColors } from "@/hooks/use-colors";
 import { potSizePhrase, recommendedPotSize } from "@/lib/plants/pot-sheet";
 import { useVacation } from "@/hooks/use-vacation";
@@ -221,6 +223,9 @@ export default function HomeScreen() {
   const sheetItem = items.find((item) => item.key === sheetKey) ?? null;
   // Arrosages et récoltes regroupés, gestes pas urgents repliés au-delà de 5 lignes (lib/garden/today.ts).
   const lines = useMemo(() => layoutTodayList(rest), [rest]);
+  // Étape 10 : le premier soir de gel, l'alerte propose Balco+ (compte gratuit, une seule fois).
+  const { isPlus } = useBalcoPlus();
+  const showFrostHint = useFirstFrostHint(banners.some((banner) => banner.group.cause === "frost"), dayKey(now), loaded && !away && !isPlus);
   const [openGroup, setOpenGroup] = useState<GroupedGesture | null>(null);
   const [moreOpen, setMoreOpen] = useState(false);
   const groupSheet = lines.find((line): line is Extract<TodayLine, { type: "group" }> => line.type === "group" && line.gesture === openGroup) ?? null;
@@ -553,6 +558,7 @@ export default function HomeScreen() {
             note={isInfoBanner(banner) ? rainNote(banner.group) : undefined}
             onDone={isInfoBanner(banner) ? undefined : () => void completeAlert(banner.group)}
             onOpen={() => setSheetKey(banner.key)}
+            onPlus={showFrostHint && banner.group.cause === "frost" ? () => router.push({ pathname: "/plus", params: { from: "frost" } }) : undefined}
           />
         ))}
 

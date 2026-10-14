@@ -96,16 +96,24 @@ test("Balco+ sans compte : « Me prévenir à l'ouverture » avec une adresse e-
   await expect(page.getByRole("button", { name: "Sauvegarde : Sur ce téléphone seulement" }).or(page.getByText("Sur ce téléphone seulement"))).toBeVisible();
   await expect(page.getByText("Pour retrouver ton balcon si tu changes de téléphone.")).toBeVisible();
   await expect(page.getByText("Supprimer mon compte")).toHaveCount(0);
+  // Étape 10 : un écran Balco+ à part, l'annuel mis en avant, l'essai, la pause, le prix fondateur.
   await page.getByRole("button", { name: "Balco+ : Bientôt" }).click();
-  const sheet = page.getByRole("dialog");
-  await expect(sheet.getByText("Prix fondateur pour les 500 premiers", { exact: false })).toBeVisible();
-  await expect(sheet.getByText("Gratuit pour tous : tes rappels, le calendrier, la sauvegarde, 1 photo et 5 questions par mois.")).toBeVisible();
-  await expect(sheet.getByText("On t’écrira une seule fois, à l’ouverture de Balco+.")).toBeVisible();
-  await sheet.getByRole("button", { name: "Me prévenir à l’ouverture" }).click();
-  await expect(sheet.getByText("Vérifie ton adresse e-mail.")).toBeVisible();
-  await sheet.getByLabel("Ton adresse e-mail").fill(`plus-${Date.now()}@balco.test`);
-  await sheet.getByRole("button", { name: "Me prévenir à l’ouverture" }).click();
-  await expect(sheet.getByText("C’est noté, on te prévient")).toBeVisible();
+  await expect(page.getByText("Pour ne rien laisser au hasard")).toBeVisible();
+  await expect(page.getByRole("radio", { name: /^À l’année : 29 € \/ an, soit 2,42 € par mois · 51 % de moins qu’au mois/u })).toHaveAttribute("aria-checked", "true");
+  await expect(page.getByText("Le plus avantageux")).toBeVisible();
+  await page.getByRole("radio", { name: /^Au mois : 4,99 € \/ mois/u }).click();
+  await expect(page.getByRole("radio", { name: /^Au mois/u })).toHaveAttribute("aria-checked", "true");
+  await expect(page.getByText("7 jours d’essai gratuit")).toBeVisible();
+  await expect(page.getByText("Pause ou arrêt à tout moment : ton balcon reste")).toBeVisible();
+  await expect(page.getByText(/Prix fondateur pour les 500 premiers/u)).toBeVisible();
+  await expect(page.getByText("Le paiement arrive bientôt : rien n’est prélevé aujourd’hui.")).toBeVisible();
+  await expect(page.getByText("Gratuit pour tous, sans limite de plantes : tes rappels, le calendrier, la sauvegarde, 1 photo et 5 questions par mois.")).toBeVisible();
+  await expect(page.getByText("On t’écrira une seule fois, à l’ouverture de Balco+.")).toBeVisible();
+  await page.getByRole("button", { name: "Me prévenir à l’ouverture" }).click();
+  await expect(page.getByText("Vérifie ton adresse e-mail.")).toBeVisible();
+  await page.getByLabel("Ton adresse e-mail").fill(`plus-${Date.now()}@balco.test`);
+  await page.getByRole("button", { name: "Me prévenir à l’ouverture" }).click();
+  await expect(page.getByText("C’est noté, on te prévient")).toBeVisible();
   expect(errors).toEqual([]);
 });
 

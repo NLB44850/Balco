@@ -51,21 +51,82 @@ export function plusBenefits(): string[] {
   ];
 }
 
-/** Réglages → feuille « Balco+ » : ce que l'offre ajoute, en quatre lignes. */
-export function plusSheetBenefits(): string[] {
+/** Sous les avantages de Balco+ : ce qui reste gratuit pour tous (sans limite de plantes, choix du 11/10). */
+export function freeForAllText() {
+  const { scan, chat } = PLANS.free.aiQuota;
+  return `Gratuit pour tous, sans limite de plantes : tes rappels, le calendrier, la sauvegarde, ${scan > 1 ? `${scan} photos` : "1 photo"} et ${chat} questions par mois.`;
+}
+
+// --- Écran Balco+ (chantier « Pots et balcon », étape 10) ------------------------------------------------------------
+
+/**
+ * Les prix prévus (choix du 11/10) : l'annuel mis en avant, 7 jours d'essai, pause possible. Le paiement n'est pas encore
+ * branché : l'écran propose « Me prévenir à l'ouverture » et dit que rien n'est prélevé.
+ */
+export const PLUS_PRICES = { yearlyEuros: 29, monthlyEuros: 4.99, trialDays: 7 } as const;
+
+/** « 4,99 € », « 29 € », « 2,42 € » : à la française. */
+export function euros(amount: number) {
+  const rounded = Math.round(amount * 100) / 100;
+  return `${Number.isInteger(rounded) ? rounded : rounded.toFixed(2).replace(".", ",")} €`;
+}
+
+/** « soit 2,42 € par mois » pour l'annuel. */
+export function yearlyPerMonthText() {
+  return `soit ${euros(PLUS_PRICES.yearlyEuros / 12)} par mois`;
+}
+
+/** « 51 % de moins qu'au mois » : l'économie de l'annuel, arrondie vers le bas. */
+export function yearlySavingText() {
+  const saving = Math.floor((1 - PLUS_PRICES.yearlyEuros / (PLUS_PRICES.monthlyEuros * 12)) * 100);
+  return `${saving} % de moins qu’au mois`;
+}
+
+/** L'écran Balco+ : ce que l'offre ajoute, avec un emoji par ligne. */
+export function plusScreenBenefits(): Array<{ icon: string; title: string; text: string }> {
   const { scan, chat } = PLANS.plus.aiQuota;
   return [
-    "Les alertes gel et orage, même si tu n’ouvres pas l’app",
-    "Ton balcon sur plusieurs téléphones",
-    `${scan} photos analysées et ${chat} questions à Nora par mois`,
-    `Prix fondateur pour les ${FOUNDER_OFFER.seats} premiers`,
+    { icon: "❄️", title: "Le gel et l’orage, même app fermée", text: "Une notification le soir où il faut rentrer ou couvrir tes plantes." },
+    { icon: "💧", title: "Le coach d’arrosage", text: "La quantité juste pour chaque plante, selon la chaleur, le vent et le soleil." },
+    { icon: "📷", title: `${scan} photos et ${chat} questions à Nora`, text: "Chaque mois, pour comprendre ce qui arrive à tes plantes." },
+    { icon: "📱", title: "Ton balcon sur plusieurs téléphones", text: "Toujours à jour, chez toi comme chez la personne qui arrose." },
   ];
 }
 
-/** Sous les avantages de Balco+ : ce qui reste gratuit pour tous. */
-export function freeForAllText() {
-  const { scan, chat } = PLANS.free.aiQuota;
-  return `Gratuit pour tous : tes rappels, le calendrier, la sauvegarde, ${scan > 1 ? `${scan} photos` : "1 photo"} et ${chat} questions par mois.`;
+/** Ce qui ne change pas : l'essai, la pause et le prix fondateur. */
+export function plusPromises(): string[] {
+  return [
+    `${PLUS_PRICES.trialDays} jours d’essai gratuit`,
+    "Pause ou arrêt à tout moment : ton balcon reste",
+    `Prix fondateur pour les ${FOUNDER_OFFER.seats} premiers, gardé même après une pause`,
+  ];
+}
+
+/** Rien n'est prélevé tant que le paiement n'est pas branché. */
+export const PLUS_NOT_YET = "Le paiement arrive bientôt : rien n’est prélevé aujourd’hui.";
+
+/** D'où l'on arrive sur l'écran Balco+ (les déclencheurs du 11/10). */
+export type PlusTrigger = "photo" | "nora" | "frost" | "coach";
+
+/** La phrase d'accueil selon le déclencheur : ce qui vient d'arriver, puis ce que Balco+ change. */
+export function plusTriggerText(trigger: PlusTrigger | undefined): string | null {
+  const { scan, chat } = PLANS.plus.aiQuota;
+  switch (trigger) {
+    case "photo":
+      return `${PLANS.free.aiQuota.scan > 1 ? "Tes photos du mois sont analysées" : "Ta photo du mois est analysée"}. Avec Balco+, ${scan} photos chaque mois.`;
+    case "nora":
+      return `Tes ${PLANS.free.aiQuota.chat} questions du mois sont posées. Avec Balco+, ${chat} questions à Nora chaque mois.`;
+    case "frost":
+      return "Gel annoncé ce soir. Avec Balco+, l’alerte arrive même si tu n’ouvres pas l’app.";
+    case "coach":
+      return "Le coach d’arrosage dit combien verser à chaque plante, chaque jour.";
+    default:
+      return null;
+  }
+}
+
+export function isPlusTrigger(value: unknown): value is PlusTrigger {
+  return value === "photo" || value === "nora" || value === "frost" || value === "coach";
 }
 
 /** Ce que le compte gratuit garde, sans contrepartie : rassurant avant de parler de Balco+. */

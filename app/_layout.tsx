@@ -101,6 +101,7 @@ export default function RootLayout() {
             <Stack.Screen name="vacation" />
             <Stack.Screen name="helper-note" />
             <Stack.Screen name="event/[id]" />
+            <Stack.Screen name="plus" />
           </Stack>
           <StatusBar style="dark" />
           <GlobalToast />

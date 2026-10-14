@@ -46,10 +46,11 @@ test("connexion par code, le balcon retrouvé sur un autre téléphone, qui devi
 
   // Balco+ : « Me prévenir à l'ouverture » avec le compte, sans rien demander d'autre.
   await phone.getByRole("button", { name: "Balco+ : Bientôt" }).click();
-  await expect(phone.getByRole("dialog").getByLabel("Ton adresse e-mail")).toHaveCount(0);
-  await phone.getByRole("dialog").getByRole("button", { name: "Me prévenir à l’ouverture" }).click();
-  await expect(phone.getByRole("dialog").getByText("C’est noté, on te prévient")).toBeVisible();
-  await phone.getByRole("dialog").getByRole("button", { name: "Fermer la fiche" }).click();
+  await expect(phone.getByText("Pour ne rien laisser au hasard")).toBeVisible();
+  await expect(phone.getByLabel("Ton adresse e-mail")).toHaveCount(0);
+  await phone.getByRole("button", { name: "Me prévenir à l’ouverture" }).click();
+  await expect(phone.getByText("C’est noté, on te prévient")).toBeVisible();
+  await phone.getByRole("button", { name: "Retour" }).click();
 
   // Supprimer le compte : le balcon reste sur ce téléphone, sans revenir à l'accueil.
   await phone.getByRole("button", { name: "Supprimer mon compte" }).click();

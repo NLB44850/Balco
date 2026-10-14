@@ -134,8 +134,8 @@ marque citée, jamais de produit chimique, tout en centimètres (jamais de litre
   secondaire, lien vert « › », plus de bouton noir), une seule façon de supprimer (avec « Annuler »), cases et « × »
   identiques, boutons à l'infinitif. Livraison 1 (les boutons) validée ; 2 (suppression avec « Annuler », fiche plante refaite) validée, petits bugs corrigés, fusionnée (PR #50) ; 3 (cases rondes pour un geste fait, carrées pour une option, même « × » et même flèche de retour, boutons à l'infinitif) validée le 14/10.
 - **Étape 8b, traitement naturel dans Observer : validée et fusionnée (PR #51, 14/10).** Observer reconnaît le problème (pucerons, oïdium…) et Balco affiche son propre traitement vérifié : gestes à la main d'abord, recette simple (savon noir 1 cuillère à soupe par litre au plus), précautions, « Pas mieux dans 10 jours ? Montre-la en jardinerie. » Jamais de produit chimique.
-- **Étape 9, calculateur de poids : codée le 14/10, à valider.** Réglages → Mon balcon → « Poids de tes pots » : une estimation comptée large (terreau mouillé 1 kg par litre, pot en terre cuite), pot par pot, avec le repère « souvent 350 kg par m² » et le conseil de demander au syndic.
-- Puis : 10 écran Balco+.
+- **Étape 9, calculateur de poids : validée le 14/10.** Réglages → Mon balcon → « Poids de tes pots » : une estimation comptée large (terreau mouillé 1 kg par litre, pot en terre cuite), pot par pot, avec le repère « souvent 350 kg par m² » et le conseil de demander au syndic.
+- **Étape 10, écran Balco+ : codée le 14/10, à valider.** Un écran à part : les avantages, l'annuel mis en avant (29 € par an, soit 2,42 € par mois, contre 4,99 € par mois), 7 jours d'essai, pause, prix fondateur, « Me prévenir à l'ouverture » (rien n'est prélevé). Il s'ouvre aussi à la 2ᵉ photo du mois, à la 6ᵉ question à Nora, le premier soir de gel et depuis le coach d'arrosage.
 
 ## Ce qu'il reste à faire, dans l'ordre
 
