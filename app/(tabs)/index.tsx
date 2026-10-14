@@ -256,7 +256,7 @@ export default function HomeScreen() {
   };
   const hideToast = useCallback(() => setToast(null), []);
   // Après la récolte d'une plante récoltée en une fois : « Tout récolté ? », puis « Ton pot est libre ».
-  const freePot = useFreePot({ climate, onDone: (text) => showToast(text), overlay: <><UndoToast message={toast} onDone={hideToast} />{celebration}</> });
+  const freePot = useFreePot({ climate, onDone: (text) => showToast(text), overlay: <><UndoToast message={toast} onDone={hideToast} bottom={insets.bottom + 16} />{celebration}</> });
 
   /**
    * Un badge, un niveau, une série ou une récolte débloqués par ce geste : plein écran pour un badge ou une
@@ -745,7 +745,7 @@ export default function HomeScreen() {
       <BottomSheet
         visible={groupSheet !== null}
         onClose={() => setOpenGroup(null)}
-        overlay={<><UndoToast message={toast} onDone={hideToast} />{celebration}</>}
+        overlay={<><UndoToast message={toast} onDone={hideToast} bottom={insets.bottom + 16} />{celebration}</>}
       >
         {groupSheet && (
           <View style={styles.sheet}>

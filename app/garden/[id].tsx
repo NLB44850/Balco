@@ -70,7 +70,7 @@ export default function PlantScreen() {
   }, []);
   const hideToast = useCallback(() => setToast(null), []);
   // Après la récolte d'une plante récoltée en une fois. Pot vidé ou donné à une autre plante : la fiche se ferme.
-  const freePot = useFreePot({ climate, onDone: (text, kind) => (kind === "restart" ? showToast(text) : back()), overlay: <><UndoToast message={toast} onDone={hideToast} />{celebration}</> });
+  const freePot = useFreePot({ climate, onDone: (text, kind) => (kind === "restart" ? showToast(text) : back()), overlay: <><UndoToast message={toast} onDone={hideToast} bottom={insets.bottom + 16} />{celebration}</> });
   const capture = usePlantPhotoCapture(showToast);
   const now = clockNow();
   const resolved = resolvedPlants.find((item) => item.plant.id === id);

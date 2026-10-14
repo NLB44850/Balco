@@ -320,7 +320,7 @@ export default function CalendarScreen() {
       <BottomSheet
         visible={sheetGroup !== null}
         onClose={() => setGroupKey(null)}
-        overlay={<UndoToast message={toast} onDone={hideToast} />}
+        overlay={<UndoToast message={toast} onDone={hideToast} bottom={insets.bottom + 16} />}
       >
         {sheetGroup && (
           <View style={styles.sheet}>

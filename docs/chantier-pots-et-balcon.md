@@ -289,3 +289,8 @@ Règles qui valent pour toutes les étapes :
    - Choix faits en codant : « Ressemer » reste proposé (semis échelonnés dans la même saison) ; pas de lien vers le
      catalogue entier (la feuille resterait courte). Tests `tests/replant.test.ts`, e2e « pot libre : Que planter à la
      place ? » (`14-apres-recolte`).
+   - **Retour du 14/10** (capture : « Oui » du message du bas peu visible, caché par la barre d'Android au-dessus d'une
+     feuille du bas) : le bouton du message du bas (`components/today/undo-toast.tsx`) est une pastille d'au moins 44
+     points (« Oui » en vert plein, « Annuler » en blanc), texte sur 3 lignes, une question reste 9 s au lieu de 5 ; au
+     -dessus d'une feuille du bas, le message tient compte de la marge du bas du téléphone (`bottom={insets.bottom + 16}`
+     dans Aujourd'hui, Saisons et la fiche).
