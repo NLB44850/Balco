@@ -170,7 +170,7 @@ export default function ScannerScreen() {
       : status.data?.paused && !diagnosis
         ? { title: "L’analyse fait une pause", text: status.data.paused }
       : noScansLeft && !diagnosis
-        ? { title: "Tes analyses du mois sont utilisées", text: `En attendant, pose ta question à Nora ou regarde tes feuilles de près : le dessous, les tiges et la terre.${status.data?.plan === "free" ? ` ${plusQuotaHint("scan")}` : ""}`, action: { label: "Demander à Nora", onPress: () => router.push("/(tabs)/assistant") } }
+        ? { title: "Tes analyses du mois sont utilisées", text: `En attendant, pose ta question à Nora ou regarde tes feuilles de près : le dessous, les tiges et la terre.${status.data?.plan === "free" ? ` ${plusQuotaHint("scan")}` : ""}`, action: { label: "Demander à Nora", onPress: () => router.push("/(tabs)/assistant") }, plus: status.data?.plan === "free" }
         : null;
 
   return (
@@ -192,6 +192,10 @@ export default function ScannerScreen() {
             )}
             {blocker.action && (
               <Button label={blocker.action.label} onPress={blocker.action.onPress} />
+            )}
+            {/* Étape 10 : la 2ᵉ photo du mois ouvre l'écran Balco+. */}
+            {"plus" in blocker && blocker.plus && (
+              <Button variant="link" center label="Découvrir Balco+" onPress={() => router.push({ pathname: "/plus", params: { from: "photo" } })} />
             )}
           </View>
         ) : (

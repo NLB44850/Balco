@@ -15,6 +15,8 @@ type WeatherBannerProps = {
   /** Absent : bandeau à lire seulement (pluie). Présent : bouton « C'est fait ». */
   onDone?: () => void;
   onOpen: () => void;
+  /** Étape 10 : le premier soir de gel, une ligne vers Balco+ (compte gratuit). */
+  onPlus?: () => void;
 };
 
 /**
@@ -22,7 +24,7 @@ type WeatherBannerProps = {
  * la chaleur. Toucher le bandeau ouvre le détail (« Dans 3 h », « Pas aujourd'hui ») ; le bouton
  * « C'est fait » note l'action demandée pour toutes les plantes concernées.
  */
-export function WeatherBanner({ icon, tone, title, subtitle, note, onDone, onOpen }: WeatherBannerProps) {
+export function WeatherBanner({ icon, tone, title, subtitle, note, onDone, onOpen, onPlus }: WeatherBannerProps) {
   const colors = useColors();
   const heat = tone === "heat";
   const accent = heat ? colors.terracotta : colors.frost;
@@ -43,6 +45,11 @@ export function WeatherBanner({ icon, tone, title, subtitle, note, onDone, onOpe
           <Text style={styles.buttonText}>C’est fait</Text>
         </Pressable>
       )}
+      {onPlus && (
+        <Pressable accessibilityRole="button" accessibilityLabel="Avec Balco+, l’alerte gel arrive même app fermée ›" onPress={onPlus} hitSlop={6} style={({ pressed }) => [styles.plus, pressed && styles.pressed]}>
+          <Text style={[styles.plusText, { color: accent }]}>Avec Balco+, l’alerte gel arrive même app fermée ›</Text>
+        </Pressable>
+      )}
     </FadeIn>
   );
 }
@@ -58,5 +65,7 @@ const styles = StyleSheet.create({
   note: { fontSize: 13, lineHeight: 18 },
   button: { alignSelf: "flex-start", marginLeft: 52, borderRadius: 999, paddingHorizontal: 18, paddingVertical: 9 },
   buttonText: { color: "#FFFFFF", fontSize: 14, fontWeight: "700" },
+  plus: { marginLeft: 52 },
+  plusText: { fontSize: 13, fontWeight: "700" },
   pressed: { opacity: 0.7 },
 });

@@ -79,6 +79,22 @@ test.describe("alertes météo", () => {
     await expect(page.getByText("Alerte météo · à voir sur Aujourd’hui")).toHaveCount(0);
   });
 
+  test("premier soir de gel : l'alerte propose Balco+ (compte gratuit), une seule fois", async ({ page }) => {
+    const now = await atDate(page, new Date(2027, 4, 5, 18));
+    await mockWeather(page);
+    await seedBalcony(page, { plants: PLANTS, now });
+    await simulate(page, "frost");
+    const hint = page.getByRole("button", { name: "Avec Balco+, l’alerte gel arrive même app fermée ›" });
+    await expect(hint).toBeVisible();
+    await hint.click();
+    await expect(page.getByText("Gel annoncé ce soir. Avec Balco+, l’alerte arrive même si tu n’ouvres pas l’app.")).toBeVisible();
+    // Un autre soir de gel : la ligne ne revient pas.
+    await page.evaluate(() => window.localStorage.setItem("balco.plus.frost-hint.v1", "2027-05-01"));
+    await page.goto("/");
+    await expect(page.getByText("Gel cette nuit : protège le basilic")).toBeVisible({ timeout: 20_000 });
+    await expect(hint).toHaveCount(0);
+  });
+
   test("orage : tout le balcon à l'abri, pas d'arrosage pendant l'orage", async ({ page }) => {
     await mockWeather(page);
     await seedBalcony(page, { plants: PLANTS });

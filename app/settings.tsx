@@ -4,11 +4,9 @@
  * Ton balcon, tes rappels, toi, ta sauvegarde et ton compte. Chaque changement s'enregistre tout de suite, sans bouton « Valider ».
  * S'ouvre depuis la roue crantée de Moi.
  */
-import AsyncStorage from "@react-native-async-storage/async-storage";
 import Constants from "expo-constants";
-import { TRPCClientError } from "@trpc/client";
 import { useRouter } from "expo-router";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { Alert, AppState, Linking, Platform, Pressable, ScrollView, StyleSheet, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
@@ -23,10 +21,8 @@ import { ScreenHeader } from "@/components/screen-header";
 import { Button } from "@/components/ui/button";
 import { Check } from "@/components/ui/check";
 import { Text, TextInput } from "@/components/ui/typography";
-import { freeForAllText, plusSheetBenefits } from "@/lib/plans";
 import { FEEDBACK_EMAIL, feedbackMailto, versionText } from "@/lib/feedback";
 import { currentUpdateDate } from "@/hooks/use-app-updates";
-import { trpc } from "@/lib/trpc";
 import { useBalcoPlus } from "@/hooks/use-balco-plus";
 import { useColors } from "@/hooks/use-colors";
 import { useLocalWeather } from "@/hooks/use-local-weather";
@@ -35,6 +31,7 @@ import { useDateSimulation } from "@/hooks/use-date-simulation";
 import { useEventDismissals } from "@/hooks/use-event-dismissals";
 import { addDays, clockPresets, longDayText } from "@/lib/clock";
 import { useGarden } from "@/lib/garden/garden-context";
+import { BALCONY_LOAD_NOTE, balconyWeight, guessedNote, LIGHTER_TIP, weightIntro, weightValue } from "@/lib/garden/balcony-weight";
 import { dayKey, plantDisplayName } from "@/lib/garden/garden-logic";
 import { harvestEndStates, potIsFree, settleLongOverSeasons } from "@/lib/garden/harvest-end";
 import { GOAL_OPTIONS, SPACE_OPTIONS, SUNLIGHT_UNKNOWN } from "@/lib/garden/onboarding";
@@ -43,6 +40,7 @@ import { backupStatus, cityValue, goalsValue, NOT_YET, spaceValue, springWishEnt
 import { ORIENTATION_OPTIONS, seasonSunHours, sunSummary, type Orientation } from "@/lib/garden/sun";
 import { nextSpringReminder, SPRING_REMINDER_SOURCE, springReminderContent } from "@/lib/garden/spring";
 import { notificationsUnavailableReason } from "@/lib/notifications/module";
+import { POT_SIZE_CHOICES } from "@/lib/plants/pot-size";
 import { activateReminders, NOTIFICATIONS_DENIED } from "@/lib/reminders/activate";
 import {
   clearAndDisableLocalReminders,
@@ -62,8 +60,6 @@ import type { ReminderSnooze } from "@/lib/reminders/reminder-actions";
 import { coversReminder, followedText, hourText, isFollowed, QUIET_END_HOURS, QUIET_START_HOURS, quietText, REMINDER_HOURS, reminderHourChoice, toggleFollowed, vacationText, withReminderHour } from "@/lib/reminders/settings-text";
 import { WEATHER_SCENARIOS } from "@/lib/weather/simulation";
 
-/** « Me prévenir à l'ouverture » déjà demandé depuis ce téléphone (sans compte, l'adresse n'est gardée que sur le serveur). */
-const PLUS_NOTIFY_STORAGE_KEY = "balco.plus.notify.v1";
 const appVersion = Constants.expoConfig?.version ?? "1.0.0";
 
 export default function SettingsScreen() {
@@ -94,35 +90,6 @@ export default function SettingsScreen() {
       setDeleteError("La suppression n’a pas abouti. Vérifie ta connexion et réessaie.");
     } finally {
       setDeleting(false);
-    }
-  };
-
-  // « Me prévenir à l'ouverture » de Balco+ : le compte, ou sans compte une adresse e-mail.
-  const interest = trpc.plus.interest.useQuery(undefined, { enabled: account.signedIn, retry: false });
-  const [notifiedHere, setNotifiedHere] = useState(false);
-  const notified = notifiedHere || (account.signedIn && interest.data?.interested === true);
-  useEffect(() => {
-    void AsyncStorage.getItem(PLUS_NOTIFY_STORAGE_KEY).then((value) => setNotifiedHere(value === "1")).catch(() => undefined);
-  }, []);
-  const [notifyEmail, setNotifyEmail] = useState("");
-  const [notifying, setNotifying] = useState(false);
-  const [notifyError, setNotifyError] = useState<string | null>(null);
-  const notifyMutation = trpc.plus.notifyMe.useMutation();
-  const notifyMe = async () => {
-    if (!account.signedIn && !/^\S+@\S+\.\S+$/.test(notifyEmail.trim())) {
-      setNotifyError("Vérifie ton adresse e-mail.");
-      return;
-    }
-    setNotifying(true);
-    setNotifyError(null);
-    try {
-      await notifyMutation.mutateAsync(account.signedIn ? {} : { email: notifyEmail.trim() });
-      setNotifiedHere(true);
-      await AsyncStorage.setItem(PLUS_NOTIFY_STORAGE_KEY, "1").catch(() => undefined);
-    } catch (error) {
-      setNotifyError(error instanceof TRPCClientError && error.data?.code === "TOO_MANY_REQUESTS" ? error.message : "Pas de connexion pour l’instant : réessaie plus tard.");
-    } finally {
-      setNotifying(false);
     }
   };
 
@@ -159,7 +126,7 @@ export default function SettingsScreen() {
 
   const location = useLocalWeather();
   const [cityPickerOpen, setCityPickerOpen] = useState(false);
-  const [sheet, setSheet] = useState<"sun" | "space" | "goals" | "spring" | "name" | "level" | "hour" | "quiet" | "plants" | "check" | "plus" | "delete" | "simulation" | "date" | null>(null);
+  const [sheet, setSheet] = useState<"sun" | "space" | "goals" | "spring" | "name" | "level" | "hour" | "quiet" | "plants" | "check" | "delete" | "simulation" | "date" | "weight" | null>(null);
   const closeSheet = () => setSheet(null);
   // « Envies » : plusieurs choix, enregistrés d'un coup par « Enregistrer ».
   const [goalsDraft, setGoalsDraft] = useState<string[]>([]);
@@ -199,6 +166,8 @@ export default function SettingsScreen() {
     return subscribeReminderSnoozes(setSnoozes);
   }, []);
   const harvestEnds = settleLongOverSeasons(harvestEndStates(snoozes, new Date()), resolvedPlants, events, new Date());
+  // Étape 9 : le poids des pots (une estimation comptée large, lib/garden/balcony-weight.ts).
+  const weight = useMemo(() => balconyWeight(resolvedPlants), [resolvedPlants]);
   const eligiblePlants = resolvedPlants.filter((resolved) => !resolved.plant.toPlant && !potIsFree(resolved, harvestEnds.get(resolved.plant.id)));
 
   // L'autorisation du téléphone, relue au retour dans l'app (après un passage par ses réglages).
@@ -334,36 +303,6 @@ export default function SettingsScreen() {
           </>
         )}
       </BottomSheet>
-      <BottomSheet visible={sheet === "plus"} onClose={closeSheet}>
-        <SheetHeading title="Balco+" intro="Pour ne rien laisser au hasard." />
-        <View style={styles.benefits}>
-          {plusSheetBenefits().map((benefit) => (
-            <View key={benefit} style={styles.benefitRow}>
-              <Text style={[styles.benefitMark, { color: colors.primary }]}>✓</Text>
-              <Text style={[styles.benefit, { color: colors.foreground }]}>{benefit}</Text>
-            </View>
-          ))}
-        </View>
-        <Text style={[styles.sheetHint, { color: colors.muted }]}>{freeForAllText()}</Text>
-        {account.signedIn && account.plan === "plus" ? (
-          <Text style={[styles.sheetNote, { color: colors.primary }]}>{account.founder ? "Tu as Balco+ au prix fondateur : merci d’être là depuis le début." : "Tu as Balco+ : merci !"}</Text>
-        ) : notified ? (
-          <View style={[styles.notified, { backgroundColor: colors.leaf }]}>
-            <Text style={[styles.notifiedText, { color: colors.primary }]}>C’est noté, on te prévient</Text>
-          </View>
-        ) : (
-          <>
-            {!account.signedIn && (
-              <>
-                <TextInput value={notifyEmail} onChangeText={setNotifyEmail} accessibilityLabel="Ton adresse e-mail" placeholder="Ton adresse e-mail" placeholderTextColor={colors.muted} autoCapitalize="none" autoComplete="email" keyboardType="email-address" returnKeyType="send" onSubmitEditing={() => void notifyMe()} style={[styles.sheetInput, { borderColor: colors.border, color: colors.foreground }]} />
-                <Text style={[styles.accountHint, { color: colors.muted }]}>On t’écrira une seule fois, à l’ouverture de Balco+.</Text>
-              </>
-            )}
-            <Button label={notifying ? "Envoi…" : "Me prévenir à l’ouverture"} accessibilityLabel="Me prévenir à l’ouverture" disabled={notifying} onPress={() => void notifyMe()} style={styles.sheetButton} />
-            {notifyError && <Text style={[styles.accountHint, { color: colors.error }]}>{notifyError}</Text>}
-          </>
-        )}
-      </BottomSheet>
       <BottomSheet visible={sheet === "delete"} onClose={closeSheet}>
         <SheetHeading title="Supprimer ton compte ?" intro="Ton compte, ta sauvegarde et tes échanges avec Nora seront effacés. Ton balcon reste sur ce téléphone." />
         <Button variant="danger" label={deleting ? "Suppression…" : "Supprimer définitivement"} accessibilityLabel="Supprimer définitivement" disabled={deleting} onPress={() => void removeAccount()} style={styles.sheetButton} />
@@ -467,6 +406,27 @@ export default function SettingsScreen() {
           </View>
         ))}
       </BottomSheet>
+      <BottomSheet visible={sheet === "weight"} onClose={closeSheet}>
+        <SheetHeading title={weight.pots.length === 0 ? "Pas encore de pot" : `Environ ${weight.totalKg} kg`} intro={weight.pots.length === 0 ? "Ajoute une plante à ton balcon : Balco estimera le poids de ses pots." : weightIntro(weight)} />
+        {weight.pots.map((pot) => {
+          const resolved = resolvedPlants.find((item) => item.plant.id === pot.plantId);
+          if (!resolved) return null;
+          const sizeText = pot.size ? POT_SIZE_CHOICES.find((choice) => choice.id === pot.size)?.title : "Grand bac";
+          return (
+            <View key={pot.plantId} style={[styles.wishRow, { borderColor: colors.border }]}>
+              <PlantPicture resolved={resolved} style={styles.wishPicture} />
+              <View style={styles.flex}>
+                <Text style={[styles.wishName, { color: colors.foreground }]}>{plantDisplayName(resolved)}</Text>
+                <Text style={[styles.weightSize, { color: colors.muted }]}>{pot.guessed ? `Taille conseillée : ${sizeText?.toLowerCase()}` : sizeText}</Text>
+              </View>
+              <Text style={[styles.weightKg, { color: colors.foreground }]}>{pot.kg} kg</Text>
+            </View>
+          );
+        })}
+        {weight.guessedCount > 0 && <Text style={[styles.sheetNote, { color: colors.muted }]}>{guessedNote(weight.guessedCount)}</Text>}
+        <Text style={[styles.sheetNote, { color: colors.foreground }]}>{BALCONY_LOAD_NOTE}</Text>
+        <Text style={[styles.sheetNote, { color: colors.muted }]}>{LIGHTER_TIP}</Text>
+      </BottomSheet>
       <ScrollView keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false} contentContainerStyle={[styles.content, { paddingTop: insets.top + 14 }]}>
         <ScreenHeader back title="Réglages" subtitle="Tout s’enregistre tout de suite" style={styles.header} />
 
@@ -477,6 +437,7 @@ export default function SettingsScreen() {
           <SettingRow label="Envies" value={goalsValue(answers.goals)} onPress={openGoals} />
           <SettingRow label="Envies du printemps" value={springWishesValue(onboarding?.springWishes)} onPress={() => setSheet("spring")} />
           <SettingRow label="Diagnostic de ton balcon" onPress={() => router.push("/diagnostic")} />
+          <SettingRow label="Poids de tes pots" value={weightValue(weight)} onPress={() => setSheet("weight")} />
         </SettingsGroup>
 
         <SettingsGroup title="Rappels">
@@ -528,7 +489,7 @@ export default function SettingsScreen() {
               )}
             </View>
           )}
-          <SettingRow label="Balco+" value={account.signedIn && account.plan === "plus" ? "Actif" : "Bientôt"} onPress={() => setSheet("plus")} />
+          <SettingRow label="Balco+" value={account.signedIn && account.plan === "plus" ? "Actif" : "Bientôt"} onPress={() => router.push("/plus")} />
           {account.signedIn && <SettingRow label="Supprimer mon compte" danger onPress={openDelete} />}
         </SettingsGroup>
 
@@ -561,7 +522,6 @@ const styles = StyleSheet.create({
   introReset: { alignSelf: "flex-start", marginTop: 4 },
   content: { paddingHorizontal: 20, paddingBottom: 40 },
   header: { marginBottom: 8 },
-  benefits: { gap: 8, marginTop: 8 },
   // Deux boutons qui ne tiennent pas sur une ligne (« Sauvegarder depuis ce téléphone ») : le second passe dessous.
   accountActions: { flexDirection: "row", flexWrap: "wrap", alignItems: "center", gap: 10, marginTop: 10 },
   simulationChips: { flexDirection: "row", flexWrap: "wrap", gap: 8, marginTop: 12 },
@@ -589,15 +549,12 @@ const styles = StyleSheet.create({
   accountBlock: { paddingBottom: 12 },
   accountWide: { marginTop: 10 },
   accountHint: { fontSize: 13, lineHeight: 18, marginTop: 8 },
-  benefitRow: { flexDirection: "row", gap: 10 },
-  benefitMark: { fontSize: 15, lineHeight: 21, fontWeight: "800" },
-  benefit: { flex: 1, fontSize: 15, lineHeight: 21 },
-  notified: { borderRadius: 14, paddingVertical: 14, alignItems: "center", marginTop: 14 },
-  notifiedText: { fontSize: 15, fontWeight: "700" },
   version: { fontSize: 13, textAlign: "center", marginTop: 14 },
   sheetNote: { fontSize: 15, lineHeight: 21, marginTop: 6 },
   wishRow: { flexDirection: "row", alignItems: "center", gap: 12, borderBottomWidth: StyleSheet.hairlineWidth, paddingVertical: 10 },
   wishPicture: { width: 40, height: 40, borderRadius: 20, alignItems: "center", justifyContent: "center" },
   wishName: { flex: 1, fontSize: 15, fontWeight: "600" },
+  weightSize: { fontSize: 13, marginTop: 2 },
+  weightKg: { fontSize: 15, fontWeight: "700" },
   pressed: { opacity: 0.78, transform: [{ scale: 0.98 }] },
 });

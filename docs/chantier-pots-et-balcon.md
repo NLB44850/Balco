@@ -313,7 +313,7 @@ Règles qui valent pour toutes les étapes :
      reproposera au printemps. »). Un toucher ajoute ; le message du bas n'a plus que « Annuler ». Les mêmes cartes
      terminent la fiche du catalogue. `addQuestion`, `addOptions` (catalog-add.ts).
 
-   - **8b, traitement naturel dans Observer : codée le 14/10, à valider.** Observer reconnaît le problème (`problem`,
+   - **8b, traitement naturel dans Observer : codée le 14/10, validée et fusionnée (PR #51, 14/10).** Observer reconnaît le problème (`problem`,
      9 au choix : pucerons, cochenilles, araignées rouges, mouches blanches, oïdium, mildiou, limaces et escargots,
      chenilles, moucherons du terreau) ; le traitement affiché vient de Balco (`lib/plants/natural-remedies.ts`,
      carte `components/natural-remedy-card.tsx`) : gestes à la main d'abord, recette seulement si simple et sûre (savon
@@ -321,3 +321,23 @@ Règles qui valent pour toutes les étapes :
      forcer la dose, rincer avant de manger), « Pas mieux dans 10 jours ? Montre-la en jardinerie. ». Le texte libre
      « Solution naturelle » reste pour les autres cas, écarté par le serveur s'il parle d'un produit à éviter
      (`isUnsafeRemedyText`). Sources : `docs/sources-traitements.md`. Côté serveur : en ligne après la fusion (Railway).
+9. **Calculateur de poids : codé le 14/10, validé le 14/10 (« c'est nickel »).** Réglages → Mon balcon → « Poids de tes pots » (valeur « ≈ 20 kg »),
+   feuille du bas : « Environ 20 kg », un pot par ligne (taille, kg), le plus lourd d'abord. Terreau bien arrosé à
+   1 kg par litre (compté large), pot vide compté en terre cuite (1 / 3 / 6 / 5 kg), taille « Je ne sais pas » =
+   taille conseillée par la fiche et c'est dit ; plantes « à planter » non comptées ; total arrondi aux 5 kg. Repère
+   « souvent 350 kg par m² pour un balcon récent, parfois moins dans l'ancien » + demander au syndic ; « Pour alléger ».
+   Pas de seuil « danger » (surface et état du balcon inconnus). Logique `lib/garden/balcony-weight.ts`, sources
+   `docs/sources-poids.md`, tests `tests/balcony-weight.test.ts`, e2e `16-reglages`.
+10. **Écran Balco+ refait : codé le 14/10, à valider.** Écran à part `app/plus.tsx` (Réglages → Compte → Balco+, à la
+   place de la feuille du bas) : 4 avantages (gel et orage app fermée, coach d'arrosage, 20 photos et 100 questions,
+   plusieurs téléphones), choix « À l'année · 29 € / an, soit 2,42 € par mois · 51 % de moins qu'au mois » coché d'office
+   avec « Le plus avantageux », « Au mois · 4,99 € / mois · Sans engagement » ; 7 jours d'essai, pause ou arrêt à tout
+   moment, prix fondateur pour les 500 premiers ; « Me prévenir à l'ouverture » (`hooks/use-plus-interest.ts`) et « Le
+   paiement arrive bientôt : rien n'est prélevé aujourd'hui » ; « Gratuit pour tous, sans limite de plantes ». Prix et
+   textes dans `lib/plans.ts` (`PLUS_PRICES`, `plusScreenBenefits`, `plusPromises`, `plusTriggerText`).
+   Déclencheurs (« Découvrir Balco+ › », `/plus?from=…` avec une phrase d'accueil) : 2ᵉ photo du mois (Observer, quota
+   gratuit utilisé), 6ᵉ question à Nora (sous le compteur), premier soir de gel (ligne sous l'alerte gel d'Aujourd'hui,
+   une seule fois : `hooks/use-first-frost-hint.ts`), coach d'arrosage (carte « bientôt avec Balco+ » de la fiche).
+   Choix faits en codant : le choix annuel / mensuel ne change rien tant que le paiement n'est pas branché ; en Balco+
+   (ou simulé), l'écran remercie au lieu de proposer. Tests `tests/plus-offer.test.ts`, e2e `16-reglages`, `2-meteo`,
+   `26-coach`, `3-compte-et-vacances`.
