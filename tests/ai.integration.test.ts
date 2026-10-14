@@ -150,6 +150,23 @@ describe.skipIf(!TEST_DATABASE_URL)("AI scanner and assistant (fake Messages API
       expect(diagnosis.catalogId).toBeNull();
     });
 
+    it("étape 8b : le problème reconnu ouvre le traitement de Balco, un texte libre risqué est écarté", async () => {
+      nextReplies = [scanReply({ ...DIAGNOSIS, problem: "aphids", naturalRemedy: "Savon noir dilué." })];
+      const aphids = await caller(plusUserId, "plus").ai.diagnose({ imageBase64: JPEG });
+      expect(aphids.diagnosis).toMatchObject({ problem: "aphids", naturalRemedy: "" });
+      const schema = requests.at(-1)!.body.output_config.format.schema;
+      expect(schema.properties.problem.enum).toEqual(expect.arrayContaining(["aphids", "powdery-mildew", "none"]));
+      expect(requests.at(-1)!.body.system[0].text).toContain("Problèmes connus");
+
+      nextReplies = [scanReply({ ...DIAGNOSIS, problem: "rust", naturalRemedy: "Pulvérise de la bouillie bordelaise." })];
+      const risky = await caller(plusUserId, "plus").ai.diagnose({ imageBase64: JPEG });
+      expect(risky.diagnosis).toMatchObject({ problem: null, naturalRemedy: "" });
+
+      nextReplies = [scanReply({ ...DIAGNOSIS, naturalRemedy: "Paille la terre pour garder la fraîcheur." })];
+      const free = await caller(plusUserId, "plus").ai.diagnose({ imageBase64: JPEG });
+      expect(free.diagnosis).toMatchObject({ problem: null, naturalRemedy: "Paille la terre pour garder la fraîcheur." });
+    });
+
     it("rejects files that are not images before calling the model", async () => {
       await expect(caller().ai.diagnose({ imageBase64: Buffer.from("%PDF-1.7 not an image at all, clearly".repeat(5)).toString("base64") })).rejects.toMatchObject({ code: "BAD_REQUEST" });
       expect(requests).toHaveLength(0);

@@ -4,7 +4,7 @@ import { planDay } from "../lib/garden/day-plan";
 import { resolvePlants } from "../lib/garden/garden-logic";
 import { nextSaturdayMorning, postponedStarts, postponeStart, saturdayReminder, startSnoozeKey } from "../lib/garden/postpone";
 
-describe("« Pas encore acheté ? Rappelle-moi samedi »", () => {
+describe("« Pas encore acheté : me le rappeler samedi »", () => {
   it("le prochain samedi à 9 h, jamais le jour même", () => {
     // Mardi 6 octobre 2026 → samedi 10 ; un samedi → le samedi suivant ; un dimanche → 6 jours plus tard.
     expect(nextSaturdayMorning(new Date(2026, 9, 6, 18))).toEqual(new Date(2026, 9, 10, 9, 0));

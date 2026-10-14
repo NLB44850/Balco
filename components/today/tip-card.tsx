@@ -1,6 +1,7 @@
 import { Pressable, StyleSheet, View } from "react-native";
 
 import { glass } from "@/components/ui/glass";
+import { CloseButton } from "@/components/ui/nav-buttons";
 import { Text } from "@/components/ui/typography";
 import { useColors } from "@/hooks/use-colors";
 import type { Tip } from "@/lib/tips/tips";
@@ -12,9 +13,7 @@ export function TipCard({ tip, onAsk, onClose }: { tip: Tip; onAsk: () => void; 
     <View style={[glass.card, styles.card]}>
       <View style={styles.head}>
         <Text style={[styles.label, { color: colors.primary }]}>💡 Astuce de la semaine</Text>
-        <Pressable accessibilityRole="button" accessibilityLabel="Masquer l’astuce jusqu’à la suivante" hitSlop={10} onPress={onClose} style={({ pressed }) => [styles.close, pressed && styles.pressed]}>
-          <Text style={[styles.closeText, { color: colors.muted }]}>×</Text>
-        </Pressable>
+        <CloseButton accessibilityLabel="Masquer l’astuce jusqu’à la suivante" onPress={onClose} />
       </View>
       <Text style={[styles.text, { color: colors.foreground }]}>{tip.text}</Text>
       <Pressable accessibilityRole="button" onPress={onAsk} hitSlop={6} style={({ pressed }) => pressed && styles.pressed}>

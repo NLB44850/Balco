@@ -1,6 +1,7 @@
 import { Pressable, StyleSheet, View } from "react-native";
 
 import { glass } from "@/components/ui/glass";
+import { CloseButton } from "@/components/ui/nav-buttons";
 import { Text } from "@/components/ui/typography";
 import { useColors } from "@/hooks/use-colors";
 
@@ -19,9 +20,7 @@ export function EventCard({ emoji, title, text, onOpen, onClose }: { emoji: stri
           <Text style={[styles.body, { color: colors.muted }]}>{text}{onOpen ? " ›" : ""}</Text>
         </View>
       </Pressable>
-      <Pressable accessibilityRole="button" accessibilityLabel={`Masquer : ${title}`} hitSlop={10} onPress={onClose} style={({ pressed }) => [styles.close, pressed && styles.pressed]}>
-        <Text style={[styles.closeText, { color: colors.muted }]}>×</Text>
-      </Pressable>
+      <CloseButton accessibilityLabel={`Masquer : ${title}`} onPress={onClose} />
     </View>
   );
 }

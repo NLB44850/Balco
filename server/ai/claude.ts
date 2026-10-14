@@ -2,6 +2,7 @@ import Anthropic from "@anthropic-ai/sdk";
 import { z } from "zod";
 
 import { PLANT_CATALOG } from "../../lib/plants/catalog";
+import { isUnsafeRemedyText, PROBLEM_IDS, problemGuide, remedyFor, type ProblemId } from "../../lib/plants/natural-remedies";
 import { ENV } from "../_core/env";
 import type { Usage } from "./quotas";
 
@@ -93,8 +94,13 @@ On t'envoie la photo d'une plante en pot. Identifie-la, évalue son état et pro
 - Base ton diagnostic sur ce que la photo montre vraiment (couleur et forme des feuilles, taches, insectes, terre, tiges). Si l'image ne permet pas de conclure, dis-le et baisse la confiance plutôt que d'inventer.
 - Les actions sont des gestes concrets, réalisables sur un balcon, dans l'ordre où les faire.
 - Privilégie les solutions mécaniques et naturelles. Ne recommande aucun produit phytosanitaire de synthèse ni aucun dosage de traitement. Si le problème semble grave, contagieux ou incertain, mets seeExpert à true pour conseiller une jardinerie.
+- Pour problem, choisis l'identifiant de la liste « Problèmes connus » ci-dessous seulement si la photo en montre clairement les signes ; sinon "none". Balco affiche alors son propre traitement naturel vérifié : dans ce cas, laisse naturalRemedy vide.
+- naturalRemedy (quand problem vaut "none") : un geste naturel simple, sans dose, sans produit du commerce, sans cuivre, soufre, huile de neem ni anti-limaces.
 - Si la photo ne montre pas de plante, mets isPlant à false et explique en une phrase comment reprendre la photo.
 - Écris du texte simple, sans Markdown.
+
+Problèmes connus (identifiant : nom (signes)) :
+${problemGuide()}
 
 Plantes du catalogue Balco (identifiant : nom) :
 ${PLANT_CATALOG.map((entry) => `${entry.id} : ${entry.name}`).join("\n")}`;
@@ -102,7 +108,7 @@ ${PLANT_CATALOG.map((entry) => `${entry.id} : ${entry.name}`).join("\n")}`;
 const SCAN_JSON_SCHEMA = {
   type: "object",
   additionalProperties: false,
-  required: ["isPlant", "commonName", "scientificName", "catalogId", "confidence", "health", "summary", "observations", "actions", "naturalRemedy", "seeExpert"],
+  required: ["isPlant", "commonName", "scientificName", "catalogId", "confidence", "health", "summary", "observations", "actions", "problem", "naturalRemedy", "seeExpert"],
   properties: {
     isPlant: { type: "boolean" },
     commonName: { type: "string", description: "Nom courant en français, ou chaîne vide si inconnu" },
@@ -117,7 +123,8 @@ const SCAN_JSON_SCHEMA = {
       description: "Au plus 4 gestes à faire, du plus urgent au moins urgent",
       items: { type: "object", additionalProperties: false, required: ["title", "detail"], properties: { title: { type: "string" }, detail: { type: "string" } } },
     },
-    naturalRemedy: { type: "string", description: "Une solution naturelle si utile, sinon chaîne vide" },
+    problem: { type: "string", enum: [...PROBLEM_IDS, "none"], description: "Le problème reconnu sur la photo, sinon none" },
+    naturalRemedy: { type: "string", description: "Une solution naturelle si utile et si problem vaut none, sinon chaîne vide" },
     seeExpert: { type: "boolean" },
   },
 } as const;
@@ -132,11 +139,13 @@ const diagnosisSchema = z.object({
   summary: z.string(),
   observations: z.array(z.string()),
   actions: z.array(z.object({ title: z.string(), detail: z.string() })),
+  // Absent des réponses d'avant l'étape 8b (et du faux service des tests) : « none ».
+  problem: z.string().default("none"),
   naturalRemedy: z.string(),
   seeExpert: z.boolean(),
 });
 
-export type Diagnosis = Omit<z.infer<typeof diagnosisSchema>, "catalogId"> & { catalogId: string | null };
+export type Diagnosis = Omit<z.infer<typeof diagnosisSchema>, "catalogId" | "problem"> & { catalogId: string | null; problem: ProblemId | null };
 export type ImageMediaType = "image/jpeg" | "image/png" | "image/webp";
 
 export async function diagnosePlant(image: { data: string; mediaType: ImageMediaType }, gardenDescription: string): Promise<{ diagnosis: Diagnosis; usage: Usage }> {
@@ -168,6 +177,10 @@ export async function diagnosePlant(image: { data: string; mediaType: ImageMedia
     diagnosis: {
       ...parsed,
       catalogId: CATALOG_IDS.includes(parsed.catalogId) ? parsed.catalogId : null,
+      // Le traitement vient de Balco (lib/plants/natural-remedies.ts) ; le texte libre est écarté s'il parle d'un
+      // produit qu'on ne conseille pas, ou quand Balco a déjà son traitement vérifié.
+      problem: remedyFor(parsed.problem)?.id ?? null,
+      naturalRemedy: remedyFor(parsed.problem) || isUnsafeRemedyText(parsed.naturalRemedy) ? "" : parsed.naturalRemedy,
       observations: parsed.observations.slice(0, 4),
       actions: parsed.actions.slice(0, 4),
     },

@@ -1,6 +1,6 @@
 import { expect, test } from "@playwright/test";
 
-import { mockWeather, open, seedBalcony, trackErrors } from "./helpers";
+import { atDate, mockWeather, open, openPlantings, seedBalcony, trackErrors } from "./helpers";
 
 /** Chantier « Cohérence », livraison 2 : supprimer = tout de suite, avec « Annuler » dans le message du bas. */
 
@@ -51,5 +51,29 @@ test("mode vacances : « Arrêter » tout de suite, « Annuler » remet les date
   await expect(page.getByText("Tu pars quand ?")).toBeVisible();
   await page.getByRole("button", { name: "Annuler" }).click();
   await expect(page.getByRole("button", { name: "Arrêter le mode vacances" })).toBeVisible();
+  expect(errors).toEqual([]);
+});
+
+test("plantations du mois : cocher puis décocher dans la feuille ne la referme pas, même un instant", async ({ page }) => {
+  const errors = trackErrors(page);
+  const now = await atDate(page, new Date(2026, 9, 14, 15));
+  await mockWeather(page);
+  const plants = ["chives", "blackcurrant"].map((catalogId, index) => ({ id: `${catalogId}-e2e`, catalogId, addedAt: new Date(now.getTime() - (2 - index) * 86_400_000).toISOString(), toPlant: true }));
+  await seedBalcony(page, { plants: ["chives", "blackcurrant"], now, extra: { "balco.garden.plants.v1": JSON.stringify(plants) } });
+  await open(page, "/", "Aujourd’hui");
+  await openPlantings(page);
+  const box = page.getByRole("checkbox", { name: /: Plante le cassissier$/ });
+  await box.click();
+  await expect(page.getByRole("dialog").getByText(/1 sur 2 faites$/u)).toBeVisible();
+  // On guette la feuille toutes les 5 ms pendant le décochage : elle ne doit jamais disparaître.
+  await page.evaluate(() => {
+    const w = window as unknown as { gone: number };
+    w.gone = 0;
+    setInterval(() => { if (!document.body.innerText.includes("Pas besoin de tout faire aujourd")) w.gone += 1; }, 5);
+  });
+  await box.click();
+  await expect(page.getByRole("dialog").getByText(/0 sur 2 faites$/u)).toBeVisible();
+  await page.waitForTimeout(300);
+  expect(await page.evaluate(() => (window as unknown as { gone: number }).gone)).toBe(0);
   expect(errors).toEqual([]);
 });

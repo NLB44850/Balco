@@ -14,8 +14,9 @@ const DIAGNOSIS = {
   confidence: "high",
   health: "needs_attention",
   summary: "Les feuilles du bas jaunissent : la terre reste trop humide.",
-  observations: ["Feuilles basses jaunes"],
+  observations: ["Feuilles basses jaunes", "Quelques pucerons sous les feuilles"],
   actions: [{ title: "Laisse sécher la terre", detail: "Attends qu'elle soit sèche sur 2 cm avant d'arroser." }],
+  problem: "aphids",
   naturalRemedy: "",
   seeExpert: false,
 };

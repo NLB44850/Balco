@@ -19,6 +19,7 @@ import { UndoToast, type ToastMessage } from "@/components/today/undo-toast";
 import { potNeedFor, potNeedText, potSizePhrase, recommendedPotSize } from "@/lib/plants/pot-sheet";
 import { glass } from "@/components/ui/glass";
 import { Button } from "@/components/ui/button";
+import { CloseButton } from "@/components/ui/nav-buttons";
 import { Text, TextInput } from "@/components/ui/typography";
 import { useColors } from "@/hooks/use-colors";
 import { useGarden } from "@/lib/garden/garden-context";
@@ -161,7 +162,7 @@ export default function AddPlantScreen() {
         <View style={[glass.card, styles.search]}>
           <Text style={styles.searchIcon}>🔎</Text>
           <TextInput value={query} onChangeText={setQuery} placeholder="Basilic, fraisier, lavande…" placeholderTextColor={colors.muted} returnKeyType="search" autoCorrect={false} accessibilityLabel="Rechercher une plante" style={[styles.searchInput, { color: colors.foreground }]} />
-          {query.length > 0 && <Pressable accessibilityRole="button" accessibilityLabel="Effacer la recherche" hitSlop={8} onPress={() => setQuery("")}><Text style={[styles.clear, { color: colors.muted }]}>×</Text></Pressable>}
+          {query.length > 0 && <CloseButton accessibilityLabel="Effacer la recherche" onPress={() => setQuery("")} />}
         </View>
 
         <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.chips}>
@@ -300,7 +301,6 @@ const styles = StyleSheet.create({
   search: { flexDirection: "row", alignItems: "center", gap: 10, paddingHorizontal: 14, minHeight: 52 },
   searchIcon: { fontSize: 16 },
   searchInput: { flex: 1, fontSize: 16, paddingVertical: 12 },
-  clear: { fontSize: 24, paddingHorizontal: 4 },
   chips: { gap: 8, paddingVertical: 2 },
   chip: { borderRadius: 999, paddingHorizontal: 14, paddingVertical: 9 },
   chipText: { fontSize: 13, fontWeight: "600" },

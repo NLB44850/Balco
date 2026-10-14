@@ -445,11 +445,13 @@ export function GardenProvider({ children }: { children: ReactNode }) {
   }, [queue, saveEvents, updatePlant]);
 
   const removeEvent = useCallback(async (eventId: string) => {
-    await saveEvents(eventsRef.current.filter((event) => event.id !== eventId));
-    queue((outbox) => recordEventDeletion(outbox, eventId));
-    // Décoché (« Annuler ») : elle redevient à planter.
+    // Décoché (« Annuler ») : elle redevient à planter. La plante d'abord, le geste ensuite : entre les deux, la ligne
+    // « Plante le cassissier » reste affichée (cochée) au lieu de disparaître un instant, ce qui refermait la feuille
+    // « Plante 2 plantes de saison » (retour du 14/10).
     const started = startedPlantId(eventId);
     if (started && plantsRef.current.some((plant) => plant.id === started && plant.toPlant === false)) await updatePlant(started, (plant) => ({ ...plant, toPlant: true }));
+    await saveEvents(eventsRef.current.filter((event) => event.id !== eventId));
+    queue((outbox) => recordEventDeletion(outbox, eventId));
   }, [queue, saveEvents, updatePlant]);
 
   const updateProfile = useCallback(async (patch: Partial<UserProfile>) => {

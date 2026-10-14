@@ -28,11 +28,11 @@ Dans le code : `components/ui/button.tsx` (`Button`, variantes `primary`, `secon
    pas-à-pas, accueil, diagnostic, vacances, consignes, courses, Ma semaine, temps forts et feuilles du bas passent par
    `Button`. Les boutons noirs deviennent verts (ou encadrés) ; les pastilles de filtre actives sont vertes partout
    (catalogue et Saisons étaient noires). Les suppressions restent à la livraison 2.
-2. **Suppression unifiée et fiche plante (règle 5)** : codée le 14/10, à valider. Historique sans « Supprimer » répété (toucher une ligne ouvre une
+2. **Suppression unifiée et fiche plante (règle 5)** : codée le 14/10, validée le 14/10 (avec 6 petits bugs corrigés, PR #50 fusionnée, « Nora est ok »). Historique sans « Supprimer » répété (toucher une ligne ouvre une
    feuille « Supprimer ce geste », puis « Annuler »), « Renommer » et « Retirer du balcon » en lignes comme Réglages,
    photo retirée avec « Annuler », souvenir de Nora, conversation, « Tout décocher », mode vacances arrêté : même façon.
    Graphique de progression caché tant qu'il n'y a pas assez de semaines.
-3. **Cases, pastilles, « × », retours et textes (règles 6 et 7).**
+3. **Cases, pastilles, « × », retours et textes (règles 6 et 7)** : codée le 14/10, validée le 14/10.
 
 ### Livraison 2, ce qui est fait (14/10)
 
@@ -77,3 +77,20 @@ Dans le code : `components/ui/button.tsx` (`Button`, variantes `primary`, `secon
    sur le téléphone (`plantIds` de `ai.ask`) ; le serveur tient pour retirée toute plante absente de cette liste
    (`limitToShown`, ne peut qu'en retirer, jamais en ajouter). Réglages → Compte affiche la raison d'un échec de
    sauvegarde (`syncError`). Côté serveur : en ligne après la fusion de la PR #50 (Railway).
+
+### Livraison 3, ce qui est fait (14/10)
+
+- `components/ui/check.tsx` (`Check`, 28 points partout) : **rond** = un geste fait (lignes d'Aujourd'hui, Saisons et
+  courses, préparatifs des vacances, « C'est fait » de la fiche et du pas-à-pas) ; **carré** = une option, plusieurs
+  possibles (premières plantes et ombre de l'accueil, plantes suivies, « Me le reproposer au printemps », signature des
+  consignes, envies de Réglages) ; **rond avec un point** = un seul choix (questions de l'accueil, choix de Réglages).
+- `components/ui/nav-buttons.tsx` : le même « × » (`CloseButton`, rond de 32 points : feuille du bas, connexion,
+  astuce, carte d'un temps fort, recherche du catalogue) et la même flèche de retour (`BackButton` : en-têtes, accueil,
+  connexion ; `floating` sur la photo de la fiche plante).
+- Textes à l'infinitif : « Ajouter une photo » (fiche plante), « Préparer les consignes pour qui arrose », « Ajouter mes
+  plantes » (vacances), « Pas encore acheté : me le rappeler samedi », « Voir ce qu'il te faut » (À anticiper).
+- (14/10, après test) Feuille « Plante 2 plantes de saison » : cocher puis décocher la refermait une fraction de
+  seconde. Au décochage, le geste était retiré avant que la plante redevienne « à planter » : entre les deux, la ligne
+  disparaissait, le groupe aussi, donc la feuille. `removeEvent` remet la plante « à planter » d'abord. E2e dans
+  `27-coherence` (sur le web les deux changements arrivent ensemble : le test garde le bon ordre, le saut se voyait sur
+  Android où l’enregistrement prend un instant). Validé sur son téléphone le 14/10 (« la feuille ne clignote plus »).

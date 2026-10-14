@@ -21,6 +21,7 @@ import { LightScreen } from "@/components/light-screen";
 import { CatalogPicture, PlantPicture } from "@/components/plant-picture";
 import { ScreenHeader } from "@/components/screen-header";
 import { Button } from "@/components/ui/button";
+import { Check } from "@/components/ui/check";
 import { Text, TextInput } from "@/components/ui/typography";
 import { freeForAllText, plusSheetBenefits } from "@/lib/plans";
 import { FEEDBACK_EMAIL, feedbackMailto, versionText } from "@/lib/feedback";
@@ -290,7 +291,7 @@ export default function SettingsScreen() {
             <Pressable key={resolved.plant.id} accessibilityRole="checkbox" accessibilityLabel={name} accessibilityState={{ checked: followed }} aria-checked={followed} onPress={() => void updateReminderSettings({ enabledPlantIds: toggleFollowed(eligiblePlants.map(({ plant }) => plant.id), reminderSettings.enabledPlantIds, resolved.plant.id) })} style={({ pressed }) => [styles.wishRow, { borderColor: colors.border }, pressed && styles.pressed]}>
               <PlantPicture resolved={resolved} style={styles.wishPicture} />
               <Text style={[styles.wishName, { color: colors.foreground }]}>{name}</Text>
-              <View style={[styles.box, { borderColor: followed ? colors.primary : colors.border, backgroundColor: followed ? colors.primary : "transparent" }]}>{followed && <Text style={styles.boxMark}>✓</Text>}</View>
+              <Check checked={followed} />
             </Pressable>
           );
         })}
@@ -578,8 +579,6 @@ const styles = StyleSheet.create({
   hourChip: { flex: 1, borderWidth: 1, borderRadius: 14, paddingVertical: 12, alignItems: "center" },
   hourChipText: { fontSize: 15, fontWeight: "700" },
   inlineButton: { marginBottom: 12 },
-  box: { width: 22, height: 22, borderRadius: 6, borderWidth: 2, alignItems: "center", justifyContent: "center" },
-  boxMark: { color: "#FFFFFF", fontSize: 14, fontWeight: "800", marginTop: -1 },
   flex: { flex: 1 },
   checkRow: { flexDirection: "row", alignItems: "center", gap: 12, borderBottomWidth: StyleSheet.hairlineWidth, paddingVertical: 14 },
   checkTitle: { fontSize: 15, fontWeight: "700" },

@@ -17,8 +17,9 @@ import { LightScreen } from "@/components/light-screen";
 import { FadeIn } from "@/components/motion";
 import { CatalogPicture } from "@/components/plant-picture";
 import { glass } from "@/components/ui/glass";
-import { IconSymbol } from "@/components/ui/icon-symbol";
 import { Button } from "@/components/ui/button";
+import { BackButton } from "@/components/ui/nav-buttons";
+import { Check } from "@/components/ui/check";
 import { Text, TextInput } from "@/components/ui/typography";
 import { useColors } from "@/hooks/use-colors";
 import { type CityResult, useLocalWeather } from "@/hooks/use-local-weather";
@@ -235,7 +236,7 @@ export default function OnboardingScreen() {
         <Text style={[styles.optionTitle, { color: colors.foreground }]}>{entry.name}</Text>
         <Text style={[styles.optionText, { color: colors.muted }]} numberOfLines={2}>{text}</Text>
       </View>
-      <View style={[styles.check, { borderColor: active ? colors.primary : "rgba(18,22,20,0.22)", backgroundColor: active ? colors.primary : "transparent" }]}>{active && <Text style={styles.checkMark}>✓</Text>}</View>
+      <Check checked={active} />
     </Pressable>
   );
 
@@ -244,9 +245,7 @@ export default function OnboardingScreen() {
       <ScrollView keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false} contentContainerStyle={[styles.content, { paddingTop: insets.top + 16 }]}>
         {index > 0 && (
           <View style={styles.topBar}>
-            <Pressable accessibilityRole="button" accessibilityLabel="Revenir à l'étape précédente" hitSlop={10} onPress={back} style={({ pressed }) => [styles.back, pressed && styles.pressed]}>
-              <IconSymbol name="chevron.left" size={26} color={colors.foreground} />
-            </Pressable>
+            <BackButton accessibilityLabel="Revenir à l'étape précédente" onPress={back} />
             <View style={styles.progress} accessibilityLabel={`Étape ${index} sur ${steps.length}`}>
               {steps.map((key, position) => (
                 <View key={key} style={[styles.progressSegment, { backgroundColor: position < index ? colors.primary : "rgba(18,22,20,0.1)" }]} />
@@ -279,7 +278,7 @@ export default function OnboardingScreen() {
                       <Text style={[styles.optionTitle, { color: colors.foreground }]}>{option.title}</Text>
                       <Text style={[styles.optionText, { color: colors.muted }]}>{option.text}</Text>
                     </View>
-                    <View style={[styles.check, { borderColor: active ? colors.primary : "rgba(18,22,20,0.22)", backgroundColor: active ? colors.primary : "transparent" }]}>{active && <Text style={styles.checkMark}>✓</Text>}</View>
+                    <Check checked={active} shape={question.multiple ? "square" : "radio"} />
                   </Pressable>
                 );
               })}
@@ -307,7 +306,7 @@ export default function OnboardingScreen() {
                       <Text style={[styles.optionTitle, { color: colors.foreground }]}>{option.title}</Text>
                       <Text style={[styles.optionText, { color: colors.muted }]}>{option.text}</Text>
                     </View>
-                    <View style={[styles.check, { borderColor: active ? colors.primary : "rgba(18,22,20,0.22)", backgroundColor: active ? colors.primary : "transparent" }]}>{active && <Text style={styles.checkMark}>✓</Text>}</View>
+                    <Check checked={active} />
                   </Pressable>
                 );
               })}
@@ -432,7 +431,6 @@ const styles = StyleSheet.create({
   content: { paddingHorizontal: 20, paddingBottom: 32, gap: 18, flexGrow: 1 },
   flex: { flex: 1 },
   topBar: { flexDirection: "row", alignItems: "center", gap: 12 },
-  back: { marginLeft: -8, width: 34, height: 40, alignItems: "center", justifyContent: "center" },
   progress: { flex: 1, flexDirection: "row", gap: 6 },
   progressSegment: { flex: 1, height: 5, borderRadius: 3 },
   welcome: { flex: 1, justifyContent: "center", gap: 16, paddingVertical: 20 },
@@ -449,8 +447,6 @@ const styles = StyleSheet.create({
   optionEmoji: { fontSize: 22 },
   optionTitle: { fontSize: 16, fontWeight: "700" },
   optionText: { fontSize: 13, lineHeight: 18, marginTop: 2 },
-  check: { width: 26, height: 26, borderRadius: 13, borderWidth: 2, alignItems: "center", justifyContent: "center" },
-  checkMark: { color: "#FFFFFF", fontSize: 13, fontWeight: "800" },
   plants: { paddingHorizontal: 14 },
   plant: { flexDirection: "row", alignItems: "center", gap: 12, paddingVertical: 12 },
   plantIcon: { width: 46, height: 46, borderRadius: 23, alignItems: "center", justifyContent: "center" },

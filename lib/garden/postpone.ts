@@ -1,5 +1,5 @@
 /**
- * « Pas encore acheté ? Rappelle-moi samedi » : le premier geste d'une plante à planter disparaît
+ * « Pas encore acheté : me le rappeler samedi » : le premier geste d'une plante à planter disparaît
  * d'Aujourd'hui jusqu'au samedi suivant (samedi prochain si on est samedi), 9 h. Gardé avec les autres
  * mises en sommeil du téléphone (`ReminderSnooze`). Logique pure.
  */

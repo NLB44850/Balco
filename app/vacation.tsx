@@ -15,6 +15,7 @@ import { ScreenHeader } from "@/components/screen-header";
 import { UndoToast, useUndoToast } from "@/components/today/undo-toast";
 import { glass } from "@/components/ui/glass";
 import { Button } from "@/components/ui/button";
+import { Check } from "@/components/ui/check";
 import { Text } from "@/components/ui/typography";
 import { useColors } from "@/hooks/use-colors";
 import { useVacation } from "@/hooks/use-vacation";
@@ -185,7 +186,7 @@ export default function VacationScreen() {
               const done = active.done.includes(step.id);
               return (
                 <Pressable key={step.id} accessibilityRole="checkbox" accessibilityState={{ checked: done }} onPress={() => toggleStep(step.id)} style={({ pressed }) => [styles.stepRow, index < plan.length - 1 && glass.line, pressed && styles.pressed]}>
-                  <View style={[styles.check, { borderColor: done ? colors.primary : "rgba(18,22,20,0.22)", backgroundColor: done ? colors.primary : "transparent" }]}>{done && <Text style={styles.checkMark}>✓</Text>}</View>
+                  <Check checked={done} shape="round" style={styles.checkTop} />
                   <View style={styles.flex}>
                     <Text style={[styles.small, { color: colors.primary, fontWeight: "700" }]}>{step.when}</Text>
                     <Text style={[styles.stepTitle, { color: colors.foreground }, done && styles.doneText]}>{step.title}</Text>
@@ -213,7 +214,7 @@ export default function VacationScreen() {
               </View>
             ))}
           </View>
-          <Button label="Prépare les consignes pour qui arrose" onPress={() => router.push("/helper-note")} />
+          <Button label="Préparer les consignes pour qui arrose" onPress={() => router.push("/helper-note")} />
         </View>
       )}
 
@@ -246,7 +247,7 @@ export default function VacationScreen() {
         <ScreenHeader back title="Mode vacances" subtitle={active && !editing ? vacationRange(active) : "Balco prépare ton balcon et se tait pendant ton absence"} />
         {!loaded ? null : active && !editing ? summary : form}
         {!active && !editing && resolvedPlants.length === 0 && (
-          <Button variant="link" center label="Ajoute d’abord tes plantes" onPress={() => router.push("/garden/add")} />
+          <Button variant="link" center label="Ajouter mes plantes" onPress={() => router.push("/garden/add")} />
         )}
       </ScrollView>
       <UndoToast message={toast.toast} onDone={toast.hide} bottom={insets.bottom + 16} />
@@ -279,12 +280,11 @@ const styles = StyleSheet.create({
   progressFill: { height: 8, borderRadius: 4 },
   list: { paddingHorizontal: 14 },
   stepRow: { flexDirection: "row", gap: 12, paddingVertical: 12, alignItems: "flex-start" },
-  check: { width: 28, height: 28, borderRadius: 14, borderWidth: 2, alignItems: "center", justifyContent: "center", marginTop: 2 },
-  checkMark: { color: "#FFFFFF", fontSize: 14, fontWeight: "800" },
   stepTitle: { fontSize: 15, fontWeight: "700", marginTop: 1 },
   doneText: { textDecorationLine: "line-through", opacity: 0.6 },
   thumb: { width: 44, height: 44, borderRadius: 12 },
   tipIcon: { fontSize: 18, width: 24, textAlign: "center" },
   disabled: { opacity: 0.35 },
+  checkTop: { marginTop: 2 },
   pressed: { opacity: 0.78 },
 });

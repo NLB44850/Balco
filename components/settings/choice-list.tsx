@@ -4,6 +4,7 @@
  */
 import { Pressable, StyleSheet, View } from "react-native";
 
+import { Check } from "@/components/ui/check";
 import { Text } from "@/components/ui/typography";
 import { useColors } from "@/hooks/use-colors";
 
@@ -37,9 +38,7 @@ export function ChoiceList({ choices, selected, onPick, multiple = false, hints 
               {choice.art ?? (choice.icon ? <Text style={styles.icon}>{choice.icon}</Text> : null)}
               <Text style={[styles.text, { color: colors.foreground }]}>{choice.title}</Text>
               {choice.badge ? <Text style={[styles.badge, { color: colors.primary }]}>{choice.badge}</Text> : null}
-              <View style={[multiple ? styles.box : styles.radio, { borderColor: active ? colors.primary : colors.border, backgroundColor: active && multiple ? colors.primary : "transparent" }]}>
-                {active && (multiple ? <Text style={styles.mark}>✓</Text> : <View style={[styles.dot, { backgroundColor: colors.primary }]} />)}
-              </View>
+              <Check checked={active} shape={multiple ? "square" : "radio"} />
             </Pressable>
             {hints?.[choice.id] ? <Text style={[styles.hint, { color: colors.muted }]}>{hints[choice.id]}</Text> : null}
           </View>
@@ -55,10 +54,6 @@ const styles = StyleSheet.create({
   choice: { flexDirection: "row", alignItems: "center", gap: 10, borderWidth: 1, borderRadius: 14, paddingHorizontal: 14, paddingVertical: 13 },
   icon: { fontSize: 18 },
   text: { flex: 1, fontSize: 15, fontWeight: "600", lineHeight: 20 },
-  radio: { width: 22, height: 22, borderRadius: 11, borderWidth: 2, alignItems: "center", justifyContent: "center" },
-  dot: { width: 10, height: 10, borderRadius: 5 },
-  box: { width: 22, height: 22, borderRadius: 6, borderWidth: 2, alignItems: "center", justifyContent: "center" },
-  mark: { color: "#FFFFFF", fontSize: 14, fontWeight: "800", marginTop: -1 },
   hint: { fontSize: 13, lineHeight: 18, paddingHorizontal: 4 },
   badge: { fontSize: 13, fontWeight: "700" },
   pressed: { opacity: 0.7 },

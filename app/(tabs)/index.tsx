@@ -783,7 +783,7 @@ export default function HomeScreen() {
             <Text style={[styles.sheetTitle, { color: colors.foreground }]}>{anticipationOpen.title}</Text>
             <Text style={[styles.sheetBody, { color: colors.foreground }]}>{anticipationOpen.prepare}</Text>
             <Text style={[styles.sheetBody, { color: colors.muted }]}>{anticipationOpen.detail}</Text>
-            <Button label="Ce qu’il te faut ›" onPress={() => openNeeds(anticipationOpen)} />
+            <Button label="Voir ce qu’il te faut" onPress={() => openNeeds(anticipationOpen)} />
             <Button variant="secondary" label="🛒  Ma liste de courses" onPress={() => { setAnticipationOpen(null); router.push("/shopping"); }} />
           </View>
         )}
@@ -813,7 +813,7 @@ type SheetContentProps = {
   onSnooze: (kind: ReminderSnooze["kind"]) => void;
   onOpenPlant: (plantId: string) => void;
   onOpenCalendar: () => void;
-  /** Geste « à planter » : « Pas encore acheté ? Rappelle-moi samedi ». */
+  /** Geste « à planter » : « Pas encore acheté : me le rappeler samedi ». */
   onPostpone: () => void;
   /** Geste « à planter » ou du pot (rempoter, terre du dessus) : le pas-à-pas illustré, facultatif. */
   onGuide: () => void;
@@ -860,7 +860,7 @@ function SheetContent({ item, events, resolved, now, onToggle, onSnooze, onOpenP
         <Button variant="secondary" label="Pas à pas, avec ce qu’il te faut" onPress={onGuide} />
       )}
       {item.kind === "season" && item.activity.start && !item.done && (
-        <Button variant="secondary" label="Pas encore acheté ? Rappelle-moi samedi" onPress={onPostpone} />
+        <Button variant="secondary" label="Pas encore acheté : me le rappeler samedi" onPress={onPostpone} />
       )}
       {item.kind === "season" && item.activity.kind === "repot" && !item.activity.topdress && !item.done && (
         <Button variant="secondary" label="Pas besoin cette année" onPress={onSkipRepot} />

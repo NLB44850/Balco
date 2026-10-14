@@ -1,5 +1,6 @@
 import { useEffect, useRef } from "react";
 import { Animated, Easing, Pressable, StyleSheet, View } from "react-native";
+import { Check, CHECK_SIZE } from "@/components/ui/check";
 import { Text } from "@/components/ui/typography";
 
 import { useColors } from "@/hooks/use-colors";
@@ -98,8 +99,8 @@ export function TodayRow({ icon, tone, title, subtitle, done, onToggle, onOpen, 
               />
             ))}
           </View>
-          <Animated.View style={[styles.check, { borderColor: done ? colors.primary : "rgba(18,22,20,0.22)", backgroundColor: done ? colors.primary : "rgba(255,255,255,0.6)", transform: [{ scale }] }]}>
-            {done && <Text style={styles.checkMark}>✓</Text>}
+          <Animated.View style={{ transform: [{ scale }] }}>
+            <Check checked={done} shape="round" />
           </Animated.View>
         </Pressable>
       ) : (
@@ -123,11 +124,9 @@ const styles = StyleSheet.create({
   badge: { borderRadius: 999, paddingHorizontal: 10, paddingVertical: 5, marginLeft: 8 },
   badgeText: { fontSize: 14, fontWeight: "800" },
   flash: { position: "absolute", left: -12, right: -12, top: 0, bottom: 0, borderRadius: 12 },
-  burst: { position: "absolute", right: 15, top: 15, width: 0, height: 0, alignItems: "center", justifyContent: "center" },
-  ring: { position: "absolute", width: 30, height: 30, borderRadius: 15, borderWidth: 2 },
+  burst: { position: "absolute", right: CHECK_SIZE / 2, top: CHECK_SIZE / 2, width: 0, height: 0, alignItems: "center", justifyContent: "center" },
+  ring: { position: "absolute", width: CHECK_SIZE, height: CHECK_SIZE, borderRadius: CHECK_SIZE / 2, borderWidth: 2 },
   spark: { position: "absolute", width: 11, height: 6, borderRadius: 3 },
-  check: { width: 30, height: 30, borderRadius: 15, borderWidth: 2, alignItems: "center", justifyContent: "center" },
   chevron: { fontSize: 24, fontWeight: "300", paddingLeft: 12 },
-  checkMark: { color: "#FFFFFF", fontSize: 15, fontWeight: "800" },
   pressed: { opacity: 0.6 },
 });

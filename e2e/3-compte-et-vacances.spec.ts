@@ -86,7 +86,7 @@ test("mode vacances : les consignes pour qui arrose, plante par plante, modifiab
   await page.getByRole("button", { name: "Préparer mon départ" }).click();
   await expect(page.getByText("Pour la personne qui arrose")).toBeVisible();
   await expect(page.getByText(/💧 Environ \d/).first()).toBeVisible();
-  await page.getByRole("button", { name: "Prépare les consignes pour qui arrose" }).click();
+  await page.getByRole("button", { name: "Préparer les consignes pour qui arrose" }).click();
 
   const note = page.getByLabel("Texte des consignes");
   await expect(note).toHaveValue(/Merci de t’occuper de mon balcon du 13 au 19 juillet/);

@@ -2,7 +2,7 @@ import { useEffect, useMemo, useRef } from "react";
 import { Animated, KeyboardAvoidingView, Modal, PanResponder, Pressable, ScrollView, StyleSheet, useWindowDimensions, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
-import { Text } from "@/components/ui/typography";
+import { CloseButton } from "@/components/ui/nav-buttons";
 import { useColors } from "@/hooks/use-colors";
 
 type BottomSheetProps = {
@@ -66,9 +66,7 @@ export function BottomSheet({ visible, onClose, children, overlay }: BottomSheet
         >
           <View style={styles.header}>
             <View style={[styles.grab, { backgroundColor: colors.border }]} />
-            <Pressable accessibilityRole="button" accessibilityLabel="Fermer la fiche" hitSlop={10} onPress={onClose} style={({ pressed }) => [styles.close, { backgroundColor: colors.surface }, pressed && styles.pressed]}>
-              <Text style={[styles.closeText, { color: colors.foreground }]}>×</Text>
-            </Pressable>
+            <CloseButton accessibilityLabel="Fermer la fiche" onPress={onClose} style={styles.close} />
           </View>
           <ScrollView
             bounces={false}
@@ -96,8 +94,7 @@ const styles = StyleSheet.create({
   sheet: { flexShrink: 1, borderTopLeftRadius: 24, borderTopRightRadius: 24, overflow: "hidden" },
   header: { height: 44, alignItems: "center", justifyContent: "center" },
   grab: { width: 40, height: 5, borderRadius: 3 },
-  close: { position: "absolute", right: 14, top: 8, width: 30, height: 30, borderRadius: 15, alignItems: "center", justifyContent: "center" },
-  closeText: { fontSize: 20, fontWeight: "600", marginTop: -2 },
+  close: { position: "absolute", right: 14, top: 8 },
   content: { paddingHorizontal: 20, gap: 14 },
   pressed: { opacity: 0.6 },
 });

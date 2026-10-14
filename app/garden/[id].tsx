@@ -24,6 +24,8 @@ import { careWeeksLabel, celebrationFor, milestoneDate, plantProgress, sinceLabe
 import { endsWithSeason, harvestedToastText, isHarvestedOnce } from "@/lib/garden/harvest-end";
 import { IconSymbol } from "@/components/ui/icon-symbol";
 import { Button } from "@/components/ui/button";
+import { BackButton } from "@/components/ui/nav-buttons";
+import { Check } from "@/components/ui/check";
 import { Text, TextInput } from "@/components/ui/typography";
 import { useColors } from "@/hooks/use-colors";
 import { useGarden } from "@/lib/garden/garden-context";
@@ -78,9 +80,9 @@ export default function PlantScreen() {
   const resolved = resolvedPlants.find((item) => item.plant.id === id);
   const back = () => (router.canGoBack() ? router.back() : router.replace("/(tabs)/balcony"));
 
-  const roundButton = (label: string, icon: "chevron.left" | "camera.fill", onPress: () => void) => (
+  const roundButton = (label: string, icon: "camera.fill", onPress: () => void) => (
     <Pressable accessibilityRole="button" accessibilityLabel={label} hitSlop={6} onPress={onPress} style={({ pressed }) => [styles.round, pressed && styles.pressed]}>
-      <IconSymbol name={icon} size={icon === "chevron.left" ? 26 : 19} color={colors.foreground} />
+      <IconSymbol name={icon} size={19} color={colors.foreground} />
     </Pressable>
   );
 
@@ -88,7 +90,7 @@ export default function PlantScreen() {
     return (
       <ScreenContainer edges={["top", "left", "right", "bottom"]}>
         <View style={styles.missing}>
-          {roundButton("Retour", "chevron.left", back)}
+          <BackButton floating onPress={back} />
           <Text style={[styles.name, { color: colors.foreground }]}>Plante introuvable</Text>
           {loaded && <Text style={[styles.text, { color: colors.muted }]}>Cette plante n’est plus sur ton balcon.</Text>}
         </View>
@@ -200,7 +202,7 @@ export default function PlantScreen() {
               </View>
               <Pressable accessibilityRole="button" onPress={() => capture.ask(plant.id, name)} style={({ pressed }) => [styles.heroCta, { backgroundColor: colors.primary }, pressed && styles.pressed]}>
                 <IconSymbol name="camera.fill" size={18} color="#FFFFFF" />
-                <Text style={styles.heroCtaText}>Ajoute ta photo</Text>
+                <Text style={styles.heroCtaText}>Ajouter une photo</Text>
               </Pressable>
             </View>
           )}
@@ -210,7 +212,7 @@ export default function PlantScreen() {
               <Text style={[styles.heroEmptyText, { color: colors.primary }]}>Pas encore de photo de {name}</Text>
               <Pressable accessibilityRole="button" onPress={() => capture.ask(plant.id, name)} style={({ pressed }) => [styles.heroCta, { backgroundColor: colors.primary }, pressed && styles.pressed]}>
                 <IconSymbol name="camera.fill" size={18} color="#FFFFFF" />
-                <Text style={styles.heroCtaText}>Ajoute ta photo</Text>
+                <Text style={styles.heroCtaText}>Ajouter une photo</Text>
               </Pressable>
             </View>
           )}
@@ -221,7 +223,7 @@ export default function PlantScreen() {
           )}
         </PlantPicture>
         <View style={[styles.heroBar, { top: insets.top + 8 }]}>
-          {roundButton("Retour", "chevron.left", back)}
+          <BackButton floating onPress={back} />
           {roundButton(`Ajouter une photo de ${name}`, "camera.fill", () => capture.ask(plant.id, name))}
         </View>
 
@@ -261,7 +263,7 @@ export default function PlantScreen() {
             )}
             {gesture?.done && (
               <View style={styles.doneRow}>
-                <View style={[styles.check, { backgroundColor: colors.primary }]}><Text style={styles.checkMark}>✓</Text></View>
+                <Check checked shape="round" />
                 <View style={styles.flex}>
                   <Text style={[styles.nextTitle, { color: colors.foreground }]}>{gesture.title}</Text>
                   <Text style={[styles.text, { color: colors.muted }]}>{gestureEvent ? `Fait à ${clock(gestureEvent.completedAt)}` : "Fait aujourd’hui"}</Text>
@@ -468,8 +470,6 @@ const styles = StyleSheet.create({
   cta: { marginTop: 6 },
   okButton: { alignSelf: "center" },
   doneRow: { flexDirection: "row", alignItems: "center", gap: 12 },
-  check: { width: 30, height: 30, borderRadius: 15, alignItems: "center", justifyContent: "center" },
-  checkMark: { color: "#FFFFFF", fontSize: 15, fontWeight: "800" },
   flex: { flex: 1 },
   section: { marginTop: 18, gap: 10 },
   progress: { borderWidth: 1, borderRadius: 20, padding: 16, gap: 6 },
