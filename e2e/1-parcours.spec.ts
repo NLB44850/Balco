@@ -207,29 +207,34 @@ test("catalogue : ajouter une plante d'un « + » puis ouvrir sa fiche", async (
   await seedBalcony(page, { plants: ["basil"], wateredDaysAgo: 1, now });
   await open(page, "/garden/add", "Ajouter une plante");
   await page.getByPlaceholder("Basilic, fraisier, lavande…").fill("menthe");
-  // Un seul « + » : c'est sa saison, Balco l'ajoute « à planter » ; le message du bas propose l'autre choix.
+  // « + » : une question, deux cartes qui disent ce qui va se passer ; c'est le moment de la planter.
   await page.getByRole("button", { name: /^Ajouter Menthe/ }).first().click();
+  const sheet = page.getByRole("dialog");
+  await expect(sheet.getByText("Où en est ta menthe ?")).toBeVisible();
+  await expect(sheet.getByText("C’est le moment")).toBeVisible();
+  await sheet.getByRole("button", { name: "Menthe : Déjà sur mon balcon" }).click();
   // Balco lui donne la taille de pot de sa fiche et le dit dans le message du bas (pas de question).
-  await expect(page.getByText("À planter : Menthe en pot moyen (20 à 30 cm)")).toBeVisible();
-  await expect(page.getByText("Dans quel pot ?")).toHaveCount(0);
-  await page.getByRole("button", { name: "Déjà plantée ?" }).click();
   await expect(page.getByText("Ajouté : Menthe en pot moyen (20 à 30 cm)")).toBeVisible();
+  await expect(page.getByText("Dans quel pot ?")).toHaveCount(0);
   await expect(page.getByText("✓ Sur ton balcon")).toBeVisible();
-  // La lavande, à planter.
+  // La lavande, pas encore plantée.
   await page.getByPlaceholder("Basilic, fraisier, lavande…").fill("lavande");
   await page.getByRole("button", { name: /^Ajouter Lavande/ }).first().click();
+  await page.getByRole("dialog").getByRole("button", { name: "Lavande : Pas encore plantée" }).click();
   await expect(page.getByText("À planter : Lavande en pot moyen (20 à 30 cm)")).toBeVisible();
-  // L'aubergine en octobre : déjà là, avec la fin de saison ; « Pas encore plantée ? » la garde pour le printemps.
+  // L'aubergine en octobre : les cartes préviennent avant de choisir ; « Pas encore plantée » la garde pour le printemps.
   await page.getByPlaceholder("Basilic, fraisier, lavande…").fill("aubergine");
   await page.getByRole("button", { name: /^Ajouter Aubergine/ }).first().click();
-  await expect(page.getByText(/^Ajouté : Aubergine .* · Fin de saison : récolte avant les premières gelées$/u)).toBeVisible();
-  await page.getByRole("button", { name: "Pas encore plantée ?" }).click();
+  await expect(page.getByRole("dialog").getByText("Fin de saison : récolte avant les premières gelées.")).toBeVisible();
+  await expect(page.getByRole("dialog").getByText("À semer au chaud dès février : Balco te la reproposera au printemps.")).toBeVisible();
+  await page.getByRole("dialog").getByRole("button", { name: "Aubergine : Pas encore plantée" }).click();
   await expect(page.getByText("Aubergine : à semer au chaud dès février. Balco te la reproposera au printemps")).toBeVisible();
+  await expect(page.getByText("✓ Sur ton balcon")).toHaveCount(0);
+  const wish = () => page.evaluate(() => (JSON.parse(localStorage.getItem("balco.onboarding.preferences.v1") ?? "{}") as { springWishes?: string[] }).springWishes ?? []);
+  await expect.poll(wish).toContain("eggplant");
   // « Annuler » retire l'envie.
   await page.getByRole("button", { name: "Annuler" }).click();
-  await expect(page.getByText("✓ Sur ton balcon")).toHaveCount(0);
-  const wishes = await page.evaluate(() => (JSON.parse(localStorage.getItem("balco.onboarding.preferences.v1") ?? "{}") as { springWishes?: string[] }).springWishes ?? []);
-  expect(wishes).not.toContain("eggplant");
+  await expect.poll(wish).not.toContain("eggplant");
   await page.getByRole("button", { name: "Voir mon balcon · 3 plantes" }).click();
   await page.getByRole("button", { name: /^Menthe, .*voir la fiche/ }).click();
   await expect(page.getByText(/Photo d’exemple|Ajoute ta photo/).first()).toBeVisible();
@@ -251,7 +256,6 @@ test("catalogue : ajouter une plante d'un « + » puis ouvrir sa fiche", async (
   await expect(page.getByText("Ta jardinière lui convient", { exact: false })).toBeVisible();
   await expect(page.getByText("Place pour un seul pied dans 60 cm.")).toBeVisible();
   const stored = await page.evaluate(() => JSON.parse(localStorage.getItem("balco.garden.plants.v1") ?? "[]"));
-  // « Déjà plantée ? » a remplacé la menthe « à planter » (retirée) par une menthe déjà là.
   const kept = (catalogId: string) => stored.find((plant: { catalogId: string; removedAt?: string }) => plant.catalogId === catalogId && !plant.removedAt);
   expect(kept("mint")).toMatchObject({ potSize: "planter" });
   expect(kept("mint")?.toPlant).toBeFalsy();
@@ -286,8 +290,8 @@ test("fiche du bas : jamais plus haute que l'écran, se ferme par « × » ou en
   await expect(close).toBeVisible();
   const box = await close.boundingBox();
   expect(box!.y).toBeGreaterThanOrEqual(0);
-  await page.getByRole("button", { name: "Ajouter à mon balcon" }).scrollIntoViewIfNeeded();
-  await expect(page.getByRole("button", { name: "Ajouter à mon balcon" })).toBeInViewport();
+  await page.getByRole("button", { name: "Piment : Pas encore planté" }).scrollIntoViewIfNeeded();
+  await expect(page.getByRole("button", { name: "Piment : Pas encore planté" })).toBeInViewport();
 
   // « × » ferme la fiche.
   await close.click();

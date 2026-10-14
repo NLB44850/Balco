@@ -1,16 +1,21 @@
 import { describe, expect, it } from "vitest";
 
-import { defaultAddChoice, installedText, lateSeasonNote, nextStartMonth, switchLabel, toPlantPlan, toPlantText } from "../lib/garden/catalog-add";
+import { addOptions, addQuestion, installedText, lateSeasonNote, nextStartMonth, toPlantPlan, toPlantText } from "../lib/garden/catalog-add";
 import { getCatalogPlant } from "../lib/plants/catalog";
 
 const plant = (id: string) => getCatalogPlant(id)!;
 
-describe("ajouter depuis le catalogue en un « + »", () => {
-  it("à planter si c'est sa saison, sinon déjà sur le balcon", () => {
-    expect(defaultAddChoice(plant("lavender"), 10)).toBe("toPlant");
-    expect(defaultAddChoice(plant("garlic"), 10)).toBe("toPlant");
-    expect(defaultAddChoice(plant("eggplant"), 10)).toBe("installed");
-    expect(defaultAddChoice(plant("cherry-tomato"), 5)).toBe("toPlant");
+describe("ajouter depuis le catalogue : une question, deux cartes", () => {
+  it("la question s'accorde, les cartes disent ce qui va se passer", () => {
+    expect(addQuestion(plant("eggplant"))).toBe("Où en est ton aubergine ?");
+    expect(addQuestion(plant("cherry-tomato"))).toBe("Où en sont tes tomates cerises ?");
+    const [installed, toPlant] = addOptions(plant("eggplant"), 10);
+    expect(installed).toMatchObject({ choice: "installed", title: "Déjà sur mon balcon", detail: "Fin de saison : récolte avant les premières gelées.", watch: true });
+    expect(toPlant).toMatchObject({ choice: "toPlant", title: "Pas encore plantée", detail: "À semer au chaud dès février : Balco te la reproposera au printemps.", badge: null });
+    const [, lavender] = addOptions(plant("lavender"), 10);
+    expect(lavender).toMatchObject({ title: "Pas encore plantée", badge: "C’est le moment", detail: "Le pas-à-pas t’attend sur Aujourd’hui, étape par étape." });
+    expect(addOptions(plant("thyme"), 7)[0]).toMatchObject({ detail: "Balco te dit quand l’arroser dès aujourd’hui.", watch: false });
+    expect(addOptions(plant("basil"), 10)[1].title).toBe("Pas encore planté");
   });
 
   it("prévient en fin de saison pour une annuelle frileuse", () => {
@@ -35,9 +40,4 @@ describe("ajouter depuis le catalogue en un « + »", () => {
     if (plan.kind === "later") expect(toPlantText(plant("lambs-lettuce"), plan, "")).toMatch(/^À planter en (juillet|août|juin) : Mâche$/u);
   });
 
-  it("le bouton de l'autre choix s'accorde", () => {
-    expect(switchLabel(plant("eggplant"), "installed")).toBe("Pas encore plantée ?");
-    expect(switchLabel(plant("cherry-tomato"), "toPlant")).toBe("Déjà plantées ?");
-    expect(switchLabel(plant("basil"), "installed")).toBe("Pas encore planté ?");
-  });
 });

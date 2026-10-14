@@ -1,7 +1,7 @@
 /**
- * Ajouter une plante depuis le catalogue en un seul « + » (choix du porteur, 14/10) : Balco choisit « à planter »
- * quand c'est le moment de la semer ou de la planter, sinon « déjà sur mon balcon » ; le message du bas propose
- * l'autre choix en une touche (« Pas encore plantée ? », « Déjà plantée ? »). Hors saison, il prévient :
+ * Ajouter une plante depuis le catalogue (14/10) : le « + » pose une seule question, « Où en est ton aubergine ? », avec
+ * deux cartes qui disent ce qui va se passer (« Déjà sur mon balcon », « Pas encore plantée ») ; un toucher ajoute, le
+ * message du bas n'a plus que « Annuler ». Hors saison, la carte prévient :
  * - à planter alors que ce n'est pas sa saison : « Pas avant mai » et, si sa saison revient au printemps, elle rejoint
  *   les envies du printemps (carte de mars, notification du 1er mars) au lieu d'attendre sur le balcon ;
  * - déjà sur le balcon en fin de saison (annuelle frileuse, de septembre à décembre) : « récolte avant les gelées ».
@@ -9,14 +9,9 @@
  */
 import { MONTH_LONG, type CatalogPlant, type Month } from "../plants/catalog";
 import { adaptToClimate, type ClimateInfo } from "../plants/climate";
-import { agree, objectPronoun } from "../plants/grammar";
+import { agree, objectPronoun, possessive, verb } from "../plants/grammar";
 import { endsWithSeason } from "../plants/season-end";
 import { suggestionFor, type AddChoice } from "../plants/suggestions";
-
-/** Le choix de Balco pour un « + » : à planter si c'est sa saison, sinon déjà sur le balcon. */
-export function defaultAddChoice(entry: CatalogPlant, month: number, climate?: ClimateInfo | null): AddChoice {
-  return suggestionFor(entry, month, climate) ? "toPlant" : "installed";
-}
 
 /** Le prochain mois (après celui-ci) où on peut la semer ou la planter, ou null si jamais. */
 export function nextStartMonth(entry: CatalogPlant, month: number, climate?: ClimateInfo | null): number | null {
@@ -69,8 +64,49 @@ export function toPlantText(entry: CatalogPlant, plan: ToPlantPlan, potPhrase: s
   return `À planter : ${entry.name}${potPhrase}`;
 }
 
-/** Le bouton du message du bas qui passe à l'autre choix : « Pas encore plantée ? », « Déjà plantés ? ». */
-export function switchLabel(entry: CatalogPlant, current: AddChoice) {
-  const planted = agree(entry, "planté");
-  return current === "installed" ? `Pas encore ${planted} ?` : `Déjà ${planted} ?`;
+// --- La question du « + » (retour du 14/10 : le choix dans le message du bas faisait tourner en rond) ------------
+
+/** « Où en est ton aubergine ? », « Où en sont tes tomates cerises ? » */
+export function addQuestion(entry: CatalogPlant) {
+  return `Où en ${verb(entry, "est", "sont")} ${possessive(entry)} ?`;
+}
+
+export type AddOption = {
+  choice: AddChoice;
+  title: string;
+  /** Ce qui va se passer, dit avant de toucher. */
+  detail: string;
+  /** « C'est le moment » sur la carte à planter, quand c'est sa saison. */
+  badge: string | null;
+  /** Une fin de saison à surveiller (en orange). */
+  watch: boolean;
+};
+
+/** Les deux cartes, toujours dans le même ordre : déjà sur le balcon, puis pas encore plantée. */
+export function addOptions(entry: CatalogPlant, month: number, climate?: ClimateInfo | null): AddOption[] {
+  const late = lateSeasonNote(entry, month);
+  const plan = toPlantPlan(entry, month, climate);
+  const later = (plan.kind === "spring" || plan.kind === "later") && plan.month;
+  const when = later ? (suggestionFor(entry, later, climate)?.indoors ? `À semer au chaud dès ${MONTH_LONG[later - 1]}` : `Pas avant ${MONTH_LONG[later - 1]}`) : "";
+  return [
+    {
+      choice: "installed",
+      title: "Déjà sur mon balcon",
+      detail: late ? `${late}.` : "Balco te dit quand l’arroser dès aujourd’hui.",
+      badge: null,
+      watch: late !== null,
+    },
+    {
+      choice: "toPlant",
+      title: `Pas encore ${agree(entry, "planté")}`,
+      detail:
+        plan.kind === "now"
+          ? "Le pas-à-pas t’attend sur Aujourd’hui, étape par étape."
+          : plan.kind === "spring"
+            ? `${when} : Balco te ${objectPronoun(entry)} reproposera au printemps.`
+            : `${when} : Balco te le rappellera le moment venu.`,
+      badge: plan.kind === "now" ? "C’est le moment" : null,
+      watch: false,
+    },
+  ];
 }

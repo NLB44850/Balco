@@ -305,3 +305,10 @@ Règles qui valent pour toutes les étapes :
      saison : récolte avant les premières gelées ». Logique `lib/garden/catalog-add.ts` (`defaultAddChoice`,
      `toPlantPlan`, `installedText`, `toPlantText`, `switchLabel`), tests `tests/catalog-add.test.ts`, e2e « catalogue :
      ajouter une plante d'un + » (`1-parcours`, en octobre).
+   - **Retour du 14/10 sur le « + »** (« on tourne en rond » : « Déjà plantée ? » puis « Pas encore plantée ? » dans le
+     message du bas) : le « + » ouvre une feuille du bas avec **une question et deux cartes** qui disent ce qui va se
+     passer avant de toucher : « Où en est ton aubergine ? » → 🪴 « Déjà sur mon balcon » (« Balco te dit quand l'arroser
+     dès aujourd'hui », ou en orange « Fin de saison : récolte avant les premières gelées. ») et 🌱 « Pas encore plantée »
+     (« C'est le moment » + « Le pas-à-pas t'attend sur Aujourd'hui », ou « À semer au chaud dès février : Balco te la
+     reproposera au printemps. »). Un toucher ajoute ; le message du bas n'a plus que « Annuler ». Les mêmes cartes
+     terminent la fiche du catalogue. `addQuestion`, `addOptions` (catalog-add.ts).
