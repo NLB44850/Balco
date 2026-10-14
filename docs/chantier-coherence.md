@@ -53,3 +53,16 @@ Dans le code : `components/ui/button.tsx` (`Button`, variantes `primary`, `secon
 - Mode vacances : « Arrêter le mode vacances » tout de suite, « Annuler » remet les dates et les préparatifs.
 - Courses : « Tout décocher » avec « Annuler ». Réglages → Envies du printemps : « Retirer » avec « Annuler ».
 - Reste en feuille de confirmation rouge : supprimer son compte (irréversible). E2e `27-coherence`.
+
+### Retours du 14/10 sur la livraison 2 (« tout est ok », 4 petits bugs), corrigés
+
+1. Nora parlait de plantes retirées : une plante retirée alors qu'elle était encore « à planter » restait décrite
+   « pas encore en terre » dans son contexte (`plantName`, server/ai/context.ts). Corrigé, et la liste des plantes du
+   balcon « fait foi » dans le contexte (aucune autre plante présentée comme encore là). Côté serveur : en ligne après
+   la fusion (Railway).
+2. Nora : le clavier cachait le champ de saisie sur Android (bord à bord) : `KeyboardAvoidingView` en `padding` partout
+   (Nora, consignes, connexion), comme la feuille du bas.
+3. En-tête : un bouton à droite (« Effacer » de Nora) est centré verticalement et le sous-titre passe sur deux lignes
+   (`ScreenHeader`) ; « Ta coach, qui connaît ta plante » (au lieu de « tes plante ») ; « OK » du prénom dans sa bulle.
+4. Image d'une plante vide sur Aujourd'hui : une photo dont le fichier a disparu laisse place à la photo d'exemple
+   (`onError` de `PlantPicture`).

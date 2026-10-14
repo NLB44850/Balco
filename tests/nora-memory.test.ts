@@ -122,6 +122,16 @@ describe("history for Nora (last 90 days, aggregated)", () => {
     expect(totals).toEqual({ events: 22, last30Days: 9, firstDaysAgo: 78 });
   });
 
+  it("a plant removed while still « to plant » is not presented as waiting (retour du 14/10)", () => {
+    const rows = [
+      { plantId: "claytone-1", catalogId: "winter-purslane", nickname: null, displayName: "Claytone de Cuba", varietyId: null, active: 0, addedAt: daysAgo(5), removedAt: daysAgo(1), toPlant: 1 },
+      { plantId: "chives-1", catalogId: "chives", nickname: null, displayName: "Ciboulette", varietyId: null, active: 1, addedAt: daysAgo(5), removedAt: null, toPlant: 1 },
+    ];
+    const { removedPlants, history } = summarizeHistory(rows, [], NOW);
+    expect(removedPlants[0].name).toBe("Claytone de Cuba");
+    expect(history[0].name).toBe("Ciboulette (à semer ou planter : pas encore en terre)");
+  });
+
   it("writes it in plain French for Nora", () => {
     const summary = summarizeHistory(plants, events, NOW);
     const facts: GardenFacts = {

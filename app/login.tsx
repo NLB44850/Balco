@@ -131,7 +131,7 @@ export default function LoginScreen() {
 
   return (
     <LightScreen bottom>
-      <KeyboardAvoidingView behavior={Platform.OS === "ios" ? "padding" : undefined} style={styles.flex}>
+      <KeyboardAvoidingView behavior="padding" style={styles.flex}>
         <ScrollView keyboardShouldPersistTaps="handled" contentContainerStyle={[styles.content, { paddingTop: insets.top + 12 }]}>
           <View style={styles.header}>
             {step === "code" ? (

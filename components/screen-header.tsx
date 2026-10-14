@@ -34,9 +34,10 @@ export function ScreenHeader({ title, subtitle, back, right, style }: Props) {
       )}
       <View style={styles.copy}>
         <Text style={[styles.title, { color: colors.foreground }]} numberOfLines={1}>{title}</Text>
-        {!!subtitle && <Text style={[styles.subtitle, { color: colors.muted }]} numberOfLines={1}>{subtitle}</Text>}
+        {/* Deux lignes : un bouton à droite (« Effacer » de Nora) ne coupe plus la phrase (retour du 14/10). */}
+        {!!subtitle && <Text style={[styles.subtitle, { color: colors.muted }]} numberOfLines={2}>{subtitle}</Text>}
       </View>
-      {right}
+      {right && <View style={styles.right}>{right}</View>}
       {!back && (
         <Pressable accessibilityRole="button" accessibilityLabel="Moi : profil et réglages" onPress={() => router.push("/(tabs)/profile")} style={({ pressed }) => [styles.avatar, { backgroundColor: colors.primary }, pressed && styles.pressed]}>
           <Text style={styles.avatarText}>{letter ?? "🌱"}</Text>
@@ -52,6 +53,7 @@ const styles = StyleSheet.create({
   copy: { flex: 1, gap: 2 },
   title: { fontSize: 32, fontWeight: "800", letterSpacing: -1 },
   subtitle: { fontSize: 14 },
+  right: { alignSelf: "center" },
   avatar: { width: 40, height: 40, borderRadius: 20, alignItems: "center", justifyContent: "center" },
   avatarText: { color: "#FFFFFF", fontSize: 16, fontWeight: "800" },
   pressed: { opacity: 0.75, transform: [{ scale: 0.97 }] },

@@ -1,7 +1,7 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { useEffect, useMemo, useRef, useState } from "react";
-import { FlatList, KeyboardAvoidingView, Platform, Pressable, StyleSheet, View } from "react-native";
+import { FlatList, KeyboardAvoidingView, Pressable, StyleSheet, View } from "react-native";
 import { Button } from "@/components/ui/button";
 import { Text, TextInput } from "@/components/ui/typography";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -218,7 +218,7 @@ export default function AssistantScreen() {
     <>
       <ScreenHeader
         title="Nora"
-        subtitle={unavailable ? "Ta coach balcon · bientôt disponible" : resolvedPlants.length > 0 ? `Ta coach, qui connaît tes ${resolvedPlants.length > 1 ? `${resolvedPlants.length} plantes` : "plante"}` : "Ta coach balcon"}
+        subtitle={unavailable ? "Ta coach balcon · bientôt disponible" : resolvedPlants.length > 0 ? resolvedPlants.length > 1 ? `Ta coach, qui connaît tes ${resolvedPlants.length} plantes` : "Ta coach, qui connaît ta plante" : "Ta coach balcon"}
         right={messages.length > 0 ? <Button small variant="remove" label="Effacer" accessibilityLabel="Effacer la conversation" onPress={clearConversation} /> : undefined}
         style={styles.header}
       />
@@ -265,7 +265,7 @@ export default function AssistantScreen() {
 
   return (
     <LightScreen>
-      <KeyboardAvoidingView style={styles.flex} behavior={Platform.OS === "ios" ? "padding" : undefined}>
+      <KeyboardAvoidingView style={styles.flex} behavior="padding">
         <FlatList
           ref={listRef}
           data={[...welcome, ...withDaySeparators(messages)]}
@@ -373,7 +373,7 @@ const styles = StyleSheet.create({
   smallAvatarText: { color: "#FFFFFF", fontSize: 11, fontWeight: "800" },
   nameBox: { gap: 8, marginTop: 10 },
   nameRow: { flexDirection: "row", alignItems: "center", gap: 8 },
-  nameInput: { flex: 1, borderWidth: 1, borderRadius: 12, paddingHorizontal: 12, paddingVertical: 9, fontSize: 15, backgroundColor: "#FFFFFF" },
+  nameInput: { flex: 1, minWidth: 0, borderWidth: 1, borderRadius: 12, paddingHorizontal: 12, paddingVertical: 9, fontSize: 15, backgroundColor: "#FFFFFF" },
   nameButton: { alignSelf: "center" },
   nameLater: { fontSize: 13, fontWeight: "600" },
   bubble: { padding: 13, maxWidth: "82%", borderBottomLeftRadius: 5 },
