@@ -321,3 +321,10 @@ Règles qui valent pour toutes les étapes :
      forcer la dose, rincer avant de manger), « Pas mieux dans 10 jours ? Montre-la en jardinerie. ». Le texte libre
      « Solution naturelle » reste pour les autres cas, écarté par le serveur s'il parle d'un produit à éviter
      (`isUnsafeRemedyText`). Sources : `docs/sources-traitements.md`. Côté serveur : en ligne après la fusion (Railway).
+9. **Calculateur de poids : codé le 14/10, à valider.** Réglages → Mon balcon → « Poids de tes pots » (valeur « ≈ 20 kg »),
+   feuille du bas : « Environ 20 kg », un pot par ligne (taille, kg), le plus lourd d'abord. Terreau bien arrosé à
+   1 kg par litre (compté large), pot vide compté en terre cuite (1 / 3 / 6 / 5 kg), taille « Je ne sais pas » =
+   taille conseillée par la fiche et c'est dit ; plantes « à planter » non comptées ; total arrondi aux 5 kg. Repère
+   « souvent 350 kg par m² pour un balcon récent, parfois moins dans l'ancien » + demander au syndic ; « Pour alléger ».
+   Pas de seuil « danger » (surface et état du balcon inconnus). Logique `lib/garden/balcony-weight.ts`, sources
+   `docs/sources-poids.md`, tests `tests/balcony-weight.test.ts`, e2e `16-reglages`.

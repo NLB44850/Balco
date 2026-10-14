@@ -122,3 +122,20 @@ test("À propos : avis, confidentialité bientôt, crédits et version", async (
   await expect(page).toHaveURL(/\/credits/);
   expect(errors).toEqual([]);
 });
+
+test("Mon balcon : poids des pots, estimation avec le repère du balcon (étape 9)", async ({ page }) => {
+  const errors = trackErrors(page);
+  await mockWeather(page);
+  await seedBalcony(page, { plants: ["basil", "mint"], wateredDaysAgo: 1 });
+  await open(page, "/settings", "Réglages");
+  const row = page.getByRole("button", { name: /^Poids de tes pots/u });
+  await expect(row).toContainText(/≈ \d+ kg/u);
+  await row.click();
+  const sheet = page.getByRole("dialog");
+  await expect(sheet.getByText(/^Environ \d+ kg$/u)).toBeVisible();
+  await expect(sheet.getByText(/^Tes 2 pots, terre bien arrosée/u)).toBeVisible();
+  // Les tailles ne sont pas notées : comptées à la taille conseillée, et c'est dit.
+  await expect(sheet.getByText(/^2 pots sans taille notée/u)).toBeVisible();
+  await expect(sheet.getByText(/350 kg par m².*syndic/u)).toBeVisible();
+  expect(errors).toEqual([]);
+});

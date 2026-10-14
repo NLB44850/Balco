@@ -8,7 +8,7 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import Constants from "expo-constants";
 import { TRPCClientError } from "@trpc/client";
 import { useRouter } from "expo-router";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { Alert, AppState, Linking, Platform, Pressable, ScrollView, StyleSheet, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
@@ -35,6 +35,7 @@ import { useDateSimulation } from "@/hooks/use-date-simulation";
 import { useEventDismissals } from "@/hooks/use-event-dismissals";
 import { addDays, clockPresets, longDayText } from "@/lib/clock";
 import { useGarden } from "@/lib/garden/garden-context";
+import { BALCONY_LOAD_NOTE, balconyWeight, guessedNote, LIGHTER_TIP, weightIntro, weightValue } from "@/lib/garden/balcony-weight";
 import { dayKey, plantDisplayName } from "@/lib/garden/garden-logic";
 import { harvestEndStates, potIsFree, settleLongOverSeasons } from "@/lib/garden/harvest-end";
 import { GOAL_OPTIONS, SPACE_OPTIONS, SUNLIGHT_UNKNOWN } from "@/lib/garden/onboarding";
@@ -43,6 +44,7 @@ import { backupStatus, cityValue, goalsValue, NOT_YET, spaceValue, springWishEnt
 import { ORIENTATION_OPTIONS, seasonSunHours, sunSummary, type Orientation } from "@/lib/garden/sun";
 import { nextSpringReminder, SPRING_REMINDER_SOURCE, springReminderContent } from "@/lib/garden/spring";
 import { notificationsUnavailableReason } from "@/lib/notifications/module";
+import { POT_SIZE_CHOICES } from "@/lib/plants/pot-size";
 import { activateReminders, NOTIFICATIONS_DENIED } from "@/lib/reminders/activate";
 import {
   clearAndDisableLocalReminders,
@@ -159,7 +161,7 @@ export default function SettingsScreen() {
 
   const location = useLocalWeather();
   const [cityPickerOpen, setCityPickerOpen] = useState(false);
-  const [sheet, setSheet] = useState<"sun" | "space" | "goals" | "spring" | "name" | "level" | "hour" | "quiet" | "plants" | "check" | "plus" | "delete" | "simulation" | "date" | null>(null);
+  const [sheet, setSheet] = useState<"sun" | "space" | "goals" | "spring" | "name" | "level" | "hour" | "quiet" | "plants" | "check" | "plus" | "delete" | "simulation" | "date" | "weight" | null>(null);
   const closeSheet = () => setSheet(null);
   // « Envies » : plusieurs choix, enregistrés d'un coup par « Enregistrer ».
   const [goalsDraft, setGoalsDraft] = useState<string[]>([]);
@@ -199,6 +201,8 @@ export default function SettingsScreen() {
     return subscribeReminderSnoozes(setSnoozes);
   }, []);
   const harvestEnds = settleLongOverSeasons(harvestEndStates(snoozes, new Date()), resolvedPlants, events, new Date());
+  // Étape 9 : le poids des pots (une estimation comptée large, lib/garden/balcony-weight.ts).
+  const weight = useMemo(() => balconyWeight(resolvedPlants), [resolvedPlants]);
   const eligiblePlants = resolvedPlants.filter((resolved) => !resolved.plant.toPlant && !potIsFree(resolved, harvestEnds.get(resolved.plant.id)));
 
   // L'autorisation du téléphone, relue au retour dans l'app (après un passage par ses réglages).
@@ -467,6 +471,27 @@ export default function SettingsScreen() {
           </View>
         ))}
       </BottomSheet>
+      <BottomSheet visible={sheet === "weight"} onClose={closeSheet}>
+        <SheetHeading title={weight.pots.length === 0 ? "Pas encore de pot" : `Environ ${weight.totalKg} kg`} intro={weight.pots.length === 0 ? "Ajoute une plante à ton balcon : Balco estimera le poids de ses pots." : weightIntro(weight)} />
+        {weight.pots.map((pot) => {
+          const resolved = resolvedPlants.find((item) => item.plant.id === pot.plantId);
+          if (!resolved) return null;
+          const sizeText = pot.size ? POT_SIZE_CHOICES.find((choice) => choice.id === pot.size)?.title : "Grand bac";
+          return (
+            <View key={pot.plantId} style={[styles.wishRow, { borderColor: colors.border }]}>
+              <PlantPicture resolved={resolved} style={styles.wishPicture} />
+              <View style={styles.flex}>
+                <Text style={[styles.wishName, { color: colors.foreground }]}>{plantDisplayName(resolved)}</Text>
+                <Text style={[styles.weightSize, { color: colors.muted }]}>{pot.guessed ? `Taille conseillée : ${sizeText?.toLowerCase()}` : sizeText}</Text>
+              </View>
+              <Text style={[styles.weightKg, { color: colors.foreground }]}>{pot.kg} kg</Text>
+            </View>
+          );
+        })}
+        {weight.guessedCount > 0 && <Text style={[styles.sheetNote, { color: colors.muted }]}>{guessedNote(weight.guessedCount)}</Text>}
+        <Text style={[styles.sheetNote, { color: colors.foreground }]}>{BALCONY_LOAD_NOTE}</Text>
+        <Text style={[styles.sheetNote, { color: colors.muted }]}>{LIGHTER_TIP}</Text>
+      </BottomSheet>
       <ScrollView keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false} contentContainerStyle={[styles.content, { paddingTop: insets.top + 14 }]}>
         <ScreenHeader back title="Réglages" subtitle="Tout s’enregistre tout de suite" style={styles.header} />
 
@@ -477,6 +502,7 @@ export default function SettingsScreen() {
           <SettingRow label="Envies" value={goalsValue(answers.goals)} onPress={openGoals} />
           <SettingRow label="Envies du printemps" value={springWishesValue(onboarding?.springWishes)} onPress={() => setSheet("spring")} />
           <SettingRow label="Diagnostic de ton balcon" onPress={() => router.push("/diagnostic")} />
+          <SettingRow label="Poids de tes pots" value={weightValue(weight)} onPress={() => setSheet("weight")} />
         </SettingsGroup>
 
         <SettingsGroup title="Rappels">
@@ -599,5 +625,7 @@ const styles = StyleSheet.create({
   wishRow: { flexDirection: "row", alignItems: "center", gap: 12, borderBottomWidth: StyleSheet.hairlineWidth, paddingVertical: 10 },
   wishPicture: { width: 40, height: 40, borderRadius: 20, alignItems: "center", justifyContent: "center" },
   wishName: { flex: 1, fontSize: 15, fontWeight: "600" },
+  weightSize: { fontSize: 13, marginTop: 2 },
+  weightKg: { fontSize: 15, fontWeight: "700" },
   pressed: { opacity: 0.78, transform: [{ scale: 0.98 }] },
 });
