@@ -313,7 +313,7 @@ Règles qui valent pour toutes les étapes :
      reproposera au printemps. »). Un toucher ajoute ; le message du bas n'a plus que « Annuler ». Les mêmes cartes
      terminent la fiche du catalogue. `addQuestion`, `addOptions` (catalog-add.ts).
 
-   - **8b, traitement naturel dans Observer : codée le 14/10, à valider.** Observer reconnaît le problème (`problem`,
+   - **8b, traitement naturel dans Observer : codée le 14/10, validée et fusionnée (PR #51, 14/10).** Observer reconnaît le problème (`problem`,
      9 au choix : pucerons, cochenilles, araignées rouges, mouches blanches, oïdium, mildiou, limaces et escargots,
      chenilles, moucherons du terreau) ; le traitement affiché vient de Balco (`lib/plants/natural-remedies.ts`,
      carte `components/natural-remedy-card.tsx`) : gestes à la main d'abord, recette seulement si simple et sûre (savon
