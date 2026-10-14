@@ -17,12 +17,15 @@ téléphone avant la suivante. Pour chaque étape, on cherche aussi le même dé
   « Nora a retenu : … », note d'Observer dans l'historique.
 - Code : `lib/garden/helper-note.ts` (`helperPlantWatering(item, visitEvery)`), `app/vacation.tsx`.
 
-## Étape 2 : « Ton pot est libre » après les radis
+## Étape 2 : « Ton pot est libre » après les radis (faite le 14/10, à valider)
 
 - Contradiction : « Ressemer des radis » juste au-dessus de « Pas de la famille du chou », alors que le radis en fait
   partie.
 - Décision : quand la plante récoltée est d'une famille à éviter, garder « Ressemer des radis » avec le sous-titre
   « Dans un autre pot, ou avec une terre neuve ». Le texte sur la famille ne vaut que pour les idées « à la place ».
+- Fait : `restartDetail` (`lib/garden/harvest-end.ts`) ; une plante seule de sa famille (micro-pousses…) garde « Dans le
+  même pot, avec son pas-à-pas. ». Vaut aussi pour la fin de saison (même feuille). Ailleurs, rien d'autre ne propose
+  de ressemer dans le même pot.
 
 ## Étape 3 : le sens de « À surveiller »
 

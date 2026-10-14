@@ -7,6 +7,7 @@ import {
   archiveSeason,
   clearHarvestEnd,
   freePotChoices,
+  restartDetail,
   harvestEndStates,
   harvestQuestionDate,
   harvestQuestionDue,
@@ -125,10 +126,17 @@ describe("« Oui » : ton pot est libre", () => {
     const choices = freePotChoices(plant("radish"), null, { month: 5 });
     expect(choices.map((choice) => choice.kind)).toEqual(["restart", "plant", "plant", "plant", "empty"]);
     expect(choices[0].label).toBe("Ressemer des radis");
+    // Le radis est de la famille du chou, celle qu'on évite à la place : pas dans la même terre.
+    expect(choices[0].detail).toBe("Dans un autre pot, ou avec une terre neuve.");
     expect(choices.at(-1)?.label).toBe("Laisser le pot vide");
     const other = choices.find((choice) => choice.kind === "plant");
     for (const choice of choices) if (choice.kind === "plant") expect(potNeedFor(choice.entry).liters).toBeLessThanOrEqual(potNeedFor(plant("radish").entry).liters);
     expect(other?.label).toMatch(/^(Semer|Planter) (le |la |les |l’)/u);
+  });
+
+  it("ressemer : même pot seulement pour une plante seule de sa famille", () => {
+    expect(restartDetail(plant("microgreens").entry)).toBe("Dans le même pot, avec son pas-à-pas.");
+    for (const id of ["radish", "garlic", "round-carrot", "head-lettuce"]) expect(restartDetail(plant(id).entry)).toBe("Dans un autre pot, ou avec une terre neuve.");
   });
 
   it("les plantes à replanter disent « Replanter » : ail, pommes de terre", () => {

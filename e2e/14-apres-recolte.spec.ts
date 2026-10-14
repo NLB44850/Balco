@@ -77,6 +77,9 @@ test("pot libre : « Que planter à la place ? » propose une autre famille, et 
   await page.getByRole("button", { name: "Oui, tout est récolté" }).click();
   const sheet = page.getByRole("dialog");
   await expect(sheet.getByText("Que planter à la place ?")).toBeVisible();
+  // Ressemer des radis reste proposé, mais pas dans la même terre (famille du chou).
+  await expect(sheet.getByRole("button", { name: "Ressemer des radis" })).toBeVisible();
+  await expect(sheet.getByText("Dans un autre pot, ou avec une terre neuve.")).toBeVisible();
   await expect(sheet.getByText(/^Pas de la famille du chou : mêmes maladies dans la terre\. Avant de replanter/u)).toBeVisible();
   const idea = sheet.getByRole("button", { name: /^(Semer|Planter) / }).first();
   const label = (await idea.getAttribute("aria-label")) ?? "";
