@@ -14,6 +14,7 @@ import { CatalogPicture } from "@/components/plant-picture";
 import { ScreenHeader } from "@/components/screen-header";
 import { UndoToast, type ToastMessage } from "@/components/today/undo-toast";
 import { glass } from "@/components/ui/glass";
+import { Button } from "@/components/ui/button";
 import { Text } from "@/components/ui/typography";
 import { useColors } from "@/hooks/use-colors";
 import { capitalize } from "@/lib/plants/grammar";
@@ -151,9 +152,7 @@ export default function EventScreen() {
       {protected_ ? (
         <Text style={[styles.rowTitle, { color: colors.primary }]}>✓ C’est fait</Text>
       ) : pots.length > 0 ? (
-        <Pressable accessibilityRole="button" accessibilityLabel={`C’est fait : ${event.protection.title}`} onPress={() => void protect()} style={({ pressed }) => [styles.cta, { backgroundColor: colors.primary }, pressed && styles.pressed]}>
-          <Text style={styles.ctaText}>C’est fait</Text>
-        </Pressable>
+        <Button label="C’est fait" accessibilityLabel={`C’est fait : ${event.protection.title}`} onPress={() => void protect()} />
       ) : null}
     </View>
   );
@@ -202,8 +201,6 @@ const styles = StyleSheet.create({
   pill: { borderWidth: 1, borderRadius: 999, paddingHorizontal: 14, paddingVertical: 8 },
   pillFilled: {},
   pillText: { fontSize: 14, fontWeight: "700" },
-  cta: { borderRadius: 14, paddingVertical: 13, alignItems: "center", marginTop: 4 },
-  ctaText: { color: "#FFFFFF", fontSize: 16, fontWeight: "700" },
   nora: { alignItems: "center", gap: 4, paddingVertical: 10 },
   noraText: { fontSize: 16, fontWeight: "700" },
   pressed: { opacity: 0.78, transform: [{ scale: 0.98 }] },

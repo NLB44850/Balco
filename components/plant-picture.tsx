@@ -54,12 +54,14 @@ function Picture({ entry, uri, style, hideEmoji, children }: { entry: CatalogPla
     const next = Math.min(width, height);
     if (next !== side) setSide(next);
   };
-  const stock = uri ? undefined : stockPhoto(entry.id);
-  const source = uri ? { uri } : stock;
+  // Ta photo introuvable (fichier effacé par le téléphone) : la photo d'exemple plutôt qu'un rond vide (retour du 14/10).
+  const [brokenUri, setBrokenUri] = useState<string | null>(null);
+  const ownUri = uri && uri !== brokenUri ? uri : undefined;
+  const source = ownUri ? { uri: ownUri } : stockPhoto(entry.id);
   return (
     <View style={[styles.frame, { backgroundColor: colors.leaf }, style]} onLayout={source ? undefined : onLayout}>
       {source ? (
-        <Image source={source} style={StyleSheet.absoluteFill} contentFit="cover" transition={180} accessibilityIgnoresInvertColors />
+        <Image source={source} style={StyleSheet.absoluteFill} contentFit="cover" transition={180} accessibilityIgnoresInvertColors onError={() => ownUri && setBrokenUri(ownUri)} />
       ) : (
         !hideEmoji && side > 0 && (
           <View style={styles.center} pointerEvents="none">

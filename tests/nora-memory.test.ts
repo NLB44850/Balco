@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import { conversationDayLabel, conversationForNora, withDaySeparators, type DatedMessage } from "../lib/ai/conversation";
 import { cleanNote, cleanPreferences, describeMemory, mergeNotes, noteDate, parseNotes, togglePreference } from "../lib/ai/memory";
-import { describeGarden, summarizeHistory, type GardenFacts } from "../server/ai/context";
+import { describeGarden, limitToShown, summarizeHistory, type GardenFacts } from "../server/ai/context";
 
 const NOW = new Date("2026-09-29T12:00:00Z");
 const daysAgo = (days: number) => new Date(NOW.getTime() - days * 86_400_000);
@@ -120,6 +120,23 @@ describe("history for Nora (last 90 days, aggregated)", () => {
     expect(history.find((plant) => plant.name === "Menthe")!.byType).toEqual([]);
     expect(removedPlants).toEqual([{ name: "Radis", grownDays: 60, removedDaysAgo: 60 }]);
     expect(totals).toEqual({ events: 22, last30Days: 9, firstDaysAgo: 78 });
+  });
+
+  it("a plant removed while still « to plant » is not presented as waiting (retour du 14/10)", () => {
+    const rows = [
+      { plantId: "claytone-1", catalogId: "winter-purslane", nickname: null, displayName: "Claytone de Cuba", varietyId: null, active: 0, addedAt: daysAgo(5), removedAt: daysAgo(1), toPlant: 1 },
+      { plantId: "chives-1", catalogId: "chives", nickname: null, displayName: "Ciboulette", varietyId: null, active: 1, addedAt: daysAgo(5), removedAt: null, toPlant: 1 },
+    ];
+    const { removedPlants, history } = summarizeHistory(rows, [], NOW);
+    expect(removedPlants[0].name).toBe("Claytone de Cuba");
+    expect(history[0].name).toBe("Ciboulette (à semer ou planter : pas encore en terre)");
+  });
+
+  it("only the plants shown on the phone count as on the balcony", () => {
+    const limited = limitToShown(plants, ["basil-1"], NOW);
+    expect(limited.find((row) => row.plantId === "mint-1")).toMatchObject({ active: 0, removedAt: NOW });
+    expect(limited.find((row) => row.plantId === "basil-1")!.active).toBe(1);
+    expect(limitToShown(plants, undefined, NOW)).toBe(plants);
   });
 
   it("writes it in plain French for Nora", () => {

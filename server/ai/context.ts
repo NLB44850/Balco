@@ -59,7 +59,9 @@ function plantName(row: PlantRow) {
   const variety = entry?.varieties.find((item) => item.id === row.varietyId);
   const name = row.nickname?.trim() || entry?.name || row.displayName;
   const named = variety ? `${name} (variété ${variety.name})` : name;
-  return row.toPlant === 1 ? `${named} (à semer ou planter : pas encore en terre)` : named;
+  // « Pas encore en terre » seulement pour une plante encore sur le balcon : une plante retirée n'attend plus rien
+  // (retour du 14/10 : Nora parlait d'une claytone retirée comme d'une plante « qui attend encore »).
+  return row.toPlant === 1 && row.active === 1 && !row.removedAt ? `${named} (à semer ou planter : pas encore en terre)` : named;
 }
 
 /** Gestes que le catalogue prévoit pour une plante : ceux jamais faits sont signalés à Nora. */
@@ -130,6 +132,13 @@ function parseBalcony(json: string | null | undefined): OnboardingAnswers | null
   }
 }
 
+/** Une plante que le téléphone n'affiche plus est tenue pour retirée, même si le serveur ne le sait pas encore. */
+export function limitToShown<T extends { plantId: string; active: number; removedAt: Date | null }>(rows: T[], shownPlantIds: string[] | undefined, now: Date): T[] {
+  if (!shownPlantIds) return rows;
+  const shown = new Set(shownPlantIds);
+  return rows.map((row) => (row.active === 1 && !shown.has(row.plantId) ? { ...row, active: 0, removedAt: row.removedAt ?? now } : row));
+}
+
 /** La mémoire telle que l'écran Nora l'affiche. Le niveau est l'expérience choisie à l'accueil ou dans Réglages. */
 export async function loadMemory(userId: number): Promise<NoraMemoryView> {
   const db = await getDb();
@@ -141,12 +150,12 @@ export async function loadMemory(userId: number): Promise<NoraMemoryView> {
 }
 
 /** Ce que Nora sait du balcon : lu en base, jamais fourni par le client (pas de contexte falsifiable). */
-export async function loadGardenFacts(userId: number, now = new Date()): Promise<GardenFacts> {
+export async function loadGardenFacts(userId: number, now = new Date(), shownPlantIds?: string[]): Promise<GardenFacts> {
   const db = await getDb();
   const empty = { events: 0, last30Days: 0, firstDaysAgo: null };
   if (!db) return { firstName: null, city: null, sunlight: null, space: null, goals: [], plants: [], history: [], removedPlants: [], totals: empty, memory: { level: null, preferences: [], notes: [] } };
   const [profile] = await db.select().from(reminderProfiles).where(eq(reminderProfiles.userId, userId)).limit(1);
-  const rows = await db.select().from(reminderPlants).where(eq(reminderPlants.userId, userId));
+  const rows = limitToShown(await db.select().from(reminderPlants).where(eq(reminderPlants.userId, userId)), shownPlantIds, now);
   const since = new Date(now.getTime() - HISTORY_DAYS * DAY_MS);
   const events = await db.select().from(maintenanceEvents).where(and(eq(maintenanceEvents.userId, userId), gt(maintenanceEvents.completedAt, since))).orderBy(desc(maintenanceEvents.completedAt)).limit(MAX_HISTORY_EVENTS);
   const balcony = parseBalcony(profile?.balconyJson);
@@ -202,10 +211,12 @@ export function describeGarden(facts: GardenFacts, now = new Date()) {
     facts.goals.length > 0 ? `Envies choisies à l'inscription : ${facts.goals.join(", ")}.` : null,
     ...describeMemory(facts.memory, now),
     facts.vacation && facts.vacation.end >= `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}` ? `Mode vacances : absence ${vacationRange(facts.vacation)}, ${facts.vacation.helper ? "un proche passe arroser" : "personne ne passe arroser"}.` : null,
-    facts.plants.length > 0 ? `Plantes cultivées : ${facts.plants.map((plant) => plant.name).join(", ")}.` : "Aucune plante enregistrée pour l'instant.",
+    facts.plants.length > 0
+      ? `Plantes sur le balcon en ce moment (cette liste fait foi : ne parle d'aucune autre plante comme si elle y était encore, même si la conversation ou un fait retenu en parle) : ${facts.plants.map((plant) => plant.name).join(", ")}.`
+      : "Aucune plante sur le balcon en ce moment (si la conversation ou un fait retenu parle de plantes, elles n'y sont plus).",
     totals.events > 0 ? `Gestes notés dans Balco ces ${HISTORY_DAYS} derniers jours : ${totals.events}, dont ${totals.last30Days} ces 30 derniers jours.` : null,
     facts.history.length > 0 ? `Historique des ${HISTORY_DAYS} derniers jours, plante par plante :\n${facts.history.map(describePlantHistory).join("\n")}` : null,
-    facts.removedPlants.length > 0 ? `Plantes retirées du balcon cette année : ${facts.removedPlants.map((plant) => `${plant.name} (${plant.grownDays === null ? "" : `${plant.grownDays} j sur le balcon, `}retrait ${ago(plant.removedDaysAgo)})`).join(", ")}.` : null,
+    facts.removedPlants.length > 0 ? `Plantes retirées du balcon cette année (elles n'y sont plus) : ${facts.removedPlants.map((plant) => `${plant.name} (${plant.grownDays === null ? "" : `${plant.grownDays} j sur le balcon, `}retrait ${ago(plant.removedDaysAgo)})`).join(", ")}.` : null,
   ];
   return lines.filter(Boolean).join("\n");
 }

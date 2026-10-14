@@ -20,6 +20,7 @@ import { LightScreen } from "@/components/light-screen";
 import { FadeIn, PopIn } from "@/components/motion";
 import { ScreenHeader } from "@/components/screen-header";
 import { glass } from "@/components/ui/glass";
+import { Button } from "@/components/ui/button";
 import { Text } from "@/components/ui/typography";
 import { useColors } from "@/hooks/use-colors";
 import { followUpsFor } from "@/lib/garden/follow-ups";
@@ -166,16 +167,12 @@ export default function GuideScreen() {
               })}
             </View>
             {missing.length > 0 ? (
-              <Pressable accessibilityRole="button" onPress={share} style={({ pressed }) => [styles.secondary, { borderColor: colors.primary }, pressed && styles.pressed]}>
-                <Text style={[styles.secondaryText, { color: colors.primary }]}>Partager ce qui manque · {missing.length}</Text>
-              </Pressable>
+              <Button variant="secondary" label={`Partager ce qui manque · ${missing.length}`} onPress={share} />
             ) : (
               <Text style={[styles.why, { color: colors.primary, textAlign: "center" }]}>Tu as tout ce qu’il faut.</Text>
             )}
             {!needOnly && (
-              <Pressable accessibilityRole="button" onPress={() => setPhase("steps")} style={({ pressed }) => [styles.cta, { backgroundColor: colors.primary }, pressed && styles.pressed]}>
-                <Text style={styles.ctaText}>Commencer le pas-à-pas</Text>
-              </Pressable>
+              <Button label="Commencer le pas-à-pas" onPress={() => setPhase("steps")} />
             )}
           </>
         )}
@@ -193,12 +190,8 @@ export default function GuideScreen() {
             </View>
             <View style={styles.dots}>{steps.map((_, dot) => <View key={dot} style={[styles.dot, { backgroundColor: dot === index ? colors.primary : colors.border }]} />)}</View>
             <View style={styles.nav}>
-              <Pressable accessibilityRole="button" onPress={previous} style={({ pressed }) => [styles.secondary, styles.flex, { borderColor: colors.border }, pressed && styles.pressed]}>
-                <Text style={[styles.secondaryText, { color: colors.foreground }]}>Retour</Text>
-              </Pressable>
-              <Pressable accessibilityRole="button" onPress={next} style={({ pressed }) => [styles.cta, styles.flex, { backgroundColor: colors.primary, marginTop: 0 }, pressed && styles.pressed]}>
-                <Text style={styles.ctaText}>{index >= steps.length - 1 ? "Et après ?" : "Suivant"}</Text>
-              </Pressable>
+              <Button variant="secondary" label="Retour" onPress={previous} style={styles.flex} />
+              <Button label={index >= steps.length - 1 ? "Et après ?" : "Suivant"} onPress={next} style={styles.flex} />
             </View>
           </>
         )}
@@ -217,13 +210,9 @@ export default function GuideScreen() {
                 <Text style={[styles.itemLabel, { color: colors.primary }]}>{doneLabel} : bien joué !</Text>
               </PopIn>
             ) : canPlant ? (
-              <Pressable accessibilityRole="button" onPress={() => void markPlanted()} style={({ pressed }) => [styles.cta, { backgroundColor: colors.primary }, pressed && styles.pressed]}>
-                <Text style={styles.ctaText}>{doneLabel}</Text>
-              </Pressable>
+              <Button label={doneLabel} onPress={() => void markPlanted()} />
             ) : (
-              <Pressable accessibilityRole="button" onPress={() => router.back()} style={({ pressed }) => [styles.cta, { backgroundColor: colors.foreground }, pressed && styles.pressed]}>
-                <Text style={[styles.ctaText, { color: colors.background }]}>Fermer</Text>
-              </Pressable>
+              <Button label="Fermer" onPress={() => router.back()} />
             )}
           </>
         )}
@@ -255,9 +244,5 @@ const styles = StyleSheet.create({
   planted: { flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 10, paddingVertical: 14 },
   check: { width: 30, height: 30, borderRadius: 15, alignItems: "center", justifyContent: "center" },
   checkMark: { color: "#FFFFFF", fontSize: 15, fontWeight: "800" },
-  cta: { borderRadius: 16, paddingVertical: 15, alignItems: "center", marginTop: 4 },
-  ctaText: { color: "#FFFFFF", fontSize: 16, fontWeight: "700" },
-  secondary: { borderRadius: 16, borderWidth: 1, paddingVertical: 14, alignItems: "center" },
-  secondaryText: { fontSize: 15, fontWeight: "700" },
   pressed: { opacity: 0.8, transform: [{ scale: 0.98 }] },
 });

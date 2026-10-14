@@ -30,7 +30,9 @@ import {
   mergeOutbox,
   recordEvent,
   recordEventDeletion,
+  nextUpdatedAt,
   recordPlant,
+  resendPlants,
   seedOutbox,
   type LocalGardenState,
   type Outbox,
@@ -45,7 +47,7 @@ import { herbariumAwards } from "./herbarium";
 import { seasonAwards } from "./season-badges";
 import { BACKFILL_VERSION, backfillAwards, badgesEarnedNow, capAwards, mergeAwards, newAwards, unseenAwards, type Awards } from "./awards";
 import { now as clockNow } from "@/lib/clock";
-import type { PotSize } from "@/lib/plants/pot-size";
+import type { KnownPotSize, PotSize } from "@/lib/plants/pot-size";
 import { recommendedPotSize } from "@/lib/plants/pot-sheet";
 import { getCatalogPlant } from "@/lib/plants/catalog";
 
@@ -64,7 +66,8 @@ const SYNC_DEBOUNCE_MS = 2000;
 
 export type UserProfile = { firstName?: string };
 
-type SyncMeta = { openId?: string; lastSyncedAt?: string; lastLocation?: SyncLocation };
+/** `plantsResent` : toutes les plantes renvoyées une fois (réparation du 14/10, `resendPlants`). */
+type SyncMeta = { openId?: string; lastSyncedAt?: string; lastLocation?: SyncLocation; plantsResent?: boolean };
 type PushRegistration = { token: string; openId: string };
 
 export type AccountState = {
@@ -76,6 +79,8 @@ export type AccountState = {
   email?: string | null;
   /** « other-device » : compte gratuit dont le jardin est sauvegardé depuis un autre téléphone. */
   status: "idle" | "syncing" | "offline" | "other-device";
+  /** La raison du dernier échec de sauvegarde (affichée dans Réglages pour comprendre un souci). */
+  syncError?: string;
   lastSyncedAt?: string;
   serverPush: boolean;
   /** Forfait du compte, connu après la première synchro. */
@@ -103,8 +108,10 @@ type GardenContextValue = {
   onboarding: OnboardingAnswers | null;
   account: AccountState;
   /** `toPlant` : choisie mais pas encore en terre (son premier geste sera « Sème… » ou « Plante… »). */
-  addPlant: (catalogId: string, options?: { toPlant?: boolean }) => Promise<GardenPlant>;
+  addPlant: (catalogId: string, options?: { toPlant?: boolean; potSize?: KnownPotSize }) => Promise<GardenPlant>;
   removePlant: (plantId: string) => Promise<void>;
+  /** « Annuler » après « Retirer du balcon » : la plante revient, avec son historique. */
+  restorePlant: (plantId: string) => Promise<void>;
   /** Ressemer ou replanter la même plante (pot libre) : une nouvelle saison, elle repasse « à planter ». */
   restartPlant: (plantId: string) => Promise<void>;
   renamePlant: (plantId: string, nickname: string) => Promise<void>;
@@ -158,6 +165,7 @@ export function GardenProvider({ children }: { children: ReactNode }) {
   const [awards, setAwards] = useState<Awards>({});
   const awardsRef = useRef<StoredAwards>({ awards: {}, seen: [] });
   const [syncStatus, setSyncStatus] = useState<AccountState["status"]>("idle");
+  const [syncError, setSyncError] = useState<string | undefined>(undefined);
   const [lastSyncedAt, setLastSyncedAt] = useState<string | undefined>(undefined);
   const [serverPush, setServerPush] = useState(false);
   const [plan, setPlan] = useState<Plan>("free");
@@ -324,6 +332,7 @@ export function GardenProvider({ children }: { children: ReactNode }) {
         claimDeviceRef.current = true;
         await saveMeta({ openId });
       }
+      if (!metaRef.current.plantsResent) sent = mergeOutbox(sent, resendPlants(plantsRef.current));
       setOutbox(emptyOutbox());
       const location = locationChanged(metaRef.current.lastLocation, locationRef.current) ? locationRef.current ?? undefined : undefined;
 
@@ -342,8 +351,9 @@ export function GardenProvider({ children }: { children: ReactNode }) {
       if (arrived) await saveAwards({ ...awardsRef.current, awards: capAwards(applied.awards), seen: [...awardsRef.current.seen, ...Object.keys(arrived)] });
       const appliedSettings = { ...defaultLocalReminderSettings, ...applied.settings, vacation: applied.settings.vacation ?? null };
       if (JSON.stringify(appliedSettings) !== JSON.stringify(latestSettings)) await saveLocalReminderSettings(appliedSettings, "sync");
-      await saveMeta({ openId, lastSyncedAt: snapshot.serverTime, lastLocation: location ?? metaRef.current.lastLocation });
+      await saveMeta({ openId, lastSyncedAt: snapshot.serverTime, lastLocation: location ?? metaRef.current.lastLocation, plantsResent: true });
       setSyncStatus("idle");
+      setSyncError(undefined);
       setPlan(snapshot.access.plan);
       setFounder(snapshot.access.founder);
       if (snapshot.access.serverReminders) {
@@ -361,6 +371,7 @@ export function GardenProvider({ children }: { children: ReactNode }) {
         return;
       }
       setSyncStatus("offline");
+      setSyncError((error instanceof Error ? error.message : String(error)).slice(0, 200));
       console.warn("[sync] failed, will retry", error);
     } finally {
       syncingRef.current = false;
@@ -391,11 +402,13 @@ export function GardenProvider({ children }: { children: ReactNode }) {
 
   // --- Actions -----------------------------------------------------------------------
 
-  const addPlant = useCallback(async (catalogId: string, options: { toPlant?: boolean } = {}) => {
-    // La taille de pot de sa fiche Spécial pot, choisie par Balco (13/10) : on la change sur la fiche.
+  const addPlant = useCallback(async (catalogId: string, options: { toPlant?: boolean; potSize?: KnownPotSize } = {}) => {
+    // La taille de pot de sa fiche Spécial pot, choisie par Balco (13/10) : on la change sur la fiche. Dans un pot
+    // libéré (« Que planter à la place ? »), elle garde la taille de ce pot.
     const entry = getCatalogPlant(catalogId);
-    const plant = createGardenPlant(catalogId, clockNow(), options);
-    const created = entry ? { ...plant, potSize: recommendedPotSize(entry) } : plant;
+    const plant = createGardenPlant(catalogId, clockNow(), { toPlant: options.toPlant });
+    const potSize = options.potSize ?? (entry ? recommendedPotSize(entry) : undefined);
+    const created = potSize ? { ...plant, potSize } : plant;
     await savePlants([...plantsRef.current, created]);
     queue((outbox) => recordPlant(outbox, created));
     return created;
@@ -404,13 +417,14 @@ export function GardenProvider({ children }: { children: ReactNode }) {
   const updatePlant = useCallback(async (plantId: string, patch: (plant: GardenPlant) => GardenPlant) => {
     const current = plantsRef.current.find((plant) => plant.id === plantId);
     if (!current) return;
-    const next = { ...patch(current), updatedAt: new Date().toISOString() };
+    const next = { ...patch(current), updatedAt: nextUpdatedAt(current) };
     await savePlants(plantsRef.current.map((plant) => (plant.id === plantId ? next : plant)));
     queue((outbox) => recordPlant(outbox, next));
   }, [queue, savePlants]);
 
   // L'historique d'une plante retirée est conservé : il reste utile si elle revient.
   const removePlant = useCallback((plantId: string) => updatePlant(plantId, (plant) => ({ ...plant, removedAt: clockNow().toISOString() })), [updatePlant]);
+  const restorePlant = useCallback((plantId: string) => updatePlant(plantId, ({ removedAt: _removedAt, ...plant }) => plant), [updatePlant]);
   // Les gestes « une fois par saison » sont rangés sous leur date : la nouvelle saison les redemandera.
   const restartPlant = useCallback(async (plantId: string) => {
     const { remove, add } = archiveSeason(eventsRef.current, plantId);
@@ -558,15 +572,16 @@ export function GardenProvider({ children }: { children: ReactNode }) {
     name: auth.user?.name,
     email: auth.user?.email,
     status: syncStatus,
+    syncError,
     lastSyncedAt,
     serverPush,
     plan,
     founder,
-  }), [auth.isAuthenticated, auth.loading, auth.user?.email, auth.user?.name, founder, lastSyncedAt, plan, serverPush, syncStatus]);
+  }), [auth.isAuthenticated, auth.loading, auth.user?.email, auth.user?.name, founder, lastSyncedAt, plan, serverPush, syncError, syncStatus]);
 
   const value = useMemo<GardenContextValue>(
-    () => ({ loaded, plants, resolvedPlants, pastPlants, events, awards, takeUnseenAwards, markAwardsSeen, grantAward, profile, onboarding, account, addPlant, removePlant, restartPlant, renamePlant, setPlantVariety, setPlantPotSize, logEvent, removeEvent, updateProfile, reloadOnboarding, updateOnboarding, reportLocation, signIn, signOut, syncNow, claimThisDevice, refreshAccount, completeSignIn, deleteAccount }),
-    [loaded, plants, resolvedPlants, pastPlants, events, awards, takeUnseenAwards, markAwardsSeen, grantAward, profile, onboarding, account, addPlant, removePlant, restartPlant, renamePlant, setPlantVariety, setPlantPotSize, logEvent, removeEvent, updateProfile, reloadOnboarding, updateOnboarding, reportLocation, signIn, signOut, syncNow, claimThisDevice, refreshAccount, completeSignIn, deleteAccount],
+    () => ({ loaded, plants, resolvedPlants, pastPlants, events, awards, takeUnseenAwards, markAwardsSeen, grantAward, profile, onboarding, account, addPlant, removePlant, restorePlant, restartPlant, renamePlant, setPlantVariety, setPlantPotSize, logEvent, removeEvent, updateProfile, reloadOnboarding, updateOnboarding, reportLocation, signIn, signOut, syncNow, claimThisDevice, refreshAccount, completeSignIn, deleteAccount }),
+    [loaded, plants, resolvedPlants, pastPlants, events, awards, takeUnseenAwards, markAwardsSeen, grantAward, profile, onboarding, account, addPlant, removePlant, restorePlant, restartPlant, renamePlant, setPlantVariety, setPlantPotSize, logEvent, removeEvent, updateProfile, reloadOnboarding, updateOnboarding, reportLocation, signIn, signOut, syncNow, claimThisDevice, refreshAccount, completeSignIn, deleteAccount],
   );
 
   return <GardenContext.Provider value={value}>{children}</GardenContext.Provider>;

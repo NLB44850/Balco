@@ -13,6 +13,7 @@ import { FadeIn, PopIn } from "@/components/motion";
 import { PlantPicture } from "@/components/plant-picture";
 import { ScreenHeader } from "@/components/screen-header";
 import { glass } from "@/components/ui/glass";
+import { Button } from "@/components/ui/button";
 import { Text } from "@/components/ui/typography";
 import { useColors } from "@/hooks/use-colors";
 import { useGarden } from "@/lib/garden/garden-context";
@@ -132,9 +133,7 @@ export default function WeekScreen() {
           </View>
         )}
 
-        <Pressable accessibilityRole="button" onPress={() => router.replace("/(tabs)")} style={({ pressed }) => [styles.cta, { backgroundColor: colors.foreground }, pressed && styles.pressed]}>
-          <Text style={[styles.ctaText, { color: colors.background }]}>Retour à aujourd’hui</Text>
-        </Pressable>
+        <Button label="Retour à aujourd’hui" onPress={() => router.replace("/(tabs)")} style={styles.cta} />
       </ScrollView>
     </LightScreen>
   );
@@ -167,7 +166,6 @@ const styles = StyleSheet.create({
   rowTitle: { fontSize: 15, fontWeight: "700" },
   rowText: { fontSize: 13, marginTop: 1 },
   chevron: { fontSize: 24, fontWeight: "300" },
-  cta: { borderRadius: 16, paddingVertical: 15, alignItems: "center", marginTop: 4 },
-  ctaText: { fontSize: 15, fontWeight: "700" },
+  cta: { marginTop: 4 },
   pressed: { opacity: 0.78, transform: [{ scale: 0.98 }] },
 });

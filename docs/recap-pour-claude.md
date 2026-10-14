@@ -122,11 +122,18 @@ marque citée, jamais de produit chimique, tout en centimètres (jamais de litre
   - étape 6b, coach d'arrosage Balco+ (eau restante dans le pot selon la chaleur, le soleil du balcon, le vent, le pot ;
     carte avec jauge dans la fiche) et interrupteur « Simuler Balco+ » dans la version de test, PR #48.
 - Depuis le 12/10, chaque demande de fusion vers `main` publie toute seule la mise à jour de l'app pour la tester.
-- **Étape 7, consignes pour le voisin qui arrose : codée le 13/10, à valider sur mon téléphone** (mode vacances → « Oui,
+- Étape 7, consignes pour le voisin qui arrose, validée et fusionnée (PR #49) (mode vacances → « Oui,
   un proche passera » → « Prépare les consignes pour qui arrose » : quand passer, plante par plante la quantité et le
   rythme selon le pot et la saison, « chaque jour s'il fait plus de 30 °C », balcon couvert, quoi récolter ; texte
   modifiable, gardé sur le téléphone, « Préparé avec Balco » à décocher, envoi par le partage du téléphone).
-- Ensuite : 8 « Que planter à la place ? » et traitement naturel, 9 calculateur de poids, 10 écran Balco+.
+- **Étape 8a, « Que planter à la place ? » : codée le 13/10, à valider sur mon téléphone.** Quand un pot se libère
+  (« Ton pot est libre »), trois idées de saison qui tiennent dans ce pot, jamais de la même famille que la plante
+  d'avant (mêmes maladies dans la terre), les plantes sobres d'abord après une gourmande, avec le geste pour la terre ;
+  la nouvelle plante garde la taille du pot. Ensuite 8b, le traitement naturel dans les réponses d'Observer.
+- **Chantier « Cohérence » (14/10, avant la 8b)** : les mêmes boutons partout (vert plein = action principale, encadré =
+  secondaire, lien vert « › », plus de bouton noir), une seule façon de supprimer (avec « Annuler »), cases et « × »
+  identiques, boutons à l'infinitif. Livraison 1 (les boutons) validée ; 2 (suppression avec « Annuler », fiche plante refaite) validée, petits bugs corrigés ; 3 le reste.
+- Puis : 9 calculateur de poids, 10 écran Balco+.
 
 ## Ce qu'il reste à faire, dans l'ordre
 

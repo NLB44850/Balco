@@ -6,12 +6,13 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useRouter } from "expo-router";
 import { useEffect, useMemo, useState } from "react";
-import { KeyboardAvoidingView, Platform, Pressable, ScrollView, Share, StyleSheet, View } from "react-native";
+import { KeyboardAvoidingView, Pressable, ScrollView, Share, StyleSheet, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { LightScreen } from "@/components/light-screen";
 import { ScreenHeader } from "@/components/screen-header";
 import { glass } from "@/components/ui/glass";
+import { Button } from "@/components/ui/button";
 import { Text, TextInput } from "@/components/ui/typography";
 import { useColors } from "@/hooks/use-colors";
 import { useLocalWeather } from "@/hooks/use-local-weather";
@@ -96,9 +97,7 @@ export default function HelperNoteScreen() {
       <LightScreen bottom>
         <View style={[styles.content, { paddingTop: insets.top + 14 }]}>
           <ScreenHeader back title="Consignes d’arrosage" subtitle="Indique d’abord les dates de tes vacances" />
-          <Pressable accessibilityRole="button" onPress={() => router.replace("/vacation")} style={({ pressed }) => [styles.primary, { backgroundColor: colors.primary }, pressed && styles.pressed]}>
-            <Text style={styles.primaryText}>Ouvrir le mode vacances</Text>
-          </Pressable>
+          <Button label="Ouvrir le mode vacances" onPress={() => router.replace("/vacation")} />
         </View>
       </LightScreen>
     );
@@ -106,7 +105,7 @@ export default function HelperNoteScreen() {
 
   return (
     <LightScreen bottom>
-      <KeyboardAvoidingView style={styles.flex} behavior={Platform.OS === "ios" ? "padding" : undefined}>
+      <KeyboardAvoidingView style={styles.flex} behavior="padding">
         <ScrollView showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled" contentContainerStyle={[styles.content, { paddingTop: insets.top + 14 }]}>
           <ScreenHeader back title="Consignes d’arrosage" subtitle={vacation ? `Pour qui arrose ${vacationRange(vacation)}` : ""} />
           {vacation && draftLoaded && (
@@ -126,17 +125,13 @@ export default function HelperNoteScreen() {
                 {signature && <Text style={[styles.signature, { color: colors.muted }]}>{HELPER_NOTE_SIGNATURE}</Text>}
               </View>
               {edited !== null && edited !== generated && (
-                <Pressable accessibilityRole="button" onPress={reset} style={({ pressed }) => [styles.secondary, pressed && styles.pressed]}>
-                  <Text style={[styles.secondaryText, { color: colors.primary }]}>Revenir au texte de Balco</Text>
-                </Pressable>
+                <Button variant="secondary" label="Revenir au texte de Balco" onPress={reset} />
               )}
               <Pressable accessibilityRole="checkbox" accessibilityState={{ checked: signature }} accessibilityLabel={`Ajouter « ${HELPER_NOTE_SIGNATURE} » à la fin`} onPress={toggleSignature} style={({ pressed }) => [styles.checkRow, pressed && styles.pressed]}>
                 <View style={[styles.check, { borderColor: signature ? colors.primary : "rgba(18,22,20,0.22)", backgroundColor: signature ? colors.primary : "transparent" }]}>{signature && <Text style={styles.checkMark}>✓</Text>}</View>
                 <Text style={[styles.text, styles.flex, { color: colors.foreground }]}>Ajouter « {HELPER_NOTE_SIGNATURE} » à la fin</Text>
               </Pressable>
-              <Pressable accessibilityRole="button" onPress={() => void send()} style={({ pressed }) => [styles.primary, { backgroundColor: colors.primary }, pressed && styles.pressed]}>
-                <Text style={styles.primaryText}>Envoyer les consignes</Text>
-              </Pressable>
+              <Button label="Envoyer les consignes" onPress={() => void send()} />
               {showText && (
                 <View style={[glass.card, styles.card]}>
                   <Text style={[styles.small, { color: colors.muted }]}>Copie ce message et envoie-le par SMS ou messagerie :</Text>
@@ -163,9 +158,5 @@ const styles = StyleSheet.create({
   checkRow: { flexDirection: "row", alignItems: "center", gap: 12, paddingVertical: 4 },
   check: { width: 26, height: 26, borderRadius: 7, borderWidth: 2, alignItems: "center", justifyContent: "center" },
   checkMark: { color: "#FFFFFF", fontSize: 14, fontWeight: "800" },
-  primary: { borderRadius: 14, paddingVertical: 15, alignItems: "center" },
-  primaryText: { color: "#FFFFFF", fontSize: 16, fontWeight: "700" },
-  secondary: { alignItems: "center", paddingVertical: 6 },
-  secondaryText: { fontSize: 15, fontWeight: "700" },
   pressed: { opacity: 0.78 },
 });

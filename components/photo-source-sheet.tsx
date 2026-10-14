@@ -1,8 +1,9 @@
 /** La feuille « Prendre une photo / Choisir dans la galerie », pour la photo d'une plante. */
 import { useState } from "react";
-import { Platform, Pressable, StyleSheet, View } from "react-native";
+import { Platform, StyleSheet, View } from "react-native";
 
 import { BottomSheet } from "@/components/today/bottom-sheet";
+import { Button } from "@/components/ui/button";
 import { Text } from "@/components/ui/typography";
 import { useColors } from "@/hooks/use-colors";
 import { pickPlantPhoto } from "@/lib/ai/photo";
@@ -23,12 +24,8 @@ export function PhotoSourceSheet({ visible, title, onClose, onPick }: Props) {
       <View style={styles.sheet}>
         <Text style={[styles.title, { color: colors.foreground }]}>{title}</Text>
         <Text style={[styles.text, { color: colors.muted }]}>Une photo de temps en temps, et tu verras ta plante grandir. Elle reste sur ton téléphone.</Text>
-        <Pressable accessibilityRole="button" onPress={() => onPick("camera")} style={({ pressed }) => [styles.cta, { backgroundColor: colors.primary }, pressed && styles.pressed]}>
-          <Text style={styles.ctaText}>Prendre une photo</Text>
-        </Pressable>
-        <Pressable accessibilityRole="button" onPress={() => onPick("library")} style={({ pressed }) => [styles.secondary, { borderColor: colors.border }, pressed && styles.pressed]}>
-          <Text style={[styles.secondaryText, { color: colors.foreground }]}>Choisir dans la galerie</Text>
-        </Pressable>
+        <Button label="Prendre une photo" onPress={() => onPick("camera")} />
+        <Button variant="secondary" label="Choisir dans la galerie" onPress={() => onPick("library")} />
       </View>
     </BottomSheet>
   );
@@ -67,9 +64,4 @@ const styles = StyleSheet.create({
   sheet: { gap: 12 },
   title: { fontSize: 22, fontWeight: "800", letterSpacing: -0.4 },
   text: { fontSize: 15, lineHeight: 22 },
-  cta: { borderRadius: 14, paddingVertical: 15, alignItems: "center" },
-  ctaText: { color: "#FFFFFF", fontSize: 16, fontWeight: "700" },
-  secondary: { borderRadius: 14, paddingVertical: 14, alignItems: "center", borderWidth: 1 },
-  secondaryText: { fontSize: 15, fontWeight: "600" },
-  pressed: { opacity: 0.75 },
 });

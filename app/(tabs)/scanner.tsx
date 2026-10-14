@@ -2,6 +2,7 @@ import { useFocusEffect, useRouter } from "expo-router";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Image } from "expo-image";
 import { ActivityIndicator, Pressable, ScrollView, StyleSheet, View } from "react-native";
+import { Button } from "@/components/ui/button";
 import { Text } from "@/components/ui/typography";
 
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -185,9 +186,7 @@ export default function ScannerScreen() {
               </View>
             )}
             {blocker.action && (
-              <Pressable accessibilityRole="button" onPress={blocker.action.onPress} style={({ pressed }) => [styles.primary, { backgroundColor: colors.primary }, pressed && styles.pressed]}>
-                <Text style={styles.primaryText}>{blocker.action.label}</Text>
-              </Pressable>
+              <Button label={blocker.action.label} onPress={blocker.action.onPress} />
             )}
           </View>
         ) : (
@@ -222,20 +221,12 @@ export default function ScannerScreen() {
               </Pressable>
 
               {photo ? (
-                <Pressable accessibilityRole="button" disabled={busy} onPress={analyze} style={({ pressed }) => [styles.primary, { backgroundColor: colors.primary }, busy && styles.disabled, pressed && styles.pressed]}>
-                  <Text style={styles.primaryText}>{busy ? "Analyse en cours…" : "Analyser cette photo"}</Text>
-                </Pressable>
+                <Button label={busy ? "Analyse en cours…" : "Analyser cette photo"} disabled={busy} onPress={analyze} />
               ) : (
-                <Pressable accessibilityRole="button" onPress={() => void choose("camera")} style={({ pressed }) => [styles.primary, { backgroundColor: colors.primary }, pressed && styles.pressed]}>
-                  <IconSymbol name="camera.fill" size={18} color="#FFFFFF" />
-                  <Text style={styles.primaryText}>Prendre une photo</Text>
-                </Pressable>
+                <Button label="Prendre une photo" icon={<IconSymbol name="camera.fill" size={18} color="#FFFFFF" />} onPress={() => void choose("camera")} />
               )}
               {!busy && (
-                <Pressable accessibilityRole="button" onPress={() => void choose("library")} style={({ pressed }) => [styles.secondary, pressed && styles.pressed]}>
-                  <IconSymbol name="photo.on.rectangle" size={18} color={colors.primary} />
-                  <Text style={[styles.secondaryText, { color: colors.primary }]}>{photo ? "Choisir une autre photo" : "Choisir dans ma galerie"}</Text>
-                </Pressable>
+                <Button variant="secondary" label={photo ? "Choisir une autre photo" : "Choisir dans ma galerie"} icon={<IconSymbol name="photo.on.rectangle" size={18} color={colors.foreground} />} onPress={() => void choose("library")} />
               )}
             </View>
           )
@@ -291,19 +282,13 @@ export default function ScannerScreen() {
                 )}
                 {diagnosis.seeExpert && <Text style={[styles.text, { color: colors.warning, fontWeight: "600" }]}>Ce problème mérite un œil expert : montre ta plante (ou cette photo) en jardinerie.</Text>}
                 {entry && !owned && (
-                  <Pressable accessibilityRole="button" onPress={() => void addPlant(entry.id)} style={({ pressed }) => [styles.primary, { backgroundColor: colors.primary }, pressed && styles.pressed]}>
-                    <Text style={styles.primaryText}>Ajouter {entry.name.toLowerCase()} à mon balcon</Text>
-                  </Pressable>
+                  <Button label={`Ajouter ${entry.name.toLowerCase()} à mon balcon`} onPress={() => void addPlant(entry.id)} />
                 )}
                 {owned && (
-                  <Pressable accessibilityRole="button" disabled={savedNote} onPress={() => void saveObservation()} style={({ pressed }) => [styles.primary, { backgroundColor: savedNote ? colors.leaf : colors.primary }, pressed && styles.pressed]}>
-                    <Text style={[styles.primaryText, savedNote && { color: colors.primary }]}>{savedNote ? "✓ Noté dans sa fiche" : `Noter dans la fiche de ${ownedName}`}</Text>
-                  </Pressable>
+                  <Button label={savedNote ? "✓ Noté dans sa fiche" : `Noter dans la fiche de ${ownedName}`} disabled={savedNote} onPress={() => void saveObservation()} />
                 )}
                 {owned && savedNote && (
-                  <Pressable accessibilityRole="button" onPress={() => router.push({ pathname: "/garden/[id]", params: { id: owned.plant.id } })} style={({ pressed }) => [styles.secondary, pressed && styles.pressed]}>
-                    <Text style={[styles.secondaryText, { color: colors.primary }]}>Voir la fiche de {ownedName} ›</Text>
-                  </Pressable>
+                  <Button variant="link" center label={`Voir la fiche de ${ownedName}`} onPress={() => router.push({ pathname: "/garden/[id]", params: { id: owned.plant.id } })} />
                 )}
               </>
             )}
@@ -311,14 +296,10 @@ export default function ScannerScreen() {
               <View style={[styles.remedy, { backgroundColor: colors.leaf }]}>
                 <Text style={[styles.actionTitle, { color: colors.primary }]}>Garde ce diagnostic</Text>
                 <Text style={[styles.small, { color: colors.foreground }]}>Avec un compte gratuit : {monthly}, le suivi de tes plantes et Nora qui répond à tes questions.</Text>
-                <Pressable accessibilityRole="button" onPress={() => router.push("/login")} style={({ pressed }) => [styles.primary, { backgroundColor: colors.primary }, pressed && styles.pressed]}>
-                  <Text style={styles.primaryText}>Créer mon compte gratuit</Text>
-                </Pressable>
+                <Button label="Créer mon compte gratuit" onPress={() => router.push("/login")} />
               </View>
             ) : (
-              <Pressable accessibilityRole="button" onPress={restart} style={({ pressed }) => [styles.outline, { borderColor: colors.border }, pressed && styles.pressed]}>
-                <Text style={[styles.secondaryText, { color: colors.foreground }]}>Observer une autre plante</Text>
-              </Pressable>
+              <Button variant="secondary" label="Observer une autre plante" onPress={restart} />
             )}
             <Text style={[styles.small, { color: colors.muted, textAlign: "center" }]}>Diagnostic indicatif fait par une IA : en cas de doute, demande conseil en jardinerie.</Text>
           </View>
@@ -358,12 +339,6 @@ const styles = StyleSheet.create({
   busy: { backgroundColor: "rgba(18,22,20,0.45)", alignItems: "center", justifyContent: "center", gap: 12 },
   busyText: { color: "#FFFFFF", fontSize: 15, fontWeight: "700" },
   remove: { position: "absolute", top: 12, right: 12, width: 36, height: 36, borderRadius: 18, alignItems: "center", justifyContent: "center", backgroundColor: "rgba(255,255,255,0.92)" },
-  primary: { flexDirection: "row", gap: 8, borderRadius: 14, paddingVertical: 15, paddingHorizontal: 16, alignItems: "center", justifyContent: "center" },
-  primaryText: { color: "#FFFFFF", fontSize: 16, fontWeight: "700", textAlign: "center" },
-  secondary: { flexDirection: "row", gap: 8, alignItems: "center", justifyContent: "center", paddingVertical: 8 },
-  secondaryText: { fontSize: 15, fontWeight: "700" },
-  outline: { borderWidth: 1, borderRadius: 14, paddingVertical: 13, alignItems: "center" },
-  disabled: { opacity: 0.6 },
   notice: { fontSize: 14, lineHeight: 20, fontWeight: "600" },
   tips: { gap: 10 },
   tipsCard: { paddingHorizontal: 14 },

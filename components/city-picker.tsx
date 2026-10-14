@@ -8,6 +8,7 @@ import { Pressable, StyleSheet, View } from "react-native";
 
 import { SheetHeading } from "@/components/settings/rows";
 import { BottomSheet } from "@/components/today/bottom-sheet";
+import { Button } from "@/components/ui/button";
 import { Text, TextInput } from "@/components/ui/typography";
 import type { CityResult } from "@/hooks/use-local-weather";
 import { useColors } from "@/hooks/use-colors";
@@ -56,14 +57,10 @@ export function CityPicker({ visible, onClose, searchCities, selectCity, request
   return (
     <BottomSheet visible={visible} onClose={close}>
       <SheetHeading title="Où est ton balcon ?" intro="Pour te prévenir du gel, de la pluie et de la chaleur chez toi." />
-      <Pressable accessibilityRole="button" onPress={() => { close(); void requestDeviceLocation(); }} style={({ pressed }) => [styles.deviceButton, { borderColor: colors.primary }, pressed && styles.pressed]}>
-        <Text style={[styles.deviceButtonText, { color: colors.primary }]}>⌖  Utiliser ma position</Text>
-      </Pressable>
+      <Button variant="secondary" label="⌖  Utiliser ma position" onPress={() => { close(); void requestDeviceLocation(); }} />
       <View style={styles.searchRow}>
         <TextInput value={query} onChangeText={setQuery} onSubmitEditing={() => void search()} placeholder="Cherche ta ville" placeholderTextColor={colors.muted} returnKeyType="search" style={[styles.input, { borderColor: colors.border, color: colors.foreground, backgroundColor: colors.background }]} />
-        <Pressable accessibilityRole="button" onPress={() => void search()} style={({ pressed }) => [styles.searchButton, { backgroundColor: colors.primary }, pressed && styles.pressed]}>
-          <Text style={styles.searchButtonText}>{loading ? "Recherche…" : "Rechercher"}</Text>
-        </Pressable>
+        <Button small label={loading ? "Recherche…" : "Rechercher"} accessibilityLabel="Rechercher" onPress={() => void search()} style={styles.searchButton} />
       </View>
       {error && <Text style={[styles.error, { color: colors.error }]}>{error}</Text>}
       <View style={styles.results}>
@@ -79,12 +76,9 @@ export function CityPicker({ visible, onClose, searchCities, selectCity, request
 }
 
 const styles = StyleSheet.create({
-  deviceButton: { borderWidth: 1, borderRadius: 14, paddingVertical: 13, alignItems: "center", marginTop: 8 },
-  deviceButtonText: { fontSize: 15, fontWeight: "700" },
   searchRow: { flexDirection: "row", gap: 8, marginTop: 12 },
   input: { flex: 1, borderWidth: 1, borderRadius: 14, paddingHorizontal: 14, paddingVertical: 12, fontSize: 15 },
-  searchButton: { borderRadius: 14, paddingHorizontal: 15, justifyContent: "center" },
-  searchButtonText: { color: "#FFF", fontSize: 14, fontWeight: "700" },
+  searchButton: { alignSelf: "center" },
   error: { fontSize: 13, marginTop: 9 },
   results: { marginTop: 6 },
   resultRow: { borderBottomWidth: 1, paddingVertical: 12 },

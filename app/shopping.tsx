@@ -5,14 +5,16 @@
  */
 import { useRouter } from "expo-router";
 import { useEffect, useMemo, useState } from "react";
-import { Pressable, ScrollView, Share, StyleSheet, View } from "react-native";
+import { ScrollView, Share, StyleSheet, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { LightScreen } from "@/components/light-screen";
 import { FadeIn } from "@/components/motion";
 import { ScreenHeader } from "@/components/screen-header";
+import { UndoToast, useUndoToast } from "@/components/today/undo-toast";
 import { TodayRow } from "@/components/today/today-row";
 import { glass } from "@/components/ui/glass";
+import { Button } from "@/components/ui/button";
 import { Text } from "@/components/ui/typography";
 import { useColors } from "@/hooks/use-colors";
 import { useDayPlan } from "@/hooks/use-day-plan";
@@ -31,6 +33,7 @@ export default function ShoppingScreen() {
   const { now, climate, snoozes, plan } = useDayPlan();
   const [checks, setChecks] = useState<Record<string, string>>({});
   const [showText, setShowText] = useState(false);
+  const toast = useUndoToast();
 
   useEffect(() => {
     void loadShoppingChecks().then(setChecks);
@@ -51,10 +54,13 @@ export default function ShoppingScreen() {
     setChecks(next);
     void saveShoppingChecks(next);
   };
+  /** Tout décoché tout de suite, avec « Annuler ». */
   const uncheckAll = () => {
+    const before = checks;
     const next = Object.fromEntries(Object.entries(checks).filter(([id]) => !items.some((item) => item.id === id)));
     setChecks(next);
     void saveShoppingChecks(next);
+    toast.show({ text: "Liste décochée", onUndo: () => { setChecks(before); void saveShoppingChecks(before); } });
   };
   const share = async () => {
     try {
@@ -107,18 +113,15 @@ export default function ShoppingScreen() {
         {items.length > 0 && (
           <>
             <Text style={[styles.small, { color: colors.muted }]}>Aucune marque : prends ce que propose ta jardinerie, en version organique.</Text>
-            <Pressable accessibilityRole="button" onPress={() => void share()} style={({ pressed }) => [styles.cta, { backgroundColor: colors.foreground }, pressed && styles.pressed]}>
-              <Text style={[styles.ctaText, { color: colors.background }]}>Partager ma liste</Text>
-            </Pressable>
+            <Button label="Partager ma liste" onPress={() => void share()} style={styles.cta} />
             {showText && <Text selectable style={[glass.card, styles.shareText, { color: colors.foreground }]}>{shoppingShareText(items, checked)}</Text>}
             {checked.size > 0 && left < items.length && (
-              <Pressable accessibilityRole="button" onPress={uncheckAll} style={({ pressed }) => [styles.link, pressed && styles.pressed]}>
-                <Text style={[styles.linkText, { color: colors.primary }]}>Tout décocher</Text>
-              </Pressable>
+              <Button variant="secondary" label="Tout décocher" onPress={uncheckAll} />
             )}
           </>
         )}
       </ScrollView>
+      <UndoToast message={toast.toast} onDone={toast.hide} bottom={insets.bottom + 16} />
     </LightScreen>
   );
 }
@@ -131,10 +134,6 @@ const styles = StyleSheet.create({
   section: { gap: 10 },
   sectionTitle: { fontSize: 19, fontWeight: "800", letterSpacing: -0.3 },
   list: { paddingHorizontal: 16 },
-  cta: { borderRadius: 16, paddingVertical: 16, alignItems: "center", marginTop: 4 },
-  ctaText: { fontSize: 16, fontWeight: "700" },
+  cta: { marginTop: 4 },
   shareText: { padding: 16, fontSize: 14, lineHeight: 21 },
-  link: { alignSelf: "center", paddingVertical: 10 },
-  linkText: { fontSize: 15, fontWeight: "700" },
-  pressed: { opacity: 0.78 },
 });

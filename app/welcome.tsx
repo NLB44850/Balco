@@ -18,6 +18,7 @@ import { FadeIn } from "@/components/motion";
 import { CatalogPicture } from "@/components/plant-picture";
 import { glass } from "@/components/ui/glass";
 import { IconSymbol } from "@/components/ui/icon-symbol";
+import { Button } from "@/components/ui/button";
 import { Text, TextInput } from "@/components/ui/typography";
 import { useColors } from "@/hooks/use-colors";
 import { type CityResult, useLocalWeather } from "@/hooks/use-local-weather";
@@ -259,12 +260,8 @@ export default function OnboardingScreen() {
             <View style={[styles.logo, { backgroundColor: colors.primary }]}><Text style={styles.logoText}>🌱</Text></View>
             <Text style={[styles.title, styles.bigTitle, { color: colors.foreground }]}>Ton balcon, au bon moment.</Text>
             <Text style={[styles.subtitle, { color: colors.muted }]}>Chaque jour, Balco te dit le geste utile pour tes plantes, selon la météo de chez toi.</Text>
-            <Pressable accessibilityRole="button" onPress={() => setIndex(1)} style={({ pressed }) => [styles.cta, { backgroundColor: colors.primary }, pressed && styles.pressed]}>
-              <Text style={styles.ctaText}>C’est parti</Text>
-            </Pressable>
-            <Pressable accessibilityRole="button" onPress={() => void skip()} style={({ pressed }) => [styles.ghost, pressed && styles.pressed]}>
-              <Text style={[styles.ghostText, { color: colors.muted }]}>Passer</Text>
-            </Pressable>
+            <Button label="C’est parti" onPress={() => setIndex(1)} />
+            <Button variant="secondary" label="Passer" onPress={() => void skip()} />
           </FadeIn>
         )}
 
@@ -288,9 +285,7 @@ export default function OnboardingScreen() {
               })}
             </View>
             {question.multiple && (
-              <Pressable accessibilityRole="button" onPress={next} style={({ pressed }) => [styles.cta, { backgroundColor: colors.primary }, pressed && styles.pressed]}>
-                <Text style={styles.ctaText}>{answers.goals.length > 0 ? "Continuer" : "Passer cette question"}</Text>
-              </Pressable>
+              <Button label={answers.goals.length > 0 ? "Continuer" : "Passer cette question"} onPress={next} />
             )}
           </FadeIn>
         )}
@@ -324,9 +319,7 @@ export default function OnboardingScreen() {
                 <Text style={[styles.optionText, styles.flex, { color: colors.foreground }]}>{sunSummary(sunHours)}</Text>
               </View>
             )}
-            <Pressable accessibilityRole="button" onPress={next} style={({ pressed }) => [styles.cta, { backgroundColor: colors.primary }, pressed && styles.pressed]}>
-              <Text style={styles.ctaText}>Continuer</Text>
-            </Pressable>
+            <Button label="Continuer" onPress={next} />
           </FadeIn>
         )}
 
@@ -347,9 +340,7 @@ export default function OnboardingScreen() {
                 );
               })}
             </View>
-            <Pressable accessibilityRole="button" onPress={next} style={({ pressed }) => [styles.cta, { backgroundColor: colors.primary }, pressed && styles.pressed]}>
-              <Text style={styles.ctaText}>{owned.length > 0 ? `Continuer · ${owned.length} plante${owned.length > 1 ? "s" : ""}` : "Je les ajouterai plus tard"}</Text>
-            </Pressable>
+            <Button label={owned.length > 0 ? `Continuer · ${owned.length} plante${owned.length > 1 ? "s" : ""}` : "Je les ajouterai plus tard"} onPress={next} />
           </FadeIn>
         )}
 
@@ -357,15 +348,11 @@ export default function OnboardingScreen() {
           <FadeIn style={styles.step}>
             <Text style={[styles.title, { color: colors.foreground }]}>Où est ton balcon ?</Text>
             <Text style={[styles.subtitle, { color: colors.muted }]}>Pour te prévenir du gel, de la pluie et de la chaleur chez toi.</Text>
-            <Pressable accessibilityRole="button" disabled={locating} onPress={() => void locateMe()} style={({ pressed }) => [styles.cta, { backgroundColor: colors.primary }, pressed && styles.pressed]}>
-              <Text style={styles.ctaText}>{locating ? "Un instant…" : "⌖ Utiliser ma position"}</Text>
-            </Pressable>
+            <Button label={locating ? "Un instant…" : "⌖ Utiliser ma position"} disabled={locating} onPress={() => void locateMe()} />
             <Text style={[styles.optionText, { color: colors.muted, textAlign: "center" }]}>ou</Text>
             <View style={styles.searchRow}>
               <TextInput value={cityQuery} onChangeText={setCityQuery} onSubmitEditing={() => void searchCity()} placeholder="Rechercher une ville…" placeholderTextColor={colors.muted} returnKeyType="search" style={[styles.input, styles.flex, { color: colors.foreground, borderColor: colors.border }]} />
-              <Pressable accessibilityRole="button" onPress={() => void searchCity()} style={({ pressed }) => [styles.searchButton, { backgroundColor: colors.foreground }, pressed && styles.pressed]}>
-                <Text style={[styles.chipText, { color: colors.background }]}>Rechercher</Text>
-              </Pressable>
+              <Button small label="Rechercher" onPress={() => void searchCity()} style={styles.searchButton} />
             </View>
             {cityMessage && <Text style={[styles.optionText, { color: colors.error }]}>{cityMessage}</Text>}
             {cityResults.length > 0 && (
@@ -380,9 +367,7 @@ export default function OnboardingScreen() {
                 ))}
               </View>
             )}
-            <Pressable accessibilityRole="button" onPress={next} style={({ pressed }) => [styles.ghost, pressed && styles.pressed]}>
-              <Text style={[styles.ghostText, { color: colors.muted }]}>Plus tard</Text>
-            </Pressable>
+            <Button variant="secondary" label="Plus tard" onPress={next} />
           </FadeIn>
         )}
 
@@ -391,13 +376,9 @@ export default function OnboardingScreen() {
             <Text style={[styles.title, { color: colors.foreground }]}>Je te préviens au bon moment ?</Text>
             <Text style={[styles.subtitle, { color: colors.muted }]}>Je te préviens s’il gèle cette nuit ou si tes plantes ont soif.</Text>
             {remindersDenied && <Text style={[styles.optionText, { color: colors.error }]}>{NOTIFICATIONS_DENIED.title} · {NOTIFICATIONS_DENIED.message}</Text>}
-            <Pressable accessibilityRole="button" disabled={saving} onPress={() => void (remindersDenied ? finish() : turnOnReminders())} style={({ pressed }) => [styles.cta, { backgroundColor: colors.primary }, pressed && styles.pressed]}>
-              <Text style={styles.ctaText}>{saving ? "Un instant…" : remindersDenied ? "Créer mon balcon" : "Activer les rappels"}</Text>
-            </Pressable>
+            <Button label={saving ? "Un instant…" : remindersDenied ? "Créer mon balcon" : "Activer les rappels"} disabled={saving} onPress={() => void (remindersDenied ? finish() : turnOnReminders())} />
             {!remindersDenied && (
-              <Pressable accessibilityRole="button" disabled={saving} onPress={() => void finish()} style={({ pressed }) => [styles.ghost, pressed && styles.pressed]}>
-                <Text style={[styles.ghostText, { color: colors.muted }]}>Plus tard</Text>
-              </Pressable>
+              <Button variant="secondary" label="Plus tard" disabled={saving} onPress={() => void finish()} />
             )}
           </FadeIn>
         )}
@@ -439,9 +420,7 @@ export default function OnboardingScreen() {
                 </View>
               </>
             )}
-            <Pressable accessibilityRole="button" disabled={saving} onPress={next} style={({ pressed }) => [styles.cta, { backgroundColor: colors.primary }, pressed && styles.pressed]}>
-              <Text style={styles.ctaText}>{saving ? "Un instant…" : `${index < steps.length ? "Continuer" : "Créer mon balcon"}${plantCount > 0 ? ` · ${plantCount} plante${plantCount > 1 ? "s" : ""}` : ""}`}</Text>
-            </Pressable>
+            <Button label={saving ? "Un instant…" : `${index < steps.length ? "Continuer" : "Créer mon balcon"}${plantCount > 0 ? ` · ${plantCount} plante${plantCount > 1 ? "s" : ""}` : ""}`} disabled={saving} onPress={next} />
           </FadeIn>
         )}
       </ScrollView>
@@ -476,15 +455,11 @@ const styles = StyleSheet.create({
   plant: { flexDirection: "row", alignItems: "center", gap: 12, paddingVertical: 12 },
   plantIcon: { width: 46, height: 46, borderRadius: 23, alignItems: "center", justifyContent: "center" },
   searchRow: { flexDirection: "row", alignItems: "center", gap: 8 },
-  searchButton: { borderRadius: 12, paddingHorizontal: 14, paddingVertical: 13 },
+  searchButton: { alignSelf: "center" },
   section: { fontSize: 17, fontWeight: "700", marginTop: 4 },
   chips: { flexDirection: "row", flexWrap: "wrap", gap: 8 },
   chip: { borderRadius: 999, borderWidth: 1, paddingHorizontal: 12, paddingVertical: 8 },
   chipText: { fontSize: 14, fontWeight: "600" },
-  cta: { borderRadius: 16, paddingVertical: 16, alignItems: "center", marginTop: 4 },
   sunResult: { flexDirection: "row", alignItems: "center", gap: 12, padding: 14 },
-  ctaText: { color: "#FFFFFF", fontSize: 16, fontWeight: "700" },
-  ghost: { alignItems: "center", paddingVertical: 10 },
-  ghostText: { fontSize: 14, fontWeight: "600" },
   pressed: { opacity: 0.8, transform: [{ scale: 0.98 }] },
 });

@@ -1,7 +1,7 @@
-import { useEffect, useState } from "react";
 import { Pressable, StyleSheet, View } from "react-native";
 
 import { BottomSheet } from "@/components/today/bottom-sheet";
+import { Button } from "@/components/ui/button";
 import { Text } from "@/components/ui/typography";
 import { useColors } from "@/hooks/use-colors";
 import { NORA_LEVELS, NORA_PREFERENCES, togglePreference, type NoraLevel, type NoraMemoryView } from "@/lib/ai/memory";
@@ -13,6 +13,8 @@ type MemorySheetProps = {
   onLevel: (level: NoraLevel) => void;
   onPreferences: (preferences: string[]) => void;
   onForget: (noteId?: string) => void;
+  /** Le message du bas (« Annuler »), affiché par-dessus la feuille. */
+  overlay?: React.ReactNode;
 };
 
 /** Résumé en une ligne pour la carte de l'écran Nora. */
@@ -24,17 +26,12 @@ export function memorySummary(memory: NoraMemoryView | undefined) {
 }
 
 /** Ce que Nora sait de toi : tout se règle d'un toucher, et tout s'oublie. */
-export function MemorySheet({ visible, onClose, memory, onLevel, onPreferences, onForget }: MemorySheetProps) {
+export function MemorySheet({ visible, onClose, memory, onLevel, onPreferences, onForget, overlay }: MemorySheetProps) {
   const colors = useColors();
   const preferences = memory?.preferences ?? [];
   const notes = memory?.notes ?? [];
-  // « Tout oublier » se confirme d'un second toucher : rien ne s'efface par mégarde.
-  const [confirmAll, setConfirmAll] = useState(false);
-  useEffect(() => {
-    if (!visible) setConfirmAll(false);
-  }, [visible]);
   return (
-    <BottomSheet visible={visible} onClose={onClose}>
+    <BottomSheet visible={visible} onClose={onClose} overlay={overlay}>
       <View style={styles.content}>
         <Text style={[styles.title, { color: colors.foreground }]}>Ce que Nora sait de toi</Text>
         <Text style={[styles.intro, { color: colors.muted }]}>Elle connaît aussi tes plantes et tout l’historique de tes gestes, pour te dire ce qui a été oublié.</Text>
@@ -71,14 +68,10 @@ export function MemorySheet({ visible, onClose, memory, onLevel, onPreferences, 
             {[...notes].reverse().map((note) => (
               <View key={note.id} style={[styles.note, { borderBottomColor: colors.border }]}>
                 <Text style={[styles.noteText, { color: colors.foreground }]}>{note.text}</Text>
-                <Pressable accessibilityRole="button" accessibilityLabel={`Oublier : ${note.text}`} hitSlop={8} onPress={() => onForget(note.id)}>
-                  <Text style={[styles.forget, { color: colors.muted }]}>Oublier</Text>
-                </Pressable>
+                <Button small variant="remove" label="Oublier" accessibilityLabel={`Oublier : ${note.text}`} onPress={() => onForget(note.id)} />
               </View>
             ))}
-            <Pressable accessibilityRole="button" onPress={() => { if (confirmAll) { setConfirmAll(false); onForget(); } else setConfirmAll(true); }} style={({ pressed }) => [styles.forgetAll, pressed && styles.pressed]}>
-              <Text style={[styles.forgetAllText, { color: colors.warning }]}>{confirmAll ? "Touche encore pour tout effacer" : "Tout oublier"}</Text>
-            </Pressable>
+            <Button variant="remove" label="Tout oublier" onPress={() => onForget()} style={styles.forgetAll} />
           </>
         )}
       </View>
@@ -100,8 +93,6 @@ const styles = StyleSheet.create({
   empty: { fontSize: 14, lineHeight: 20 },
   note: { flexDirection: "row", alignItems: "center", gap: 12, paddingVertical: 10, borderBottomWidth: StyleSheet.hairlineWidth },
   noteText: { flex: 1, fontSize: 15, lineHeight: 20 },
-  forget: { fontSize: 14, fontWeight: "600" },
-  forgetAll: { alignSelf: "flex-start", paddingVertical: 8 },
-  forgetAllText: { fontSize: 14, fontWeight: "700" },
+  forgetAll: { marginTop: 6 },
   pressed: { opacity: 0.78 },
 });

@@ -1,12 +1,14 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { useEffect, useMemo, useRef, useState } from "react";
-import { FlatList, KeyboardAvoidingView, Platform, Pressable, StyleSheet, View } from "react-native";
+import { FlatList, KeyboardAvoidingView, Pressable, StyleSheet, View } from "react-native";
+import { Button } from "@/components/ui/button";
 import { Text, TextInput } from "@/components/ui/typography";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { LightScreen } from "@/components/light-screen";
 import { MemorySheet, memorySummary } from "@/components/nora/memory-sheet";
+import { UndoToast, useUndoToast } from "@/components/today/undo-toast";
 import { ScreenHeader } from "@/components/screen-header";
 import { glass } from "@/components/ui/glass";
 import { useColors } from "@/hooks/use-colors";
@@ -42,10 +44,11 @@ export default function AssistantScreen() {
   const colors = useColors();
   const router = useRouter();
   const insets = useSafeAreaInsets();
-  const { account, profile, resolvedPlants, onboarding, updateOnboarding, updateProfile, syncNow } = useGarden();
+  const { account, profile, resolvedPlants, onboarding, updateOnboarding, updateProfile, syncNow, claimThisDevice } = useGarden();
   // Des questions prêtes, tirées de tes plantes et de la saison : rien à écrire.
   const questions = useMemo(() => quickQuestions(resolvedPlants), [resolvedPlants]);
   const utils = trpc.useUtils();
+  const toast = useUndoToast();
   const status = trpc.ai.status.useQuery(undefined, { enabled: account.signedIn, retry: false });
   const memory = trpc.ai.memory.useQuery(undefined, { enabled: account.signedIn, retry: false });
   const ask = trpc.ai.ask.useMutation({ onSuccess: () => void utils.ai.status.invalidate() });
@@ -136,7 +139,8 @@ export default function AssistantScreen() {
     void (async () => {
       await syncNow().catch(() => undefined);
       try {
-        const result = await askRecovering({ messages: history, requestId });
+        // Les plantes affichées ici : Nora ne parle que d'elles, même si le serveur en garde une retirée.
+        const result = await askRecovering({ messages: history, requestId, plantIds: resolvedPlants.map(({ plant }) => plant.id) });
         const now = Date.now();
         const at = new Date(now).toISOString();
         setMessages((current) => [
@@ -160,7 +164,7 @@ export default function AssistantScreen() {
    * redemande la même question, avec le même identifiant, et reçoit la réponse déjà faite. Une erreur du serveur
    * (quota, pause…) s'affiche tout de suite.
    */
-  const askRecovering = async (input: { messages: ReturnType<typeof conversationForNora>; requestId?: string }) => {
+  const askRecovering = async (input: { messages: ReturnType<typeof conversationForNora>; requestId?: string; plantIds?: string[] }) => {
     for (let attempt = 0; ; attempt += 1) {
       try {
         return await ask.mutateAsync(input);
@@ -185,23 +189,38 @@ export default function AssistantScreen() {
     updateMemory.mutate({ preferences });
   };
 
+  /** Oublié tout de suite à l'écran, avec « Annuler » ; le serveur n'oublie qu'au départ du message. */
   const forgetNote = (noteId?: string) => {
-    if (memory.data) setMemory({ ...memory.data, notes: noteId ? memory.data.notes.filter((note) => note.id !== noteId) : [] });
-    forget.mutate({ noteId });
+    const before = memory.data;
+    const touched = noteId ? messages.filter((message) => message.noteId === noteId) : [];
+    if (before) setMemory({ ...before, notes: noteId ? before.notes.filter((note) => note.id !== noteId) : [] });
     if (noteId) setMessages((current) => current.map((message) => (message.noteId === noteId ? { ...message, text: message.text.replace("Nora a retenu", "Oublié"), noteId: undefined } : message)));
+    toast.show({
+      text: noteId ? "Nora a oublié ce souvenir" : "Nora a tout oublié",
+      onUndo: () => {
+        if (before) setMemory(before);
+        setMessages((current) => current.map((message) => touched.find((item) => item.id === message.id) ?? message));
+      },
+      onExpire: () => forget.mutate({ noteId }),
+    });
   };
 
+  /** Effacée tout de suite, avec « Annuler ». */
   const clearConversation = () => {
+    const before = messages;
     setMessages([]);
     ask.reset();
+    toast.show({ text: "Conversation effacée", onUndo: () => setMessages(before) });
   };
+
+  const toastView = <UndoToast message={toast.toast} onDone={toast.hide} bottom={insets.bottom + 16} />;
 
   const header = (
     <>
       <ScreenHeader
         title="Nora"
-        subtitle={unavailable ? "Ta coach balcon · bientôt disponible" : resolvedPlants.length > 0 ? `Ta coach, qui connaît tes ${resolvedPlants.length > 1 ? `${resolvedPlants.length} plantes` : "plante"}` : "Ta coach balcon"}
-        right={messages.length > 0 ? <Pressable accessibilityRole="button" accessibilityLabel="Effacer la conversation" hitSlop={8} onPress={clearConversation} style={({ pressed }) => [styles.clearButton, pressed && styles.pressed]}><Text style={[styles.clearText, { color: colors.muted }]}>Effacer</Text></Pressable> : undefined}
+        subtitle={unavailable ? "Ta coach balcon · bientôt disponible" : resolvedPlants.length > 0 ? resolvedPlants.length > 1 ? `Ta coach, qui connaît tes ${resolvedPlants.length} plantes` : "Ta coach, qui connaît ta plante" : "Ta coach balcon"}
+        right={messages.length > 0 ? <Button small variant="remove" label="Effacer" accessibilityLabel="Effacer la conversation" onPress={clearConversation} /> : undefined}
         style={styles.header}
       />
       <Pressable accessibilityRole="button" onPress={() => router.push("/(tabs)/scanner")} style={({ pressed }) => [glass.card, styles.observe, pressed && styles.pressed]}>
@@ -247,7 +266,7 @@ export default function AssistantScreen() {
 
   return (
     <LightScreen>
-      <KeyboardAvoidingView style={styles.flex} behavior={Platform.OS === "ios" ? "padding" : undefined}>
+      <KeyboardAvoidingView style={styles.flex} behavior="padding">
         <FlatList
           ref={listRef}
           data={[...welcome, ...withDaySeparators(messages)]}
@@ -262,9 +281,7 @@ export default function AssistantScreen() {
             <View style={[glass.soft, styles.memoryRow]}>
               <Text style={[styles.memoryText, { color: colors.muted }]}>💭 {item.text}</Text>
               {item.noteId && (
-                <Pressable accessibilityRole="button" hitSlop={8} onPress={() => forgetNote(item.noteId)}>
-                  <Text style={[styles.memoryForget, { color: colors.primary }]}>Oublier</Text>
-                </Pressable>
+                <Button small variant="remove" label="Oublier" onPress={() => forgetNote(item.noteId)} />
               )}
             </View>
           ) : item.from === "notice" ? (
@@ -287,9 +304,7 @@ export default function AssistantScreen() {
                   <View style={styles.nameBox}>
                     <View style={styles.nameRow}>
                       <TextInput value={nameDraft} onChangeText={setNameDraft} onSubmitEditing={() => void saveName()} placeholder="Ton prénom" placeholderTextColor={colors.muted} maxLength={30} returnKeyType="done" accessibilityLabel="Ton prénom" style={[styles.nameInput, { color: colors.foreground, borderColor: colors.border }]} />
-                      <Pressable accessibilityRole="button" accessibilityLabel="Enregistrer mon prénom" onPress={() => void saveName()} style={({ pressed }) => [styles.nameButton, { backgroundColor: colors.primary }, pressed && styles.pressed]}>
-                        <Text style={styles.nameButtonText}>OK</Text>
-                      </Pressable>
+                      <Button small label="OK" accessibilityLabel="Enregistrer mon prénom" onPress={() => void saveName()} style={styles.nameButton} />
                     </View>
                     <Pressable accessibilityRole="button" onPress={declineName} hitSlop={6}>
                       <Text style={[styles.nameLater, { color: colors.muted }]}>Plus tard</Text>
@@ -302,6 +317,13 @@ export default function AssistantScreen() {
         />
         {account.signedIn ? (
           <>
+            {/* Nora lit le balcon sauvegardé : s'il ne part plus de ce téléphone, elle ne voit pas les derniers changements. */}
+            {account.status === "other-device" && (
+              <View style={[glass.card, styles.syncWarning]}>
+                <Text style={[styles.syncWarningText, { color: colors.warning }]}>Nora ne voit pas tes derniers changements : ton balcon est sauvegardé depuis un autre téléphone.</Text>
+                <Button small label="Sauvegarder depuis ce téléphone" onPress={() => void claimThisDevice()} />
+              </View>
+            )}
             {chat && <Text style={[styles.quota, { color: noQuestionsLeft || paused ? colors.warning : colors.muted }]}>{unavailable ? "Nora arrive bientôt dans une mise à jour." : paused ?? `${quotaLabel(chat)}${noQuestionsLeft && status.data?.plan === "free" ? `. ${plusQuotaHint("chat")}` : ""}`}</Text>}
             <View style={[glass.card, styles.composer]}>
               <TextInput
@@ -321,12 +343,11 @@ export default function AssistantScreen() {
             </View>
           </>
         ) : (
-          <Pressable onPress={() => router.push("/login")} style={({ pressed }) => [styles.loginBar, { backgroundColor: colors.foreground }, pressed && styles.pressed]}>
-            <Text style={styles.loginBarText}>Se connecter pour discuter avec Nora</Text>
-          </Pressable>
+          <Button label="Se connecter pour discuter avec Nora" onPress={() => router.push("/login")} style={styles.loginBar} />
         )}
       </KeyboardAvoidingView>
-      <MemorySheet visible={memoryOpen} onClose={() => setMemoryOpen(false)} memory={memoryView} onLevel={(level) => void updateOnboarding({ experience: level })} onPreferences={changePreferences} onForget={forgetNote} />
+      <MemorySheet visible={memoryOpen} onClose={() => setMemoryOpen(false)} memory={memoryView} onLevel={(level) => void updateOnboarding({ experience: level })} onPreferences={changePreferences} onForget={forgetNote} overlay={toastView} />
+      {!memoryOpen && toastView}
     </LightScreen>
   );
 }
@@ -335,25 +356,21 @@ const styles = StyleSheet.create({
   dayLabel: { alignSelf: "center", fontSize: 12, fontWeight: "700", paddingVertical: 4 },
   flex: { flex: 1 },
   header: { marginBottom: 14 },
-  clearButton: { paddingHorizontal: 6, paddingVertical: 8 },
   observe: { flexDirection: "row", alignItems: "center", gap: 12, padding: 14, marginBottom: 12 },
   memoryRow: { flexDirection: "row", alignItems: "center", gap: 10, paddingHorizontal: 12, paddingVertical: 9, alignSelf: "flex-start", maxWidth: "92%", marginLeft: 32 },
   memoryText: { flexShrink: 1, fontSize: 13, lineHeight: 18, fontWeight: "600" },
-  memoryForget: { fontSize: 13, fontWeight: "700" },
   observeIcon: { width: 44, height: 44, borderRadius: 22, alignItems: "center", justifyContent: "center" },
   observeEmoji: { fontSize: 20 },
   observeTitle: { fontSize: 16, fontWeight: "700" },
   observeText: { fontSize: 13, lineHeight: 18, marginTop: 2 },
   observeArrow: { fontSize: 26, fontWeight: "300" },
   content: { paddingHorizontal: 20, paddingBottom: 16, gap: 12 },
-  clearText: { fontSize: 14, fontWeight: "600" },
   noticeBox: { borderRadius: 14, padding: 12, gap: 10, overflow: "hidden" },
   notice: { fontSize: 13, lineHeight: 18, fontWeight: "600" },
   retry: { alignSelf: "flex-start", borderRadius: 999, borderWidth: 1, paddingHorizontal: 14, paddingVertical: 7 },
   retryText: { fontSize: 13, fontWeight: "700" },
   quota: { fontSize: 12, fontWeight: "600", textAlign: "center", marginBottom: 6, marginHorizontal: 20 },
-  loginBar: { borderRadius: 16, paddingVertical: 16, alignItems: "center", marginBottom: 12, marginHorizontal: 20 },
-  loginBarText: { color: "#FFFFFF", fontSize: 15, fontWeight: "700" },
+  loginBar: { marginBottom: 12, marginHorizontal: 20 },
   quickLabel: { fontSize: 13, fontWeight: "600", marginBottom: 2, marginTop: 6 },
   quickList: { gap: 8, paddingBottom: 8 },
   quickChip: { paddingHorizontal: 13, paddingVertical: 10, maxWidth: 230 },
@@ -362,11 +379,12 @@ const styles = StyleSheet.create({
   messageRowUser: { justifyContent: "flex-end" },
   smallAvatar: { width: 24, height: 24, borderRadius: 9, alignItems: "center", justifyContent: "center" },
   smallAvatarText: { color: "#FFFFFF", fontSize: 11, fontWeight: "800" },
+  syncWarning: { marginHorizontal: 20, marginBottom: 8, padding: 12, gap: 8 },
+  syncWarningText: { fontSize: 13, lineHeight: 18, fontWeight: "600" },
   nameBox: { gap: 8, marginTop: 10 },
   nameRow: { flexDirection: "row", alignItems: "center", gap: 8 },
-  nameInput: { flex: 1, borderWidth: 1, borderRadius: 12, paddingHorizontal: 12, paddingVertical: 9, fontSize: 15, backgroundColor: "#FFFFFF" },
-  nameButton: { borderRadius: 12, paddingHorizontal: 14, paddingVertical: 10 },
-  nameButtonText: { color: "#FFFFFF", fontSize: 14, fontWeight: "700" },
+  nameInput: { flex: 1, minWidth: 0, borderWidth: 1, borderRadius: 12, paddingHorizontal: 12, paddingVertical: 9, fontSize: 15, backgroundColor: "#FFFFFF" },
+  nameButton: { alignSelf: "center" },
   nameLater: { fontSize: 13, fontWeight: "600" },
   bubble: { padding: 13, maxWidth: "82%", borderBottomLeftRadius: 5 },
   userBubble: { borderBottomLeftRadius: 18, borderBottomRightRadius: 5 },

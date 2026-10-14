@@ -1,4 +1,5 @@
 import "@/global.css";
+import { GlobalToast } from "@/components/global-toast";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { Onest_300Light, Onest_400Regular, Onest_500Medium, Onest_600SemiBold, Onest_700Bold, Onest_800ExtraBold, Onest_900Black, useFonts } from "@expo-google-fonts/onest";
 import { Stack } from "expo-router";
@@ -102,6 +103,7 @@ export default function RootLayout() {
             <Stack.Screen name="event/[id]" />
           </Stack>
           <StatusBar style="dark" />
+          <GlobalToast />
           <ReminderNotificationResponder />
           <AppUpdater />
           </PlantPhotosProvider>

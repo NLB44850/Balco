@@ -5,7 +5,7 @@
  */
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { useMemo } from "react";
-import { Pressable, ScrollView, StyleSheet, View } from "react-native";
+import { ScrollView, StyleSheet, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { LightScreen } from "@/components/light-screen";
@@ -13,6 +13,7 @@ import { FadeIn } from "@/components/motion";
 import { CatalogPicture } from "@/components/plant-picture";
 import { ScreenHeader } from "@/components/screen-header";
 import { glass } from "@/components/ui/glass";
+import { Button } from "@/components/ui/button";
 import { Text } from "@/components/ui/typography";
 import { useColors } from "@/hooks/use-colors";
 import { useNow } from "@/hooks/use-date-simulation";
@@ -79,13 +80,9 @@ export default function DiagnosticScreen() {
         )}
 
         {first ? (
-          <Pressable accessibilityRole="button" onPress={() => (router.canGoBack() ? router.dismissTo("/(tabs)") : router.replace("/(tabs)"))} style={({ pressed }) => [styles.cta, { backgroundColor: colors.primary }, pressed && styles.pressed]}>
-            <Text style={styles.ctaText}>Voir mon balcon</Text>
-          </Pressable>
+          <Button label="Voir mon balcon" onPress={() => (router.canGoBack() ? router.dismissTo("/(tabs)") : router.replace("/(tabs)"))} />
         ) : (
-          <Pressable accessibilityRole="button" onPress={() => router.push("/settings")} style={({ pressed }) => [styles.link, pressed && styles.pressed]}>
-            <Text style={[styles.linkText, { color: colors.primary }]}>Changer mes réponses dans Réglages ›</Text>
-          </Pressable>
+          <Button variant="link" center label="Changer mes réponses dans Réglages" onPress={() => router.push("/settings")} />
         )}
       </ScrollView>
     </LightScreen>
@@ -110,9 +107,4 @@ const styles = StyleSheet.create({
   plant: { flex: 1, padding: 10, alignItems: "center", gap: 8 },
   plantPicture: { width: 64, height: 64, borderRadius: 32 },
   plantName: { fontSize: 14, fontWeight: "700", textAlign: "center" },
-  cta: { borderRadius: 16, paddingVertical: 16, alignItems: "center", marginTop: 4 },
-  ctaText: { color: "#FFFFFF", fontSize: 16, fontWeight: "700" },
-  link: { alignSelf: "center", paddingVertical: 10 },
-  linkText: { fontSize: 15, fontWeight: "700" },
-  pressed: { opacity: 0.78 },
 });

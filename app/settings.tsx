@@ -16,9 +16,11 @@ import { CityPicker } from "@/components/city-picker";
 import { ChoiceList } from "@/components/settings/choice-list";
 import { SettingRow, SettingsGroup, SheetHeading } from "@/components/settings/rows";
 import { BottomSheet } from "@/components/today/bottom-sheet";
+import { UndoToast, useUndoToast } from "@/components/today/undo-toast";
 import { LightScreen } from "@/components/light-screen";
 import { CatalogPicture, PlantPicture } from "@/components/plant-picture";
 import { ScreenHeader } from "@/components/screen-header";
+import { Button } from "@/components/ui/button";
 import { Text, TextInput } from "@/components/ui/typography";
 import { freeForAllText, plusSheetBenefits } from "@/lib/plans";
 import { FEEDBACK_EMAIL, feedbackMailto, versionText } from "@/lib/feedback";
@@ -66,6 +68,7 @@ const appVersion = Constants.expoConfig?.version ?? "1.0.0";
 export default function SettingsScreen() {
   const balcoPlus = useBalcoPlus();
   const insets = useSafeAreaInsets();
+  const toast = useUndoToast();
   const colors = useColors();
   const router = useRouter();
   const { resolvedPlants, events, profile, onboarding, account, updateProfile, updateOnboarding, signIn, signOut, syncNow, claimThisDevice, deleteAccount } = useGarden();
@@ -165,11 +168,16 @@ export default function SettingsScreen() {
   };
   const springWishes = springWishEntries(onboarding?.springWishes);
   /** « Retirer » : la plante quitte les envies ; la notification du 1er mars suit (plus rien s'il n'en reste pas). */
-  const removeSpringWish = async (catalogId: string) => {
-    const wishes = (onboarding?.springWishes ?? []).filter((id) => id !== catalogId);
+  const saveSpringWishes = async (wishes: string[]) => {
     await updateOnboarding({ springWishes: wishes });
     const entries = springWishEntries(wishes);
     void scheduleDatedReminder(SPRING_REMINDER_SOURCE, springReminderContent(entries), entries.length > 0 ? nextSpringReminder(new Date()) : null).catch(() => undefined);
+  };
+  /** Retirée tout de suite, avec « Annuler ». */
+  const removeSpringWish = async (catalogId: string) => {
+    const before = onboarding?.springWishes ?? [];
+    await saveSpringWishes(before.filter((id) => id !== catalogId));
+    toast.show({ text: "Retirée de tes envies du printemps", onUndo: () => void saveSpringWishes(before) });
   };
 
   const toggleReminders = async () => {
@@ -299,9 +307,7 @@ export default function SettingsScreen() {
                 <Text style={[styles.checkTitle, { color: colors.foreground }]}>Autorisation du téléphone</Text>
               </View>
               {permission === "granted" ? <Text style={[styles.checkOk, { color: colors.primary }]}>✓</Text> : (
-                <Pressable accessibilityRole="button" onPress={() => void allowNotifications()} style={({ pressed }) => [styles.checkButton, { backgroundColor: colors.primary }, pressed && styles.pressed]}>
-                  <Text style={styles.checkButtonText}>Autoriser</Text>
-                </Pressable>
+                <Button small label="Autoriser" onPress={() => void allowNotifications()} style={styles.checkButton} />
               )}
             </View>
             {Platform.OS === "android" && (
@@ -311,9 +317,7 @@ export default function SettingsScreen() {
                   <Text style={[styles.checkText, { color: colors.muted }]}>Sur certains téléphones, elle bloque les rappels.</Text>
                   <Text style={[styles.checkWatch, { color: "#D2642A" }]}>À vérifier</Text>
                 </View>
-                <Pressable accessibilityRole="button" onPress={() => void openBatterySettings()} style={({ pressed }) => [styles.checkButton, { backgroundColor: colors.primary }, pressed && styles.pressed]}>
-                  <Text style={styles.checkButtonText}>Ouvrir les réglages</Text>
-                </Pressable>
+                <Button small label="Ouvrir les réglages" onPress={() => void openBatterySettings()} style={styles.checkButton} />
               </View>
             )}
             <View style={[styles.checkRow, { borderColor: colors.border }]}>
@@ -323,9 +327,7 @@ export default function SettingsScreen() {
                 {testStatus === "denied" && <Text style={[styles.checkText, { color: colors.error }]}>Les notifications sont bloquées : autorise-les d’abord.</Text>}
               </View>
               {testStatus === "sent" ? <Text style={[styles.checkOk, { color: colors.primary }]}>✓</Text> : (
-                <Pressable accessibilityRole="button" disabled={testStatus === "sending"} onPress={() => void sendTest()} style={({ pressed }) => [styles.checkButton, { backgroundColor: colors.primary }, pressed && styles.pressed]}>
-                  <Text style={styles.checkButtonText}>{testStatus === "sending" ? "Envoi…" : "M’envoyer un rappel test"}</Text>
-                </Pressable>
+                <Button small label={testStatus === "sending" ? "Envoi…" : "M’envoyer un rappel test"} accessibilityLabel="M’envoyer un rappel test" disabled={testStatus === "sending"} onPress={() => void sendTest()} style={styles.checkButton} />
               )}
             </View>
           </>
@@ -356,21 +358,15 @@ export default function SettingsScreen() {
                 <Text style={[styles.accountHint, { color: colors.muted }]}>On t’écrira une seule fois, à l’ouverture de Balco+.</Text>
               </>
             )}
-            <Pressable accessibilityRole="button" disabled={notifying} onPress={() => void notifyMe()} style={({ pressed }) => [styles.sheetButton, { backgroundColor: colors.foreground }, pressed && styles.pressed]}>
-              <Text style={[styles.sheetButtonText, { color: colors.background }]}>{notifying ? "Envoi…" : "Me prévenir à l’ouverture"}</Text>
-            </Pressable>
+            <Button label={notifying ? "Envoi…" : "Me prévenir à l’ouverture"} accessibilityLabel="Me prévenir à l’ouverture" disabled={notifying} onPress={() => void notifyMe()} style={styles.sheetButton} />
             {notifyError && <Text style={[styles.accountHint, { color: colors.error }]}>{notifyError}</Text>}
           </>
         )}
       </BottomSheet>
       <BottomSheet visible={sheet === "delete"} onClose={closeSheet}>
         <SheetHeading title="Supprimer ton compte ?" intro="Ton compte, ta sauvegarde et tes échanges avec Nora seront effacés. Ton balcon reste sur ce téléphone." />
-        <Pressable accessibilityRole="button" disabled={deleting} onPress={() => void removeAccount()} style={({ pressed }) => [styles.sheetButton, { backgroundColor: colors.error }, pressed && styles.pressed]}>
-          <Text style={[styles.sheetButtonText, { color: "#FFFFFF" }]}>{deleting ? "Suppression…" : "Supprimer définitivement"}</Text>
-        </Pressable>
-        <Pressable accessibilityRole="button" disabled={deleting} onPress={closeSheet} style={({ pressed }) => [styles.sheetButtonGhost, { borderColor: colors.border }, pressed && styles.pressed]}>
-          <Text style={[styles.sheetButtonText, { color: colors.foreground }]}>Garder mon compte</Text>
-        </Pressable>
+        <Button variant="danger" label={deleting ? "Suppression…" : "Supprimer définitivement"} accessibilityLabel="Supprimer définitivement" disabled={deleting} onPress={() => void removeAccount()} style={styles.sheetButton} />
+        <Button variant="secondary" label="Garder mon compte" disabled={deleting} onPress={closeSheet} style={styles.sheetButtonNext} />
         {deleteError && <Text style={[styles.accountHint, { color: colors.error }]}>{deleteError}</Text>}
       </BottomSheet>
       <BottomSheet visible={sheet === "simulation"} onClose={closeSheet}>
@@ -408,9 +404,7 @@ export default function SettingsScreen() {
           ))}
         </View>
         {dateSimulation.day && (
-          <Pressable accessibilityRole="button" onPress={() => void dateSimulation.setDay(null)} style={({ pressed }) => [styles.sheetButton, { backgroundColor: colors.foreground }, pressed && styles.pressed]}>
-            <Text style={[styles.sheetButtonText, { color: colors.background }]}>Revenir à aujourd’hui</Text>
-          </Pressable>
+          <Button label="Revenir à aujourd’hui" onPress={() => void dateSimulation.setDay(null)} style={styles.sheetButton} />
         )}
         <Pressable accessibilityRole="button" onPress={() => { void eventDismissals.restore(":intro", { suffix: true }); setIntrosReset(true); }} style={({ pressed }) => [styles.simulationChip, styles.introReset, { backgroundColor: colors.surface, borderColor: colors.border }, pressed && styles.pressed]}>
           <Text style={[styles.simulationChipText, { color: colors.foreground }]}>{introsReset ? "✓ Grandes cartes remises" : "Revoir les grandes cartes des temps forts"}</Text>
@@ -420,9 +414,7 @@ export default function SettingsScreen() {
       <BottomSheet visible={sheet === "name"} onClose={closeSheet}>
         <SheetHeading title="Ton prénom" intro="Pour que Balco et Nora te disent bonjour." />
         <TextInput value={nameDraft} onChangeText={setNameDraft} onSubmitEditing={() => void saveName()} accessibilityLabel="Ton prénom" placeholder="Ton prénom" placeholderTextColor={colors.muted} maxLength={30} returnKeyType="done" autoFocus style={[styles.sheetInput, { borderColor: colors.border, color: colors.foreground }]} />
-        <Pressable accessibilityRole="button" onPress={() => void saveName()} style={({ pressed }) => [styles.sheetButton, { backgroundColor: colors.foreground }, pressed && styles.pressed]}>
-          <Text style={[styles.sheetButtonText, { color: colors.background }]}>Enregistrer</Text>
-        </Pressable>
+        <Button label="Enregistrer" onPress={() => void saveName()} style={styles.sheetButton} />
       </BottomSheet>
       <BottomSheet visible={sheet === "level"} onClose={closeSheet}>
         <SheetHeading title="Comment Nora te parle ?" intro="Tu peux aussi le changer depuis Nora." />
@@ -461,20 +453,16 @@ export default function SettingsScreen() {
       <BottomSheet visible={sheet === "goals"} onClose={closeSheet}>
         <SheetHeading title="Qu’aimerais-tu cultiver ?" intro="Choisis tout ce qui te donne envie." />
         <ChoiceList multiple choices={GOAL_OPTIONS} selected={(id) => goalsDraft.includes(id)} onPick={(id) => setGoalsDraft((current) => (current.includes(id) ? current.filter((goal) => goal !== id) : [...current, id]))} />
-        <Pressable accessibilityRole="button" onPress={() => { void updateOnboarding({ goals: GOAL_OPTIONS.map((option) => option.id).filter((id) => goalsDraft.includes(id)) }); closeSheet(); }} style={({ pressed }) => [styles.sheetButton, { backgroundColor: colors.foreground }, pressed && styles.pressed]}>
-          <Text style={[styles.sheetButtonText, { color: colors.background }]}>Enregistrer</Text>
-        </Pressable>
+        <Button label="Enregistrer" onPress={() => { void updateOnboarding({ goals: GOAL_OPTIONS.map((option) => option.id).filter((id) => goalsDraft.includes(id)) }); closeSheet(); }} style={styles.sheetButton} />
       </BottomSheet>
-      <BottomSheet visible={sheet === "spring"} onClose={closeSheet}>
+      <BottomSheet visible={sheet === "spring"} onClose={closeSheet} overlay={<UndoToast message={toast.toast} onDone={toast.hide} bottom={insets.bottom + 16} />}>
         <SheetHeading title="Tes envies du printemps" intro="Balco te les reproposera en mars." />
         {springWishes.length === 0 && <Text style={[styles.sheetNote, { color: colors.muted }]}>Quand tu laisses un pot au repos, tu peux garder la plante ici pour le printemps.</Text>}
         {springWishes.map((entry) => (
           <View key={entry.id} style={[styles.wishRow, { borderColor: colors.border }]}>
             <CatalogPicture entry={entry} style={styles.wishPicture} />
             <Text style={[styles.wishName, { color: colors.foreground }]}>{entry.name}</Text>
-            <Pressable accessibilityRole="button" accessibilityLabel={`Retirer ${entry.name}`} onPress={() => void removeSpringWish(entry.id)} hitSlop={6} style={({ pressed }) => [styles.wishRemove, { borderColor: colors.border }, pressed && styles.pressed]}>
-              <Text style={[styles.wishRemoveText, { color: colors.foreground }]}>Retirer</Text>
-            </Pressable>
+            <Button small variant="remove" label="Retirer" accessibilityLabel={`Retirer ${entry.name}`} onPress={() => void removeSpringWish(entry.id)} />
           </View>
         ))}
       </BottomSheet>
@@ -502,9 +490,7 @@ export default function SettingsScreen() {
             }
           />
           {blocked && (
-            <Pressable accessibilityRole="button" onPress={() => void Linking.openSettings()} style={({ pressed }) => [styles.inlineButton, { borderColor: colors.primary }, pressed && styles.pressed]}>
-              <Text style={[styles.inlineButtonText, { color: colors.primary }]}>Ouvrir les réglages du téléphone</Text>
-            </Pressable>
+            <Button small variant="secondary" label="Ouvrir les réglages du téléphone" onPress={() => void Linking.openSettings()} style={styles.inlineButton} />
           )}
           <SettingRow label="Heure" value={hourText(reminderSettings.preferredHour, reminderSettings.preferredMinute)} disabled={!remindersOn} onPress={openHour} />
           <SettingRow label="Plage calme" value={quietText(reminderSettings)} disabled={!remindersOn} onPress={() => setSheet("quiet")} />
@@ -520,16 +506,12 @@ export default function SettingsScreen() {
         <SettingsGroup title="Compte">
           {account.signedIn ? (
             <View key="backup" style={styles.accountBlock}>
-              <SettingRow label={backup.label} subtitle={account.email ?? undefined} />
+              <SettingRow label={backup.label} subtitle={[account.email, account.status === "offline" && account.syncError ? `Raison : ${account.syncError}` : null].filter(Boolean).join("\n") || undefined} />
               <View style={styles.accountActions}>
                 {backup.action && (
-                  <Pressable accessibilityRole="button" onPress={() => void (backup.action === "claim" ? claimThisDevice() : syncNow())} style={({ pressed }) => [styles.accountButton, { backgroundColor: colors.primary }, pressed && styles.pressed]}>
-                    <Text style={styles.accountButtonText}>{backup.action === "claim" ? "Sauvegarder depuis ce téléphone" : "Réessayer"}</Text>
-                  </Pressable>
+                  <Button small label={backup.action === "claim" ? "Sauvegarder depuis ce téléphone" : "Réessayer"} onPress={() => void (backup.action === "claim" ? claimThisDevice() : syncNow())} />
                 )}
-                <Pressable accessibilityRole="button" onPress={() => void signOut()} style={({ pressed }) => [styles.accountButtonGhost, { borderColor: colors.border }, pressed && styles.pressed]}>
-                  <Text style={[styles.accountGhostText, { color: colors.foreground }]}>Se déconnecter</Text>
-                </Pressable>
+                <Button small variant="secondary" label="Se déconnecter" onPress={() => void signOut()} />
               </View>
             </View>
           ) : (
@@ -537,9 +519,7 @@ export default function SettingsScreen() {
               <SettingRow label="Sauvegarde" value="Sur ce téléphone seulement" />
               {account.loginAvailable ? (
                 <>
-                  <Pressable accessibilityRole="button" disabled={account.checking} onPress={() => void signIn()} style={({ pressed }) => [styles.accountButton, styles.accountButtonWide, { backgroundColor: colors.foreground }, pressed && styles.pressed]}>
-                    <Text style={[styles.accountButtonText, { color: colors.background }]}>{account.checking ? "Vérification…" : "Créer mon compte gratuit"}</Text>
-                  </Pressable>
+                  <Button label={account.checking ? "Vérification…" : "Créer mon compte gratuit"} accessibilityLabel="Créer mon compte gratuit" disabled={account.checking} onPress={() => void signIn()} style={styles.accountWide} />
                   <Text style={[styles.accountHint, { color: colors.muted }]}>Pour retrouver ton balcon si tu changes de téléphone.</Text>
                 </>
               ) : (
@@ -583,26 +563,21 @@ const styles = StyleSheet.create({
   benefits: { gap: 8, marginTop: 8 },
   // Deux boutons qui ne tiennent pas sur une ligne (« Sauvegarder depuis ce téléphone ») : le second passe dessous.
   accountActions: { flexDirection: "row", flexWrap: "wrap", alignItems: "center", gap: 10, marginTop: 10 },
-  accountButton: { borderRadius: 12, paddingHorizontal: 14, paddingVertical: 9 },
-  accountButtonText: { color: "#FFFFFF", fontSize: 14, fontWeight: "700" },
-  accountButtonGhost: { borderWidth: 1, borderRadius: 12, paddingHorizontal: 14, paddingVertical: 9 },
-  accountGhostText: { fontSize: 14, fontWeight: "600" },
   simulationChips: { flexDirection: "row", flexWrap: "wrap", gap: 8, marginTop: 12 },
   simulationChip: { borderRadius: 999, borderWidth: 1, paddingHorizontal: 13, paddingVertical: 8 },
   simulationChipText: { fontSize: 13, fontWeight: "600" },
   toggle: { width: 47, height: 28, borderRadius: 15, padding: 3, justifyContent: "center" },
   toggleKnob: { width: 22, height: 22, borderRadius: 11, backgroundColor: "#FFFFFF" },
   toggleKnobOn: { alignSelf: "flex-end" },
-  sheetButton: { borderRadius: 14, paddingVertical: 15, alignItems: "center", marginTop: 14 },
-  sheetButtonText: { fontSize: 16, fontWeight: "700" },
+  sheetButton: { marginTop: 14 },
+  sheetButtonNext: { marginTop: 10 },
   sheetInput: { borderWidth: 1, borderRadius: 14, paddingHorizontal: 14, paddingVertical: 13, fontSize: 16, marginTop: 8 },
   sheetLabel: { fontSize: 15, fontWeight: "700", marginTop: 12 },
   sheetHint: { fontSize: 13, lineHeight: 18, marginTop: 12 },
   hourChips: { flexDirection: "row", gap: 8, marginTop: 8 },
   hourChip: { flex: 1, borderWidth: 1, borderRadius: 14, paddingVertical: 12, alignItems: "center" },
   hourChipText: { fontSize: 15, fontWeight: "700" },
-  inlineButton: { alignSelf: "flex-start", borderWidth: 1, borderRadius: 12, paddingHorizontal: 12, paddingVertical: 8, marginBottom: 12 },
-  inlineButtonText: { fontSize: 14, fontWeight: "700" },
+  inlineButton: { marginBottom: 12 },
   box: { width: 22, height: 22, borderRadius: 6, borderWidth: 2, alignItems: "center", justifyContent: "center" },
   boxMark: { color: "#FFFFFF", fontSize: 14, fontWeight: "800", marginTop: -1 },
   flex: { flex: 1 },
@@ -611,11 +586,9 @@ const styles = StyleSheet.create({
   checkText: { fontSize: 13, lineHeight: 18, marginTop: 2 },
   checkWatch: { fontSize: 13, fontWeight: "700", marginTop: 4 },
   checkOk: { fontSize: 20, fontWeight: "800" },
-  checkButton: { borderRadius: 12, paddingHorizontal: 12, paddingVertical: 9, maxWidth: 170 },
-  checkButtonText: { color: "#FFFFFF", fontSize: 13, fontWeight: "700", textAlign: "center" },
-  sheetButtonGhost: { borderWidth: 1, borderRadius: 14, paddingVertical: 14, alignItems: "center", marginTop: 10 },
+  checkButton: { maxWidth: 180, alignSelf: "center" },
   accountBlock: { paddingBottom: 12 },
-  accountButtonWide: { alignSelf: "stretch", alignItems: "center", paddingVertical: 13 },
+  accountWide: { marginTop: 10 },
   accountHint: { fontSize: 13, lineHeight: 18, marginTop: 8 },
   benefitRow: { flexDirection: "row", gap: 10 },
   benefitMark: { fontSize: 15, lineHeight: 21, fontWeight: "800" },
@@ -627,7 +600,5 @@ const styles = StyleSheet.create({
   wishRow: { flexDirection: "row", alignItems: "center", gap: 12, borderBottomWidth: StyleSheet.hairlineWidth, paddingVertical: 10 },
   wishPicture: { width: 40, height: 40, borderRadius: 20, alignItems: "center", justifyContent: "center" },
   wishName: { flex: 1, fontSize: 15, fontWeight: "600" },
-  wishRemove: { borderWidth: 1, borderRadius: 999, paddingHorizontal: 12, paddingVertical: 7 },
-  wishRemoveText: { fontSize: 13, fontWeight: "600" },
   pressed: { opacity: 0.78, transform: [{ scale: 0.98 }] },
 });

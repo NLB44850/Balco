@@ -1,7 +1,8 @@
 /**
  * Après la récolte d'une plante récoltée en une fois, ou à la fin de saison d'une annuelle
  * (lib/garden/harvest-end.ts) : la feuille du bas qui demande « Tes radis sont-ils tous récoltés ? » ou « Ta
- * saison de basilic est finie ? », puis « Ton pot est libre » et ses trois choix au plus.
+ * saison de basilic est finie ? », puis « Ton pot est libre » : ressemer, « Que planter à la place ? » (trois idées
+ * qui tiennent dans ce pot, d'une autre famille), ou le laisser vide.
  * Partagée par Aujourd'hui et la fiche plante.
  */
 import { useEffect, useState } from "react";
@@ -9,6 +10,7 @@ import { Pressable, StyleSheet, View } from "react-native";
 
 import { CatalogPicture } from "@/components/plant-picture";
 import { BottomSheet } from "@/components/today/bottom-sheet";
+import { Button } from "@/components/ui/button";
 import { Text } from "@/components/ui/typography";
 import { useColors } from "@/hooks/use-colors";
 import { useGarden } from "@/lib/garden/garden-context";
@@ -26,7 +28,10 @@ import {
   seasonQuestionDetail,
   type FreePotChoice,
 } from "@/lib/garden/harvest-end";
+import { replantSoilTip, rotationNote } from "@/lib/garden/replant";
 import { startActivity } from "@/lib/plants/calendar";
+import { MONTH_LONG } from "@/lib/plants/catalog";
+import { potSizeOf } from "@/lib/plants/pot-size";
 import type { ClimateInfo } from "@/lib/plants/climate";
 import { addSpringWish, nextSpringReminder, SPRING_REMINDER_SOURCE, springReminderContent } from "@/lib/garden/spring";
 import { getCatalogPlant, type CatalogPlant } from "@/lib/plants/catalog";
@@ -85,11 +90,26 @@ export function useFreePot({ climate, onDone, overlay }: { climate?: ClimateInfo
     if (offerSpring && remember) await rememberForSpring(resolved.entry.id);
     await removePlant(plantId);
     if (choice.kind === "plant") {
-      await addPlant(choice.entry.id, { toPlant: true });
+      // Elle prend la place dans le même pot : on garde sa taille.
+      const potSize = potSizeOf(resolved.plant);
+      await addPlant(choice.entry.id, { toPlant: true, potSize: potSize === "unknown" ? undefined : potSize });
+      if (choice.month !== month) return onDone(`${choice.entry.name} notée : Balco te la proposera en ${MONTH_LONG[choice.month - 1]}`, choice.kind);
       return onDone(`${choice.entry.name} à planter : le premier geste t’attend sur Aujourd’hui`, choice.kind);
     }
     onDone(`${choice.label.startsWith("Laisser le pot au repos") ? "Pot au repos" : "Pot libéré"} : tes récoltes restent dans ta progression`, choice.kind);
   };
+
+  const ideas = choices.filter((choice) => choice.kind === "plant");
+  const choiceButton = (choice: FreePotChoice) =>
+    resolved && (
+      <Pressable key={choice.key} accessibilityRole="button" accessibilityLabel={choice.label} onPress={() => void choose(choice)} style={({ pressed }) => [styles.choice, styles.choiceRow, { borderColor: choice.kind === "empty" ? colors.border : colors.primary }, pressed && styles.pressed]}>
+        {choice.kind === "plant" ? <CatalogPicture entry={choice.entry} style={styles.picture} /> : choice.kind === "restart" ? <CatalogPicture entry={resolved.entry} style={styles.picture} /> : null}
+        <View style={styles.flex}>
+          <Text style={[styles.choiceText, { color: choice.kind === "empty" ? colors.foreground : colors.primary }]}>{choice.label}</Text>
+          <Text style={[styles.detail, { color: colors.muted }]} numberOfLines={2}>{choice.detail}</Text>
+        </View>
+      </Pressable>
+    );
 
   const sheet = (
     <BottomSheet visible={open !== null && resolved !== null} onClose={close} overlay={open ? overlay : undefined}>
@@ -98,12 +118,8 @@ export function useFreePot({ climate, onDone, overlay }: { climate?: ClimateInfo
           <Text style={[styles.kind, { color: colors.primary }]}>{seasonal ? "🍂  Fin de saison" : "🧺  Fin de la récolte"}</Text>
           <Text style={[styles.title, { color: colors.foreground }]}>{seasonal ? seasonQuestion(resolved.entry) : harvestQuestion(resolved.entry)}</Text>
           <Text style={[styles.body, { color: colors.muted }]}>{open.detail ?? (seasonal ? seasonQuestionDetail(false) : HARVEST_QUESTION_DETAIL)}</Text>
-          <Pressable accessibilityRole="button" onPress={() => void answerYes(resolved.plant.id)} style={({ pressed }) => [styles.cta, { backgroundColor: colors.foreground }, pressed && styles.pressed]}>
-            <Text style={[styles.ctaText, { color: colors.background }]}>{seasonal ? "Oui, la saison est finie" : "Oui, tout est récolté"}</Text>
-          </Pressable>
-          <Pressable accessibilityRole="button" onPress={close} style={({ pressed }) => [styles.choice, { borderColor: colors.border }, pressed && styles.pressed]}>
-            <Text style={[styles.choiceText, { color: colors.foreground }]}>Pas encore</Text>
-          </Pressable>
+          <Button label={seasonal ? "Oui, la saison est finie" : "Oui, tout est récolté"} onPress={() => void answerYes(resolved.plant.id)} />
+          <Button variant="secondary" label="Pas encore" onPress={close} />
         </View>
       )}
       {resolved && open?.stage === "free" && (
@@ -111,22 +127,22 @@ export function useFreePot({ climate, onDone, overlay }: { climate?: ClimateInfo
           <Text style={[styles.kind, { color: colors.primary }]}>{seasonal ? "🍂" : "🧺"}  {potFreedBy(resolved.entry)}</Text>
           <Text style={[styles.title, { color: colors.foreground }]}>Ton pot est libre</Text>
           {seasonal && <Text style={[styles.tip, { backgroundColor: colors.surface, color: colors.foreground }]}>✂  {SEASON_END_TIP}</Text>}
-          <Text style={[styles.body, { color: colors.muted }]}>Que veux-tu y mettre ?</Text>
+          {ideas.length === 0 && <Text style={[styles.body, { color: colors.muted }]}>Que veux-tu y mettre ?</Text>}
           {offerSpring && (
             <Pressable accessibilityRole="checkbox" accessibilityState={{ checked: remember }} aria-checked={remember} accessibilityLabel="Me le reproposer au printemps" onPress={() => setRemember((value) => !value)} style={({ pressed }) => [styles.remember, pressed && styles.pressed]}>
               <View style={[styles.box, { borderColor: colors.primary, backgroundColor: remember ? colors.primary : "transparent" }]}>{remember && <Text style={styles.boxMark}>✓</Text>}</View>
               <Text style={[styles.rememberText, { color: colors.foreground }]}>Me le reproposer au printemps</Text>
             </Pressable>
           )}
-          {choices.map((choice) => (
-            <Pressable key={choice.key} accessibilityRole="button" accessibilityLabel={choice.label} onPress={() => void choose(choice)} style={({ pressed }) => [styles.choice, styles.choiceRow, { borderColor: choice.kind === "empty" ? colors.border : colors.primary }, pressed && styles.pressed]}>
-              {choice.kind === "plant" ? <CatalogPicture entry={choice.entry} style={styles.picture} /> : choice.kind === "restart" ? <CatalogPicture entry={resolved.entry} style={styles.picture} /> : null}
-              <View style={styles.flex}>
-                <Text style={[styles.choiceText, { color: choice.kind === "empty" ? colors.foreground : colors.primary }]}>{choice.label}</Text>
-                <Text style={[styles.detail, { color: colors.muted }]} numberOfLines={2}>{choice.detail}</Text>
-              </View>
-            </Pressable>
-          ))}
+          {choices.filter((choice) => choice.kind === "restart").map(choiceButton)}
+          {ideas.length > 0 && (
+            <View style={styles.ideas}>
+              <Text style={[styles.ideasTitle, { color: colors.foreground }]}>Que planter à la place ?</Text>
+              <Text style={[styles.detail, { color: colors.muted }]}>{[rotationNote(resolved.entry), replantSoilTip(resolved.entry)].filter(Boolean).join(" ")}</Text>
+            </View>
+          )}
+          {ideas.map(choiceButton)}
+          {choices.filter((choice) => choice.kind === "empty").map(choiceButton)}
         </View>
       )}
     </BottomSheet>
@@ -140,8 +156,6 @@ const styles = StyleSheet.create({
   kind: { fontSize: 13, fontWeight: "700" },
   title: { fontSize: 22, fontWeight: "800", letterSpacing: -0.4, lineHeight: 27 },
   body: { fontSize: 15, lineHeight: 22 },
-  cta: { borderRadius: 14, paddingVertical: 15, alignItems: "center" },
-  ctaText: { fontSize: 16, fontWeight: "700" },
   choice: { borderWidth: 1, borderRadius: 14, paddingVertical: 12, paddingHorizontal: 14, alignItems: "center" },
   choiceRow: { flexDirection: "row", gap: 12, alignItems: "center" },
   choiceText: { fontSize: 15, fontWeight: "700" },
@@ -152,6 +166,8 @@ const styles = StyleSheet.create({
   remember: { flexDirection: "row", alignItems: "center", gap: 10, paddingVertical: 4 },
   box: { width: 22, height: 22, borderRadius: 6, borderWidth: 2, alignItems: "center", justifyContent: "center" },
   boxMark: { color: "#FFFFFF", fontSize: 14, fontWeight: "800", marginTop: -1 },
+  ideas: { gap: 4, marginTop: 4 },
+  ideasTitle: { fontSize: 17, fontWeight: "800" },
   rememberText: { fontSize: 15, fontWeight: "600" },
   pressed: { opacity: 0.7 },
 });

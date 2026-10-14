@@ -247,7 +247,7 @@ Règles qui valent pour toutes les étapes :
      prochain arrosage dans 2 jours », jauge d'eau). En gratuit : carte « Coach d'arrosage · bientôt avec Balco+ ».
      Les rappels du serveur gardent la version gratuite (le coach n'y est pas encore). Tests `tests/watering-coach.test.ts`,
      e2e `26-coach`.
-7. **Consignes pour le voisin qui arrose : codées le 13/10, à valider sur son téléphone.** Logique
+7. **Consignes pour le voisin qui arrose : codées le 13/10, validées et fusionnées (PR #49).** Logique
    `lib/garden/helper-note.ts` (`helperPlants`, `helperPlantWatering`, `helperVisits`, `heatNow`, `helperNoteText`,
    `helperNoteMessage`), écran `app/helper-note.tsx` (route `/helper-note`). Mode vacances avec « Oui, un proche passera » :
    la liste « Pour la personne qui arrose » suit maintenant les règles de l'étape 6a, et le bouton « Prépare les consignes
@@ -270,3 +270,45 @@ Règles qui valent pour toutes les étapes :
    - Choix faits en codant : version gratuite (pot et saison) même en Balco+, le coach dépendant de la météo du jour ;
      écran à part plutôt qu'une feuille du bas (texte long à modifier). Tests `tests/helper-note.test.ts`, e2e
      « mode vacances : les consignes pour qui arrose… » (`3-compte-et-vacances`).
+8. **« Que planter à la place ? » et traitement naturel**, en deux livraisons : 8a puis 8b (traitement naturel dans
+   Observer).
+   - **8a, « Que planter à la place ? » : codée le 13/10, à valider sur son téléphone.** Dans la feuille « Ton pot est
+     libre » (après une récolte en une fois ou une fin de saison, Aujourd'hui et fiche) : « Ressemer… » s'il est encore
+     temps, puis la section « Que planter à la place ? » avec trois idées au plus (au lieu d'une ou deux), puis « Laisser
+     le pot vide ». Logique `lib/garden/replant.ts` (`replantIdeas`, `fitsFreedPot`, `replantSoilTip`, `rotationNote`),
+     appelée par `freePotChoices` (harvest-end.ts).
+   - Les idées : suggestions de saison (soleil, espace, envies, climat) à semer ou planter ce mois-ci dans le pot (pas
+     de semis au chaud), sinon le mois suivant (« En novembre · … », message « Mâche notée : Balco te la proposera en
+     novembre ») ; qui tiennent dans ce pot (`potFit` de sa taille notée, sinon pas plus grand que la plante d'avant) ;
+     jamais de la même famille (`lib/plants/families.ts`, 12 familles, les autres plantes seules de leur famille) ; les
+     annuelles avant les vivaces ; après une gourmande (engrais régulier dans sa fiche), les sobres d'abord.
+   - Sous le titre : « Pas de la famille du chou : mêmes maladies dans la terre. » et le geste pour la terre (« remplace
+     un tiers de la terre par du terreau neuf mêlé de compost » après une gourmande, sinon « aère la terre et mêles-y une
+     poignée de compost »). Règles et sources : `docs/sources-rotation.md`.
+   - La nouvelle plante garde la taille du pot libéré (`addPlant(…, { potSize })`).
+   - Choix faits en codant : « Ressemer » reste proposé (semis échelonnés dans la même saison) ; pas de lien vers le
+     catalogue entier (la feuille resterait courte). Tests `tests/replant.test.ts`, e2e « pot libre : Que planter à la
+     place ? » (`14-apres-recolte`).
+   - **Retour du 14/10** (capture : « Oui » du message du bas peu visible, caché par la barre d'Android au-dessus d'une
+     feuille du bas) : le bouton du message du bas (`components/today/undo-toast.tsx`) est une pastille d'au moins 44
+     points (« Oui » en vert plein, « Annuler » en blanc), texte sur 3 lignes, une question reste 9 s au lieu de 5 ; au
+     -dessus d'une feuille du bas, le message tient compte de la marge du bas du téléphone (`bottom={insets.bottom + 16}`
+     dans Aujourd'hui, Saisons et la fiche).
+   - **Retours du 14/10, ses choix** : (1) catalogue en **un seul « + »** au lieu des deux boutons « Déjà sur mon balcon /
+     À planter » (mal alignés) : Balco choisit « à planter » quand c'est le moment de la semer ou de la planter, sinon
+     « déjà sur mon balcon » ; le message du bas propose l'autre choix (« Pas encore plantée ? », « Déjà plantée ? »,
+     accordé) et « Annuler » (deuxième bouton du message, `onCancel` de `ToastMessage`) ; la fiche du catalogue n'a plus
+     qu'« Ajouter à mon balcon ». (2) **Hors saison, prévenir et garder pour le printemps** : « à planter » alors que ce
+     n'est pas sa saison → « Aubergine : à semer au chaud dès février. Balco te la reproposera au printemps » (envie du
+     printemps, carte de mars, notification du 1er mars ; si sa saison revient de juin à janvier, elle attend sur le
+     balcon : « À planter en août : … ») ; annuelle frileuse ajoutée « déjà là » de septembre à décembre → « Fin de
+     saison : récolte avant les premières gelées ». Logique `lib/garden/catalog-add.ts` (`defaultAddChoice`,
+     `toPlantPlan`, `installedText`, `toPlantText`, `switchLabel`), tests `tests/catalog-add.test.ts`, e2e « catalogue :
+     ajouter une plante d'un + » (`1-parcours`, en octobre).
+   - **Retour du 14/10 sur le « + »** (« on tourne en rond » : « Déjà plantée ? » puis « Pas encore plantée ? » dans le
+     message du bas) : le « + » ouvre une feuille du bas avec **une question et deux cartes** qui disent ce qui va se
+     passer avant de toucher : « Où en est ton aubergine ? » → 🪴 « Déjà sur mon balcon » (« Balco te dit quand l'arroser
+     dès aujourd'hui », ou en orange « Fin de saison : récolte avant les premières gelées. ») et 🌱 « Pas encore plantée »
+     (« C'est le moment » + « Le pas-à-pas t'attend sur Aujourd'hui », ou « À semer au chaud dès février : Balco te la
+     reproposera au printemps. »). Un toucher ajoute ; le message du bas n'a plus que « Annuler ». Les mêmes cartes
+     terminent la fiche du catalogue. `addQuestion`, `addOptions` (catalog-add.ts).

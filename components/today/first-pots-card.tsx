@@ -4,6 +4,7 @@ import { Pressable, StyleSheet, View } from "react-native";
 import { PotSizeArt } from "@/components/pot-size-sheet";
 import { BottomSheet } from "@/components/today/bottom-sheet";
 import { glass } from "@/components/ui/glass";
+import { Button } from "@/components/ui/button";
 import { Text } from "@/components/ui/typography";
 import { useColors } from "@/hooks/use-colors";
 import type { FirstPotsCard as Card } from "@/lib/garden/first-pots";
@@ -50,9 +51,7 @@ export function FirstPotsCard({ card, potSizes, onOpen, onDone }: { card: Card; 
               </Pressable>
             ))}
           </View>
-          <Pressable accessibilityRole="button" onPress={() => { setOpen(false); onDone(); }} style={({ pressed }) => [styles.done, { backgroundColor: colors.primary }, pressed && styles.pressed]}>
-            <Text style={styles.doneText}>C’est bon</Text>
-          </Pressable>
+          <Button label="C’est bon" onPress={() => { setOpen(false); onDone(); }} />
         </View>
       </BottomSheet>
     </>
@@ -73,7 +72,5 @@ const styles = StyleSheet.create({
   line: { flexDirection: "row", alignItems: "center", gap: 10, paddingVertical: 8, borderBottomWidth: StyleSheet.hairlineWidth },
   lineText: { fontSize: 14, lineHeight: 19 },
   name: { fontSize: 15, fontWeight: "700" },
-  done: { borderRadius: 16, paddingVertical: 14, alignItems: "center", marginTop: 4 },
-  doneText: { color: "#FFFFFF", fontSize: 16, fontWeight: "700" },
   pressed: { opacity: 0.78 },
 });
