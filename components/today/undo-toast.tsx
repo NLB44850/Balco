@@ -1,11 +1,44 @@
-import { useEffect, useRef } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { Animated, Pressable, StyleSheet } from "react-native";
 import { Text } from "@/components/ui/typography";
 
 import { useColors } from "@/hooks/use-colors";
 
-/** `actionLabel` : le bouton à la place de « Annuler » (« Oui » après la récolte d'une plante récoltée en une fois). */
-export type ToastMessage = { id: number; text: string; onUndo?: () => void; actionLabel?: string };
+/**
+ * `actionLabel` : le bouton à la place de « Annuler » (« Oui » après la récolte d'une plante récoltée en une fois).
+ * `onExpire` (avec `useUndoToast`) : ce qui se fait pour de bon quand le message part sans « Annuler » (effacer le
+ * fichier d'une photo, oublier un souvenir de Nora sur le serveur).
+ */
+export type ToastMessage = { id: number; text: string; onUndo?: () => void; actionLabel?: string; onExpire?: () => void };
+
+/**
+ * Le message du bas d'un écran, avec la suppression « pour de bon » repoussée jusqu'à son départ (chantier
+ * « Cohérence », règle 5 : supprimer = tout de suite, avec « Annuler »). Un nouveau message, la fermeture ou la sortie
+ * de l'écran valident la suppression en attente ; « Annuler » l'abandonne.
+ */
+export function useUndoToast() {
+  const [toast, setToast] = useState<ToastMessage | null>(null);
+  const counter = useRef(0);
+  const pending = useRef<(() => void) | null>(null);
+  const commit = useCallback(() => {
+    const run = pending.current;
+    pending.current = null;
+    run?.();
+  }, []);
+  const show = useCallback((message: Omit<ToastMessage, "id">) => {
+    commit();
+    counter.current += 1;
+    const undo = message.onUndo;
+    pending.current = message.onExpire ?? null;
+    setToast({ ...message, id: counter.current, onUndo: undo && (() => { pending.current = null; undo(); }) });
+  }, [commit]);
+  const hide = useCallback(() => {
+    commit();
+    setToast(null);
+  }, [commit]);
+  useEffect(() => commit, [commit]);
+  return { toast, show, hide };
+}
 
 type UndoToastProps = { message: ToastMessage | null; onDone: () => void; bottom?: number };
 

@@ -8,6 +8,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { LightScreen } from "@/components/light-screen";
 import { MemorySheet, memorySummary } from "@/components/nora/memory-sheet";
+import { UndoToast, useUndoToast } from "@/components/today/undo-toast";
 import { ScreenHeader } from "@/components/screen-header";
 import { glass } from "@/components/ui/glass";
 import { useColors } from "@/hooks/use-colors";
@@ -47,6 +48,7 @@ export default function AssistantScreen() {
   // Des questions prêtes, tirées de tes plantes et de la saison : rien à écrire.
   const questions = useMemo(() => quickQuestions(resolvedPlants), [resolvedPlants]);
   const utils = trpc.useUtils();
+  const toast = useUndoToast();
   const status = trpc.ai.status.useQuery(undefined, { enabled: account.signedIn, retry: false });
   const memory = trpc.ai.memory.useQuery(undefined, { enabled: account.signedIn, retry: false });
   const ask = trpc.ai.ask.useMutation({ onSuccess: () => void utils.ai.status.invalidate() });
@@ -186,23 +188,38 @@ export default function AssistantScreen() {
     updateMemory.mutate({ preferences });
   };
 
+  /** Oublié tout de suite à l'écran, avec « Annuler » ; le serveur n'oublie qu'au départ du message. */
   const forgetNote = (noteId?: string) => {
-    if (memory.data) setMemory({ ...memory.data, notes: noteId ? memory.data.notes.filter((note) => note.id !== noteId) : [] });
-    forget.mutate({ noteId });
+    const before = memory.data;
+    const touched = noteId ? messages.filter((message) => message.noteId === noteId) : [];
+    if (before) setMemory({ ...before, notes: noteId ? before.notes.filter((note) => note.id !== noteId) : [] });
     if (noteId) setMessages((current) => current.map((message) => (message.noteId === noteId ? { ...message, text: message.text.replace("Nora a retenu", "Oublié"), noteId: undefined } : message)));
+    toast.show({
+      text: noteId ? "Nora a oublié ce souvenir" : "Nora a tout oublié",
+      onUndo: () => {
+        if (before) setMemory(before);
+        setMessages((current) => current.map((message) => touched.find((item) => item.id === message.id) ?? message));
+      },
+      onExpire: () => forget.mutate({ noteId }),
+    });
   };
 
+  /** Effacée tout de suite, avec « Annuler ». */
   const clearConversation = () => {
+    const before = messages;
     setMessages([]);
     ask.reset();
+    toast.show({ text: "Conversation effacée", onUndo: () => setMessages(before) });
   };
+
+  const toastView = <UndoToast message={toast.toast} onDone={toast.hide} bottom={insets.bottom + 16} />;
 
   const header = (
     <>
       <ScreenHeader
         title="Nora"
         subtitle={unavailable ? "Ta coach balcon · bientôt disponible" : resolvedPlants.length > 0 ? `Ta coach, qui connaît tes ${resolvedPlants.length > 1 ? `${resolvedPlants.length} plantes` : "plante"}` : "Ta coach balcon"}
-        right={messages.length > 0 ? <Pressable accessibilityRole="button" accessibilityLabel="Effacer la conversation" hitSlop={8} onPress={clearConversation} style={({ pressed }) => [styles.clearButton, pressed && styles.pressed]}><Text style={[styles.clearText, { color: colors.muted }]}>Effacer</Text></Pressable> : undefined}
+        right={messages.length > 0 ? <Button small variant="remove" label="Effacer" accessibilityLabel="Effacer la conversation" onPress={clearConversation} /> : undefined}
         style={styles.header}
       />
       <Pressable accessibilityRole="button" onPress={() => router.push("/(tabs)/scanner")} style={({ pressed }) => [glass.card, styles.observe, pressed && styles.pressed]}>
@@ -263,9 +280,7 @@ export default function AssistantScreen() {
             <View style={[glass.soft, styles.memoryRow]}>
               <Text style={[styles.memoryText, { color: colors.muted }]}>💭 {item.text}</Text>
               {item.noteId && (
-                <Pressable accessibilityRole="button" hitSlop={8} onPress={() => forgetNote(item.noteId)}>
-                  <Text style={[styles.memoryForget, { color: colors.primary }]}>Oublier</Text>
-                </Pressable>
+                <Button small variant="remove" label="Oublier" onPress={() => forgetNote(item.noteId)} />
               )}
             </View>
           ) : item.from === "notice" ? (
@@ -323,7 +338,8 @@ export default function AssistantScreen() {
           <Button label="Se connecter pour discuter avec Nora" onPress={() => router.push("/login")} style={styles.loginBar} />
         )}
       </KeyboardAvoidingView>
-      <MemorySheet visible={memoryOpen} onClose={() => setMemoryOpen(false)} memory={memoryView} onLevel={(level) => void updateOnboarding({ experience: level })} onPreferences={changePreferences} onForget={forgetNote} />
+      <MemorySheet visible={memoryOpen} onClose={() => setMemoryOpen(false)} memory={memoryView} onLevel={(level) => void updateOnboarding({ experience: level })} onPreferences={changePreferences} onForget={forgetNote} overlay={toastView} />
+      {!memoryOpen && toastView}
     </LightScreen>
   );
 }
@@ -332,18 +348,15 @@ const styles = StyleSheet.create({
   dayLabel: { alignSelf: "center", fontSize: 12, fontWeight: "700", paddingVertical: 4 },
   flex: { flex: 1 },
   header: { marginBottom: 14 },
-  clearButton: { paddingHorizontal: 6, paddingVertical: 8 },
   observe: { flexDirection: "row", alignItems: "center", gap: 12, padding: 14, marginBottom: 12 },
   memoryRow: { flexDirection: "row", alignItems: "center", gap: 10, paddingHorizontal: 12, paddingVertical: 9, alignSelf: "flex-start", maxWidth: "92%", marginLeft: 32 },
   memoryText: { flexShrink: 1, fontSize: 13, lineHeight: 18, fontWeight: "600" },
-  memoryForget: { fontSize: 13, fontWeight: "700" },
   observeIcon: { width: 44, height: 44, borderRadius: 22, alignItems: "center", justifyContent: "center" },
   observeEmoji: { fontSize: 20 },
   observeTitle: { fontSize: 16, fontWeight: "700" },
   observeText: { fontSize: 13, lineHeight: 18, marginTop: 2 },
   observeArrow: { fontSize: 26, fontWeight: "300" },
   content: { paddingHorizontal: 20, paddingBottom: 16, gap: 12 },
-  clearText: { fontSize: 14, fontWeight: "600" },
   noticeBox: { borderRadius: 14, padding: 12, gap: 10, overflow: "hidden" },
   notice: { fontSize: 13, lineHeight: 18, fontWeight: "600" },
   retry: { alignSelf: "flex-start", borderRadius: 999, borderWidth: 1, paddingHorizontal: 14, paddingVertical: 7 },

@@ -23,13 +23,33 @@ Dans le code : `components/ui/button.tsx` (`Button`, variantes `primary`, `secon
 
 ## Les trois livraisons
 
-1. **Un seul modèle de bouton (règles 1 à 4)** : codée le 14/10, à valider. Tous les boutons principaux, secondaires,
+1. **Un seul modèle de bouton (règles 1 à 4)** : codée le 14/10, validée le 14/10 (« c'est bon »). Tous les boutons principaux, secondaires,
    liens et petites pastilles d'Aujourd'hui, Balcon, Saisons, Nora, Observer, Réglages, Moi, catalogue, fiche plante,
    pas-à-pas, accueil, diagnostic, vacances, consignes, courses, Ma semaine, temps forts et feuilles du bas passent par
    `Button`. Les boutons noirs deviennent verts (ou encadrés) ; les pastilles de filtre actives sont vertes partout
    (catalogue et Saisons étaient noires). Les suppressions restent à la livraison 2.
-2. **Suppression unifiée et fiche plante (règle 5)** : historique sans « Supprimer » répété (toucher une ligne ouvre une
+2. **Suppression unifiée et fiche plante (règle 5)** : codée le 14/10, à valider. Historique sans « Supprimer » répété (toucher une ligne ouvre une
    feuille « Supprimer ce geste », puis « Annuler »), « Renommer » et « Retirer du balcon » en lignes comme Réglages,
    photo retirée avec « Annuler », souvenir de Nora, conversation, « Tout décocher », mode vacances arrêté : même façon.
    Graphique de progression caché tant qu'il n'y a pas assez de semaines.
 3. **Cases, pastilles, « × », retours et textes (règles 6 et 7).**
+
+### Livraison 2, ce qui est fait (14/10)
+
+- `useUndoToast` (components/today/undo-toast.tsx) : le message du bas d'un écran, avec `onExpire` pour ce qui se fait
+  pour de bon au départ du message (nouveau message, fermeture, sortie de l'écran) ; « Annuler » l'abandonne.
+- `showGlobalToast` (lib/ui/global-toast.ts) + `GlobalToast` posé dans app/_layout.tsx : un message qui survit au
+  changement d'écran, au-dessus de la barre des onglets.
+- Bouton `remove` (encadré, texte rouge) pour retirer ce qu'on peut remettre.
+- Fiche plante : plus de « Supprimer » sous chaque geste ; toucher une ligne de l'historique ouvre une feuille
+  (« Arrosage », « Hier à 12:00 », la note, « Supprimer ce geste ») puis « Geste supprimé de l'historique · Annuler ».
+  Photo : « Retirer cette photo » tout de suite, « Annuler » ; le fichier n'est effacé qu'au départ du message
+  (`removePhoto(id, { keepFile })`, `restorePhoto`, `forgetPhotoFile`). Section « Ta plante » en lignes comme Réglages :
+  « Son nom » (feuille du bas avec « Enregistrer ») et « Retirer du balcon » (rouge) : retirée tout de suite, retour sur
+  Balcon avec « Basilic retiré de ton balcon · Annuler » (`restorePlant`). Les photos d'une plante retirée attendent
+  15 s avant d'être effacées (le temps de « Annuler »). Graphique des semaines seulement à partir de 2 semaines soignées.
+- Nora : « Effacer » la conversation et « Oublier » un souvenir (dans la conversation et dans « Nora se souvient de
+  toi », « Tout oublier » compris) tout de suite avec « Annuler » ; le serveur n'oublie qu'au départ du message.
+- Mode vacances : « Arrêter le mode vacances » tout de suite, « Annuler » remet les dates et les préparatifs.
+- Courses : « Tout décocher » avec « Annuler ». Réglages → Envies du printemps : « Retirer » avec « Annuler ».
+- Reste en feuille de confirmation rouge : supprimer son compte (irréversible). E2e `27-coherence`.

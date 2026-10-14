@@ -5,12 +5,13 @@
  */
 import { useRouter } from "expo-router";
 import { useEffect, useMemo, useState } from "react";
-import { Pressable, ScrollView, Share, StyleSheet, View } from "react-native";
+import { ScrollView, Share, StyleSheet, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { LightScreen } from "@/components/light-screen";
 import { FadeIn } from "@/components/motion";
 import { ScreenHeader } from "@/components/screen-header";
+import { UndoToast, useUndoToast } from "@/components/today/undo-toast";
 import { TodayRow } from "@/components/today/today-row";
 import { glass } from "@/components/ui/glass";
 import { Button } from "@/components/ui/button";
@@ -32,6 +33,7 @@ export default function ShoppingScreen() {
   const { now, climate, snoozes, plan } = useDayPlan();
   const [checks, setChecks] = useState<Record<string, string>>({});
   const [showText, setShowText] = useState(false);
+  const toast = useUndoToast();
 
   useEffect(() => {
     void loadShoppingChecks().then(setChecks);
@@ -52,10 +54,13 @@ export default function ShoppingScreen() {
     setChecks(next);
     void saveShoppingChecks(next);
   };
+  /** Tout décoché tout de suite, avec « Annuler ». */
   const uncheckAll = () => {
+    const before = checks;
     const next = Object.fromEntries(Object.entries(checks).filter(([id]) => !items.some((item) => item.id === id)));
     setChecks(next);
     void saveShoppingChecks(next);
+    toast.show({ text: "Liste décochée", onUndo: () => { setChecks(before); void saveShoppingChecks(before); } });
   };
   const share = async () => {
     try {
@@ -111,13 +116,12 @@ export default function ShoppingScreen() {
             <Button label="Partager ma liste" onPress={() => void share()} style={styles.cta} />
             {showText && <Text selectable style={[glass.card, styles.shareText, { color: colors.foreground }]}>{shoppingShareText(items, checked)}</Text>}
             {checked.size > 0 && left < items.length && (
-              <Pressable accessibilityRole="button" onPress={uncheckAll} style={({ pressed }) => [styles.link, pressed && styles.pressed]}>
-                <Text style={[styles.linkText, { color: colors.primary }]}>Tout décocher</Text>
-              </Pressable>
+              <Button variant="secondary" label="Tout décocher" onPress={uncheckAll} />
             )}
           </>
         )}
       </ScrollView>
+      <UndoToast message={toast.toast} onDone={toast.hide} bottom={insets.bottom + 16} />
     </LightScreen>
   );
 }
@@ -132,7 +136,4 @@ const styles = StyleSheet.create({
   list: { paddingHorizontal: 16 },
   cta: { marginTop: 4 },
   shareText: { padding: 16, fontSize: 14, lineHeight: 21 },
-  link: { alignSelf: "center", paddingVertical: 10 },
-  linkText: { fontSize: 15, fontWeight: "700" },
-  pressed: { opacity: 0.78 },
 });

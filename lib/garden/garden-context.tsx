@@ -105,6 +105,8 @@ type GardenContextValue = {
   /** `toPlant` : choisie mais pas encore en terre (son premier geste sera « Sème… » ou « Plante… »). */
   addPlant: (catalogId: string, options?: { toPlant?: boolean; potSize?: KnownPotSize }) => Promise<GardenPlant>;
   removePlant: (plantId: string) => Promise<void>;
+  /** « Annuler » après « Retirer du balcon » : la plante revient, avec son historique. */
+  restorePlant: (plantId: string) => Promise<void>;
   /** Ressemer ou replanter la même plante (pot libre) : une nouvelle saison, elle repasse « à planter ». */
   restartPlant: (plantId: string) => Promise<void>;
   renamePlant: (plantId: string, nickname: string) => Promise<void>;
@@ -413,6 +415,7 @@ export function GardenProvider({ children }: { children: ReactNode }) {
 
   // L'historique d'une plante retirée est conservé : il reste utile si elle revient.
   const removePlant = useCallback((plantId: string) => updatePlant(plantId, (plant) => ({ ...plant, removedAt: clockNow().toISOString() })), [updatePlant]);
+  const restorePlant = useCallback((plantId: string) => updatePlant(plantId, ({ removedAt: _removedAt, ...plant }) => plant), [updatePlant]);
   // Les gestes « une fois par saison » sont rangés sous leur date : la nouvelle saison les redemandera.
   const restartPlant = useCallback(async (plantId: string) => {
     const { remove, add } = archiveSeason(eventsRef.current, plantId);
@@ -567,8 +570,8 @@ export function GardenProvider({ children }: { children: ReactNode }) {
   }), [auth.isAuthenticated, auth.loading, auth.user?.email, auth.user?.name, founder, lastSyncedAt, plan, serverPush, syncStatus]);
 
   const value = useMemo<GardenContextValue>(
-    () => ({ loaded, plants, resolvedPlants, pastPlants, events, awards, takeUnseenAwards, markAwardsSeen, grantAward, profile, onboarding, account, addPlant, removePlant, restartPlant, renamePlant, setPlantVariety, setPlantPotSize, logEvent, removeEvent, updateProfile, reloadOnboarding, updateOnboarding, reportLocation, signIn, signOut, syncNow, claimThisDevice, refreshAccount, completeSignIn, deleteAccount }),
-    [loaded, plants, resolvedPlants, pastPlants, events, awards, takeUnseenAwards, markAwardsSeen, grantAward, profile, onboarding, account, addPlant, removePlant, restartPlant, renamePlant, setPlantVariety, setPlantPotSize, logEvent, removeEvent, updateProfile, reloadOnboarding, updateOnboarding, reportLocation, signIn, signOut, syncNow, claimThisDevice, refreshAccount, completeSignIn, deleteAccount],
+    () => ({ loaded, plants, resolvedPlants, pastPlants, events, awards, takeUnseenAwards, markAwardsSeen, grantAward, profile, onboarding, account, addPlant, removePlant, restorePlant, restartPlant, renamePlant, setPlantVariety, setPlantPotSize, logEvent, removeEvent, updateProfile, reloadOnboarding, updateOnboarding, reportLocation, signIn, signOut, syncNow, claimThisDevice, refreshAccount, completeSignIn, deleteAccount }),
+    [loaded, plants, resolvedPlants, pastPlants, events, awards, takeUnseenAwards, markAwardsSeen, grantAward, profile, onboarding, account, addPlant, removePlant, restorePlant, restartPlant, renamePlant, setPlantVariety, setPlantPotSize, logEvent, removeEvent, updateProfile, reloadOnboarding, updateOnboarding, reportLocation, signIn, signOut, syncNow, claimThisDevice, refreshAccount, completeSignIn, deleteAccount],
   );
 
   return <GardenContext.Provider value={value}>{children}</GardenContext.Provider>;

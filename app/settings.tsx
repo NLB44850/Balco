@@ -16,6 +16,7 @@ import { CityPicker } from "@/components/city-picker";
 import { ChoiceList } from "@/components/settings/choice-list";
 import { SettingRow, SettingsGroup, SheetHeading } from "@/components/settings/rows";
 import { BottomSheet } from "@/components/today/bottom-sheet";
+import { UndoToast, useUndoToast } from "@/components/today/undo-toast";
 import { LightScreen } from "@/components/light-screen";
 import { CatalogPicture, PlantPicture } from "@/components/plant-picture";
 import { ScreenHeader } from "@/components/screen-header";
@@ -67,6 +68,7 @@ const appVersion = Constants.expoConfig?.version ?? "1.0.0";
 export default function SettingsScreen() {
   const balcoPlus = useBalcoPlus();
   const insets = useSafeAreaInsets();
+  const toast = useUndoToast();
   const colors = useColors();
   const router = useRouter();
   const { resolvedPlants, events, profile, onboarding, account, updateProfile, updateOnboarding, signIn, signOut, syncNow, claimThisDevice, deleteAccount } = useGarden();
@@ -166,11 +168,16 @@ export default function SettingsScreen() {
   };
   const springWishes = springWishEntries(onboarding?.springWishes);
   /** « Retirer » : la plante quitte les envies ; la notification du 1er mars suit (plus rien s'il n'en reste pas). */
-  const removeSpringWish = async (catalogId: string) => {
-    const wishes = (onboarding?.springWishes ?? []).filter((id) => id !== catalogId);
+  const saveSpringWishes = async (wishes: string[]) => {
     await updateOnboarding({ springWishes: wishes });
     const entries = springWishEntries(wishes);
     void scheduleDatedReminder(SPRING_REMINDER_SOURCE, springReminderContent(entries), entries.length > 0 ? nextSpringReminder(new Date()) : null).catch(() => undefined);
+  };
+  /** Retirée tout de suite, avec « Annuler ». */
+  const removeSpringWish = async (catalogId: string) => {
+    const before = onboarding?.springWishes ?? [];
+    await saveSpringWishes(before.filter((id) => id !== catalogId));
+    toast.show({ text: "Retirée de tes envies du printemps", onUndo: () => void saveSpringWishes(before) });
   };
 
   const toggleReminders = async () => {
@@ -448,16 +455,14 @@ export default function SettingsScreen() {
         <ChoiceList multiple choices={GOAL_OPTIONS} selected={(id) => goalsDraft.includes(id)} onPick={(id) => setGoalsDraft((current) => (current.includes(id) ? current.filter((goal) => goal !== id) : [...current, id]))} />
         <Button label="Enregistrer" onPress={() => { void updateOnboarding({ goals: GOAL_OPTIONS.map((option) => option.id).filter((id) => goalsDraft.includes(id)) }); closeSheet(); }} style={styles.sheetButton} />
       </BottomSheet>
-      <BottomSheet visible={sheet === "spring"} onClose={closeSheet}>
+      <BottomSheet visible={sheet === "spring"} onClose={closeSheet} overlay={<UndoToast message={toast.toast} onDone={toast.hide} bottom={insets.bottom + 16} />}>
         <SheetHeading title="Tes envies du printemps" intro="Balco te les reproposera en mars." />
         {springWishes.length === 0 && <Text style={[styles.sheetNote, { color: colors.muted }]}>Quand tu laisses un pot au repos, tu peux garder la plante ici pour le printemps.</Text>}
         {springWishes.map((entry) => (
           <View key={entry.id} style={[styles.wishRow, { borderColor: colors.border }]}>
             <CatalogPicture entry={entry} style={styles.wishPicture} />
             <Text style={[styles.wishName, { color: colors.foreground }]}>{entry.name}</Text>
-            <Pressable accessibilityRole="button" accessibilityLabel={`Retirer ${entry.name}`} onPress={() => void removeSpringWish(entry.id)} hitSlop={6} style={({ pressed }) => [styles.wishRemove, { borderColor: colors.border }, pressed && styles.pressed]}>
-              <Text style={[styles.wishRemoveText, { color: colors.foreground }]}>Retirer</Text>
-            </Pressable>
+            <Button small variant="remove" label="Retirer" accessibilityLabel={`Retirer ${entry.name}`} onPress={() => void removeSpringWish(entry.id)} />
           </View>
         ))}
       </BottomSheet>
@@ -595,7 +600,5 @@ const styles = StyleSheet.create({
   wishRow: { flexDirection: "row", alignItems: "center", gap: 12, borderBottomWidth: StyleSheet.hairlineWidth, paddingVertical: 10 },
   wishPicture: { width: 40, height: 40, borderRadius: 20, alignItems: "center", justifyContent: "center" },
   wishName: { flex: 1, fontSize: 15, fontWeight: "600" },
-  wishRemove: { borderWidth: 1, borderRadius: 999, paddingHorizontal: 12, paddingVertical: 7 },
-  wishRemoveText: { fontSize: 13, fontWeight: "600" },
   pressed: { opacity: 0.78, transform: [{ scale: 0.98 }] },
 });

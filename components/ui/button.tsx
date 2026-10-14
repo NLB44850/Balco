@@ -3,6 +3,7 @@
  * - `primary` : vert plein, l'action principale de l'écran ou de la feuille (une seule) ;
  * - `secondary` : encadré, une action à côté de la principale ;
  * - `link` : texte vert suivi de « › », pour aller voir quelque chose ;
+ * - `remove` : encadré, texte rouge : retirer quelque chose qu'on peut remettre (« Annuler » dans le message du bas) ;
  * - `danger` : rouge plein, seulement pour ce qu'on ne peut pas récupérer (supprimer son compte).
  * `small` : la même chose en petite pastille, dans une carte ou une ligne. Plus de bouton noir. Texte à l'infinitif (« Ajouter une plante »).
  */
@@ -12,7 +13,7 @@ import { Pressable, StyleSheet, View, type StyleProp, type ViewStyle } from "rea
 import { Text } from "@/components/ui/typography";
 import { useColors } from "@/hooks/use-colors";
 
-export type ButtonVariant = "primary" | "secondary" | "link" | "danger";
+export type ButtonVariant = "primary" | "secondary" | "remove" | "link" | "danger";
 
 type ButtonProps = {
   label: string;
@@ -64,7 +65,7 @@ export function Button({ label, onPress, variant = "primary", icon, disabled, ac
     >
       <View style={styles.row}>
         {icon}
-        <Text style={[styles.text, small && styles.smallText, { color: filled ? "#FFFFFF" : colors.foreground }]}>{label}</Text>
+        <Text style={[styles.text, small && styles.smallText, { color: filled ? "#FFFFFF" : variant === "remove" ? colors.error : colors.foreground }]}>{label}</Text>
       </View>
     </Pressable>
   );

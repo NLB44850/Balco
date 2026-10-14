@@ -15,11 +15,18 @@ export const PLANT_PHOTOS_STORAGE_KEY = "balco.garden.photos.v1";
 /** Le stockage est plein (surtout dans le navigateur) : la photo n'a pas pu être gardée. */
 export class PhotoStorageFullError extends Error {}
 
+/** Une plante retirée garde ses photos le temps de « Annuler ». */
+const ORPHAN_GRACE_MS = 15_000;
+
 type PlantPhotosValue = {
   photos: PlantPhoto[];
   covers: Map<string, PlantPhoto>;
   addPhoto: (plantId: string, photo: PreparedPhoto, origin?: PlantPhoto["origin"]) => Promise<PlantPhoto>;
-  removePhoto: (id: string) => Promise<void>;
+  /** `keepFile` : la photo quitte la liste mais son fichier reste, pour « Annuler » (`restorePhoto`). */
+  removePhoto: (id: string, options?: { keepFile?: boolean }) => Promise<void>;
+  restorePhoto: (photo: PlantPhoto) => Promise<void>;
+  /** Efface le fichier d'une photo retirée avec `keepFile`, une fois « Annuler » passé. */
+  forgetPhotoFile: (photo: PlantPhoto) => void;
   uriOf: (photo: PlantPhoto) => string;
 };
 
@@ -59,14 +66,20 @@ export function PlantPhotosProvider({ children }: { children: ReactNode }) {
     setPhotos(next);
   }, []);
 
-  // Plante retirée ou compte effacé : ses photos partent aussi.
+  // Plante retirée ou compte effacé : ses photos partent aussi, après le temps de « Annuler » (la plante peut revenir).
+  const plantIdsRef = useRef<string[]>([]);
+  plantIdsRef.current = plants.map((plant) => plant.id);
   useEffect(() => {
     if (!loaded || !gardenLoaded) return;
-    const orphans = orphanPhotos(photosRef.current, plants.map((plant) => plant.id));
-    if (orphans.length === 0) return;
-    const ids = new Set(orphans.map((photo) => photo.id));
-    orphans.forEach((photo) => deletePhotoFile(photo.source));
-    void save(photosRef.current.filter((photo) => !ids.has(photo.id))).catch(() => undefined);
+    if (orphanPhotos(photosRef.current, plantIdsRef.current).length === 0) return;
+    const timer = setTimeout(() => {
+      const orphans = orphanPhotos(photosRef.current, plantIdsRef.current);
+      if (orphans.length === 0) return;
+      const ids = new Set(orphans.map((photo) => photo.id));
+      orphans.forEach((photo) => deletePhotoFile(photo.source));
+      void save(photosRef.current.filter((photo) => !ids.has(photo.id))).catch(() => undefined);
+    }, ORPHAN_GRACE_MS);
+    return () => clearTimeout(timer);
   }, [gardenLoaded, loaded, plants, save]);
 
   const addPhoto = useCallback(async (plantId: string, prepared: PreparedPhoto, origin: PlantPhoto["origin"] = "journal") => {
@@ -85,16 +98,25 @@ export function PlantPhotosProvider({ children }: { children: ReactNode }) {
     return photo;
   }, [save]);
 
-  const removePhoto = useCallback(async (id: string) => {
+  const removePhoto = useCallback(async (id: string, options: { keepFile?: boolean } = {}) => {
     const photo = photosRef.current.find((item) => item.id === id);
     if (!photo) return;
     await save(photosRef.current.filter((item) => item.id !== id));
-    deletePhotoFile(photo.source);
+    if (!options.keepFile) deletePhotoFile(photo.source);
   }, [save]);
+
+  const restorePhoto = useCallback(async (photo: PlantPhoto) => {
+    if (photosRef.current.some((item) => item.id === photo.id)) return;
+    await save([...photosRef.current, photo].sort((a, b) => b.takenAt.localeCompare(a.takenAt)));
+  }, [save]);
+
+  const forgetPhotoFile = useCallback((photo: PlantPhoto) => {
+    if (!photosRef.current.some((item) => item.id === photo.id)) deletePhotoFile(photo.source);
+  }, []);
 
   const uriOf = useCallback((photo: PlantPhoto) => photoFileUri(photo.source), []);
   const covers = useMemo(() => coverPhotos(photos), [photos]);
-  const value = useMemo(() => ({ photos, covers, addPhoto, removePhoto, uriOf }), [addPhoto, covers, photos, removePhoto, uriOf]);
+  const value = useMemo(() => ({ photos, covers, addPhoto, removePhoto, restorePhoto, forgetPhotoFile, uriOf }), [addPhoto, covers, forgetPhotoFile, photos, removePhoto, restorePhoto, uriOf]);
 
   return <PlantPhotosContext.Provider value={value}>{children}</PlantPhotosContext.Provider>;
 }

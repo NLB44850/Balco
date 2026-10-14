@@ -15,7 +15,11 @@ import { PlantPicture, stockPhoto } from "@/components/plant-picture";
 import { ScreenContainer } from "@/components/screen-container";
 import { useCelebration } from "@/components/today/celebration";
 import { useFreePot } from "@/components/free-pot-sheet";
-import { UndoToast, type ToastMessage } from "@/components/today/undo-toast";
+import { BottomSheet } from "@/components/today/bottom-sheet";
+import { UndoToast, useUndoToast } from "@/components/today/undo-toast";
+import { SettingRow, SettingsGroup, SheetHeading } from "@/components/settings/rows";
+import { showGlobalToast } from "@/lib/ui/global-toast";
+import type { MaintenanceEvent } from "@/lib/reminders/reminder-engine";
 import { careWeeksLabel, celebrationFor, milestoneDate, plantProgress, sinceLabel, withCheer } from "@/lib/garden/progress";
 import { endsWithSeason, harvestedToastText, isHarvestedOnce } from "@/lib/garden/harvest-end";
 import { IconSymbol } from "@/components/ui/icon-symbol";
@@ -43,6 +47,9 @@ import { potSizeOf } from "@/lib/plants/pot-size";
 import { potNeedFor } from "@/lib/plants/pot-sheet";
 
 
+/** Le graphique des semaines s'affiche à partir de 2 semaines soignées (une seule barre ne compare rien). */
+const MIN_CHART_WEEKS = 2;
+
 const clock = (iso: string) => new Date(iso).toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" });
 
 export default function PlantScreen() {
@@ -51,25 +58,19 @@ export default function PlantScreen() {
   const insets = useSafeAreaInsets();
   const { width } = useWindowDimensions();
   const { id, pot } = useLocalSearchParams<{ id: string; /** « 1 » : ouvrir « Dans quel pot ? » (carte « Vérifie tes pots »). */ pot?: string }>();
-  const { loaded, resolvedPlants, pastPlants, events, awards, markAwardsSeen, logEvent, removeEvent, removePlant, renamePlant, setPlantVariety, setPlantPotSize } = useGarden();
+  const { loaded, resolvedPlants, pastPlants, events, awards, markAwardsSeen, logEvent, removeEvent, removePlant, restorePlant, renamePlant, setPlantVariety, setPlantPotSize } = useGarden();
   const { plan, ready, snoozes, reminderSettings, climate, coach, isPlus } = useDayPlan();
-  const { photos, removePhoto } = usePlantPhotos();
+  const { photos, removePhoto, restorePhoto, forgetPhotoFile } = usePlantPhotos();
   const [shownPhotoId, setShownPhotoId] = useState<string | null>(null);
-  const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
-  const [confirmPhotoId, setConfirmPhotoId] = useState<string | null>(null);
-  const [editingName, setEditingName] = useState(false);
+  // Un geste de l'historique touché : sa feuille du bas (« Supprimer ce geste »).
+  const [openEvent, setOpenEvent] = useState<MaintenanceEvent | null>(null);
+  const [nameSheet, setNameSheet] = useState(false);
   const [nameDraft, setNameDraft] = useState("");
-  const [confirmRemove, setConfirmRemove] = useState(false);
   const [potSheet, setPotSheet] = useState(pot === "1");
-  const [toast, setToast] = useState<ToastMessage | null>(null);
-  const toastId = useRef(0);
+  const { toast, show, hide: hideToast } = useUndoToast();
   const { celebrate, overlay: celebration } = useCelebration();
   const scrollRef = useRef<ScrollView>(null);
-  const showToast = useCallback((text: string, onUndo?: () => void, actionLabel?: string) => {
-    toastId.current += 1;
-    setToast({ id: toastId.current, text, onUndo, actionLabel });
-  }, []);
-  const hideToast = useCallback(() => setToast(null), []);
+  const showToast = useCallback((text: string, onUndo?: () => void, actionLabel?: string) => show({ text, onUndo, actionLabel }), [show]);
   // Après la récolte d'une plante récoltée en une fois. Pot vidé ou donné à une autre plante : la fiche se ferme.
   const freePot = useFreePot({ climate, onDone: (text, kind) => (kind === "restart" ? showToast(text) : back()), overlay: <><UndoToast message={toast} onDone={hideToast} bottom={insets.bottom + 16} />{celebration}</> });
   const capture = usePlantPhotoCapture(showToast);
@@ -161,15 +162,30 @@ export default function PlantScreen() {
 
   const saveName = async () => {
     await renamePlant(plant.id, nameDraft);
-    setEditingName(false);
+    setNameSheet(false);
   };
 
-  const deleteShownPhoto = async () => {
+  /** Retirée tout de suite, avec « Annuler » ; son fichier n'est effacé qu'au départ du message. */
+  const removeShownPhoto = async () => {
     if (!shown) return;
-    await removePhoto(shown.id);
-    setConfirmPhotoId(null);
+    const photo = shown;
+    await removePhoto(photo.id, { keepFile: true });
     setShownPhotoId(null);
-    showToast("Photo retirée");
+    show({ text: "Photo retirée", onUndo: () => void restorePhoto(photo), onExpire: () => forgetPhotoFile(photo) });
+  };
+
+  /** Un geste de l'historique supprimé, avec « Annuler » (il revient tel quel). */
+  const deleteEvent = async (event: MaintenanceEvent) => {
+    setOpenEvent(null);
+    await removeEvent(event.id);
+    showToast("Geste supprimé de l’historique", () => void logEvent(event));
+  };
+
+  /** Retirée tout de suite ; « Annuler » sur Balcon, où l'on revient, la remet avec son historique. */
+  const removeFromBalcony = async () => {
+    await removePlant(plant.id);
+    showGlobalToast({ text: `${name} ${byForm(entry, "retiré", "retirée", "retirés", "retirées")} de ton balcon`, onUndo: () => void restorePlant(plant.id) });
+    back();
   };
 
   return (
@@ -210,14 +226,7 @@ export default function PlantScreen() {
         </View>
 
         <View style={[styles.body, { backgroundColor: colors.background }]}>
-          {editingName ? (
-            <View style={styles.editRow}>
-              <TextInput value={nameDraft} onChangeText={setNameDraft} onSubmitEditing={() => void saveName()} autoFocus placeholder={entry.name} placeholderTextColor={colors.muted} maxLength={40} returnKeyType="done" style={[styles.input, { color: colors.foreground, borderColor: colors.border }]} />
-              <Button small label="OK" onPress={() => void saveName()} style={styles.okButton} />
-            </View>
-          ) : (
-            <Text style={[styles.name, { color: colors.foreground }]}>{name}</Text>
-          )}
+          <Text style={[styles.name, { color: colors.foreground }]}>{name}</Text>
           <Text style={[styles.text, { color: colors.muted }]}>{[plant.nickname ? entry.name : null, variety?.name, CATEGORY_LABELS[entry.category]].filter(Boolean).join(" · ")}</Text>
           <View style={styles.statusRow}>
             {/* Tant que la météo n'est pas chargée, pas d'état qui changerait aussitôt. */}
@@ -296,22 +305,15 @@ export default function PlantScreen() {
                   <IconSymbol name="camera.fill" size={22} color={colors.primary} />
                 </Pressable>
                 {plantPhotos.map((photo) => (
-                  <Pressable key={photo.id} accessibilityRole="button" accessibilityLabel={photoDateLabel(photo.takenAt, now)} onPress={() => { setShownPhotoId(photo.id); setConfirmPhotoId(null); }} style={({ pressed }) => [pressed && styles.pressed]}>
+                  <Pressable key={photo.id} accessibilityRole="button" accessibilityLabel={photoDateLabel(photo.takenAt, now)} onPress={() => setShownPhotoId(photo.id)} style={({ pressed }) => [pressed && styles.pressed]}>
                     <PlantPicture resolved={resolved} photo={photo} style={[styles.thumb, photo.id === shown?.id && { borderWidth: 2.5, borderColor: colors.primary }]} />
                   </Pressable>
                 ))}
               </ScrollView>
               {shown && (
                 <View style={styles.inlineRow}>
-                  <Text style={[styles.small, styles.flex, { color: colors.muted }]}>{confirmPhotoId === shown.id ? "Retirer cette photo ?" : photoDateLabel(shown.takenAt, now)}</Text>
-                  {confirmPhotoId === shown.id ? (
-                    <>
-                      <Pressable accessibilityRole="button" onPress={() => void deleteShownPhoto()} hitSlop={8}><Text style={[styles.link, { color: colors.error }]}>Retirer</Text></Pressable>
-                      <Pressable accessibilityRole="button" onPress={() => setConfirmPhotoId(null)} hitSlop={8}><Text style={[styles.link, { color: colors.muted }]}>Garder</Text></Pressable>
-                    </>
-                  ) : (
-                    <Pressable accessibilityRole="button" onPress={() => setConfirmPhotoId(shown.id)} hitSlop={8}><Text style={[styles.link, { color: colors.muted }]}>Retirer</Text></Pressable>
-                  )}
+                  <Text style={[styles.small, styles.flex, { color: colors.muted }]}>{photoDateLabel(shown.takenAt, now)}</Text>
+                  <Button small variant="remove" label="Retirer cette photo" onPress={() => void removeShownPhoto()} />
                 </View>
               )}
             </View>
@@ -340,14 +342,17 @@ export default function PlantScreen() {
               <Text style={[styles.stage, { color: colors.primary }]}>{progress.stage.label}</Text>
               <Text style={[styles.text, { color: colors.muted }]}>{progress.stage.detail}</Text>
               <Text style={[styles.small, { color: colors.muted }]}>Sur ton balcon {sinceLabel(progress.daysOnBalcony)}{totals ? ` · ${totals}` : ""}</Text>
-              <View style={styles.bars} accessibilityLabel={careWeeksLabel(progress)}>
-                {progress.weeks.map((value, index) => (
-                  <View key={index} style={styles.barSlot}>
-                    {/* Avant son arrivée : pas de barre, ces semaines-là ne comptent pas. */}
-                    {index >= progress.weeks.length - progress.trackedWeeks && <View style={[styles.bar, { height: value > 0 ? 8 + (value / busiestWeek) * 40 : 4, backgroundColor: value > 0 ? colors.primary : colors.leaf }]} />}
-                  </View>
-                ))}
-              </View>
+              {/* Le graphique des semaines seulement quand il y a de quoi comparer (une seule barre ne dit rien). */}
+              {progress.activeWeeks >= MIN_CHART_WEEKS && (
+                <View style={styles.bars} accessibilityLabel={careWeeksLabel(progress)}>
+                  {progress.weeks.map((value, index) => (
+                    <View key={index} style={styles.barSlot}>
+                      {/* Avant son arrivée : pas de barre, ces semaines-là ne comptent pas. */}
+                      {index >= progress.weeks.length - progress.trackedWeeks && <View style={[styles.bar, { height: value > 0 ? 8 + (value / busiestWeek) * 40 : 4, backgroundColor: value > 0 ? colors.primary : colors.leaf }]} />}
+                    </View>
+                  ))}
+                </View>
+              )}
               <Text style={[styles.small, { color: colors.muted }]}>{careWeeksLabel(progress)}</Text>
               {progress.milestones.slice(0, 4).map((milestone) => (
                 <View key={milestone.key} style={styles.milestone}>
@@ -381,49 +386,50 @@ export default function PlantScreen() {
                   const type = EVENT_TYPE_LABELS[event.type];
                   const scanner = isScannerEvent(event);
                   const note = scanner ? event.note?.replace(/^Scanner : /, "") : event.note;
-                  const confirming = confirmDeleteId === event.id;
                   return (
-                    <View key={event.id} style={[styles.event, { borderBottomColor: colors.border }]}>
+                    <Pressable key={event.id} accessibilityRole="button" accessibilityLabel={`${scanner ? "Diagnostic de Nora" : type.label} à ${clock(event.completedAt)}, détail`} onPress={() => setOpenEvent(event)} style={({ pressed }) => [styles.event, { borderBottomColor: colors.border }, pressed && styles.pressed]}>
                       <View style={[styles.eventIcon, { backgroundColor: colors.surface }]}><Text style={styles.eventIconText}>{scanner ? "📷" : type.icon}</Text></View>
                       <View style={styles.flex}>
                         <Text style={[styles.eventTitle, { color: colors.foreground }]}>
                           {scanner ? "Diagnostic de Nora" : type.label}
                           <Text style={[styles.small, { color: colors.muted }]}>  {clock(event.completedAt)}</Text>
                         </Text>
-                        {!!note && note !== type.label && <Text style={[styles.small, { color: colors.muted }]}>{note}</Text>}
-                        <View style={styles.inlineRow}>
-                          <Pressable accessibilityRole="button" onPress={() => (confirming ? void removeEvent(event.id).then(() => setConfirmDeleteId(null)) : setConfirmDeleteId(event.id))} hitSlop={6}>
-                            <Text style={[styles.smallLink, { color: confirming ? colors.error : colors.muted }]}>{confirming ? "Confirmer la suppression" : "Supprimer"}</Text>
-                          </Pressable>
-                          {confirming && <Pressable onPress={() => setConfirmDeleteId(null)} hitSlop={6}><Text style={[styles.smallLink, { color: colors.muted }]}>Annuler</Text></Pressable>}
-                        </View>
+                        {!!note && note !== type.label && <Text style={[styles.small, { color: colors.muted }]} numberOfLines={2}>{note}</Text>}
                       </View>
-                    </View>
+                      <Text style={[styles.eventChevron, { color: colors.muted }]}>›</Text>
+                    </Pressable>
                   );
                 })}
               </View>
             ))}
           </View>
 
-          {/* Renommer ou retirer la plante, en bas de la fiche. */}
-          <View style={[styles.footer, { borderTopColor: colors.border }]}>
-            {confirmRemove ? (
-              <>
-                <Text style={[styles.text, styles.flex, { color: colors.foreground }]}>Retirer {name} de ton balcon ?</Text>
-                <Pressable accessibilityRole="button" onPress={() => void removePlant(plant.id).then(back)} style={({ pressed }) => [styles.pill, { backgroundColor: colors.error }, pressed && styles.pressed]}><Text style={[styles.pillText, { color: "#FFFFFF" }]}>Retirer</Text></Pressable>
-                <Pressable accessibilityRole="button" onPress={() => setConfirmRemove(false)} style={({ pressed }) => [styles.pill, pressed && styles.pressed]}><Text style={[styles.pillText, { color: colors.muted }]}>Annuler</Text></Pressable>
-              </>
-            ) : (
-              <>
-                <Pressable accessibilityRole="button" onPress={() => { setNameDraft(plant.nickname ?? ""); setEditingName(true); }} style={({ pressed }) => [styles.pill, { backgroundColor: colors.leaf }, pressed && styles.pressed]}><Text style={[styles.pillText, { color: colors.primary }]}>Renommer</Text></Pressable>
-                <Pressable accessibilityRole="button" onPress={() => setConfirmRemove(true)} style={({ pressed }) => [styles.pill, { backgroundColor: colors.surface }, pressed && styles.pressed]}><Text style={[styles.pillText, { color: colors.error }]}>Retirer du balcon</Text></Pressable>
-              </>
-            )}
+          {/* Son nom et la retirer du balcon : des lignes comme dans Réglages. */}
+          <View style={styles.section}>
+            <SettingsGroup title="Ta plante">
+              <SettingRow key="name" label="Son nom" value={plant.nickname?.trim() || "Pas de surnom"} onPress={() => { setNameDraft(plant.nickname ?? ""); setNameSheet(true); }} />
+              <SettingRow key="remove" label="Retirer du balcon" subtitle="Tu pourras annuler juste après. Son historique est gardé." danger onPress={() => void removeFromBalcony()} />
+            </SettingsGroup>
           </View>
         </View>
       </ScrollView>
       {capture.sheet}
       {freePot.sheet}
+      <BottomSheet visible={nameSheet} onClose={() => setNameSheet(false)}>
+        <SheetHeading title="Son nom" intro={`Un surnom pour ${byForm(entry, "le", "la", "les", "les")} reconnaître (« ${entry.name} du salon »). Vide : ${entry.name}.`} />
+        <TextInput value={nameDraft} onChangeText={setNameDraft} onSubmitEditing={() => void saveName()} accessibilityLabel="Son nom" placeholder={entry.name} placeholderTextColor={colors.muted} maxLength={40} returnKeyType="done" autoFocus style={[styles.sheetInput, { borderColor: colors.border, color: colors.foreground }]} />
+        <Button label="Enregistrer" onPress={() => void saveName()} style={styles.sheetButton} />
+      </BottomSheet>
+      <BottomSheet visible={openEvent !== null} onClose={() => setOpenEvent(null)}>
+        {openEvent && (
+          <View style={styles.sheet}>
+            <Text style={[styles.kicker, { color: colors.primary }]}>{isScannerEvent(openEvent) ? "📷  Diagnostic de Nora" : `${EVENT_TYPE_LABELS[openEvent.type].icon}  ${EVENT_TYPE_LABELS[openEvent.type].label}`}</Text>
+            <Text style={[styles.nextTitle, { color: colors.foreground }]}>{days.find((day) => day.events.some((event) => event.id === openEvent.id))?.label ?? "Ce jour-là"} à {clock(openEvent.completedAt)}</Text>
+            {!!openEvent.note && <Text style={[styles.text, { color: colors.muted }]}>{isScannerEvent(openEvent) ? openEvent.note.replace(/^Scanner : /, "") : openEvent.note}</Text>}
+            <Button variant="remove" label="Supprimer ce geste" onPress={() => void deleteEvent(openEvent)} />
+          </View>
+        )}
+      </BottomSheet>
       <PotSizeSheet entry={entry} visible={potSheet} onClose={() => setPotSheet(false)} value={potSizeOf(plant)} onPick={(size) => { setPotSheet(false); void setPlantPotSize(plant.id, size); }} />
       {!freePot.isOpen && <UndoToast message={toast} onDone={hideToast} bottom={insets.bottom + 16} />}
       {!freePot.isOpen && celebration}
@@ -465,8 +471,6 @@ const styles = StyleSheet.create({
   check: { width: 30, height: 30, borderRadius: 15, alignItems: "center", justifyContent: "center" },
   checkMark: { color: "#FFFFFF", fontSize: 15, fontWeight: "800" },
   flex: { flex: 1 },
-  link: { fontSize: 14, fontWeight: "700" },
-  smallLink: { fontSize: 12, fontWeight: "700" },
   section: { marginTop: 18, gap: 10 },
   progress: { borderWidth: 1, borderRadius: 20, padding: 16, gap: 6 },
   stage: { fontSize: 17, fontWeight: "800" },
@@ -491,10 +495,9 @@ const styles = StyleSheet.create({
   eventIcon: { width: 36, height: 36, borderRadius: 10, alignItems: "center", justifyContent: "center" },
   eventIconText: { fontSize: 17 },
   eventTitle: { fontSize: 15, fontWeight: "700" },
-  editRow: { flexDirection: "row", alignItems: "center", gap: 8 },
-  input: { flex: 1, fontSize: 20, fontWeight: "700", borderWidth: 1, borderRadius: 12, paddingHorizontal: 12, paddingVertical: 8 },
-  pill: { borderRadius: 999, paddingHorizontal: 14, paddingVertical: 9 },
-  pillText: { fontSize: 13, fontWeight: "700" },
-  footer: { marginTop: 24, paddingTop: 16, borderTopWidth: StyleSheet.hairlineWidth, flexDirection: "row", alignItems: "center", flexWrap: "wrap", gap: 10 },
+  eventChevron: { fontSize: 20, alignSelf: "center" },
+  sheet: { gap: 12 },
+  sheetInput: { fontSize: 17, borderWidth: 1, borderRadius: 14, paddingHorizontal: 14, paddingVertical: 12, marginTop: 14 },
+  sheetButton: { marginTop: 14 },
   pressed: { opacity: 0.75, transform: [{ scale: 0.98 }] },
 });
