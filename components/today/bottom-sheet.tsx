@@ -1,5 +1,5 @@
-import { useEffect, useMemo, useRef } from "react";
-import { Animated, KeyboardAvoidingView, Modal, PanResponder, Pressable, ScrollView, StyleSheet, useWindowDimensions, View } from "react-native";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { Animated, Keyboard, KeyboardAvoidingView, Modal, PanResponder, Pressable, ScrollView, StyleSheet, useWindowDimensions, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { CloseButton } from "@/components/ui/nav-buttons";
@@ -30,6 +30,28 @@ export function BottomSheet({ visible, onClose, children, overlay }: BottomSheet
   const scrollTop = useRef(0);
   const closeRef = useRef(onClose);
   closeRef.current = onClose;
+  // Clavier ouvert derrière (recherche du catalogue, question à Nora) : on le ferme et on attend qu'il soit parti avant
+  // de monter la feuille. Sinon, sur Android, la feuille se cale sur un clavier qui disparaît aussitôt : elle passe sous
+  // la barre d'état et laisse un trou en bas (vu le 14/10). Un champ `autoFocus` de la feuille rouvre ensuite le sien.
+  const [shown, setShown] = useState(visible && !Keyboard.isVisible());
+  useEffect(() => {
+    if (!visible) {
+      setShown(false);
+      return;
+    }
+    if (!Keyboard.isVisible()) {
+      setShown(true);
+      return;
+    }
+    Keyboard.dismiss();
+    const show = () => setShown(true);
+    const hidden = Keyboard.addListener("keyboardDidHide", show);
+    const fallback = setTimeout(show, 400);
+    return () => {
+      hidden.remove();
+      clearTimeout(fallback);
+    };
+  }, [visible]);
 
   useEffect(() => {
     if (visible) {
@@ -57,7 +79,7 @@ export function BottomSheet({ visible, onClose, children, overlay }: BottomSheet
   );
 
   return (
-    <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose} statusBarTranslucent>
+    <Modal visible={visible && shown} transparent animationType="slide" onRequestClose={onClose} statusBarTranslucent>
       <KeyboardAvoidingView behavior="padding" style={styles.root}>
         <Pressable accessibilityRole="button" accessibilityLabel="Fermer" onPress={onClose} style={styles.backdrop} />
         <Animated.View

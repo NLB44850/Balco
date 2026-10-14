@@ -3,7 +3,7 @@
 Retours du porteur sur les 16 captures du 14/10 (`docs/captures/`). Une étape = un commit testé, validée sur son
 téléphone avant la suivante. Pour chaque étape, on cherche aussi le même défaut ailleurs dans l'app.
 
-## Étape 1 : consignes pour le voisin (faite le 14/10, à valider)
+## Étape 1 : consignes pour le voisin (validée le 14/10)
 
 - Le rythme de chaque plante suit les passages du voisin (avant : « passage tous les 3 jours », mais « tomates : 4 L
   tous les 4 jours »). Maintenant : « Tomates cerises : environ 4 L à chaque passage, si la terre est sèche », ou
@@ -56,3 +56,10 @@ téléphone avant la suivante. Pour chaque étape, on cherche aussi le même dé
 - Revérifier sur deux sources sérieuses (notées dans `docs/sources-*.md`). Si ce n'est pas confirmé : « Vérifie que ton
   pot a un trou au fond », retirer les billes de la liste de courses, revoir « Pour alléger ». Montrer les textes au
   porteur avant de les changer.
+
+## Bug vu pendant le test de l'étape 1 (14/10)
+
+- Catalogue ouvert depuis Balcon, clavier ouvert (recherche « Men ») : toucher la plante ouvrait la fiche sous la barre
+  d'état (le « × » caché) avec la barre « Voir mon balcon » par-dessus. Corrigé dans la feuille du bas commune
+  (`components/today/bottom-sheet.tsx`) : le clavier est fermé et la feuille attend qu'il soit parti avant de monter.
+  Vaut pour toutes les feuilles (catalogue, Nora, Réglages…).
