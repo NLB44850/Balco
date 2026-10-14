@@ -354,7 +354,15 @@ export default function HomeScreen() {
     // Une plante récoltée en une fois : « Radis récoltés : noté · Tout récolté ? » avec « Oui » à la place de « Annuler ».
     const { resolved } = item.task;
     if (item.task.task.type === "harvest" && isHarvestedOnce(resolved.entry)) {
-      return showToast(withCheer(cheer(logged), harvestedToastText(resolved.entry)), () => void freePot.answerYes(resolved.plant.id), "Oui");
+      // Cochée depuis la feuille des récoltes : elle se replie avant que celle du pot libre monte (sinon les deux
+      // s'empilaient, vu le 14/10).
+      const answerYes = () => {
+        if (!openGroup && !sheetKey) return void freePot.answerYes(resolved.plant.id);
+        setOpenGroup(null);
+        setSheetKey(null);
+        setTimeout(() => void freePot.answerYes(resolved.plant.id), 320);
+      };
+      return showToast(withCheer(cheer(logged), harvestedToastText(resolved.entry)), answerYes, "Oui");
     }
     showToast(withCheer(cheer(logged), `${item.title} : noté · +${POINTS_PER_GESTURE * logged.length} points`), undo);
   };

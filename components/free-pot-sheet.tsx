@@ -5,6 +5,7 @@
  * qui tiennent dans ce pot, d'une autre famille), ou le laisser vide.
  * Partagée par Aujourd'hui et la fiche plante.
  */
+import { useRouter } from "expo-router";
 import { useEffect, useState } from "react";
 import { Pressable, StyleSheet, View } from "react-native";
 
@@ -47,6 +48,7 @@ type Stage = "question" | "free";
  */
 export function useFreePot({ climate, onDone, overlay }: { climate?: ClimateInfo | null; onDone: (text: string, kind: FreePotChoice["kind"]) => void; overlay?: React.ReactNode }) {
   const colors = useColors();
+  const router = useRouter();
   const { resolvedPlants, onboarding, addPlant, removePlant, restartPlant, updateOnboarding } = useGarden();
   // « Me le reproposer au printemps », cochée d'office à chaque ouverture de la feuille.
   const [remember, setRemember] = useState(true);
@@ -143,6 +145,17 @@ export function useFreePot({ climate, onDone, overlay }: { climate?: ClimateInfo
             </View>
           )}
           {ideas.map(choiceButton)}
+          {ideas.length === 0 && (
+            // Rien de saison qui tienne dans ce pot : on ouvre le catalogue du mois plutôt que de ne rien proposer.
+            <Button
+              variant="link"
+              label={`Voir les plantes de ${MONTH_LONG[month - 1]}`}
+              onPress={() => {
+                close();
+                router.push(`/garden/add?month=${month}`);
+              }}
+            />
+          )}
           {choices.filter((choice) => choice.kind === "empty").map(choiceButton)}
         </View>
       )}

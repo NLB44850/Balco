@@ -26,6 +26,11 @@ téléphone avant la suivante. Pour chaque étape, on cherche aussi le même dé
 - Fait : `restartDetail` (`lib/garden/harvest-end.ts`) ; une plante seule de sa famille (micro-pousses…) garde « Dans le
   même pot, avec son pas-à-pas. ». Vaut aussi pour la fin de saison (même feuille). Ailleurs, rien d'autre ne propose
   de ressemer dans le même pot.
+- Vu en testant (14/10, balcon à l'ombre, radis en petit pot, ciboulette déjà là) : aucune idée « à la place ». Corrigé
+  (`replantIdeas`) : ce mois-ci, puis le mois suivant, puis une plante déjà sur le balcon (« Déjà sur ton balcon · … »)
+  plutôt que rien ; s'il ne reste vraiment rien, lien « Voir les plantes de mai › » vers le catalogue du mois.
+- Vu aussi : radis cochés dans la feuille des récoltes, puis « Oui » : la feuille du pot libre s'empilait sur celle des
+  récoltes (Android). La feuille des récoltes se replie d'abord (`app/(tabs)/index.tsx`).
 
 ## Étape 3 : le sens de « À surveiller »
 

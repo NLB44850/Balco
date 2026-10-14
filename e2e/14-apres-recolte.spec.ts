@@ -1,6 +1,6 @@
 import { expect, test } from "@playwright/test";
 
-import { checkboxOf, mockWeather, open, seedBalcony, trackErrors } from "./helpers";
+import { checkboxOf, mockWeather, open, openHarvests, seedBalcony, trackErrors } from "./helpers";
 
 /** Après la récolte d'une plante récoltée en une fois : « Tout récolté ? », puis « Ton pot est libre ». */
 
@@ -92,5 +92,36 @@ test("pot libre : « Que planter à la place ? » propose une autre famille, et 
   const added = plants.filter((plant) => plant.catalogId !== "radish" && !plant.removedAt);
   expect(added).toHaveLength(1);
   expect(added[0]).toMatchObject({ potSize: "small", toPlant: true });
+  expect(errors).toEqual([]);
+});
+
+test("radis cochés dans la feuille des récoltes, à l'ombre : « Oui » ouvre une seule feuille, avec des idées", async ({ page }) => {
+  const errors = trackErrors(page);
+  await page.clock.install({ time: new Date(2027, 4, 12, 10) });
+  await page.clock.resume();
+  await mockWeather(page);
+  const chives = { id: "chives-e2e", catalogId: "chives", addedAt: new Date(2027, 2, 1).toISOString() };
+  const shade = { firstName: "Camille", experience: "beginner", sunlight: "shade", space: "terrace", goals: [], completedAt: new Date(2027, 2, 1).toISOString() };
+  await seedBalcony(page, {
+    plants: [],
+    extra: {
+      "balco.garden.plants.v1": JSON.stringify([radish, chives]),
+      "balco.garden.events.v1": JSON.stringify([sown, watered(new Date(2027, 4, 12, 8)), { ...watered(new Date(2027, 4, 12, 8)), id: "w-chives", plantId: "chives-e2e" }]),
+      "balco.onboarding.preferences.v1": JSON.stringify(shade),
+    },
+  });
+
+  await open(page, "/", /Récolte ce qui est prêt sur 2 plantes/u);
+  await openHarvests(page);
+  await checkboxOf(page, "Marquer comme fait : Récolte les radis").click();
+  await page.getByRole("button", { name: "Oui" }).click();
+  // La feuille des récoltes se replie : une seule feuille, celle du pot libre (sur Android, les deux s’empilaient ;
+  // le web n’en montre jamais qu’une).
+  await expect(page.getByRole("dialog").getByText("Ton pot est libre")).toBeVisible();
+  await expect(page.getByRole("dialog")).toHaveCount(1);
+  await expect(page.getByRole("dialog").getByText("Dans un autre pot, ou avec une terre neuve.")).toBeVisible();
+  // Petit pot à l'ombre, ciboulette déjà là : elle est proposée plutôt que rien.
+  await expect(page.getByRole("dialog").getByText("Que planter à la place ?")).toBeVisible();
+  await expect(page.getByRole("dialog").getByText(/^Déjà sur ton balcon · /u).first()).toBeVisible();
   expect(errors).toEqual([]);
 });

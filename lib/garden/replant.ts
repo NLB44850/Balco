@@ -59,20 +59,26 @@ const startsInPot = (suggestion: SeasonalSuggestion) => !(suggestion.indoors && 
 export function replantIdeas(resolved: ResolvedPlant, answers: OnboardingAnswers | null, { month, climate, ownedCatalogIds = [], seed, limit = 3 }: ReplantOptions): ReplantIdea[] {
   const { entry } = resolved;
   const potSize = potSizeOf(resolved.plant);
-  const owned = [...ownedCatalogIds, entry.id];
-  const pick = (forMonth: number) =>
-    seasonalSuggestions(answers, { month: forMonth, climate, ownedCatalogIds: owned, limit: 60, seed })
+  const pick = (forMonth: number, excluded: string[]) =>
+    seasonalSuggestions(answers, { month: forMonth, climate, ownedCatalogIds: excluded, limit: 60, seed })
       .filter((suggestion) => startsInPot(suggestion) && !sameFamily(suggestion.entry.id, entry.id) && fitsFreedPot(suggestion.entry, entry, potSize))
       // Une saison de plus d'abord (une vivace prend le pot pour des années), puis, après une gourmande, les sobres
       // (tri stable : l'ordre du jour est gardé à l'intérieur).
       .sort((a, b) => Number(a.entry.perennial) - Number(b.entry.perennial) || (isHungry(entry) ? Number(isSober(b.entry)) - Number(isSober(a.entry)) : 0));
-  const ideas: ReplantIdea[] = pick(month).map((suggestion) => ({ entry: suggestion.entry, month, reason: suggestion.reason }));
-  if (ideas.length < limit) {
-    const next = (month % 12) + 1;
-    for (const suggestion of pick(next)) {
+  const ideas: ReplantIdea[] = [];
+  const add = (forMonth: number, excluded: string[], prefix: string | null) => {
+    for (const suggestion of pick(forMonth, excluded)) {
+      if (ideas.length >= limit) return;
       if (ideas.some((idea) => idea.entry.id === suggestion.entry.id)) continue;
-      ideas.push({ entry: suggestion.entry, month: next, reason: `En ${MONTH_LONG[next - 1]} · ${suggestion.reason.charAt(0).toLowerCase()}${suggestion.reason.slice(1)}` });
+      const reason = prefix ? `${prefix} · ${suggestion.reason.charAt(0).toLowerCase()}${suggestion.reason.slice(1)}` : suggestion.reason;
+      ideas.push({ entry: suggestion.entry, month: forMonth, reason });
     }
-  }
+  };
+  const next = (month % 12) + 1;
+  // Ce mois-ci, puis le mois suivant ; puis (balcon à l'ombre, petit pot…) une plante déjà sur le balcon, plutôt que
+  // rien (retour du 14/10 : aucune idée après des radis, à l'ombre, avec la ciboulette déjà là).
+  add(month, [...ownedCatalogIds, entry.id], null);
+  add(next, [...ownedCatalogIds, entry.id], `En ${MONTH_LONG[next - 1]}`);
+  add(month, [entry.id], "Déjà sur ton balcon");
   return ideas.slice(0, limit);
 }
