@@ -201,7 +201,7 @@ et les 10 étapes du test utilisateur du 04/10 (détail dans « Historique des l
      reproposer au printemps » cochée d'office quand on ne peut plus ressemer (`addSpringWish`, envies du printemps,
      notification du 1er mars). E2e `15-fin-de-saison`.
    - Corrigé au passage : « de haricots » (h aspiré, `elides` dans grammar.ts) au lieu de « d'haricots ».
-6. **Mémoire de Nora sur plusieurs jours** : il doit encore faire le test sur 2-3 jours (retour à recueillir).
+6. **Mémoire de Nora sur plusieurs jours** : validée sur son téléphone le 14/10 (« la mémoire de Nora est ok »).
 7. **Tester sans Codespace : fait le 09/10** (Railway + APK par GitHub + EAS Update, `docs/deploiement-railway.md`).
 8. **À la publication** (pas encore décidée) : notifications serveur Android (FCM), reports « Dans 3 h »
    synchronisés avec le serveur, photos des plantes sur le serveur, paiement Balco+ (RevenueCat ; les textes
@@ -457,8 +457,7 @@ et route réservée à `role = admin`. Balco+ sera payant (offre commerciale Ope
   (« on laisse comme ça », 06/10) ; IDE sur mobile = ouvrir le Codespace dans Chrome (« Open in browser »).
 
 Points à ne pas oublier (à proposer au porteur au bon moment, noté le 30/09) :
-- Encore à valider sur son téléphone : la mémoire de Nora sur plusieurs jours (« Sa progression » et les
-  petites victoires sont validées).
+- Mémoire de Nora sur plusieurs jours validée le 14/10 (« Sa progression » et les petites victoires aussi).
 - **Branche fusionnée dans `main`** : PR #1 (02/10, jusqu'à l'étape 6 de l'audit), #14 (04/10, étapes 7
   à 11), #15 (04/10, mises à jour Dependabot), #22 (04/10, Saisons rangé par type, progression, Nora datée), #27 (06/10, les 10 étapes du test utilisateur), #28 (06/10, accueil refait et pas-à-pas pour planter), #29 (07/10, rempotage, 11 pas-à-pas, Nora, Saisons) #30 (08/10, accords, après-récolte, laitue pommée) et #31 (08/10, fin de saison des annuelles). Le travail continue
   sur `claude/eloquent-gates-g7xc6x` ; proposer une nouvelle PR vers `main` à la fin de chaque bloc validé. (La session clone le dépôt en partiel : `git fetch --unshallow` avant
