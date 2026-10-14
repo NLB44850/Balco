@@ -15,6 +15,7 @@ import { ScreenHeader } from "@/components/screen-header";
 import { UndoToast, type ToastMessage } from "@/components/today/undo-toast";
 import { glass } from "@/components/ui/glass";
 import { IconSymbol } from "@/components/ui/icon-symbol";
+import { Button } from "@/components/ui/button";
 import { Text } from "@/components/ui/typography";
 import { useColors } from "@/hooks/use-colors";
 import { useDayPlan } from "@/hooks/use-day-plan";
@@ -110,17 +111,9 @@ export default function BalconyScreen() {
           </View>
         )}
 
-        <Pressable accessibilityRole="button" onPress={() => router.push("/garden/add")} style={({ pressed }) => [styles.cta, { backgroundColor: colors.foreground }, pressed && styles.pressed]}>
-          <Text style={[styles.ctaText, { color: colors.background }]}>Ajouter une plante</Text>
-        </Pressable>
-        {resolvedPlants.length > 0 && (
-          <Pressable accessibilityRole="button" onPress={() => router.push("/shopping")} style={({ pressed }) => [styles.secondary, { borderColor: colors.border }, pressed && styles.pressed]}>
-            <Text style={[styles.secondaryText, { color: colors.foreground }]}>🛒  Ma liste de courses</Text>
-          </Pressable>
-        )}
-        <Pressable accessibilityRole="button" onPress={() => router.push("/(tabs)/scanner")} style={({ pressed }) => [styles.secondary, { borderColor: colors.border }, pressed && styles.pressed]}>
-          <Text style={[styles.secondaryText, { color: colors.foreground }]}>📷  Observer une plante avec Nora</Text>
-        </Pressable>
+        <Button label="Ajouter une plante" onPress={() => router.push("/garden/add")} />
+        {resolvedPlants.length > 0 && <Button variant="secondary" label="🛒  Ma liste de courses" onPress={() => router.push("/shopping")} />}
+        <Button variant="secondary" label="📷  Observer une plante avec Nora" onPress={() => router.push("/(tabs)/scanner")} />
       </ScrollView>
       {capture.sheet}
       <UndoToast message={toast} onDone={hideToast} />
@@ -144,9 +137,5 @@ const styles = StyleSheet.create({
   addPhotoText: { fontSize: 13, fontWeight: "700" },
   name: { fontSize: 16, fontWeight: "700" },
   line: { fontSize: 13, lineHeight: 18 },
-  cta: { borderRadius: 16, paddingVertical: 15, alignItems: "center" },
-  ctaText: { fontSize: 15, fontWeight: "700" },
-  secondary: { borderRadius: 16, paddingVertical: 14, alignItems: "center", borderWidth: 1, backgroundColor: "rgba(255,255,255,0.6)" },
-  secondaryText: { fontSize: 14, fontWeight: "600" },
   pressed: { opacity: 0.8, transform: [{ scale: 0.98 }] },
 });

@@ -2,6 +2,7 @@ import { useIsFocused } from "@react-navigation/native";
 import { useRouter } from "expo-router";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Alert, Animated, Platform, Pressable, ScrollView, StyleSheet, View } from "react-native";
+import { Button } from "@/components/ui/button";
 import { Text } from "@/components/ui/typography";
 import * as Haptics from "expo-haptics";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -498,9 +499,7 @@ export default function HomeScreen() {
             <Text style={[styles.simulationTitle, { color: colors.foreground }]}>🧪 Date simulée : {longDayText(dateSimulation.day)}</Text>
             <Text style={[styles.small, { color: colors.muted }]}>Calendrier, badges et événements suivent ce jour ; la météo reste celle d’aujourd’hui.</Text>
             <View style={styles.inlineActions}>
-              <Pressable accessibilityRole="button" onPress={() => void dateSimulation.setDay(null)} style={({ pressed }) => [styles.pill, { borderColor: colors.border, borderWidth: 1 }, pressed && styles.pressed]}>
-                <Text style={[styles.pillText, { color: colors.foreground }]}>Revenir à aujourd’hui</Text>
-              </Pressable>
+              <Button small variant="secondary" label="Revenir à aujourd’hui" onPress={() => void dateSimulation.setDay(null)} />
             </View>
           </View>
         )}
@@ -511,13 +510,9 @@ export default function HomeScreen() {
             <Text style={[styles.small, { color: colors.muted }]}>{weather.isFallback ? "La météo réelle n’a pas encore chargé : la simulation s’appliquera dès qu’elle sera là." : reminderDecisions.length === 0 ? "Aucune alerte pour ce scénario : vérifie tes plantes et leurs derniers arrosages." : visibleGroups.length === 0 ? "Alerte simulée déjà traitée aujourd’hui." : "Les alertes ci-dessous sont simulées."}</Text>
             <View style={styles.inlineActions}>
               {notificationsUnavailableReason === null && visibleGroups.length > 0 && (
-                <Pressable accessibilityRole="button" onPress={() => void sendReminderPreview(visibleGroups[0]).then((result) => setPreviewStatus(result === "sent" ? "sent" : "denied"))} style={({ pressed }) => [styles.pill, { backgroundColor: colors.foreground }, pressed && styles.pressed]}>
-                  <Text style={[styles.pillText, { color: colors.background }]}>Me notifier dans 5 s</Text>
-                </Pressable>
+                <Button small label="Me notifier dans 5 s" onPress={() => void sendReminderPreview(visibleGroups[0]).then((result) => setPreviewStatus(result === "sent" ? "sent" : "denied"))} />
               )}
-              <Pressable accessibilityRole="button" onPress={() => void simulation.setScenario("none")} style={({ pressed }) => [styles.pill, { borderColor: colors.border, borderWidth: 1 }, pressed && styles.pressed]}>
-                <Text style={[styles.pillText, { color: colors.foreground }]}>Arrêter la simulation</Text>
-              </Pressable>
+              <Button small variant="secondary" label="Arrêter la simulation" onPress={() => void simulation.setScenario("none")} />
             </View>
             {previewStatus === "sent" && <Text style={[styles.small, { color: colors.muted }]}>Envoyée : verrouille ton téléphone pour la voir arriver.</Text>}
             {previewStatus === "denied" && <Text style={[styles.small, { color: colors.error }]}>Les notifications sont bloquées : autorise-les pour Balco dans les réglages du téléphone.</Text>}
@@ -544,9 +539,7 @@ export default function HomeScreen() {
               <Text style={[styles.cityBannerTitle, { color: colors.foreground }]}>Météo de Paris par défaut</Text>
               <Text style={[styles.small, { color: colors.muted }]}>Choisis ta ville pour être prévenu du gel, de la pluie et de la chaleur chez toi.</Text>
             </View>
-            <Pressable accessibilityRole="button" onPress={() => setCityPickerOpen(true)} style={({ pressed }) => [styles.pill, { backgroundColor: colors.primary }, pressed && styles.pressed]}>
-              <Text style={[styles.pillText, { color: "#FFFFFF" }]}>Choisir ma ville</Text>
-            </Pressable>
+            <Button small label="Choisir ma ville" onPress={() => setCityPickerOpen(true)} />
           </View>
         )}
 
@@ -608,9 +601,7 @@ export default function HomeScreen() {
                 ? `${status.doneToday} geste${status.doneToday > 1 ? "s" : ""} aujourd’hui${streak > 1 ? ` · ${streak} jours de suite` : ""}. Balco te préviendra si la météo change.`
                 : RESTING_TEXT}
             </Text>
-            <Pressable accessibilityRole="button" onPress={() => router.push("/week")} style={({ pressed }) => [styles.pill, styles.weekButton, { backgroundColor: colors.primary }, pressed && styles.pressed]}>
-              <Text style={[styles.pillText, { color: "#FFFFFF" }]}>Voir ma semaine</Text>
-            </Pressable>
+            <Button small label="Voir ma semaine" onPress={() => router.push("/week")} style={styles.weekButton} />
           </FadeIn>
         )}
 
@@ -634,9 +625,7 @@ export default function HomeScreen() {
         {loaded && hasPlants && !away && !reminderSettings.enabled && notificationsUnavailableReason === null && (
           <View style={styles.remindersRow}>
             <Text style={[styles.small, styles.flex, { color: colors.muted }]}>Sois prévenu au bon moment, sans ouvrir l’app.</Text>
-            <Pressable accessibilityRole="button" onPress={() => void turnOnReminders()} style={({ pressed }) => [styles.pill, { backgroundColor: colors.leaf }, pressed && styles.pressed]}>
-              <Text style={[styles.pillText, { color: colors.primary }]}>Activer les rappels</Text>
-            </Pressable>
+            <Button small label="Activer les rappels" onPress={() => void turnOnReminders()} />
           </View>
         )}
 
@@ -652,9 +641,7 @@ export default function HomeScreen() {
               <View key={entry.id} style={[styles.reco, { borderBottomColor: colors.border }]}>
                 <CatalogPicture entry={entry} style={[styles.plantBubble, styles.recoBubble]} />
                 <Text style={[styles.recoName, styles.flex, { color: colors.foreground }]}>{entry.name}</Text>
-                <Pressable accessibilityRole="button" accessibilityLabel={`Ajouter ${entry.name}`} onPress={() => void addRecommendation(entry.id, entry.name)} style={({ pressed }) => [styles.pill, { backgroundColor: colors.primary }, pressed && styles.pressed]}>
-                  <Text style={[styles.pillText, { color: "#FFFFFF" }]}>Ajouter</Text>
-                </Pressable>
+                <Button small label="Ajouter" accessibilityLabel={`Ajouter ${entry.name}`} onPress={() => void addRecommendation(entry.id, entry.name)} />
               </View>
             ))}
             <Pressable accessibilityRole="button" onPress={() => void updateOnboarding({ springWishes: [] })} hitSlop={6}>
@@ -689,7 +676,7 @@ export default function HomeScreen() {
           <View style={styles.shelf}>
             <View style={styles.shelfHead}>
               <Text style={[styles.sectionTitle, { color: colors.foreground }]}>Tes plantes</Text>
-              <Pressable accessibilityRole="button" onPress={() => router.push("/(tabs)/balcony")} hitSlop={8}><Text style={[styles.link, { color: colors.primary }]}>Tout voir</Text></Pressable>
+              <Button variant="link" label="Tout voir" onPress={() => router.push("/(tabs)/balcony")} />
             </View>
             <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.shelfRow}>
               {resolvedPlants.map((resolved) => {
@@ -725,14 +712,10 @@ export default function HomeScreen() {
                   <Text style={[styles.recoName, { color: colors.foreground }]}>{entry.name}</Text>
                   <Text style={[styles.small, { color: colors.muted }]} numberOfLines={2}>{entry.pitch}</Text>
                 </View>
-                <Pressable accessibilityRole="button" accessibilityLabel={`Ajouter ${entry.name}`} onPress={() => void addRecommendation(entry.id, entry.name)} style={({ pressed }) => [styles.pill, { backgroundColor: colors.primary }, pressed && styles.pressed]}>
-                  <Text style={[styles.pillText, { color: "#FFFFFF" }]}>Ajouter</Text>
-                </Pressable>
+                <Button small label="Ajouter" accessibilityLabel={`Ajouter ${entry.name}`} onPress={() => void addRecommendation(entry.id, entry.name)} />
               </View>
             ))}
-            <Pressable accessibilityRole="button" onPress={() => router.push("/garden/add")} style={({ pressed }) => [styles.cta, { backgroundColor: colors.foreground }, pressed && styles.pressed]}>
-              <Text style={[styles.ctaText, { color: colors.background }]}>Voir les {PLANT_CATALOG.length} plantes</Text>
-            </Pressable>
+            <Button label={`Voir les ${PLANT_CATALOG.length} plantes`} onPress={() => router.push("/garden/add")} />
           </FadeIn>
         )}
         </View>
@@ -800,12 +783,8 @@ export default function HomeScreen() {
             <Text style={[styles.sheetTitle, { color: colors.foreground }]}>{anticipationOpen.title}</Text>
             <Text style={[styles.sheetBody, { color: colors.foreground }]}>{anticipationOpen.prepare}</Text>
             <Text style={[styles.sheetBody, { color: colors.muted }]}>{anticipationOpen.detail}</Text>
-            <Pressable accessibilityRole="button" onPress={() => openNeeds(anticipationOpen)} style={({ pressed }) => [styles.cta, { backgroundColor: colors.foreground }, pressed && styles.pressed]}>
-              <Text style={[styles.ctaText, { color: colors.background }]}>Ce qu’il te faut ›</Text>
-            </Pressable>
-            <Pressable accessibilityRole="button" onPress={() => { setAnticipationOpen(null); router.push("/shopping"); }} style={({ pressed }) => [styles.secondaryButton, { borderColor: colors.border }, pressed && styles.pressed]}>
-              <Text style={[styles.secondaryText, { color: colors.foreground }]}>🛒  Ma liste de courses</Text>
-            </Pressable>
+            <Button label="Ce qu’il te faut ›" onPress={() => openNeeds(anticipationOpen)} />
+            <Button variant="secondary" label="🛒  Ma liste de courses" onPress={() => { setAnticipationOpen(null); router.push("/shopping"); }} />
           </View>
         )}
       </BottomSheet>
@@ -867,35 +846,27 @@ function SheetContent({ item, events, resolved, now, onToggle, onSnooze, onOpenP
           {!watering && <Text style={[styles.why, { backgroundColor: colors.surface, color: colors.muted }]}>Pourquoi : {item.group.reason}</Text>}
         </>
       )}
-      <Pressable accessibilityRole="button" onPress={onToggle} style={({ pressed }) => [styles.cta, { backgroundColor: item.done ? colors.surface : colors.foreground }, pressed && styles.pressed]}>
-        <Text style={[styles.ctaText, { color: item.done ? colors.foreground : colors.background }]}>{item.done ? "Annuler ce geste" : info ? "Compris" : "C’est fait"}</Text>
-      </Pressable>
+      <Button variant={item.done ? "secondary" : "primary"} label={item.done ? "Annuler ce geste" : info ? "Compris" : "C’est fait"} onPress={onToggle} />
       {item.kind === "alert" && !info && (
         <View style={styles.secondary}>
-          <Pressable accessibilityRole="button" onPress={() => onSnooze("later")} style={({ pressed }) => [styles.secondaryButton, { borderColor: colors.border }, pressed && styles.pressed]}><Text style={[styles.secondaryText, { color: colors.foreground }]}>Dans 3 h</Text></Pressable>
-          <Pressable accessibilityRole="button" onPress={() => onSnooze("skip")} style={({ pressed }) => [styles.secondaryButton, { borderColor: colors.border }, pressed && styles.pressed]}><Text style={[styles.secondaryText, { color: colors.foreground }]}>Pas aujourd’hui</Text></Pressable>
+          <Button variant="secondary" label="Dans 3 h" onPress={() => onSnooze("later")} style={styles.flex} />
+          <Button variant="secondary" label="Pas aujourd’hui" onPress={() => onSnooze("skip")} style={styles.flex} />
         </View>
       )}
       {item.kind === "task" && (
-        <Pressable accessibilityRole="button" onPress={() => onOpenPlant(item.task.resolved.plant.id)} style={styles.sheetLink}><Text style={[styles.link, { color: colors.primary }]}>Voir la fiche de {plantDisplayName(item.task.resolved)}</Text></Pressable>
+        <Button variant="link" center label={`Voir la fiche de ${plantDisplayName(item.task.resolved)}`} onPress={() => onOpenPlant(item.task.resolved.plant.id)} />
       )}
       {item.kind === "season" && (item.activity.start || item.activity.kind === "repot" || item.activity.followUp) && !item.done && (
-        <Pressable accessibilityRole="button" onPress={onGuide} style={({ pressed }) => [styles.secondaryButton, { borderColor: colors.primary }, pressed && styles.pressed]}>
-          <Text style={[styles.secondaryText, { color: colors.primary }]}>Pas à pas, avec ce qu’il te faut</Text>
-        </Pressable>
+        <Button variant="secondary" label="Pas à pas, avec ce qu’il te faut" onPress={onGuide} />
       )}
       {item.kind === "season" && item.activity.start && !item.done && (
-        <Pressable accessibilityRole="button" onPress={onPostpone} style={({ pressed }) => [styles.secondaryButton, { borderColor: colors.border }, pressed && styles.pressed]}>
-          <Text style={[styles.secondaryText, { color: colors.foreground }]}>Pas encore acheté ? Rappelle-moi samedi</Text>
-        </Pressable>
+        <Button variant="secondary" label="Pas encore acheté ? Rappelle-moi samedi" onPress={onPostpone} />
       )}
       {item.kind === "season" && item.activity.kind === "repot" && !item.activity.topdress && !item.done && (
-        <Pressable accessibilityRole="button" onPress={onSkipRepot} style={({ pressed }) => [styles.secondaryButton, { borderColor: colors.border }, pressed && styles.pressed]}>
-          <Text style={[styles.secondaryText, { color: colors.foreground }]}>Pas besoin cette année</Text>
-        </Pressable>
+        <Button variant="secondary" label="Pas besoin cette année" onPress={onSkipRepot} />
       )}
       {item.kind === "season" && (
-        <Pressable accessibilityRole="button" onPress={onOpenCalendar} style={styles.sheetLink}><Text style={[styles.link, { color: colors.primary }]}>Voir le calendrier</Text></Pressable>
+        <Button variant="link" center label="Voir le calendrier" onPress={onOpenCalendar} />
       )}
     </View>
   );
@@ -913,8 +884,6 @@ const styles = StyleSheet.create({
   simulationTitle: { fontSize: 14, fontWeight: "700" },
   small: { fontSize: 13, lineHeight: 18 },
   inlineActions: { flexDirection: "row", flexWrap: "wrap", gap: 8, marginTop: 2 },
-  pill: { borderRadius: 999, paddingHorizontal: 14, paddingVertical: 8 },
-  pillText: { fontSize: 13, fontWeight: "700" },
   status: { borderRadius: 16, padding: 14, gap: 10 },
   statusText: { fontSize: 15, fontWeight: "700" },
   track: { height: 6, borderRadius: 3, overflow: "hidden" },
@@ -922,7 +891,7 @@ const styles = StyleSheet.create({
   allDone: { alignItems: "center", gap: 6, paddingVertical: 10 },
   allDoneIcon: { fontSize: 40 },
   allDoneTitle: { fontSize: 20, fontWeight: "800", textAlign: "center", letterSpacing: -0.3 },
-  weekButton: { marginTop: 8, paddingHorizontal: 18, paddingVertical: 11 },
+  weekButton: { marginTop: 8, alignSelf: "center" },
   allDoneText: { fontSize: 14, lineHeight: 20, textAlign: "center" },
   arrival: { padding: 14, gap: 4 },
   cityBanner: { flexDirection: "row", alignItems: "center", gap: 12, padding: 14 },
@@ -932,7 +901,6 @@ const styles = StyleSheet.create({
   shelf: { gap: 12 },
   shelfHead: { flexDirection: "row", justifyContent: "space-between", alignItems: "center" },
   sectionTitle: { fontSize: 18, fontWeight: "700" },
-  link: { fontSize: 14, fontWeight: "600" },
   shelfRow: { gap: 14, paddingRight: 8 },
   plant: { width: 64, alignItems: "center", gap: 6 },
   plantBubble: { width: 58, height: 58, borderRadius: 29, alignItems: "center", justifyContent: "center" },
@@ -949,8 +917,6 @@ const styles = StyleSheet.create({
   ideaMain: { flex: 1, flexDirection: "row", alignItems: "center", gap: 12 },
   ideaAdd: { width: 38, height: 38, borderRadius: 19, alignItems: "center", justifyContent: "center" },
   ideaAddText: { color: "#FFFFFF", fontSize: 22, fontWeight: "700", marginTop: -2 },
-  cta: { borderRadius: 14, paddingVertical: 15, alignItems: "center" },
-  ctaText: { fontSize: 16, fontWeight: "700" },
   sheet: { gap: 12 },
   sheetKind: { fontSize: 13, fontWeight: "700" },
   sheetTitle: { fontSize: 22, fontWeight: "800", letterSpacing: -0.4, lineHeight: 27 },
@@ -960,8 +926,5 @@ const styles = StyleSheet.create({
   chipText: { fontSize: 13, fontWeight: "600" },
   why: { fontSize: 13, lineHeight: 18, borderRadius: 12, padding: 12, overflow: "hidden" },
   secondary: { flexDirection: "row", gap: 10 },
-  secondaryButton: { flex: 1, borderWidth: 1, borderRadius: 14, paddingVertical: 12, alignItems: "center" },
-  secondaryText: { fontSize: 14, fontWeight: "600" },
-  sheetLink: { alignItems: "center", paddingVertical: 4 },
   pressed: { opacity: 0.7 },
 });

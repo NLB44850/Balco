@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef } from "react";
 import { Animated, Easing, Platform, Pressable, StyleSheet, useWindowDimensions, View } from "react-native";
 import * as Haptics from "expo-haptics";
 
+import { Button } from "@/components/ui/button";
 import { Text } from "@/components/ui/typography";
 import { useColors } from "@/hooks/use-colors";
 import type { SeasonalEvent } from "@/lib/events/events";
@@ -109,12 +110,8 @@ export function EventIntro({ event, text, onOpen, onClose }: { event: SeasonalEv
           <Text style={[styles.title, { color: colors.foreground }]}>{event.title}</Text>
           {event.quote ? <Text style={[styles.quote, { color: colors.foreground }]}>{keepQuotes(event.quote)}</Text> : null}
           <Text style={[styles.text, { color: colors.muted }]}>{text}</Text>
-          <Pressable accessibilityRole="button" onPress={() => close(onOpen)} style={({ pressed }) => [styles.primary, { backgroundColor: colors.primary }, pressed && styles.pressed]}>
-            <Text style={styles.primaryText}>{event.intro.action}</Text>
-          </Pressable>
-          <Pressable accessibilityRole="button" hitSlop={8} onPress={() => close(onClose)} style={({ pressed }) => [styles.later, pressed && styles.pressed]}>
-            <Text style={[styles.laterText, { color: colors.muted }]}>Plus tard</Text>
-          </Pressable>
+          <Button label={event.intro.action} onPress={() => close(onOpen)} style={styles.primary} />
+          <Button variant="secondary" label="Plus tard" onPress={() => close(onClose)} style={styles.later} />
         </Animated.View>
       </View>
     </Animated.View>
@@ -132,9 +129,6 @@ const styles = StyleSheet.create({
   title: { fontSize: 26, fontWeight: "800", textAlign: "center", lineHeight: 32 },
   quote: { fontSize: 15, fontStyle: "italic", textAlign: "center", lineHeight: 21 },
   text: { fontSize: 15, textAlign: "center", lineHeight: 21 },
-  primary: { alignSelf: "stretch", marginTop: 12, borderRadius: 16, paddingVertical: 15, alignItems: "center" },
-  primaryText: { color: "#FFFFFF", fontSize: 16, fontWeight: "700" },
-  later: { paddingVertical: 10, paddingHorizontal: 16 },
-  laterText: { fontSize: 15, fontWeight: "600" },
-  pressed: { opacity: 0.8 },
+  primary: { alignSelf: "stretch", marginTop: 12 },
+  later: { alignSelf: "stretch", marginTop: 8 },
 });

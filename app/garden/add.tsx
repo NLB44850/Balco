@@ -18,6 +18,7 @@ import { BottomSheet } from "@/components/today/bottom-sheet";
 import { UndoToast, type ToastMessage } from "@/components/today/undo-toast";
 import { potNeedFor, potNeedText, potSizePhrase, recommendedPotSize } from "@/lib/plants/pot-sheet";
 import { glass } from "@/components/ui/glass";
+import { Button } from "@/components/ui/button";
 import { Text, TextInput } from "@/components/ui/typography";
 import { useColors } from "@/hooks/use-colors";
 import { useGarden } from "@/lib/garden/garden-context";
@@ -175,7 +176,7 @@ export default function AddPlantScreen() {
           {[undefined, ...categories].map((value) => {
             const active = category === value;
             return (
-              <Pressable key={value ?? "all"} accessibilityRole="button" accessibilityState={{ selected: active }} onPress={() => setCategory(value)} style={({ pressed }) => [styles.chip, active ? { backgroundColor: colors.foreground } : glass.soft, pressed && styles.pressed]}>
+              <Pressable key={value ?? "all"} accessibilityRole="button" accessibilityState={{ selected: active }} onPress={() => setCategory(value)} style={({ pressed }) => [styles.chip, active ? { backgroundColor: colors.primary } : glass.soft, pressed && styles.pressed]}>
                 <Text style={[styles.chipText, { color: active ? "#FFFFFF" : colors.foreground }]}>{value ? CATEGORY_LABELS[value] : "Toutes"}</Text>
               </Pressable>
             );
@@ -200,9 +201,7 @@ export default function AddPlantScreen() {
       {/* Une barre sous la liste (pas par-dessus) : le bouton reste en bas et ne cache aucune plante. */}
       {plants.length > 0 && (
         <View style={[styles.footer, { paddingBottom: insets.bottom + 12, borderTopColor: colors.border }]}>
-          <Pressable accessibilityRole="button" onPress={() => router.dismissTo("/(tabs)/balcony")} style={({ pressed }) => [styles.doneButton, { backgroundColor: colors.foreground }, pressed && styles.pressed]}>
-            <Text style={[styles.doneText, { color: colors.background }]}>Voir mon balcon · {plants.length} plante{plants.length > 1 ? "s" : ""}</Text>
-          </Pressable>
+          <Button label={`Voir mon balcon · ${plants.length} plante${plants.length > 1 ? "s" : ""}`} onPress={() => router.dismissTo("/(tabs)/balcony")} />
         </View>
       )}
 
@@ -311,15 +310,12 @@ const styles = StyleSheet.create({
   row: { flexDirection: "row", alignItems: "center", gap: 10, paddingVertical: 10 },
   rowMain: { flex: 1, flexDirection: "row", alignItems: "center", gap: 12 },
   bubble: { width: 46, height: 46, borderRadius: 23, alignItems: "center", justifyContent: "center" },
-  emoji: { fontSize: 23 },
   name: { fontSize: 16, fontWeight: "700" },
   meta: { fontSize: 13, marginTop: 1 },
   add: { width: 38, height: 38, borderRadius: 19, alignItems: "center", justifyContent: "center" },
   addText: { fontSize: 22, fontWeight: "700", marginTop: -2 },
   needLink: { paddingVertical: 4 },
   footer: { paddingHorizontal: 20, paddingTop: 12, backgroundColor: "rgba(255,255,255,0.92)", borderTopWidth: StyleSheet.hairlineWidth },
-  doneButton: { borderRadius: 16, paddingVertical: 15, alignItems: "center" },
-  doneText: { fontSize: 15, fontWeight: "700" },
   sheet: { gap: 12 },
   sheetTop: { flexDirection: "row", alignItems: "center", gap: 12 },
   sheetPhoto: { height: 190, borderRadius: 18 },

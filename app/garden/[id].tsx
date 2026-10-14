@@ -19,6 +19,7 @@ import { UndoToast, type ToastMessage } from "@/components/today/undo-toast";
 import { careWeeksLabel, celebrationFor, milestoneDate, plantProgress, sinceLabel, withCheer } from "@/lib/garden/progress";
 import { endsWithSeason, harvestedToastText, isHarvestedOnce } from "@/lib/garden/harvest-end";
 import { IconSymbol } from "@/components/ui/icon-symbol";
+import { Button } from "@/components/ui/button";
 import { Text, TextInput } from "@/components/ui/typography";
 import { useColors } from "@/hooks/use-colors";
 import { useGarden } from "@/lib/garden/garden-context";
@@ -212,7 +213,7 @@ export default function PlantScreen() {
           {editingName ? (
             <View style={styles.editRow}>
               <TextInput value={nameDraft} onChangeText={setNameDraft} onSubmitEditing={() => void saveName()} autoFocus placeholder={entry.name} placeholderTextColor={colors.muted} maxLength={40} returnKeyType="done" style={[styles.input, { color: colors.foreground, borderColor: colors.border }]} />
-              <Pressable accessibilityRole="button" onPress={() => void saveName()} style={({ pressed }) => [styles.pill, { backgroundColor: colors.primary }, pressed && styles.pressed]}><Text style={[styles.pillText, { color: "#FFFFFF" }]}>OK</Text></Pressable>
+              <Button small label="OK" onPress={() => void saveName()} style={styles.okButton} />
             </View>
           ) : (
             <Text style={[styles.name, { color: colors.foreground }]}>{name}</Text>
@@ -246,9 +247,7 @@ export default function PlantScreen() {
                 <Text style={[styles.kicker, { color: colors.primary }]}>Aujourd’hui · {gesture.minutes} min</Text>
                 <Text style={[styles.nextTitle, { color: colors.foreground }]}>{gesture.title}</Text>
                 <Text style={[styles.text, { color: colors.muted }]}>{gesture.instruction}</Text>
-                <Pressable accessibilityRole="button" onPress={() => void doGesture()} style={({ pressed }) => [styles.cta, { backgroundColor: colors.primary }, pressed && styles.pressed]}>
-                  <Text style={styles.ctaText}>{gesture.source.type === "harvest-end" ? (gesture.source.stage === "question" ? (endsWithSeason(entry) ? "Oui, la saison est finie" : "Oui, tout est récolté") : "Choisir quoi y mettre") : "C’est fait"}</Text>
-                </Pressable>
+                <Button label={gesture.source.type === "harvest-end" ? (gesture.source.stage === "question" ? (endsWithSeason(entry) ? "Oui, la saison est finie" : "Oui, tout est récolté") : "Choisir quoi y mettre") : "C’est fait"} onPress={() => void doGesture()} style={styles.cta} />
               </>
             )}
             {gesture?.done && (
@@ -258,29 +257,21 @@ export default function PlantScreen() {
                   <Text style={[styles.nextTitle, { color: colors.foreground }]}>{gesture.title}</Text>
                   <Text style={[styles.text, { color: colors.muted }]}>{gestureEvent ? `Fait à ${clock(gestureEvent.completedAt)}` : "Fait aujourd’hui"}</Text>
                 </View>
-                <Pressable accessibilityRole="button" onPress={() => void undoGesture()} hitSlop={8}><Text style={[styles.link, { color: colors.muted }]}>Annuler</Text></Pressable>
+                <Button small variant="secondary" label="Annuler" onPress={() => void undoGesture()} style={styles.okButton} />
               </View>
             )}
             {/* Le pas-à-pas : pour la planter, ou pour revoir comment elle l'a été. */}
-            <Pressable accessibilityRole="button" onPress={() => router.push({ pathname: "/guide/[catalogId]", params: { catalogId: entry.id, plantId: plant.id } })} style={({ pressed }) => [styles.guideLink, pressed && styles.pressed]}>
-              <Text style={[styles.link, { color: colors.primary }]}>{plant.toPlant ? "Pas à pas, avec ce qu’il te faut ›" : "Revoir le pas-à-pas ›"}</Text>
-            </Pressable>
+            <Button variant="link" label={plant.toPlant ? "Pas à pas, avec ce qu’il te faut" : "Revoir le pas-à-pas"} onPress={() => router.push({ pathname: "/guide/[catalogId]", params: { catalogId: entry.id, plantId: plant.id } })} />
             {/* Éclaircir, pincer ou sortir les plants aujourd'hui : son pas-à-pas. */}
             {followUpTask && (
-              <Pressable accessibilityRole="button" onPress={() => router.push({ pathname: "/guide/[catalogId]", params: { catalogId: entry.id, plantId: plant.id, task: followUpTask } })} style={({ pressed }) => [styles.guideLink, pressed && styles.pressed]}>
-                <Text style={[styles.link, { color: colors.primary }]}>{guideLinkText(entry, followUpTask)}</Text>
-              </Pressable>
+              <Button variant="link" noChevron label={guideLinkText(entry, followUpTask)} onPress={() => router.push({ pathname: "/guide/[catalogId]", params: { catalogId: entry.id, plantId: plant.id, task: followUpTask } })} />
             )}
             {/* Une vivace installée : le pas-à-pas du pot (celui du geste du jour s'il y en a un). */}
             {!plant.toPlant && REPOTTING[entry.id] && (
-              <Pressable accessibilityRole="button" onPress={() => router.push({ pathname: "/guide/[catalogId]", params: { catalogId: entry.id, plantId: plant.id, task: potTask } })} style={({ pressed }) => [styles.guideLink, pressed && styles.pressed]}>
-                <Text style={[styles.link, { color: colors.primary }]}>{guideLinkText(entry, potTask)}</Text>
-              </Pressable>
+              <Button variant="link" noChevron label={guideLinkText(entry, potTask)} onPress={() => router.push({ pathname: "/guide/[catalogId]", params: { catalogId: entry.id, plantId: plant.id, task: potTask } })} />
             )}
             {canMarkBloom(resolved, events, now) && (
-              <Pressable accessibilityRole="button" onPress={() => void markBloom()} style={({ pressed }) => [styles.guideLink, pressed && styles.pressed]}>
-                <Text style={[styles.link, { color: colors.primary }]}>{byForm(entry, "Il a fleuri ?", "Elle a fleuri ?", "Ils ont fleuri ?", "Elles ont fleuri ?")} Note-le dans ton herbier ›</Text>
-              </Pressable>
+              <Button variant="link" label={`${byForm(entry, "Il a fleuri ?", "Elle a fleuri ?", "Ils ont fleuri ?", "Elles ont fleuri ?")} Note-le dans ton herbier`} onPress={() => void markBloom()} />
             )}
             {!gesture && (
               <>
@@ -468,14 +459,13 @@ const styles = StyleSheet.create({
   next: { marginTop: 10, borderWidth: 1, borderRadius: 20, padding: 16, gap: 8 },
   kicker: { fontSize: 13, fontWeight: "700" },
   nextTitle: { fontSize: 19, fontWeight: "800", letterSpacing: -0.3, lineHeight: 24 },
-  cta: { marginTop: 6, borderRadius: 14, paddingVertical: 15, alignItems: "center" },
-  ctaText: { color: "#FFFFFF", fontSize: 16, fontWeight: "700" },
+  cta: { marginTop: 6 },
+  okButton: { alignSelf: "center" },
   doneRow: { flexDirection: "row", alignItems: "center", gap: 12 },
   check: { width: 30, height: 30, borderRadius: 15, alignItems: "center", justifyContent: "center" },
   checkMark: { color: "#FFFFFF", fontSize: 15, fontWeight: "800" },
   flex: { flex: 1 },
   link: { fontSize: 14, fontWeight: "700" },
-  guideLink: { paddingVertical: 6 },
   smallLink: { fontSize: 12, fontWeight: "700" },
   section: { marginTop: 18, gap: 10 },
   progress: { borderWidth: 1, borderRadius: 20, padding: 16, gap: 6 },

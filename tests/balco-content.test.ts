@@ -53,7 +53,7 @@ describe("Balco MVP content", () => {
 
     expect(home).toContain("useGarden");
     expect(home).toContain("seasonalStarters");
-    expect(home).toContain("Voir les {PLANT_CATALOG.length} plantes");
+    expect(home).toContain("Voir les ${PLANT_CATALOG.length} plantes");
     expect(home).toContain("useDayPlan");
     expect(home).toContain("buildTodayList");
     expect(home).toContain("balconyStatus");

@@ -2,6 +2,7 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { FlatList, KeyboardAvoidingView, Platform, Pressable, StyleSheet, View } from "react-native";
+import { Button } from "@/components/ui/button";
 import { Text, TextInput } from "@/components/ui/typography";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
@@ -287,9 +288,7 @@ export default function AssistantScreen() {
                   <View style={styles.nameBox}>
                     <View style={styles.nameRow}>
                       <TextInput value={nameDraft} onChangeText={setNameDraft} onSubmitEditing={() => void saveName()} placeholder="Ton prénom" placeholderTextColor={colors.muted} maxLength={30} returnKeyType="done" accessibilityLabel="Ton prénom" style={[styles.nameInput, { color: colors.foreground, borderColor: colors.border }]} />
-                      <Pressable accessibilityRole="button" accessibilityLabel="Enregistrer mon prénom" onPress={() => void saveName()} style={({ pressed }) => [styles.nameButton, { backgroundColor: colors.primary }, pressed && styles.pressed]}>
-                        <Text style={styles.nameButtonText}>OK</Text>
-                      </Pressable>
+                      <Button small label="OK" accessibilityLabel="Enregistrer mon prénom" onPress={() => void saveName()} style={styles.nameButton} />
                     </View>
                     <Pressable accessibilityRole="button" onPress={declineName} hitSlop={6}>
                       <Text style={[styles.nameLater, { color: colors.muted }]}>Plus tard</Text>
@@ -321,9 +320,7 @@ export default function AssistantScreen() {
             </View>
           </>
         ) : (
-          <Pressable onPress={() => router.push("/login")} style={({ pressed }) => [styles.loginBar, { backgroundColor: colors.foreground }, pressed && styles.pressed]}>
-            <Text style={styles.loginBarText}>Se connecter pour discuter avec Nora</Text>
-          </Pressable>
+          <Button label="Se connecter pour discuter avec Nora" onPress={() => router.push("/login")} style={styles.loginBar} />
         )}
       </KeyboardAvoidingView>
       <MemorySheet visible={memoryOpen} onClose={() => setMemoryOpen(false)} memory={memoryView} onLevel={(level) => void updateOnboarding({ experience: level })} onPreferences={changePreferences} onForget={forgetNote} />
@@ -352,8 +349,7 @@ const styles = StyleSheet.create({
   retry: { alignSelf: "flex-start", borderRadius: 999, borderWidth: 1, paddingHorizontal: 14, paddingVertical: 7 },
   retryText: { fontSize: 13, fontWeight: "700" },
   quota: { fontSize: 12, fontWeight: "600", textAlign: "center", marginBottom: 6, marginHorizontal: 20 },
-  loginBar: { borderRadius: 16, paddingVertical: 16, alignItems: "center", marginBottom: 12, marginHorizontal: 20 },
-  loginBarText: { color: "#FFFFFF", fontSize: 15, fontWeight: "700" },
+  loginBar: { marginBottom: 12, marginHorizontal: 20 },
   quickLabel: { fontSize: 13, fontWeight: "600", marginBottom: 2, marginTop: 6 },
   quickList: { gap: 8, paddingBottom: 8 },
   quickChip: { paddingHorizontal: 13, paddingVertical: 10, maxWidth: 230 },
@@ -365,8 +361,7 @@ const styles = StyleSheet.create({
   nameBox: { gap: 8, marginTop: 10 },
   nameRow: { flexDirection: "row", alignItems: "center", gap: 8 },
   nameInput: { flex: 1, borderWidth: 1, borderRadius: 12, paddingHorizontal: 12, paddingVertical: 9, fontSize: 15, backgroundColor: "#FFFFFF" },
-  nameButton: { borderRadius: 12, paddingHorizontal: 14, paddingVertical: 10 },
-  nameButtonText: { color: "#FFFFFF", fontSize: 14, fontWeight: "700" },
+  nameButton: { alignSelf: "center" },
   nameLater: { fontSize: 13, fontWeight: "600" },
   bubble: { padding: 13, maxWidth: "82%", borderBottomLeftRadius: 5 },
   userBubble: { borderBottomLeftRadius: 18, borderBottomRightRadius: 5 },

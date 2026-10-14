@@ -130,6 +130,9 @@ marque citée, jamais de produit chimique, tout en centimètres (jamais de litre
   (« Ton pot est libre »), trois idées de saison qui tiennent dans ce pot, jamais de la même famille que la plante
   d'avant (mêmes maladies dans la terre), les plantes sobres d'abord après une gourmande, avec le geste pour la terre ;
   la nouvelle plante garde la taille du pot. Ensuite 8b, le traitement naturel dans les réponses d'Observer.
+- **Chantier « Cohérence » (14/10, avant la 8b)** : les mêmes boutons partout (vert plein = action principale, encadré =
+  secondaire, lien vert « › », plus de bouton noir), une seule façon de supprimer (avec « Annuler »), cases et « × »
+  identiques, boutons à l'infinitif. Livraison 1 (les boutons) à valider ; 2 suppression et fiche plante ; 3 le reste.
 - Puis : 9 calculateur de poids, 10 écran Balco+.
 
 ## Ce qu'il reste à faire, dans l'ordre

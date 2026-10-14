@@ -13,6 +13,7 @@ import { LightScreen } from "@/components/light-screen";
 import { PlantPicture } from "@/components/plant-picture";
 import { ScreenHeader } from "@/components/screen-header";
 import { glass } from "@/components/ui/glass";
+import { Button } from "@/components/ui/button";
 import { Text } from "@/components/ui/typography";
 import { useColors } from "@/hooks/use-colors";
 import { useVacation } from "@/hooks/use-vacation";
@@ -138,13 +139,9 @@ export default function VacationScreen() {
         })}
       </View>
 
-      <Pressable accessibilityRole="button" onPress={() => void save()} style={({ pressed }) => [styles.primary, { backgroundColor: colors.primary }, pressed && styles.pressed]}>
-        <Text style={styles.primaryText}>{active ? "Enregistrer" : "Préparer mon départ"}</Text>
-      </Pressable>
+      <Button label={active ? "Enregistrer" : "Préparer mon départ"} onPress={() => void save()} />
       {active && (
-        <Pressable accessibilityRole="button" onPress={() => setEditing(false)} style={({ pressed }) => [styles.secondary, pressed && styles.pressed]}>
-          <Text style={[styles.secondaryText, { color: colors.muted }]}>Annuler</Text>
-        </Pressable>
+        <Button variant="secondary" label="Annuler" onPress={() => setEditing(false)} />
       )}
     </>
   );
@@ -173,9 +170,7 @@ export default function VacationScreen() {
         {state.phase === "back" && (
           <>
             {RETURN_STEPS.map((step) => <Text key={step} style={[styles.text, { color: colors.foreground }]}>•  {step}</Text>)}
-            <Pressable accessibilityRole="button" onPress={() => void setVacation(null)} style={({ pressed }) => [styles.primary, { backgroundColor: colors.primary }, pressed && styles.pressed]}>
-              <Text style={styles.primaryText}>C’est fait</Text>
-            </Pressable>
+            <Button label="C’est fait" onPress={() => void setVacation(null)} />
           </>
         )}
       </View>
@@ -216,9 +211,7 @@ export default function VacationScreen() {
               </View>
             ))}
           </View>
-          <Pressable accessibilityRole="button" onPress={() => router.push("/helper-note")} style={({ pressed }) => [styles.primary, { backgroundColor: colors.primary }, pressed && styles.pressed]}>
-            <Text style={styles.primaryText}>Prépare les consignes pour qui arrose</Text>
-          </Pressable>
+          <Button label="Prépare les consignes pour qui arrose" onPress={() => router.push("/helper-note")} />
         </View>
       )}
 
@@ -238,9 +231,7 @@ export default function VacationScreen() {
 
       {state.phase !== "back" && (
         <>
-          <Pressable accessibilityRole="button" onPress={edit} style={({ pressed }) => [styles.outline, { borderColor: colors.border }, pressed && styles.pressed]}>
-            <Text style={[styles.secondaryText, { color: colors.foreground }]}>Modifier les dates</Text>
-          </Pressable>
+          <Button variant="secondary" label="Modifier les dates" onPress={edit} />
           <Pressable accessibilityRole="button" onPress={() => void stop()} style={({ pressed }) => [styles.secondary, pressed && styles.pressed]}>
             <Text style={[styles.secondaryText, { color: colors.warning }]}>{confirmStop ? "Touche encore pour arrêter le mode vacances" : "Arrêter le mode vacances"}</Text>
           </Pressable>
@@ -255,9 +246,7 @@ export default function VacationScreen() {
         <ScreenHeader back title="Mode vacances" subtitle={active && !editing ? vacationRange(active) : "Balco prépare ton balcon et se tait pendant ton absence"} />
         {!loaded ? null : active && !editing ? summary : form}
         {!active && !editing && resolvedPlants.length === 0 && (
-          <Pressable accessibilityRole="button" onPress={() => router.push("/garden/add")} style={({ pressed }) => [styles.secondary, pressed && styles.pressed]}>
-            <Text style={[styles.secondaryText, { color: colors.primary }]}>Ajoute d’abord tes plantes ›</Text>
-          </Pressable>
+          <Button variant="link" center label="Ajoute d’abord tes plantes" onPress={() => router.push("/garden/add")} />
         )}
       </ScrollView>
     </LightScreen>
@@ -284,11 +273,8 @@ const styles = StyleSheet.create({
   roundText: { fontSize: 22, fontWeight: "600", marginTop: -2 },
   option: { borderWidth: 1.5, borderRadius: 14, paddingHorizontal: 14, paddingVertical: 11, gap: 2 },
   optionTitle: { fontSize: 15, fontWeight: "700" },
-  primary: { borderRadius: 14, paddingVertical: 15, alignItems: "center" },
-  primaryText: { color: "#FFFFFF", fontSize: 16, fontWeight: "700" },
   secondary: { alignItems: "center", paddingVertical: 8 },
   secondaryText: { fontSize: 15, fontWeight: "700" },
-  outline: { borderWidth: 1, borderRadius: 14, paddingVertical: 13, alignItems: "center" },
   progressRow: { gap: 6 },
   progressTrack: { height: 8, borderRadius: 4, overflow: "hidden" },
   progressFill: { height: 8, borderRadius: 4 },

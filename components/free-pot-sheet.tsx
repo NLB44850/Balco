@@ -10,6 +10,7 @@ import { Pressable, StyleSheet, View } from "react-native";
 
 import { CatalogPicture } from "@/components/plant-picture";
 import { BottomSheet } from "@/components/today/bottom-sheet";
+import { Button } from "@/components/ui/button";
 import { Text } from "@/components/ui/typography";
 import { useColors } from "@/hooks/use-colors";
 import { useGarden } from "@/lib/garden/garden-context";
@@ -117,12 +118,8 @@ export function useFreePot({ climate, onDone, overlay }: { climate?: ClimateInfo
           <Text style={[styles.kind, { color: colors.primary }]}>{seasonal ? "🍂  Fin de saison" : "🧺  Fin de la récolte"}</Text>
           <Text style={[styles.title, { color: colors.foreground }]}>{seasonal ? seasonQuestion(resolved.entry) : harvestQuestion(resolved.entry)}</Text>
           <Text style={[styles.body, { color: colors.muted }]}>{open.detail ?? (seasonal ? seasonQuestionDetail(false) : HARVEST_QUESTION_DETAIL)}</Text>
-          <Pressable accessibilityRole="button" onPress={() => void answerYes(resolved.plant.id)} style={({ pressed }) => [styles.cta, { backgroundColor: colors.foreground }, pressed && styles.pressed]}>
-            <Text style={[styles.ctaText, { color: colors.background }]}>{seasonal ? "Oui, la saison est finie" : "Oui, tout est récolté"}</Text>
-          </Pressable>
-          <Pressable accessibilityRole="button" onPress={close} style={({ pressed }) => [styles.choice, { borderColor: colors.border }, pressed && styles.pressed]}>
-            <Text style={[styles.choiceText, { color: colors.foreground }]}>Pas encore</Text>
-          </Pressable>
+          <Button label={seasonal ? "Oui, la saison est finie" : "Oui, tout est récolté"} onPress={() => void answerYes(resolved.plant.id)} />
+          <Button variant="secondary" label="Pas encore" onPress={close} />
         </View>
       )}
       {resolved && open?.stage === "free" && (
@@ -159,8 +156,6 @@ const styles = StyleSheet.create({
   kind: { fontSize: 13, fontWeight: "700" },
   title: { fontSize: 22, fontWeight: "800", letterSpacing: -0.4, lineHeight: 27 },
   body: { fontSize: 15, lineHeight: 22 },
-  cta: { borderRadius: 14, paddingVertical: 15, alignItems: "center" },
-  ctaText: { fontSize: 16, fontWeight: "700" },
   choice: { borderWidth: 1, borderRadius: 14, paddingVertical: 12, paddingHorizontal: 14, alignItems: "center" },
   choiceRow: { flexDirection: "row", gap: 12, alignItems: "center" },
   choiceText: { fontSize: 15, fontWeight: "700" },

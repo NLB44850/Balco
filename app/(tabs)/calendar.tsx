@@ -19,6 +19,7 @@ import { BottomSheet } from "@/components/today/bottom-sheet";
 import { TODAY_ROW_PICTURE, TodayRow } from "@/components/today/today-row";
 import { UndoToast, type ToastMessage } from "@/components/today/undo-toast";
 import { glass } from "@/components/ui/glass";
+import { Button } from "@/components/ui/button";
 import { Text } from "@/components/ui/typography";
 import { useDayPlan } from "@/hooks/use-day-plan";
 import { useColors } from "@/hooks/use-colors";
@@ -258,7 +259,7 @@ export default function CalendarScreen() {
               const active = activeFilter === id;
               const resolved = resolvedById.get(id);
               return (
-                <Pressable key={id} accessibilityRole="button" accessibilityState={{ selected: active }} onPress={() => setSelectedPlant(id)} style={({ pressed }) => [styles.filterChip, active ? { backgroundColor: colors.foreground } : glass.soft, pressed && styles.pressed]}>
+                <Pressable key={id} accessibilityRole="button" accessibilityState={{ selected: active }} onPress={() => setSelectedPlant(id)} style={({ pressed }) => [styles.filterChip, active ? { backgroundColor: colors.primary } : glass.soft, pressed && styles.pressed]}>
                   {resolved && <PlantPicture resolved={resolved} style={styles.filterPicture} />}
                   <Text style={[styles.filterText, { color: active ? "#FFFFFF" : colors.foreground }]}>{label}</Text>
                 </Pressable>
@@ -301,16 +302,16 @@ export default function CalendarScreen() {
               <Text style={[styles.sheetTitle, { color: colors.foreground }]}>{sheetActivity.title}</Text>
               <Text style={[styles.sheetBody, { color: colors.muted }]}>{sheetActivity.description}</Text>
               {showingIdeas ? (
-                <Pressable accessibilityRole="button" onPress={() => { setSheetKey(null); void addIdea(sheetActivity); }} style={({ pressed }) => [styles.cta, { backgroundColor: colors.primary }, pressed && styles.pressed]}><Text style={[styles.ctaText, { color: "#FFFFFF" }]}>+ Ajouter à mon balcon</Text></Pressable>
+                <Button label="+ Ajouter à mon balcon" onPress={() => { setSheetKey(null); void addIdea(sheetActivity); }} />
               ) : isDone(sheetActivity) ? (
                 <Text style={[styles.small, { color: colors.primary }]}>{activityDoneLabel(sheetActivity)} : c’est noté sur Aujourd’hui.</Text>
               ) : thisMonth ? (
-                <Pressable accessibilityRole="button" onPress={() => { setSheetKey(null); openToday(); }} style={({ pressed }) => [styles.cta, { backgroundColor: colors.foreground }, pressed && styles.pressed]}><Text style={[styles.ctaText, { color: colors.background }]}>Le faire sur Aujourd’hui</Text></Pressable>
+                <Button label="Le faire sur Aujourd’hui" onPress={() => { setSheetKey(null); openToday(); }} />
               ) : (
                 <Text style={[styles.small, { color: colors.muted }]}>Le moment venu, Balco te le proposera sur Aujourd’hui.</Text>
               )}
               {resolved && (
-                <Pressable accessibilityRole="button" onPress={() => { setSheetKey(null); router.push({ pathname: "/garden/[id]", params: { id: resolved.plant.id } }); }} style={styles.sheetLink}><Text style={[styles.link, { color: colors.primary }]}>Voir la fiche de {plantDisplayName(resolved)}</Text></Pressable>
+                <Button variant="link" center label={`Voir la fiche de ${plantDisplayName(resolved)}`} onPress={() => { setSheetKey(null); router.push({ pathname: "/garden/[id]", params: { id: resolved.plant.id } }); }} />
               )}
             </View>
           );
@@ -364,7 +365,7 @@ export default function CalendarScreen() {
               ].filter(Boolean).join("\n")}
             </Text>
             {sheetSuggestion.lastChance && <Text style={[styles.small, { color: colors.terracotta }]}>C’est le dernier mois pour le faire cette année.</Text>}
-            <Pressable accessibilityRole="button" onPress={() => { const suggestion = sheetSuggestion; setSheetSuggestion(null); void addSuggestion(suggestion); }} style={({ pressed }) => [styles.cta, { backgroundColor: colors.primary }, pressed && styles.pressed]}><Text style={[styles.ctaText, { color: "#FFFFFF" }]}>+ Ajouter à mon balcon</Text></Pressable>
+            <Button label="+ Ajouter à mon balcon" onPress={() => { const suggestion = sheetSuggestion; setSheetSuggestion(null); void addSuggestion(suggestion); }} />
           </View>
         )}
       </BottomSheet>
@@ -408,9 +409,5 @@ const styles = StyleSheet.create({
   sheetKind: { fontSize: 13, fontWeight: "700" },
   sheetTitle: { fontSize: 22, fontWeight: "800", letterSpacing: -0.4, lineHeight: 27 },
   sheetBody: { fontSize: 15, lineHeight: 22 },
-  cta: { borderRadius: 14, paddingVertical: 15, alignItems: "center" },
-  ctaText: { fontSize: 16, fontWeight: "700" },
-  sheetLink: { alignItems: "center", paddingVertical: 4 },
-  link: { fontSize: 14, fontWeight: "600" },
   pressed: { opacity: 0.78, transform: [{ scale: 0.98 }] },
 });

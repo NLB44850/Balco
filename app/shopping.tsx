@@ -13,6 +13,7 @@ import { FadeIn } from "@/components/motion";
 import { ScreenHeader } from "@/components/screen-header";
 import { TodayRow } from "@/components/today/today-row";
 import { glass } from "@/components/ui/glass";
+import { Button } from "@/components/ui/button";
 import { Text } from "@/components/ui/typography";
 import { useColors } from "@/hooks/use-colors";
 import { useDayPlan } from "@/hooks/use-day-plan";
@@ -107,9 +108,7 @@ export default function ShoppingScreen() {
         {items.length > 0 && (
           <>
             <Text style={[styles.small, { color: colors.muted }]}>Aucune marque : prends ce que propose ta jardinerie, en version organique.</Text>
-            <Pressable accessibilityRole="button" onPress={() => void share()} style={({ pressed }) => [styles.cta, { backgroundColor: colors.foreground }, pressed && styles.pressed]}>
-              <Text style={[styles.ctaText, { color: colors.background }]}>Partager ma liste</Text>
-            </Pressable>
+            <Button label="Partager ma liste" onPress={() => void share()} style={styles.cta} />
             {showText && <Text selectable style={[glass.card, styles.shareText, { color: colors.foreground }]}>{shoppingShareText(items, checked)}</Text>}
             {checked.size > 0 && left < items.length && (
               <Pressable accessibilityRole="button" onPress={uncheckAll} style={({ pressed }) => [styles.link, pressed && styles.pressed]}>
@@ -131,8 +130,7 @@ const styles = StyleSheet.create({
   section: { gap: 10 },
   sectionTitle: { fontSize: 19, fontWeight: "800", letterSpacing: -0.3 },
   list: { paddingHorizontal: 16 },
-  cta: { borderRadius: 16, paddingVertical: 16, alignItems: "center", marginTop: 4 },
-  ctaText: { fontSize: 16, fontWeight: "700" },
+  cta: { marginTop: 4 },
   shareText: { padding: 16, fontSize: 14, lineHeight: 21 },
   link: { alignSelf: "center", paddingVertical: 10 },
   linkText: { fontSize: 15, fontWeight: "700" },
