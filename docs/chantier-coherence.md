@@ -93,4 +93,4 @@ Dans le code : `components/ui/button.tsx` (`Button`, variantes `primary`, `secon
   seconde. Au décochage, le geste était retiré avant que la plante redevienne « à planter » : entre les deux, la ligne
   disparaissait, le groupe aussi, donc la feuille. `removeEvent` remet la plante « à planter » d'abord. E2e dans
   `27-coherence` (sur le web les deux changements arrivent ensemble : le test garde le bon ordre, le saut se voyait sur
-  Android où l'enregistrement prend un instant).
+  Android où l’enregistrement prend un instant). Validé sur son téléphone le 14/10 (« la feuille ne clignote plus »).
