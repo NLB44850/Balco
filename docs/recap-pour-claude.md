@@ -161,6 +161,7 @@ Après un tour de toute l'app, les mêmes règles partout (détail dans `docs/ch
    - un nom de domaine : adresse de contact (aujourd'hui contact_balco@gmail.com) et expéditeur des e-mails reconnu par
      Brevo (avec une adresse Outlook ou Gmail, les codes peuvent arriver dans les indésirables) ;
    - compte développeur Google et fiche Play Store ; offre payante d'Open-Meteo dès que Balco+ sera payant.
+   - afficher le montant du prix fondateur sur l'écran Balco+ (montant à décider avec le porteur).
 4. **Version suivante** : suivi d'une plante en photos, balcon visuel (plan, emplacement, exposition), récoltes et
    recettes, défis entre jardiniers, rentrer une plante pour l'hiver (piment, poivron, physalis).
 

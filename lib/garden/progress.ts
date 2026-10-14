@@ -4,7 +4,7 @@
  * Logique pure.
  */
 import { MONTH_LONG, type Month } from "../plants/catalog";
-import { capitalize, objectPronoun, stressedPronoun, subjectPronoun, verb } from "../plants/grammar";
+import { afterColon, capitalize, objectPronoun, stressedPronoun, subjectPronoun, verb } from "../plants/grammar";
 import type { MaintenanceEvent } from "../reminders/reminder-engine";
 import { badgeTierKey, computeBadges, computeProgress, computeStats, TIER_NAMES, type Badge, dayKey, daysBetween, followedDays, isAvoidedWatering, plantDisplayName, wateringLitersOf, type ResolvedPlant } from "./garden-logic";
 import type { PlantPhoto } from "./photos";
@@ -219,7 +219,7 @@ export function awardCelebration(key: string): Celebration | null {
   if (rule) return { kind: "badge", emoji: rule.emoji, title: `Nouveau badge : ${seasonBadgeTitle(rule, Number(year))}`, detail: `${capitalize(rule.unit(rule.target))} : bravo !`, big: true, awardKey: key };
   // Nouvelle carte d'herbier : un mot, pas le plein écran.
   const entry = scope === "herbier" ? getCatalogPlant(id) : undefined;
-  if (entry) return { kind: "tier", emoji: "🌿", title: `Nouvelle carte dans ton herbier : ${entry.name}`, detail: "", big: false, awardKey: key };
+  if (entry) return { kind: "tier", emoji: "🌿", title: `Nouvelle carte dans ton herbier : ${afterColon(entry.name)}`, detail: "", big: false, awardKey: key };
   const [, badgeId, tierText] = key.split(":");
   const tier = (tierText ? Number(tierText) : 1) as 1 | 2 | 3;
   const badge = scope === "badge" ? computeBadges(computeStats([], [])).find((item) => item.id === badgeId) : undefined;

@@ -10,7 +10,7 @@ export type NoraLevel = "beginner" | "curious" | "experienced";
  * « Comment Nora te parle » : une seule valeur (`experience` des réponses de l'accueil), réglée dans la carte
  * « Nora se souvient de toi » ou dans Réglages. `short` : la valeur au bout de la ligne de Réglages.
  */
-export const NORA_LEVELS: Array<{ id: NoraLevel; title: string; short: string; prompt: string }> = [
+export const NORA_LEVELS: { id: NoraLevel; title: string; short: string; prompt: string }[] = [
   { id: "beginner", title: "Simplement, sans jargon", short: "Simplement", prompt: "débute : explique chaque geste simplement, un seul conseil à la fois, sans jargon" },
   { id: "curious", title: "Avec un peu plus de détails", short: "Avec des détails", prompt: "a déjà quelques plantes : conseils concrets, tu peux employer les mots courants du jardinage" },
   { id: "experienced", title: "En jardinier, droit au but", short: "En jardinier", prompt: "a déjà de l'expérience : va droit au but, donne les précisions utiles (variétés, doses de terreau, calendrier)" },

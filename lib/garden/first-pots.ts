@@ -5,7 +5,7 @@
  * pour une plante déjà là (à confirmer sur sa fiche). « C'est bon » la ferme pour de bon ; elle s'efface seule
  * deux semaines après l'accueil. Logique pure.
  */
-import { capitalize } from "../plants/grammar";
+import { afterColon, capitalize } from "../plants/grammar";
 import { potFit, potNeedShort, soilPhrase } from "../plants/pot-sheet";
 import { potSizeLabel, potSizeOf } from "../plants/pot-size";
 import { plantDisplayName, type ResolvedPlant } from "./garden-logic";
@@ -68,7 +68,7 @@ export function firstPotsCard({ answers, plants, dismissed, now }: {
   const count = (tone: FirstPotLine["tone"]) => lines.filter((line) => line.tone === tone).length;
   const allToPlant = count("prepare") === lines.length;
   const verb = allToPlant ? "Prépare" : "Vérifie";
-  const title = lines.length === 1 ? `${verb} le pot : ${lines[0].name}` : `${verb} le pot de ${lines.length} plantes`;
+  const title = lines.length === 1 ? `${verb} le pot : ${afterColon(lines[0].name)}` : `${verb} le pot de ${lines.length} plantes`;
   const parts = [counted(count("small"), "trop petit", "trop petits"), counted(count("choose"), "à choisir", "à choisir"), counted(count("prepare"), "à préparer", "à préparer")].filter(Boolean);
   const summary = lines.length === 1 ? lines[0].detail : parts.length > 0 ? parts.join(" · ") : "Pots notés par Balco : c’est bien ça ?";
   return {

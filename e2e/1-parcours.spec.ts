@@ -214,14 +214,14 @@ test("catalogue : ajouter une plante d'un « + » puis ouvrir sa fiche", async (
   await expect(sheet.getByText("C’est le moment")).toBeVisible();
   await sheet.getByRole("button", { name: "Menthe : Déjà sur mon balcon" }).click();
   // Balco lui donne la taille de pot de sa fiche et le dit dans le message du bas (pas de question).
-  await expect(page.getByText("Ajouté : Menthe en pot moyen (20 à 30 cm)")).toBeVisible();
+  await expect(page.getByText("Ajouté : menthe en pot moyen (20 à 30 cm)")).toBeVisible();
   await expect(page.getByText("Dans quel pot ?")).toHaveCount(0);
   await expect(page.getByText("✓ Sur ton balcon")).toBeVisible();
   // La lavande, pas encore plantée.
   await page.getByPlaceholder("Basilic, fraisier, lavande…").fill("lavande");
   await page.getByRole("button", { name: /^Ajouter Lavande/ }).first().click();
   await page.getByRole("dialog").getByRole("button", { name: "Lavande : Pas encore plantée" }).click();
-  await expect(page.getByText("À planter : Lavande en pot moyen (20 à 30 cm)")).toBeVisible();
+  await expect(page.getByText("À planter : lavande en pot moyen (20 à 30 cm)")).toBeVisible();
   // L'aubergine en octobre : les cartes préviennent avant de choisir ; « Pas encore plantée » la garde pour le printemps.
   await page.getByPlaceholder("Basilic, fraisier, lavande…").fill("aubergine");
   await page.getByRole("button", { name: /^Ajouter Aubergine/ }).first().click();

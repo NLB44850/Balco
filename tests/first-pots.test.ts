@@ -35,7 +35,7 @@ describe("première tâche liée au pot (étape 3c)", () => {
 
   it("une plante seule : son nom dans le titre, son pot en résumé ; tous bons : à confirmer", () => {
     const one = resolvePlants([{ ...createGardenPlant("basil", now), id: "basil-1", potSize: "medium" }]);
-    expect(firstPotsCard({ answers, plants: one, dismissed: [], now })).toMatchObject({ title: "Vérifie le pot : Basilic", summary: "Moyen (20 à 30 cm)" });
+    expect(firstPotsCard({ answers, plants: one, dismissed: [], now })).toMatchObject({ title: "Vérifie le pot : basilic", summary: "Moyen (20 à 30 cm)" });
     const two = resolvePlants([{ ...createGardenPlant("basil", now), id: "basil-1", potSize: "medium" }, { ...createGardenPlant("mint", now), id: "mint-1", potSize: "large" }]);
     expect(firstPotsCard({ answers, plants: two, dismissed: [], now })?.summary).toBe("Pots notés par Balco : c’est bien ça ?");
   });

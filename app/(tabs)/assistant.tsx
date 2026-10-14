@@ -1,3 +1,4 @@
+import { afterColon } from "@/lib/plants/grammar";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { useEffect, useMemo, useRef, useState } from "react";
@@ -146,8 +147,8 @@ export default function AssistantScreen() {
         setMessages((current) => [
           ...current,
           { id: `${now}-bot`, from: "bot", text: result.answer, time: clock(), at },
-          ...result.remembered.map((note): Message => ({ id: `${now}-memory-${note.id}`, from: "memory", text: `Nora a retenu : ${note.text}`, time: "", noteId: note.id, at })),
-          ...result.forgotten.map((note): Message => ({ id: `${now}-forgot-${note.id}`, from: "memory", text: `Nora a oublié : ${note.text}`, time: "", at })),
+          ...result.remembered.map((note): Message => ({ id: `${now}-memory-${note.id}`, from: "memory", text: `Nora a retenu : ${afterColon(note.text)}`, time: "", noteId: note.id, at })),
+          ...result.forgotten.map((note): Message => ({ id: `${now}-forgot-${note.id}`, from: "memory", text: `Nora a oublié : ${afterColon(note.text)}`, time: "", at })),
         ]);
         if (result.remembered.length > 0 || result.forgotten.length > 0) void utils.ai.memory.invalidate();
       } catch (error) {

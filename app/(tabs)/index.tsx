@@ -1,3 +1,4 @@
+import { afterColon } from "@/lib/plants/grammar";
 import { useIsFocused } from "@react-navigation/native";
 import { useRouter } from "expo-router";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
@@ -404,7 +405,7 @@ export default function HomeScreen() {
   const addMonthIdea = async ({ entry }: SeasonalSuggestion) => {
     const created = await addPlant(entry.id, { toPlant: true });
     haptic();
-    showToast(`Ajouté : ${entry.name} ${potSizePhrase(recommendedPotSize(entry))}`, () => void removePlant(created.id));
+    showToast(`Ajouté : ${afterColon(entry.name)} ${potSizePhrase(recommendedPotSize(entry))}`, () => void removePlant(created.id));
   };
 
   const closeSheet = () => setSheetKey(null);

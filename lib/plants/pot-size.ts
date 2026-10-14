@@ -23,7 +23,7 @@ export const POT_LITERS: Record<KnownPotSize, number> = {
   planter: 20,
 };
 
-export const POT_SIZE_CHOICES: ReadonlyArray<{ id: PotSize; title: string; detail?: string }> = [
+export const POT_SIZE_CHOICES: readonly { id: PotSize; title: string; detail?: string }[] = [
   { id: "small", title: "Petit", detail: "moins de 20 cm" },
   { id: "medium", title: "Moyen", detail: "20 à 30 cm" },
   { id: "large", title: "Grand", detail: "30 à 40 cm" },

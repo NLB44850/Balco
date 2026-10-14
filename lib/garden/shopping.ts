@@ -87,7 +87,7 @@ const SOIL_LINES: Record<string, SoilLine> = {
 };
 
 /** Comment se répartissent les litres d'un pot selon le terreau de la fiche. */
-function soilShares(kind: SoilKind | undefined, liters: number): Array<[keyof typeof SOIL_LINES, number]> {
+function soilShares(kind: SoilKind | undefined, liters: number): [keyof typeof SOIL_LINES, number][] {
   switch (kind) {
     case "rich": return [["soil", (liters * 2) / 3], ["compost", liters / 3]];
     case "draining": return [["soil", (liters * 2) / 3], ["sand", liters / 3]];

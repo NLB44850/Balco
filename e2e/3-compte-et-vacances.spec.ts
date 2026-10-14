@@ -87,12 +87,16 @@ test("mode vacances : les consignes pour qui arrose, plante par plante, modifiab
   await page.getByRole("button", { name: "Préparer mon départ" }).click();
   await expect(page.getByText("Pour la personne qui arrose")).toBeVisible();
   await expect(page.getByText(/💧 Environ \d/).first()).toBeVisible();
+  await expect(page.getByText("Premier passage jeudi 15 juillet, puis tous les 2 jours jusqu’au 19 juillet.")).toBeVisible();
   await page.getByRole("button", { name: "Préparer les consignes pour qui arrose" }).click();
 
   const note = page.getByLabel("Texte des consignes");
   await expect(note).toHaveValue(/Merci de t’occuper de mon balcon du 13 au 19 juillet/);
   await expect(note).toHaveValue(/Quand passer\nPremier passage jeudi 15 juillet, puis tous les 2 jours jusqu’au 19 juillet\./);
-  await expect(note).toHaveValue(/• Basilic : environ 1 L tous les 2 jours, chaque jour s’il fait plus de 30 °C\./);
+  // Le rythme suit les passages ; par forte chaleur, le basilic demande plus souvent : on le dit.
+  await expect(note).toHaveValue(/• Basilic : environ 1 L à chaque passage, si la terre est sèche ; s’il fait plus de 30 °C, passe plus souvent pour le basilic si tu peux \(chaque jour\)\./);
+  await expect(note).toHaveValue(/• Tomates cerises : environ \d(,5)? L (à chaque passage|un passage sur deux), si la terre est sèche/);
+  await expect(note).not.toHaveValue(/ : \p{Lu}\p{Ll}/u);
   await expect(note).toHaveValue(/Merci !$/);
   await expect(page.getByText("Préparé avec Balco", { exact: true })).toBeVisible();
 

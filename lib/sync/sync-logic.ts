@@ -53,7 +53,7 @@ export type SyncPushPayload = {
   profile?: { firstName: string | null; balcony: OnboardingAnswers | null };
   settings?: SyncSettings;
   location?: SyncLocation;
-  plants: Array<GardenPlant & { updatedAt: string }>;
+  plants: (GardenPlant & { updatedAt: string })[];
   events: MaintenanceEvent[];
   deletedEventIds: string[];
   awards?: Awards;
@@ -62,7 +62,7 @@ export type SyncPushPayload = {
 export type SyncSnapshotPayload = {
   profile: { firstName: string | null; balcony: OnboardingAnswers | null };
   settings: SyncSettings | null;
-  plants: Array<GardenPlant & { updatedAt: string }>;
+  plants: (GardenPlant & { updatedAt: string })[];
   events: MaintenanceEvent[];
   /** Absent d'un serveur plus ancien. */
   awards?: Awards;

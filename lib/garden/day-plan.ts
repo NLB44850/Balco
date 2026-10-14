@@ -117,7 +117,7 @@ export const TO_PLANT_LABEL = "À planter";
 const STATUS_LABEL: Record<PlantTone, string> = { good: "En forme", watch: "À surveiller", weather: "Météo", new: "Nouvelle" };
 
 /** Ce que veut dire chaque couleur, pour la légende. */
-export const STATUS_LEGEND: Array<{ tone: PlantTone; text: string }> = [
+export const STATUS_LEGEND: { tone: PlantTone; text: string }[] = [
   { tone: "good", text: "en forme" },
   { tone: "watch", text: "à surveiller" },
   { tone: "weather", text: "gel ou pluie annoncés" },

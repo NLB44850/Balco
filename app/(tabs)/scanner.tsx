@@ -1,3 +1,4 @@
+import { afterColon } from "@/lib/plants/grammar";
 import { useFocusEffect, useRouter } from "expo-router";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Image } from "expo-image";
@@ -52,7 +53,7 @@ const CONFIDENCE = { high: "Confiance élevée", medium: "Confiance moyenne", lo
 function scannerNote(diagnosis: Diagnosis) {
   const actions = diagnosis.actions.map((action) => action.title).join(" · ");
   const remedy = remedyFor(diagnosis.problem);
-  return `Scanner : ${diagnosis.summary}${actions ? ` À faire : ${actions}.` : ""}${remedy ? ` Traitement naturel : ${remedy.name}.` : ""}`.slice(0, 480);
+  return `Scanner : ${afterColon(diagnosis.summary)}${actions ? ` À faire : ${afterColon(actions)}.` : ""}${remedy ? ` Traitement naturel : ${remedy.name}.` : ""}`.slice(0, 480);
 }
 
 export default function ScannerScreen() {

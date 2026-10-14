@@ -83,7 +83,7 @@ export function yearlySavingText() {
 }
 
 /** L'écran Balco+ : ce que l'offre ajoute, avec un emoji par ligne. */
-export function plusScreenBenefits(): Array<{ icon: string; title: string; text: string }> {
+export function plusScreenBenefits(): { icon: string; title: string; text: string }[] {
   const { scan, chat } = PLANS.plus.aiQuota;
   return [
     { icon: "❄️", title: "Le gel et l’orage, même app fermée", text: "Une notification le soir où il faut rentrer ou couvrir tes plantes." },
