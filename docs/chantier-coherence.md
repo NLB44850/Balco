@@ -89,3 +89,8 @@ Dans le code : `components/ui/button.tsx` (`Button`, variantes `primary`, `secon
   connexion ; `floating` sur la photo de la fiche plante).
 - Textes à l'infinitif : « Ajouter une photo » (fiche plante), « Préparer les consignes pour qui arrose », « Ajouter mes
   plantes » (vacances), « Pas encore acheté : me le rappeler samedi », « Voir ce qu'il te faut » (À anticiper).
+- (14/10, après test) Feuille « Plante 2 plantes de saison » : cocher puis décocher la refermait une fraction de
+  seconde. Au décochage, le geste était retiré avant que la plante redevienne « à planter » : entre les deux, la ligne
+  disparaissait, le groupe aussi, donc la feuille. `removeEvent` remet la plante « à planter » d'abord. E2e dans
+  `27-coherence` (sur le web les deux changements arrivent ensemble : le test garde le bon ordre, le saut se voyait sur
+  Android où l'enregistrement prend un instant).
