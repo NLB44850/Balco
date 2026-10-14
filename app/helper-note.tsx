@@ -13,6 +13,7 @@ import { LightScreen } from "@/components/light-screen";
 import { ScreenHeader } from "@/components/screen-header";
 import { glass } from "@/components/ui/glass";
 import { Button } from "@/components/ui/button";
+import { Check } from "@/components/ui/check";
 import { Text, TextInput } from "@/components/ui/typography";
 import { useColors } from "@/hooks/use-colors";
 import { useLocalWeather } from "@/hooks/use-local-weather";
@@ -128,7 +129,7 @@ export default function HelperNoteScreen() {
                 <Button variant="secondary" label="Revenir au texte de Balco" onPress={reset} />
               )}
               <Pressable accessibilityRole="checkbox" accessibilityState={{ checked: signature }} accessibilityLabel={`Ajouter « ${HELPER_NOTE_SIGNATURE} » à la fin`} onPress={toggleSignature} style={({ pressed }) => [styles.checkRow, pressed && styles.pressed]}>
-                <View style={[styles.check, { borderColor: signature ? colors.primary : "rgba(18,22,20,0.22)", backgroundColor: signature ? colors.primary : "transparent" }]}>{signature && <Text style={styles.checkMark}>✓</Text>}</View>
+                <Check checked={signature} />
                 <Text style={[styles.text, styles.flex, { color: colors.foreground }]}>Ajouter « {HELPER_NOTE_SIGNATURE} » à la fin</Text>
               </Pressable>
               <Button label="Envoyer les consignes" onPress={() => void send()} />
@@ -156,7 +157,5 @@ const styles = StyleSheet.create({
   text: { fontSize: 15, lineHeight: 21 },
   small: { fontSize: 13, lineHeight: 18 },
   checkRow: { flexDirection: "row", alignItems: "center", gap: 12, paddingVertical: 4 },
-  check: { width: 26, height: 26, borderRadius: 7, borderWidth: 2, alignItems: "center", justifyContent: "center" },
-  checkMark: { color: "#FFFFFF", fontSize: 14, fontWeight: "800" },
   pressed: { opacity: 0.78 },
 });

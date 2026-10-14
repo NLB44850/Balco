@@ -272,7 +272,7 @@ Règles qui valent pour toutes les étapes :
      « mode vacances : les consignes pour qui arrose… » (`3-compte-et-vacances`).
 8. **« Que planter à la place ? » et traitement naturel**, en deux livraisons : 8a puis 8b (traitement naturel dans
    Observer).
-   - **8a, « Que planter à la place ? » : codée le 13/10, à valider sur son téléphone.** Dans la feuille « Ton pot est
+   - **8a, « Que planter à la place ? » : codée le 13/10, validée et fusionnée (PR #50, 14/10).** Dans la feuille « Ton pot est
      libre » (après une récolte en une fois ou une fin de saison, Aujourd'hui et fiche) : « Ressemer… » s'il est encore
      temps, puis la section « Que planter à la place ? » avec trois idées au plus (au lieu d'une ou deux), puis « Laisser
      le pot vide ». Logique `lib/garden/replant.ts` (`replantIdeas`, `fitsFreedPot`, `replantSoilTip`, `rotationNote`),

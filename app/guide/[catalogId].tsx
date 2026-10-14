@@ -21,6 +21,7 @@ import { FadeIn, PopIn } from "@/components/motion";
 import { ScreenHeader } from "@/components/screen-header";
 import { glass } from "@/components/ui/glass";
 import { Button } from "@/components/ui/button";
+import { Check } from "@/components/ui/check";
 import { Text } from "@/components/ui/typography";
 import { useColors } from "@/hooks/use-colors";
 import { followUpsFor } from "@/lib/garden/follow-ups";
@@ -206,7 +207,7 @@ export default function GuideScreen() {
             </View>
             {planted ? (
               <PopIn style={styles.planted}>
-                <View style={[styles.check, { backgroundColor: colors.primary }]}><Text style={styles.checkMark}>✓</Text></View>
+                <Check checked shape="round" />
                 <Text style={[styles.itemLabel, { color: colors.primary }]}>{doneLabel} : bien joué !</Text>
               </PopIn>
             ) : canPlant ? (
@@ -242,7 +243,5 @@ const styles = StyleSheet.create({
   after: { alignItems: "center", gap: 10, padding: 18 },
   afterLine: { fontSize: 16, lineHeight: 23, textAlign: "center" },
   planted: { flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 10, paddingVertical: 14 },
-  check: { width: 30, height: 30, borderRadius: 15, alignItems: "center", justifyContent: "center" },
-  checkMark: { color: "#FFFFFF", fontSize: 15, fontWeight: "800" },
   pressed: { opacity: 0.8, transform: [{ scale: 0.98 }] },
 });

@@ -11,6 +11,7 @@ import { Pressable, StyleSheet, View } from "react-native";
 import { CatalogPicture } from "@/components/plant-picture";
 import { BottomSheet } from "@/components/today/bottom-sheet";
 import { Button } from "@/components/ui/button";
+import { Check } from "@/components/ui/check";
 import { Text } from "@/components/ui/typography";
 import { useColors } from "@/hooks/use-colors";
 import { useGarden } from "@/lib/garden/garden-context";
@@ -130,7 +131,7 @@ export function useFreePot({ climate, onDone, overlay }: { climate?: ClimateInfo
           {ideas.length === 0 && <Text style={[styles.body, { color: colors.muted }]}>Que veux-tu y mettre ?</Text>}
           {offerSpring && (
             <Pressable accessibilityRole="checkbox" accessibilityState={{ checked: remember }} aria-checked={remember} accessibilityLabel="Me le reproposer au printemps" onPress={() => setRemember((value) => !value)} style={({ pressed }) => [styles.remember, pressed && styles.pressed]}>
-              <View style={[styles.box, { borderColor: colors.primary, backgroundColor: remember ? colors.primary : "transparent" }]}>{remember && <Text style={styles.boxMark}>✓</Text>}</View>
+              <Check checked={remember} />
               <Text style={[styles.rememberText, { color: colors.foreground }]}>Me le reproposer au printemps</Text>
             </Pressable>
           )}
@@ -164,8 +165,6 @@ const styles = StyleSheet.create({
   picture: { width: 40, height: 40, borderRadius: 20, alignItems: "center", justifyContent: "center" },
   flex: { flex: 1 },
   remember: { flexDirection: "row", alignItems: "center", gap: 10, paddingVertical: 4 },
-  box: { width: 22, height: 22, borderRadius: 6, borderWidth: 2, alignItems: "center", justifyContent: "center" },
-  boxMark: { color: "#FFFFFF", fontSize: 14, fontWeight: "800", marginTop: -1 },
   ideas: { gap: 4, marginTop: 4 },
   ideasTitle: { fontSize: 17, fontWeight: "800" },
   rememberText: { fontSize: 15, fontWeight: "600" },

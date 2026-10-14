@@ -5,13 +5,13 @@ import { useRouter } from "expo-router";
 import * as WebBrowser from "expo-web-browser";
 import { useEffect, useRef, useState } from "react";
 import { ActivityIndicator, KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, View, type TextInput as RNTextInput } from "react-native";
+import { BackButton, CloseButton } from "@/components/ui/nav-buttons";
 import { Text, TextInput } from "@/components/ui/typography";
 
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { LightScreen } from "@/components/light-screen";
 import { glass } from "@/components/ui/glass";
-import { IconSymbol } from "@/components/ui/icon-symbol";
 import { useColors } from "@/hooks/use-colors";
 import type { SignInResult } from "@/hooks/use-auth";
 import { useGarden } from "@/lib/garden/garden-context";
@@ -135,13 +135,9 @@ export default function LoginScreen() {
         <ScrollView keyboardShouldPersistTaps="handled" contentContainerStyle={[styles.content, { paddingTop: insets.top + 12 }]}>
           <View style={styles.header}>
             {step === "code" ? (
-              <Pressable accessibilityRole="button" accessibilityLabel="Changer d’adresse" hitSlop={8} onPress={() => { setStep("email"); setError(null); }} style={({ pressed }) => [styles.round, pressed && styles.pressed]}>
-                <IconSymbol name="chevron.left" size={24} color={colors.foreground} />
-              </Pressable>
+              <BackButton accessibilityLabel="Changer d’adresse" onPress={() => { setStep("email"); setError(null); }} />
             ) : <View />}
-            <Pressable accessibilityRole="button" accessibilityLabel="Fermer" hitSlop={8} onPress={close} style={({ pressed }) => [styles.round, pressed && styles.pressed]}>
-              <Text style={[styles.closeText, { color: colors.foreground }]}>×</Text>
-            </Pressable>
+            <CloseButton onPress={close} />
           </View>
 
           <View style={[styles.badge, { backgroundColor: colors.leaf }]}><Text style={styles.badgeEmoji}>{step === "email" ? "🪴" : "✉️"}</Text></View>
@@ -265,8 +261,6 @@ const styles = StyleSheet.create({
   flex: { flex: 1 },
   content: { paddingHorizontal: 20, paddingBottom: 40, gap: 14 },
   header: { flexDirection: "row", alignItems: "center", justifyContent: "space-between" },
-  round: { width: 40, height: 40, borderRadius: 20, alignItems: "center", justifyContent: "center", backgroundColor: "rgba(255,255,255,0.8)" },
-  closeText: { fontSize: 24, marginTop: -2 },
   badge: { width: 56, height: 56, borderRadius: 28, alignItems: "center", justifyContent: "center", marginTop: 12 },
   badgeEmoji: { fontSize: 26 },
   title: { fontSize: 30, lineHeight: 35, fontWeight: "800", letterSpacing: -0.8 },

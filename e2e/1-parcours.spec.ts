@@ -237,7 +237,7 @@ test("catalogue : ajouter une plante d'un « + » puis ouvrir sa fiche", async (
   await expect.poll(wish).not.toContain("eggplant");
   await page.getByRole("button", { name: "Voir mon balcon · 3 plantes" }).click();
   await page.getByRole("button", { name: /^Menthe, .*voir la fiche/ }).click();
-  await expect(page.getByText(/Photo d’exemple|Ajoute ta photo/).first()).toBeVisible();
+  await expect(page.getByText(/Photo d’exemple|Ajouter une photo/).first()).toBeVisible();
   // Sa fiche « Spécial pot » compare son pot à celui qu'il lui faut, en centimètres (menthe : 30 cm de large).
   await expect(page.getByText("Spécial pot")).toBeVisible();
   await expect(page.getByText("Ton pot lui convient", { exact: false })).toBeVisible();
@@ -421,13 +421,13 @@ test("Nora demande le prénom, sans compte ni IA, et le garde pour Réglages", a
   expect(errors).toEqual([]);
 });
 
-test("« Pas encore acheté ? Rappelle-moi samedi » : le geste disparaît, « Annuler » le remet", async ({ page }) => {
+test("« Pas encore acheté : me le rappeler samedi » : le geste disparaît, « Annuler » le remet", async ({ page }) => {
   const errors = trackErrors(page);
   await mockWeather(page);
   await seedBalcony(page, { plants: ["mint"], wateredDaysAgo: 0, extra: { "balco.garden.plants.v1": JSON.stringify([{ id: "lavender-e2e", catalogId: "lavender", addedAt: new Date().toISOString(), toPlant: true }]) } });
   await open(page, "/", "Plante la lavande");
   await page.getByRole("button", { name: "Plante la lavande, détail" }).click();
-  await page.getByRole("button", { name: "Pas encore acheté ? Rappelle-moi samedi" }).click();
+  await page.getByRole("button", { name: "Pas encore acheté : me le rappeler samedi" }).click();
   await expect(page.getByText("Je te le rappelle samedi")).toBeVisible();
   await expect(checkboxOf(page, "Marquer comme fait : Plante la lavande")).toHaveCount(0);
   await page.getByRole("button", { name: "Annuler" }).click();

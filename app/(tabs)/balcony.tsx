@@ -1,7 +1,7 @@
 /**
  * Onglet « Balcon » : tes plantes en grandes cartes photo, comme des annonces. Sur chaque carte,
  * ta dernière photo, un point de couleur pour son état et le geste du jour. Toucher une carte
- * ouvre sa fiche ; sans photo, un toucher sur « Ajoute ta photo » suffit.
+ * ouvre sa fiche ; sans photo, un toucher sur « Ajouter une photo » suffit.
  */
 import { useRouter } from "expo-router";
 import { useCallback, useRef, useState } from "react";

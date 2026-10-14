@@ -101,7 +101,7 @@ export type DayPlanInput = {
   /** Tous les conseils du moment, même mis en sommeil : une soif reportée ne revient pas en arrosage. */
   allDecisions?: ReminderDecision[];
   climate?: ClimateInfo | null;
-  /** Plantes à planter dont le premier geste attend samedi (« Rappelle-moi samedi »). */
+  /** Plantes à planter dont le premier geste attend samedi (« me le rappeler samedi »). */
   postponed?: Set<string>;
   /** « Pas besoin cette année » : plante → date jusqu'à laquelle son rempotage est écarté. */
   repotSkips?: Map<string, string>;

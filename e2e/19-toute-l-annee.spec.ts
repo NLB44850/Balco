@@ -30,7 +30,7 @@ test("février : « Ton balcon se repose », puis « À anticiper » et ce qu'il
   await card.click();
   const sheet = page.getByRole("dialog");
   await expect(sheet.getByText("Prépare des godets et du terreau à semis.")).toBeVisible();
-  await sheet.getByRole("button", { name: "Ce qu’il te faut ›" }).click();
+  await sheet.getByRole("button", { name: "Voir ce qu’il te faut" }).click();
   await expect(page.getByText(/J’ai déjà/).first()).toBeVisible();
 
   // La croix masque l'astuce jusqu'à la suivante ; l'Idée du mois prend sa place.
