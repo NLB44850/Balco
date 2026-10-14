@@ -114,6 +114,24 @@ function plantTimestamp(plant: GardenPlant) {
   return plant.updatedAt ?? plant.removedAt ?? plant.addedAt;
 }
 
+/**
+ * L'heure de la modification d'une plante, toujours après la précédente. Le serveur garde la modification la plus
+ * récente : une plante ajoutée à une date simulée dans le futur (Réglages → Version de test) avait une date plus
+ * récente que son retrait, qui était alors ignoré (retour du 14/10 : Nora voyait encore des plantes retirées).
+ */
+export function nextUpdatedAt(plant: GardenPlant, now = Date.now()) {
+  const stamps = [plant.updatedAt, plant.removedAt, plant.addedAt].map((value) => (value ? Date.parse(value) : NaN)).filter(Number.isFinite);
+  return new Date(Math.max(now, ...stamps.map((stamp) => stamp + 1))).toISOString();
+}
+
+/**
+ * Renvoie une fois toutes les plantes du téléphone, datées de maintenant : répare un serveur resté sur une plante
+ * retirée (date simulée, ou sauvegarde depuis un autre téléphone entre-temps). Le téléphone fait foi.
+ */
+export function resendPlants(plants: GardenPlant[], now = Date.now()): Outbox {
+  return plants.reduce((outbox, plant) => recordPlant(outbox, { ...plant, updatedAt: nextUpdatedAt(plant, now) }), emptyOutbox());
+}
+
 export function buildPush(outbox: Outbox, local: LocalGardenState, location?: SyncLocation): SyncPushPayload {
   return {
     ...(outbox.profileDirty ? { profile: { firstName: local.firstName?.trim() || null, balcony: local.onboarding } } : {}),

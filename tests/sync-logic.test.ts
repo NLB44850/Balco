@@ -18,6 +18,8 @@ import {
   type LocalGardenState,
   type SyncSettings,
   type SyncSnapshotPayload,
+  nextUpdatedAt,
+  resendPlants,
 } from "../lib/sync/sync-logic";
 
 const DEFAULT_SETTINGS: SyncSettings = { enabled: false, preferredHour: 18, preferredMinute: 30, quietStartHour: 21, quietEndHour: 9, maxNormalRemindersPerDay: 1, skipWateringWhenRainExpected: true, enabledPlantIds: [] };
@@ -138,5 +140,23 @@ describe("location changes", () => {
     expect(locationChanged(paris, { ...paris, latitude: 48.857 })).toBe(false);
     expect(locationChanged(paris, { city: "Lyon", latitude: 45.76, longitude: 4.84, timezone: "Europe/Paris" })).toBe(true);
     expect(locationChanged(paris, null)).toBe(false);
+  });
+});
+
+describe("plant timestamps (retour du 14/10 : retrait ignoré après une date simulée)", () => {
+  const future = { id: "lavender-1", catalogId: "lavender", addedAt: "2027-11-01T09:00:00.000Z" };
+  it("a modification always comes after everything known about the plant", () => {
+    const now = Date.parse("2026-10-14T12:00:00.000Z");
+    expect(nextUpdatedAt(future, now)).toBe("2027-11-01T09:00:00.001Z");
+    expect(nextUpdatedAt({ ...future, addedAt: "2026-10-01T09:00:00.000Z" }, now)).toBe("2026-10-14T12:00:00.000Z");
+  });
+
+  it("resends every plant once, newer than the server's copy", () => {
+    const now = Date.parse("2026-10-14T12:00:00.000Z");
+    const removed = { ...future, removedAt: "2026-10-14T11:00:00.000Z", updatedAt: "2026-10-14T11:00:00.000Z" };
+    const outbox = resendPlants([removed], now);
+    const push = buildPush(outbox, { plants: [removed], events: [], onboarding: null, settings: {} as never });
+    expect(push.plants[0].removedAt).toBe(removed.removedAt);
+    expect(Date.parse(push.plants[0].updatedAt)).toBeGreaterThan(Date.parse(future.addedAt));
   });
 });

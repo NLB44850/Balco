@@ -44,7 +44,7 @@ export default function AssistantScreen() {
   const colors = useColors();
   const router = useRouter();
   const insets = useSafeAreaInsets();
-  const { account, profile, resolvedPlants, onboarding, updateOnboarding, updateProfile, syncNow } = useGarden();
+  const { account, profile, resolvedPlants, onboarding, updateOnboarding, updateProfile, syncNow, claimThisDevice } = useGarden();
   // Des questions prêtes, tirées de tes plantes et de la saison : rien à écrire.
   const questions = useMemo(() => quickQuestions(resolvedPlants), [resolvedPlants]);
   const utils = trpc.useUtils();
@@ -316,6 +316,13 @@ export default function AssistantScreen() {
         />
         {account.signedIn ? (
           <>
+            {/* Nora lit le balcon sauvegardé : s'il ne part plus de ce téléphone, elle ne voit pas les derniers changements. */}
+            {account.status === "other-device" && (
+              <View style={[glass.card, styles.syncWarning]}>
+                <Text style={[styles.syncWarningText, { color: colors.warning }]}>Nora ne voit pas tes derniers changements : ton balcon est sauvegardé depuis un autre téléphone.</Text>
+                <Button small label="Sauvegarder depuis ce téléphone" onPress={() => void claimThisDevice()} />
+              </View>
+            )}
             {chat && <Text style={[styles.quota, { color: noQuestionsLeft || paused ? colors.warning : colors.muted }]}>{unavailable ? "Nora arrive bientôt dans une mise à jour." : paused ?? `${quotaLabel(chat)}${noQuestionsLeft && status.data?.plan === "free" ? `. ${plusQuotaHint("chat")}` : ""}`}</Text>}
             <View style={[glass.card, styles.composer]}>
               <TextInput
@@ -371,6 +378,8 @@ const styles = StyleSheet.create({
   messageRowUser: { justifyContent: "flex-end" },
   smallAvatar: { width: 24, height: 24, borderRadius: 9, alignItems: "center", justifyContent: "center" },
   smallAvatarText: { color: "#FFFFFF", fontSize: 11, fontWeight: "800" },
+  syncWarning: { marginHorizontal: 20, marginBottom: 8, padding: 12, gap: 8 },
+  syncWarningText: { fontSize: 13, lineHeight: 18, fontWeight: "600" },
   nameBox: { gap: 8, marginTop: 10 },
   nameRow: { flexDirection: "row", alignItems: "center", gap: 8 },
   nameInput: { flex: 1, minWidth: 0, borderWidth: 1, borderRadius: 12, paddingHorizontal: 12, paddingVertical: 9, fontSize: 15, backgroundColor: "#FFFFFF" },

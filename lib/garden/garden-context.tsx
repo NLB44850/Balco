@@ -30,7 +30,9 @@ import {
   mergeOutbox,
   recordEvent,
   recordEventDeletion,
+  nextUpdatedAt,
   recordPlant,
+  resendPlants,
   seedOutbox,
   type LocalGardenState,
   type Outbox,
@@ -64,7 +66,8 @@ const SYNC_DEBOUNCE_MS = 2000;
 
 export type UserProfile = { firstName?: string };
 
-type SyncMeta = { openId?: string; lastSyncedAt?: string; lastLocation?: SyncLocation };
+/** `plantsResent` : toutes les plantes renvoyées une fois (réparation du 14/10, `resendPlants`). */
+type SyncMeta = { openId?: string; lastSyncedAt?: string; lastLocation?: SyncLocation; plantsResent?: boolean };
 type PushRegistration = { token: string; openId: string };
 
 export type AccountState = {
@@ -326,6 +329,7 @@ export function GardenProvider({ children }: { children: ReactNode }) {
         claimDeviceRef.current = true;
         await saveMeta({ openId });
       }
+      if (!metaRef.current.plantsResent) sent = mergeOutbox(sent, resendPlants(plantsRef.current));
       setOutbox(emptyOutbox());
       const location = locationChanged(metaRef.current.lastLocation, locationRef.current) ? locationRef.current ?? undefined : undefined;
 
@@ -344,7 +348,7 @@ export function GardenProvider({ children }: { children: ReactNode }) {
       if (arrived) await saveAwards({ ...awardsRef.current, awards: capAwards(applied.awards), seen: [...awardsRef.current.seen, ...Object.keys(arrived)] });
       const appliedSettings = { ...defaultLocalReminderSettings, ...applied.settings, vacation: applied.settings.vacation ?? null };
       if (JSON.stringify(appliedSettings) !== JSON.stringify(latestSettings)) await saveLocalReminderSettings(appliedSettings, "sync");
-      await saveMeta({ openId, lastSyncedAt: snapshot.serverTime, lastLocation: location ?? metaRef.current.lastLocation });
+      await saveMeta({ openId, lastSyncedAt: snapshot.serverTime, lastLocation: location ?? metaRef.current.lastLocation, plantsResent: true });
       setSyncStatus("idle");
       setPlan(snapshot.access.plan);
       setFounder(snapshot.access.founder);
@@ -408,7 +412,7 @@ export function GardenProvider({ children }: { children: ReactNode }) {
   const updatePlant = useCallback(async (plantId: string, patch: (plant: GardenPlant) => GardenPlant) => {
     const current = plantsRef.current.find((plant) => plant.id === plantId);
     if (!current) return;
-    const next = { ...patch(current), updatedAt: new Date().toISOString() };
+    const next = { ...patch(current), updatedAt: nextUpdatedAt(current) };
     await savePlants(plantsRef.current.map((plant) => (plant.id === plantId ? next : plant)));
     queue((outbox) => recordPlant(outbox, next));
   }, [queue, savePlants]);

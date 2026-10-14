@@ -66,3 +66,9 @@ Dans le code : `components/ui/button.tsx` (`Button`, variantes `primary`, `secon
    (`ScreenHeader`) ; « Ta coach, qui connaît ta plante » (au lieu de « tes plante ») ; « OK » du prénom dans sa bulle.
 4. Image d'une plante vide sur Aujourd'hui : une photo dont le fichier a disparu laisse place à la photo d'exemple
    (`onError` de `PlantPicture`).
+5. (14/10, après test) Nora citait encore lavande, thym, menthe : le serveur n'avait pas reçu leur retrait. Deux causes
+   possibles, corrigées : (a) compte gratuit sauvegardé depuis un autre appareil (statut `other-device`) : Nora affiche
+   maintenant « Nora ne voit pas tes derniers changements… » avec « Sauvegarder depuis ce téléphone » ; (b) date de
+   modification d'une plante plus ancienne que sa date d'ajout simulée (le serveur garde la modification la plus
+   récente) : `nextUpdatedAt` (toujours après tout ce qu'on sait de la plante) et `resendPlants` (toutes les plantes
+   renvoyées une fois, `plantsResent` dans les métadonnées de synchro). Tests `sync-logic`.
