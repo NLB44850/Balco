@@ -17,7 +17,7 @@ téléphone avant la suivante. Pour chaque étape, on cherche aussi le même dé
   « Nora a retenu : … », note d'Observer dans l'historique.
 - Code : `lib/garden/helper-note.ts` (`helperPlantWatering(item, visitEvery)`), `app/vacation.tsx`.
 
-## Étape 2 : « Ton pot est libre » après les radis (faite le 14/10, à valider)
+## Étape 2 : « Ton pot est libre » après les radis (validée le 14/10)
 
 - Contradiction : « Ressemer des radis » juste au-dessus de « Pas de la famille du chou », alors que le radis en fait
   partie.
@@ -32,13 +32,22 @@ téléphone avant la suivante. Pour chaque étape, on cherche aussi le même dé
 - Vu aussi : radis cochés dans la feuille des récoltes, puis « Oui » : la feuille du pot libre s'empilait sur celle des
   récoltes (Android). La feuille des récoltes se replie d'abord (`app/(tabs)/index.tsx`).
 
-## Étape 3 : le sens de « À surveiller »
+## Étape 3 : le sens de « À surveiller » (faite le 14/10, à valider)
 
 - L'orange garde son sens d'alerte : « À surveiller » seulement pour un vrai souci (forte chaleur, problème vu par
   Observer, pot trop petit, plante en retard de soin depuis plusieurs jours).
 - Un arrosage ou une récolte du jour ne change pas le statut : « En forme », le geste en sous-titre.
 - Le compteur du Balcon (« 5 plantes · 4 à surveiller ») suit la même règle.
 - Lister les cas exacts qui passent en orange et les faire valider avant de coder.
+- Validé le 14/10 (« ok, tout me va »), codé dans `statusOf` (`lib/garden/day-plan.ts`), avec un mot précis :
+  1. « Forte chaleur », « Orage annoncé », « Coup de vent » : alerte pas encore traitée ;
+  2. « Problème vu par Observer » : dernière analyse « À surveiller » ou « Besoin de soins » de moins de 14 jours
+     (`OBSERVER_PROBLEM_DAYS`), sauf nouvelle analyse qui va bien ; le verdict est gardé dans l'identifiant de
+     l'analyse (`scanEventId`, `scan:<plante>:<ms>:<état>`) ;
+  3. « Pot trop petit » (ou « trop peu profond ») : seulement pour une taille choisie ;
+  4. « Pas arrosée depuis N jours » : 3 jours de retard ou plus sur son rythme (`LATE_WATERING_DAYS`).
+- Bleu : « Gel annoncé » (compté) et « Pluie annoncée » (plus comptée). Compteur du Balcon = `status.worry`.
+- Un arrosage ou une récolte du jour : « En forme ». E2e `27-a-surveiller`.
 
 ## Étape 4 : taille choisie ou taille conseillée
 

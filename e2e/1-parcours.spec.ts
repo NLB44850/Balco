@@ -248,7 +248,8 @@ test("catalogue : ajouter une plante d'un « + » puis ouvrir sa fiche", async (
   await expect(page.getByRole("radio", { name: "Moyen (20 à 30 cm)" })).toBeChecked();
   await expect(page.getByText("✓ Conseillé")).toBeVisible();
   await page.getByRole("radio", { name: "Petit (moins de 20 cm)" }).click();
-  await expect(page.getByText("Pot trop petit", { exact: false })).toBeVisible();
+  // Dans « Spécial pot », et en orange dans l'état de la plante (retour du 14/10 : un vrai souci).
+  await expect(page.getByText(/^(⚠︎ )?Pot trop petit$/u)).toHaveCount(2);
   await expect(page.getByText("Il lui faut un pot de 30 cm de large, 20 cm de profondeur. Prends un pot moyen.")).toBeVisible();
   // Jardinière : combien de pieds y tiennent.
   await page.getByRole("button", { name: "Ton pot : Petit (moins de 20 cm)" }).click();

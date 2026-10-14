@@ -120,7 +120,7 @@ export function useDayPlan() {
   }, [allDecisions, harvestEnds, now, plan, snoozesLoaded]);
 
   // Prêt quand la météo (ou son repli) et les réglages sont là : avant, l'état d'une plante changerait
-  // sous les yeux (« En forme », puis « À surveiller » une fois la soif connue).
+  // sous les yeux (« Gel annoncé » ou « Forte chaleur » une fois la météo connue).
   const ready = !local.isLoading && reminderSettingsLoaded && snoozesLoaded;
 
   return {

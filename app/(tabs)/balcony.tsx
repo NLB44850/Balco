@@ -44,7 +44,7 @@ export default function BalconyScreen() {
 
   // Le même plan du jour qu'Aujourd'hui et la fiche : même geste, même couleur.
   const { plan, ready } = useDayPlan();
-  const watching = !ready ? 0 : plan.filter((day) => day.status.tone === "watch" || day.status.tone === "weather").length;
+  const watching = !ready ? 0 : plan.filter((day) => day.status.worry).length;
   const subtitle = resolvedPlants.length === 0
     ? "Ajoute ta première plante"
     : `${resolvedPlants.length} plante${resolvedPlants.length > 1 ? "s" : ""}${!ready ? "" : watching ? ` · ${watching} à surveiller` : " · toutes en forme"}`;
