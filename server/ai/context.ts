@@ -132,6 +132,13 @@ function parseBalcony(json: string | null | undefined): OnboardingAnswers | null
   }
 }
 
+/** Une plante que le téléphone n'affiche plus est tenue pour retirée, même si le serveur ne le sait pas encore. */
+export function limitToShown<T extends { plantId: string; active: number; removedAt: Date | null }>(rows: T[], shownPlantIds: string[] | undefined, now: Date): T[] {
+  if (!shownPlantIds) return rows;
+  const shown = new Set(shownPlantIds);
+  return rows.map((row) => (row.active === 1 && !shown.has(row.plantId) ? { ...row, active: 0, removedAt: row.removedAt ?? now } : row));
+}
+
 /** La mémoire telle que l'écran Nora l'affiche. Le niveau est l'expérience choisie à l'accueil ou dans Réglages. */
 export async function loadMemory(userId: number): Promise<NoraMemoryView> {
   const db = await getDb();
@@ -143,12 +150,12 @@ export async function loadMemory(userId: number): Promise<NoraMemoryView> {
 }
 
 /** Ce que Nora sait du balcon : lu en base, jamais fourni par le client (pas de contexte falsifiable). */
-export async function loadGardenFacts(userId: number, now = new Date()): Promise<GardenFacts> {
+export async function loadGardenFacts(userId: number, now = new Date(), shownPlantIds?: string[]): Promise<GardenFacts> {
   const db = await getDb();
   const empty = { events: 0, last30Days: 0, firstDaysAgo: null };
   if (!db) return { firstName: null, city: null, sunlight: null, space: null, goals: [], plants: [], history: [], removedPlants: [], totals: empty, memory: { level: null, preferences: [], notes: [] } };
   const [profile] = await db.select().from(reminderProfiles).where(eq(reminderProfiles.userId, userId)).limit(1);
-  const rows = await db.select().from(reminderPlants).where(eq(reminderPlants.userId, userId));
+  const rows = limitToShown(await db.select().from(reminderPlants).where(eq(reminderPlants.userId, userId)), shownPlantIds, now);
   const since = new Date(now.getTime() - HISTORY_DAYS * DAY_MS);
   const events = await db.select().from(maintenanceEvents).where(and(eq(maintenanceEvents.userId, userId), gt(maintenanceEvents.completedAt, since))).orderBy(desc(maintenanceEvents.completedAt)).limit(MAX_HISTORY_EVENTS);
   const balcony = parseBalcony(profile?.balconyJson);

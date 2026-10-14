@@ -96,6 +96,11 @@ const chatInput = z.object({
   messages: z.array(z.object({ role: z.enum(["user", "assistant"]), content: z.string().trim().min(1).max(2000) })).min(1).max(40),
   /** Tiré par l'app pour chaque question : la renvoyer avec le même identifiant redonne la même réponse. */
   requestId: z.string().min(8).max(64).optional(),
+  /**
+   * Les plantes que le téléphone affiche : Nora ne parle que de celles-là (retour du 14/10, une plante retirée restée
+   * sur le serveur ressortait dans ses réponses). Ne peut que retirer des plantes du contexte, jamais en ajouter.
+   */
+  plantIds: z.array(z.string().min(1).max(128)).max(200).optional(),
 });
 
 /** Garde les derniers échanges, en commençant par une question et en finissant par la nouvelle question. */
@@ -171,7 +176,7 @@ export const aiRouter = router({
   ask: protectedProcedure.input(chatInput).mutation(({ ctx, input }) => answerOnce(ctx.user.id, input.requestId, async () => {
     const history = trimHistory(input.messages);
     if (history.length === 0 || history[history.length - 1].role !== "user") throw new TRPCError({ code: "BAD_REQUEST", message: "La conversation doit se terminer par une question." });
-    const garden = describeGarden(await loadGardenFacts(ctx.user.id));
+    const garden = describeGarden(await loadGardenFacts(ctx.user.id, new Date(), input.plantIds));
     const { remember, forget, ...result } = await withQuota(ctx.user, "chat", () => askNora(history, garden));
     // La réponse compte plus que la mémoire : un souci d'enregistrement ne la fait pas perdre.
     const learned = await learnFromAnswer(ctx.user.id, remember, forget).catch((error: unknown) => {

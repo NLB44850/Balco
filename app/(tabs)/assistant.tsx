@@ -139,7 +139,8 @@ export default function AssistantScreen() {
     void (async () => {
       await syncNow().catch(() => undefined);
       try {
-        const result = await askRecovering({ messages: history, requestId });
+        // Les plantes affichées ici : Nora ne parle que d'elles, même si le serveur en garde une retirée.
+        const result = await askRecovering({ messages: history, requestId, plantIds: resolvedPlants.map(({ plant }) => plant.id) });
         const now = Date.now();
         const at = new Date(now).toISOString();
         setMessages((current) => [
@@ -163,7 +164,7 @@ export default function AssistantScreen() {
    * redemande la même question, avec le même identifiant, et reçoit la réponse déjà faite. Une erreur du serveur
    * (quota, pause…) s'affiche tout de suite.
    */
-  const askRecovering = async (input: { messages: ReturnType<typeof conversationForNora>; requestId?: string }) => {
+  const askRecovering = async (input: { messages: ReturnType<typeof conversationForNora>; requestId?: string; plantIds?: string[] }) => {
     for (let attempt = 0; ; attempt += 1) {
       try {
         return await ask.mutateAsync(input);

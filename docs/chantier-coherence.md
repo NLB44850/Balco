@@ -72,3 +72,8 @@ Dans le code : `components/ui/button.tsx` (`Button`, variantes `primary`, `secon
    modification d'une plante plus ancienne que sa date d'ajout simulée (le serveur garde la modification la plus
    récente) : `nextUpdatedAt` (toujours après tout ce qu'on sait de la plante) et `resendPlants` (toutes les plantes
    renvoyées une fois, `plantsResent` dans les métadonnées de synchro). Tests `sync-logic`.
+6. (14/10, 2ᵉ test) Toujours lavande, thym, menthe chez Nora alors que la synchro des gestes marche. Cause exacte non
+   trouvée depuis la session (pas d'accès à sa base). Parade sûre : chaque question à Nora envoie les plantes affichées
+   sur le téléphone (`plantIds` de `ai.ask`) ; le serveur tient pour retirée toute plante absente de cette liste
+   (`limitToShown`, ne peut qu'en retirer, jamais en ajouter). Réglages → Compte affiche la raison d'un échec de
+   sauvegarde (`syncError`). Côté serveur : en ligne après la fusion de la PR #50 (Railway).

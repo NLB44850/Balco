@@ -79,6 +79,8 @@ export type AccountState = {
   email?: string | null;
   /** « other-device » : compte gratuit dont le jardin est sauvegardé depuis un autre téléphone. */
   status: "idle" | "syncing" | "offline" | "other-device";
+  /** La raison du dernier échec de sauvegarde (affichée dans Réglages pour comprendre un souci). */
+  syncError?: string;
   lastSyncedAt?: string;
   serverPush: boolean;
   /** Forfait du compte, connu après la première synchro. */
@@ -163,6 +165,7 @@ export function GardenProvider({ children }: { children: ReactNode }) {
   const [awards, setAwards] = useState<Awards>({});
   const awardsRef = useRef<StoredAwards>({ awards: {}, seen: [] });
   const [syncStatus, setSyncStatus] = useState<AccountState["status"]>("idle");
+  const [syncError, setSyncError] = useState<string | undefined>(undefined);
   const [lastSyncedAt, setLastSyncedAt] = useState<string | undefined>(undefined);
   const [serverPush, setServerPush] = useState(false);
   const [plan, setPlan] = useState<Plan>("free");
@@ -350,6 +353,7 @@ export function GardenProvider({ children }: { children: ReactNode }) {
       if (JSON.stringify(appliedSettings) !== JSON.stringify(latestSettings)) await saveLocalReminderSettings(appliedSettings, "sync");
       await saveMeta({ openId, lastSyncedAt: snapshot.serverTime, lastLocation: location ?? metaRef.current.lastLocation, plantsResent: true });
       setSyncStatus("idle");
+      setSyncError(undefined);
       setPlan(snapshot.access.plan);
       setFounder(snapshot.access.founder);
       if (snapshot.access.serverReminders) {
@@ -367,6 +371,7 @@ export function GardenProvider({ children }: { children: ReactNode }) {
         return;
       }
       setSyncStatus("offline");
+      setSyncError((error instanceof Error ? error.message : String(error)).slice(0, 200));
       console.warn("[sync] failed, will retry", error);
     } finally {
       syncingRef.current = false;
@@ -567,11 +572,12 @@ export function GardenProvider({ children }: { children: ReactNode }) {
     name: auth.user?.name,
     email: auth.user?.email,
     status: syncStatus,
+    syncError,
     lastSyncedAt,
     serverPush,
     plan,
     founder,
-  }), [auth.isAuthenticated, auth.loading, auth.user?.email, auth.user?.name, founder, lastSyncedAt, plan, serverPush, syncStatus]);
+  }), [auth.isAuthenticated, auth.loading, auth.user?.email, auth.user?.name, founder, lastSyncedAt, plan, serverPush, syncError, syncStatus]);
 
   const value = useMemo<GardenContextValue>(
     () => ({ loaded, plants, resolvedPlants, pastPlants, events, awards, takeUnseenAwards, markAwardsSeen, grantAward, profile, onboarding, account, addPlant, removePlant, restorePlant, restartPlant, renamePlant, setPlantVariety, setPlantPotSize, logEvent, removeEvent, updateProfile, reloadOnboarding, updateOnboarding, reportLocation, signIn, signOut, syncNow, claimThisDevice, refreshAccount, completeSignIn, deleteAccount }),

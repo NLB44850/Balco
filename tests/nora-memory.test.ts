@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import { conversationDayLabel, conversationForNora, withDaySeparators, type DatedMessage } from "../lib/ai/conversation";
 import { cleanNote, cleanPreferences, describeMemory, mergeNotes, noteDate, parseNotes, togglePreference } from "../lib/ai/memory";
-import { describeGarden, summarizeHistory, type GardenFacts } from "../server/ai/context";
+import { describeGarden, limitToShown, summarizeHistory, type GardenFacts } from "../server/ai/context";
 
 const NOW = new Date("2026-09-29T12:00:00Z");
 const daysAgo = (days: number) => new Date(NOW.getTime() - days * 86_400_000);
@@ -130,6 +130,13 @@ describe("history for Nora (last 90 days, aggregated)", () => {
     const { removedPlants, history } = summarizeHistory(rows, [], NOW);
     expect(removedPlants[0].name).toBe("Claytone de Cuba");
     expect(history[0].name).toBe("Ciboulette (à semer ou planter : pas encore en terre)");
+  });
+
+  it("only the plants shown on the phone count as on the balcony", () => {
+    const limited = limitToShown(plants, ["basil-1"], NOW);
+    expect(limited.find((row) => row.plantId === "mint-1")).toMatchObject({ active: 0, removedAt: NOW });
+    expect(limited.find((row) => row.plantId === "basil-1")!.active).toBe(1);
+    expect(limitToShown(plants, undefined, NOW)).toBe(plants);
   });
 
   it("writes it in plain French for Nora", () => {

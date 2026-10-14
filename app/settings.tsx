@@ -506,7 +506,7 @@ export default function SettingsScreen() {
         <SettingsGroup title="Compte">
           {account.signedIn ? (
             <View key="backup" style={styles.accountBlock}>
-              <SettingRow label={backup.label} subtitle={account.email ?? undefined} />
+              <SettingRow label={backup.label} subtitle={[account.email, account.status === "offline" && account.syncError ? `Raison : ${account.syncError}` : null].filter(Boolean).join("\n") || undefined} />
               <View style={styles.accountActions}>
                 {backup.action && (
                   <Button small label={backup.action === "claim" ? "Sauvegarder depuis ce téléphone" : "Réessayer"} onPress={() => void (backup.action === "claim" ? claimThisDevice() : syncNow())} />
