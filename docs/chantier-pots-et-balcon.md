@@ -294,3 +294,14 @@ Règles qui valent pour toutes les étapes :
      points (« Oui » en vert plein, « Annuler » en blanc), texte sur 3 lignes, une question reste 9 s au lieu de 5 ; au
      -dessus d'une feuille du bas, le message tient compte de la marge du bas du téléphone (`bottom={insets.bottom + 16}`
      dans Aujourd'hui, Saisons et la fiche).
+   - **Retours du 14/10, ses choix** : (1) catalogue en **un seul « + »** au lieu des deux boutons « Déjà sur mon balcon /
+     À planter » (mal alignés) : Balco choisit « à planter » quand c'est le moment de la semer ou de la planter, sinon
+     « déjà sur mon balcon » ; le message du bas propose l'autre choix (« Pas encore plantée ? », « Déjà plantée ? »,
+     accordé) et « Annuler » (deuxième bouton du message, `onCancel` de `ToastMessage`) ; la fiche du catalogue n'a plus
+     qu'« Ajouter à mon balcon ». (2) **Hors saison, prévenir et garder pour le printemps** : « à planter » alors que ce
+     n'est pas sa saison → « Aubergine : à semer au chaud dès février. Balco te la reproposera au printemps » (envie du
+     printemps, carte de mars, notification du 1er mars ; si sa saison revient de juin à janvier, elle attend sur le
+     balcon : « À planter en août : … ») ; annuelle frileuse ajoutée « déjà là » de septembre à décembre → « Fin de
+     saison : récolte avant les premières gelées ». Logique `lib/garden/catalog-add.ts` (`defaultAddChoice`,
+     `toPlantPlan`, `installedText`, `toPlantText`, `switchLabel`), tests `tests/catalog-add.test.ts`, e2e « catalogue :
+     ajouter une plante d'un + » (`1-parcours`, en octobre).

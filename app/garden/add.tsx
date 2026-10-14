@@ -1,6 +1,7 @@
 /**
  * Le catalogue : ajouter une plante en un toucher. Une recherche, les plantes adaptées à ton balcon
- * d'abord, les familles en pastilles. Le « + » ajoute tout de suite (avec « Annuler ») ; toucher la
+ * d'abord, les familles en pastilles. Le « + » ajoute tout de suite, « à planter » si c'est sa saison, sinon « déjà sur
+ * mon balcon » (lib/garden/catalog-add.ts) ; le message du bas propose l'autre choix et « Annuler » ; toucher la
  * ligne ouvre la fiche du catalogue dans la feuille du bas (variétés, calendrier, pot). La pastille
  * « À semer en octobre » ne garde que ce qui se sème ou se plante ce mois-là (ouverte depuis Saisons).
  */
@@ -37,7 +38,10 @@ import {
   type SpaceSize,
   type Sunlight,
 } from "@/lib/plants/catalog";
-import { ADD_CHOICE_LABELS, addChoices, suggestionActionLabel, suggestionFor, type AddChoice } from "@/lib/plants/suggestions";
+import { suggestionActionLabel, suggestionFor, type AddChoice } from "@/lib/plants/suggestions";
+import { defaultAddChoice, installedText, switchLabel, toPlantPlan, toPlantText } from "@/lib/garden/catalog-add";
+import { addSpringWish, nextSpringReminder, SPRING_REMINDER_SOURCE, springReminderContent } from "@/lib/garden/spring";
+import { scheduleDatedReminder } from "@/lib/reminders/local-notifications";
 import { guideLinkText } from "@/lib/plants/guide";
 import { now as clockNow } from "@/lib/clock";
 
@@ -47,7 +51,7 @@ export default function AddPlantScreen() {
   const colors = useColors();
   const router = useRouter();
   const insets = useSafeAreaInsets();
-  const { plants, onboarding, addPlant, removePlant } = useGarden();
+  const { plants, onboarding, addPlant, removePlant, updateOnboarding } = useGarden();
   const params = useLocalSearchParams<{ month?: string }>();
   const currentMonth = clockNow().getMonth() + 1;
   const askedMonth = Number(params.month);
@@ -58,8 +62,6 @@ export default function AddPlantScreen() {
   const hasBalconyInfo = Boolean(onboarding && !onboarding.skipped && (onboarding.sunlight || onboarding.space));
   const [onlyFitting, setOnlyFitting] = useState(hasBalconyInfo);
   const [sheetId, setSheetId] = useState<string | null>(null);
-  // « + » touché : la ligne propose « Déjà sur mon balcon » ou « À planter ».
-  const [choosingId, setChoosingId] = useState<string | null>(null);
   const [toast, setToast] = useState<ToastMessage | null>(null);
   const toastId = useRef(0);
   const hideToast = useCallback(() => setToast(null), []);
@@ -83,22 +85,48 @@ export default function AddPlantScreen() {
     : null;
   const sheetEntry = sheetId ? getCatalogPlant(sheetId) : undefined;
 
-  const add = async (catalogId: string, choice: AddChoice) => {
-    const entry = getCatalogPlant(catalogId);
-    setChoosingId(null);
-    // À planter : son premier geste sera « Sème… » ou « Plante… » ; déjà là : on l'arrose et on l'entretient.
-    const created = await addPlant(catalogId, { toPlant: choice === "toPlant" });
-    if (Platform.OS !== "web") void Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => undefined);
+  const showToast = (message: Omit<ToastMessage, "id">) => {
     toastId.current += 1;
+    setToast({ id: toastId.current, ...message });
+  };
+
+  /** Envie du printemps : carte de mars et notification du 1er mars (comme « Me le reproposer au printemps »). */
+  const setSpringWish = async (catalogId: string, wished: boolean) => {
+    const current = onboarding?.springWishes ?? [];
+    const wishes = wished ? addSpringWish(current, catalogId) : current.filter((id) => id !== catalogId);
+    if (wishes === current) return;
+    await updateOnboarding({ springWishes: wishes });
+    const entries = wishes.map((id) => getCatalogPlant(id)).filter((item): item is CatalogPlant => Boolean(item));
+    if (entries.length > 0) void scheduleDatedReminder(SPRING_REMINDER_SOURCE, springReminderContent(entries), nextSpringReminder(clockNow())).catch(() => undefined);
+  };
+
+  /** Ajoute la plante comme `choice`, puis le message du bas : l'autre choix en une touche, et « Annuler ». */
+  const add = async (catalogId: string, choice?: AddChoice) => {
+    const entry = getCatalogPlant(catalogId);
+    if (!entry) return;
+    const month = clockNow().getMonth() + 1;
+    const chosen = choice ?? defaultAddChoice(entry, month);
     // Balco lui donne la taille de pot de sa fiche et le dit ; on la change sur sa fiche (13/10 : moins d'efforts).
-    const pot = entry ? ` ${potSizePhrase(recommendedPotSize(entry))}` : "";
-    setToast({ id: toastId.current, text: `${choice === "toPlant" ? "À planter" : "Ajouté"} : ${entry?.name ?? "ta plante"}${pot}`, onUndo: () => void removePlant(created.id) });
+    const pot = ` ${potSizePhrase(recommendedPotSize(entry))}`;
+    if (Platform.OS !== "web") void Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => undefined);
+    const other: AddChoice = chosen === "installed" ? "toPlant" : "installed";
+    const plan = chosen === "toPlant" ? toPlantPlan(entry, month) : null;
+    if (plan?.kind === "spring") {
+      // Pas avant le printemps : elle rejoint les envies du printemps au lieu d'attendre sur le balcon.
+      await setSpringWish(catalogId, true);
+      const undo = () => void setSpringWish(catalogId, false);
+      return showToast({ text: toPlantText(entry, plan, pot), actionLabel: switchLabel(entry, chosen), onUndo: () => { undo(); void add(catalogId, other); }, onCancel: undo });
+    }
+    // À planter : son premier geste sera « Sème… » ou « Plante… » ; déjà là : on l'arrose et on l'entretient.
+    const created = await addPlant(catalogId, { toPlant: chosen === "toPlant" });
+    const undo = () => void removePlant(created.id);
+    const text = plan ? toPlantText(entry, plan, pot) : installedText(entry, month, pot);
+    showToast({ text, actionLabel: switchLabel(entry, chosen), onUndo: () => { undo(); void add(catalogId, other); }, onCancel: undo });
   };
   // Des fonctions stables pour les lignes : seules les lignes qui changent se redessinent (101 lignes avec photo).
   const addRef = useRef(add);
   addRef.current = add;
-  const onAdd = useCallback((catalogId: string, choice: AddChoice) => void addRef.current(catalogId, choice), []);
-  const onToggle = useCallback((catalogId: string) => setChoosingId((current) => (current === catalogId ? null : catalogId)), []);
+  const onAdd = useCallback((catalogId: string) => void addRef.current(catalogId), []);
   const onOpen = useCallback((catalogId: string) => setSheetId(catalogId), []);
 
   return (
@@ -140,7 +168,7 @@ export default function AddPlantScreen() {
               const owned = countByCatalogId.get(entry.id) ?? 0;
               const seasonal = inSeason ? suggestionFor(entry, seasonMonth) : null;
               const meta = owned ? `✓ Sur ton balcon${owned > 1 ? ` (${owned})` : ""}` : seasonal ? `${suggestionActionLabel(seasonal)} · ${seasonal.reason}` : effortLabel(entry);
-              return <CatalogRow key={entry.id} entry={entry} owned={owned > 0} meta={meta} metaLines={seasonal && !owned ? 2 : 1} choosing={choosingId === entry.id} month={currentMonth} last={index === results.length - 1} onOpen={onOpen} onToggle={onToggle} onAdd={onAdd} />;
+              return <CatalogRow key={entry.id} entry={entry} owned={owned > 0} meta={meta} metaLines={seasonal && !owned ? 2 : 1} last={index === results.length - 1} onOpen={onOpen} onAdd={onAdd} />;
             })}
           </View>
         )}
@@ -193,11 +221,9 @@ export default function AddPlantScreen() {
               <Text style={[styles.factText, { color: colors.primary }]}>🧺  {guideLinkText(sheetEntry, "need")}</Text>
             </Pressable>
             {countByCatalogId.get(sheetEntry.id) ? <Text style={[styles.meta, { color: colors.primary }]}>✓ Déjà sur ton balcon : tu peux en ajouter une autre.</Text> : null}
-            {addChoices(sheetEntry, currentMonth).map((choice, position) => (
-              <Pressable key={choice} accessibilityRole="button" onPress={() => { const id = sheetEntry.id; setSheetId(null); void add(id, choice); }} style={({ pressed }) => [styles.cta, position === 0 ? { backgroundColor: colors.primary } : { borderColor: colors.primary, borderWidth: 1 }, pressed && styles.pressed]}>
-                <Text style={[styles.ctaText, position > 0 && { color: colors.primary }]}>{ADD_CHOICE_LABELS[choice]}</Text>
-              </Pressable>
-            ))}
+            <Pressable accessibilityRole="button" onPress={() => { const id = sheetEntry.id; setSheetId(null); void add(id); }} style={({ pressed }) => [styles.cta, { backgroundColor: colors.primary }, pressed && styles.pressed]}>
+              <Text style={styles.ctaText}>Ajouter à mon balcon</Text>
+            </Pressable>
           </View>
         )}
       </BottomSheet>
@@ -211,16 +237,13 @@ type RowProps = {
   owned: boolean;
   meta: string;
   metaLines: number;
-  choosing: boolean;
-  month: number;
   last: boolean;
   onOpen: (catalogId: string) => void;
-  onToggle: (catalogId: string) => void;
-  onAdd: (catalogId: string, choice: AddChoice) => void;
+  onAdd: (catalogId: string) => void;
 };
 
-/** Une ligne du catalogue, redessinée seulement quand elle change (« + » touché, plante ajoutée). */
-const CatalogRow = memo(function CatalogRow({ entry, owned, meta, metaLines, choosing, month, last, onOpen, onToggle, onAdd }: RowProps) {
+/** Une ligne du catalogue, redessinée seulement quand elle change (plante ajoutée). */
+const CatalogRow = memo(function CatalogRow({ entry, owned, meta, metaLines, last, onOpen, onAdd }: RowProps) {
   const colors = useColors();
   return (
     <View style={!last && glass.line}>
@@ -232,19 +255,10 @@ const CatalogRow = memo(function CatalogRow({ entry, owned, meta, metaLines, cho
             <Text style={[styles.meta, { color: owned ? colors.primary : colors.muted }]} numberOfLines={metaLines}>{meta}</Text>
           </View>
         </Pressable>
-        <Pressable accessibilityRole="button" accessibilityLabel={`Ajouter ${entry.name}`} hitSlop={8} onPress={() => onToggle(entry.id)} style={({ pressed }) => [styles.add, { backgroundColor: owned || choosing ? colors.leaf : colors.primary }, pressed && styles.pressed]}>
-          <Text style={[styles.addText, { color: owned || choosing ? colors.primary : "#FFFFFF" }]}>{choosing ? "×" : "+"}</Text>
+        <Pressable accessibilityRole="button" accessibilityLabel={`Ajouter ${entry.name}`} hitSlop={8} onPress={() => onAdd(entry.id)} style={({ pressed }) => [styles.add, { backgroundColor: owned ? colors.leaf : colors.primary }, pressed && styles.pressed]}>
+          <Text style={[styles.addText, { color: owned ? colors.primary : "#FFFFFF" }]}>+</Text>
         </Pressable>
       </View>
-      {choosing && (
-        <View style={styles.choices}>
-          {addChoices(entry, month).map((choice, position) => (
-            <Pressable key={choice} accessibilityRole="button" accessibilityLabel={`${entry.name} : ${ADD_CHOICE_LABELS[choice]}`} onPress={() => onAdd(entry.id, choice)} style={({ pressed }) => [styles.choice, position === 0 ? { backgroundColor: colors.primary } : { borderColor: colors.primary, borderWidth: 1 }, pressed && styles.pressed]}>
-              <Text style={[styles.choiceText, { color: position === 0 ? "#FFFFFF" : colors.primary }]}>{ADD_CHOICE_LABELS[choice]}</Text>
-            </Pressable>
-          ))}
-        </View>
-      )}
     </View>
   );
 });
@@ -271,9 +285,6 @@ const styles = StyleSheet.create({
   add: { width: 38, height: 38, borderRadius: 19, alignItems: "center", justifyContent: "center" },
   addText: { fontSize: 22, fontWeight: "700", marginTop: -2 },
   needLink: { paddingVertical: 4 },
-  choices: { flexDirection: "row", gap: 8, paddingBottom: 12, paddingLeft: 58 },
-  choice: { flex: 1, borderRadius: 12, paddingVertical: 10, alignItems: "center" },
-  choiceText: { fontSize: 13, fontWeight: "700" },
   footer: { paddingHorizontal: 20, paddingTop: 12, backgroundColor: "rgba(255,255,255,0.92)", borderTopWidth: StyleSheet.hairlineWidth },
   doneButton: { borderRadius: 16, paddingVertical: 15, alignItems: "center" },
   doneText: { fontSize: 15, fontWeight: "700" },

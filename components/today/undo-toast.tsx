@@ -1,11 +1,12 @@
 import { useEffect, useRef } from "react";
-import { Animated, Pressable, StyleSheet } from "react-native";
+import { Animated, Pressable, StyleSheet, View } from "react-native";
 import { Text } from "@/components/ui/typography";
 
 import { useColors } from "@/hooks/use-colors";
 
 /** `actionLabel` : le bouton à la place de « Annuler » (« Oui » après la récolte d'une plante récoltée en une fois). */
-export type ToastMessage = { id: number; text: string; onUndo?: () => void; actionLabel?: string };
+/** `onCancel` : un « Annuler » en plus du bouton principal (catalogue : « Pas encore plantée ? » et « Annuler »). */
+export type ToastMessage = { id: number; text: string; onUndo?: () => void; actionLabel?: string; onCancel?: () => void };
 
 type UndoToastProps = { message: ToastMessage | null; onDone: () => void; bottom?: number };
 
@@ -32,18 +33,27 @@ export function UndoToast({ message, onDone, bottom = 16 }: UndoToastProps) {
 
   if (!message) return null;
   return (
-    <Animated.View accessibilityLiveRegion="polite" style={[styles.toast, { bottom, backgroundColor: colors.foreground, transform: [{ translateY: translate }] }]}>
-      <Text style={styles.text} numberOfLines={3}>{message.text}</Text>
-      {message.onUndo && (
-        <Pressable
-          accessibilityRole="button"
-          accessibilityLabel={message.actionLabel ?? "Annuler"}
-          onPress={() => { message.onUndo?.(); onDone(); }}
-          hitSlop={8}
-          style={({ pressed }) => [styles.action, message.actionLabel ? { backgroundColor: colors.primary } : styles.actionQuiet, pressed && styles.pressed]}
-        >
-          <Text style={[styles.actionText, { color: message.actionLabel ? "#FFFFFF" : colors.foreground }]}>{message.actionLabel ?? "Annuler"}</Text>
-        </Pressable>
+    <Animated.View accessibilityLiveRegion="polite" style={[styles.toast, message.onCancel && styles.stacked, { bottom, backgroundColor: colors.foreground, transform: [{ translateY: translate }] }]}>
+      <Text style={[styles.text, message.onCancel && styles.textStacked]} numberOfLines={3}>{message.text}</Text>
+      {(message.onUndo || message.onCancel) && (
+        <View style={styles.actions}>
+          {message.onCancel && (
+            <Pressable accessibilityRole="button" accessibilityLabel="Annuler" onPress={() => { message.onCancel?.(); onDone(); }} hitSlop={8} style={({ pressed }) => [styles.action, styles.actionQuiet, pressed && styles.pressed]}>
+              <Text style={[styles.actionText, { color: colors.foreground }]}>Annuler</Text>
+            </Pressable>
+          )}
+          {message.onUndo && (
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel={message.actionLabel ?? "Annuler"}
+              onPress={() => { message.onUndo?.(); onDone(); }}
+              hitSlop={8}
+              style={({ pressed }) => [styles.action, message.actionLabel ? { backgroundColor: colors.primary } : styles.actionQuiet, pressed && styles.pressed]}
+            >
+              <Text style={[styles.actionText, { color: message.actionLabel ? "#FFFFFF" : colors.foreground }]}>{message.actionLabel ?? "Annuler"}</Text>
+            </Pressable>
+          )}
+        </View>
       )}
     </Animated.View>
   );
@@ -51,6 +61,10 @@ export function UndoToast({ message, onDone, bottom = 16 }: UndoToastProps) {
 
 const styles = StyleSheet.create({
   toast: { position: "absolute", left: 16, right: 16, borderRadius: 14, paddingLeft: 16, paddingRight: 10, paddingVertical: 10, flexDirection: "row", alignItems: "center", gap: 12, shadowColor: "#000", shadowOpacity: 0.18, shadowRadius: 14, shadowOffset: { width: 0, height: 6 }, elevation: 6 },
+  // Deux boutons : le texte au-dessus, les boutons en dessous, à droite.
+  stacked: { flexDirection: "column", alignItems: "stretch", gap: 8, paddingTop: 14 },
+  textStacked: { flex: 0 },
+  actions: { flexDirection: "row", justifyContent: "flex-end", gap: 8 },
   text: { flex: 1, color: "#FFFFFF", fontSize: 14, lineHeight: 19, fontWeight: "600" },
   action: { minHeight: 44, minWidth: 64, borderRadius: 22, paddingHorizontal: 18, alignItems: "center", justifyContent: "center" },
   actionQuiet: { backgroundColor: "#FFFFFF" },

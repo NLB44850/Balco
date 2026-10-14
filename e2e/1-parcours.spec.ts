@@ -199,24 +199,37 @@ test("une 1ʳᵉ récolte se fête en grand, une seule fois par jour", async ({ 
   await expect(page.getByRole("button", { name: /\. Fermer$/ })).toHaveCount(0);
 });
 
-test("catalogue : ajouter une plante puis ouvrir sa fiche", async ({ page }) => {
+test("catalogue : ajouter une plante d'un « + » puis ouvrir sa fiche", async ({ page }) => {
   const errors = trackErrors(page);
+  // En octobre : la menthe et la lavande se plantent, l'aubergine finit sa saison.
+  const now = await atDate(page, new Date(2027, 9, 14, 10));
   await mockWeather(page);
-  await seedBalcony(page, { plants: ["basil"], wateredDaysAgo: 1 });
+  await seedBalcony(page, { plants: ["basil"], wateredDaysAgo: 1, now });
   await open(page, "/garden/add", "Ajouter une plante");
   await page.getByPlaceholder("Basilic, fraisier, lavande…").fill("menthe");
-  // « + » : déjà sur le balcon, ou à planter ?
+  // Un seul « + » : c'est sa saison, Balco l'ajoute « à planter » ; le message du bas propose l'autre choix.
   await page.getByRole("button", { name: /^Ajouter Menthe/ }).first().click();
-  await page.getByRole("button", { name: "Menthe : Déjà sur mon balcon" }).click();
   // Balco lui donne la taille de pot de sa fiche et le dit dans le message du bas (pas de question).
-  await expect(page.getByText("Ajouté : Menthe en pot moyen (20 à 30 cm)")).toBeVisible();
+  await expect(page.getByText("À planter : Menthe en pot moyen (20 à 30 cm)")).toBeVisible();
   await expect(page.getByText("Dans quel pot ?")).toHaveCount(0);
+  await page.getByRole("button", { name: "Déjà plantée ?" }).click();
+  await expect(page.getByText("Ajouté : Menthe en pot moyen (20 à 30 cm)")).toBeVisible();
   await expect(page.getByText("✓ Sur ton balcon")).toBeVisible();
-  // La même, à planter : son premier geste sera de la planter.
+  // La lavande, à planter.
   await page.getByPlaceholder("Basilic, fraisier, lavande…").fill("lavande");
   await page.getByRole("button", { name: /^Ajouter Lavande/ }).first().click();
-  await page.getByRole("button", { name: "Lavande : À planter" }).click();
   await expect(page.getByText("À planter : Lavande en pot moyen (20 à 30 cm)")).toBeVisible();
+  // L'aubergine en octobre : déjà là, avec la fin de saison ; « Pas encore plantée ? » la garde pour le printemps.
+  await page.getByPlaceholder("Basilic, fraisier, lavande…").fill("aubergine");
+  await page.getByRole("button", { name: /^Ajouter Aubergine/ }).first().click();
+  await expect(page.getByText(/^Ajouté : Aubergine .* · Fin de saison : récolte avant les premières gelées$/u)).toBeVisible();
+  await page.getByRole("button", { name: "Pas encore plantée ?" }).click();
+  await expect(page.getByText("Aubergine : à semer au chaud dès février. Balco te la reproposera au printemps")).toBeVisible();
+  // « Annuler » retire l'envie.
+  await page.getByRole("button", { name: "Annuler" }).click();
+  await expect(page.getByText("✓ Sur ton balcon")).toHaveCount(0);
+  const wishes = await page.evaluate(() => (JSON.parse(localStorage.getItem("balco.onboarding.preferences.v1") ?? "{}") as { springWishes?: string[] }).springWishes ?? []);
+  expect(wishes).not.toContain("eggplant");
   await page.getByRole("button", { name: "Voir mon balcon · 3 plantes" }).click();
   await page.getByRole("button", { name: /^Menthe, .*voir la fiche/ }).click();
   await expect(page.getByText(/Photo d’exemple|Ajoute ta photo/).first()).toBeVisible();
@@ -238,8 +251,11 @@ test("catalogue : ajouter une plante puis ouvrir sa fiche", async ({ page }) => 
   await expect(page.getByText("Ta jardinière lui convient", { exact: false })).toBeVisible();
   await expect(page.getByText("Place pour un seul pied dans 60 cm.")).toBeVisible();
   const stored = await page.evaluate(() => JSON.parse(localStorage.getItem("balco.garden.plants.v1") ?? "[]"));
-  expect(stored.find((plant: { catalogId: string }) => plant.catalogId === "mint")?.potSize).toBe("planter");
-  expect(stored.find((plant: { catalogId: string }) => plant.catalogId === "lavender")?.potSize).toBe("medium");
+  // « Déjà plantée ? » a remplacé la menthe « à planter » (retirée) par une menthe déjà là.
+  const kept = (catalogId: string) => stored.find((plant: { catalogId: string; removedAt?: string }) => plant.catalogId === catalogId && !plant.removedAt);
+  expect(kept("mint")).toMatchObject({ potSize: "planter" });
+  expect(kept("mint")?.toPlant).toBeFalsy();
+  expect(kept("lavender")).toMatchObject({ potSize: "medium", toPlant: true });
   expect(errors).toEqual([]);
 });
 
@@ -270,8 +286,8 @@ test("fiche du bas : jamais plus haute que l'écran, se ferme par « × » ou en
   await expect(close).toBeVisible();
   const box = await close.boundingBox();
   expect(box!.y).toBeGreaterThanOrEqual(0);
-  await page.getByRole("button", { name: "Déjà sur mon balcon" }).scrollIntoViewIfNeeded();
-  await expect(page.getByRole("button", { name: "Déjà sur mon balcon" })).toBeInViewport();
+  await page.getByRole("button", { name: "Ajouter à mon balcon" }).scrollIntoViewIfNeeded();
+  await expect(page.getByRole("button", { name: "Ajouter à mon balcon" })).toBeInViewport();
 
   // « × » ferme la fiche.
   await close.click();
