@@ -33,7 +33,8 @@ describe("arrosage selon le pot et la météo (étape 6a)", () => {
     expect(wateringIntervalHours(basil, "medium")).toBe(36);
     expect(wateringIntervalHours(basil, "large")).toBe(47);
     expect(wateringIntervalHours(basil, "planter")).toBe(31);
-    expect(wateringIntervalHours(basil, "unknown")).toBe(36);
+    // Taille pas notée : celle que conseille sa fiche (petit pot pour le basilic), comme pour le poids.
+    expect(wateringIntervalHours(basil, "unknown")).toBe(25);
     expect(wateringIntervalOf(plant("small"))).toBe(25);
     // Arrosé 26 h avant minuit : dû en petit pot (25 h), pas en pot moyen (36 h).
     const due = (potSize: string) => planDay({ plants: [plant(potSize)], events: [wateredHoursAgo(26)], now: NOW })[0].gestures.some((gesture) => gesture.kind === "watering" && !gesture.done);

@@ -1,6 +1,6 @@
 import { expect, test } from "@playwright/test";
 
-import { atDate, loginCodes, mockWeather, open, seedBalcony, trackErrors } from "./helpers";
+import { atDate, DAY_MS, loginCodes, mockWeather, open, seedBalcony, trackErrors } from "./helpers";
 
 /** Le compte (code par e-mail, balcon retrouvé sur un autre téléphone) et le mode vacances. */
 
@@ -81,7 +81,10 @@ test("mode vacances : les consignes pour qui arrose, plante par plante, modifiab
   // En juillet (le rythme dépend de la saison).
   const now = await atDate(page, new Date(2027, 6, 10, 9));
   await mockWeather(page);
-  await seedBalcony(page, { plants: ["basil", "cherry-tomato"], wateredDaysAgo: 1, now });
+  // Le basilic en pot moyen noté (sans taille, il compterait en petit pot : un passage chaque jour).
+  const added = new Date(now.getTime() - 30 * DAY_MS).toISOString();
+  const pots = [{ id: "basil-e2e", catalogId: "basil", addedAt: added, potSize: "medium" }, { id: "cherry-tomato-e2e", catalogId: "cherry-tomato", addedAt: added }];
+  await seedBalcony(page, { plants: ["basil", "cherry-tomato"], wateredDaysAgo: 1, now, extra: { "balco.garden.plants.v1": JSON.stringify(pots) } });
   await open(page, "/vacation", "Mode vacances");
   await page.getByRole("radio", { name: /Oui, un proche passera/ }).click();
   await page.getByRole("button", { name: "Préparer mon départ" }).click();
@@ -94,7 +97,7 @@ test("mode vacances : les consignes pour qui arrose, plante par plante, modifiab
   await expect(note).toHaveValue(/Merci de t’occuper de mon balcon du 13 au 19 juillet/);
   await expect(note).toHaveValue(/Quand passer\nPremier passage jeudi 15 juillet, puis tous les 2 jours jusqu’au 19 juillet\./);
   // Le rythme suit les passages ; par forte chaleur, le basilic demande plus souvent : on le dit.
-  await expect(note).toHaveValue(/• Basilic : environ 1 L à chaque passage, si la terre est sèche ; s’il fait plus de 30 °C, passe plus souvent pour le basilic si tu peux \(chaque jour\)\./);
+  await expect(note).toHaveValue(/• Basilic \(pot moyen\) : environ 2 L à chaque passage, si la terre est sèche ; s’il fait plus de 30 °C, passe plus souvent pour le basilic si tu peux \(chaque jour\)\./);
   await expect(note).toHaveValue(/• Tomates cerises : environ \d(,5)? L (à chaque passage|un passage sur deux), si la terre est sèche/);
   await expect(note).not.toHaveValue(/ : \p{Lu}\p{Ll}/u);
   await expect(note).toHaveValue(/Merci !$/);

@@ -40,7 +40,8 @@ import { backupStatus, cityValue, goalsValue, NOT_YET, spaceValue, springWishEnt
 import { ORIENTATION_OPTIONS, seasonSunHours, sunSummary, type Orientation } from "@/lib/garden/sun";
 import { nextSpringReminder, SPRING_REMINDER_SOURCE, springReminderContent } from "@/lib/garden/spring";
 import { notificationsUnavailableReason } from "@/lib/notifications/module";
-import { POT_SIZE_CHOICES } from "@/lib/plants/pot-size";
+import { potLabel } from "@/lib/plants/pot-sheet";
+import { potSizeOf } from "@/lib/plants/pot-size";
 import { activateReminders, NOTIFICATIONS_DENIED } from "@/lib/reminders/activate";
 import {
   clearAndDisableLocalReminders,
@@ -411,13 +412,14 @@ export default function SettingsScreen() {
         {weight.pots.map((pot) => {
           const resolved = resolvedPlants.find((item) => item.plant.id === pot.plantId);
           if (!resolved) return null;
-          const sizeText = pot.size ? POT_SIZE_CHOICES.find((choice) => choice.id === pot.size)?.title : "Grand bac";
+          // Le même libellé que la fiche de la plante : « Pot moyen (21 à 30 cm) » ou « Pot conseillé : petit (…) ».
+          const sizeText = potLabel(resolved.entry, potSizeOf(resolved.plant)).text;
           return (
             <View key={pot.plantId} style={[styles.wishRow, { borderColor: colors.border }]}>
               <PlantPicture resolved={resolved} style={styles.wishPicture} />
               <View style={styles.flex}>
                 <Text style={[styles.wishName, { color: colors.foreground }]}>{plantDisplayName(resolved)}</Text>
-                <Text style={[styles.weightSize, { color: colors.muted }]}>{pot.guessed ? `Taille conseillée : ${sizeText?.toLowerCase()}` : sizeText}</Text>
+                <Text style={[styles.weightSize, { color: colors.muted }]}>{sizeText}</Text>
               </View>
               <Text style={[styles.weightKg, { color: colors.foreground }]}>{pot.kg} kg</Text>
             </View>

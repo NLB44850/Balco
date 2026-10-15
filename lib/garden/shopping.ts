@@ -14,7 +14,7 @@ import { activityGroupSummary, potCareFor, type CalendarSubject } from "../plant
 import { getCatalogPlant, sowsIndoors, type CatalogPlant, type Month } from "../plants/catalog";
 import { adaptToClimate, type ClimateInfo } from "../plants/climate";
 import { feedingFor } from "../plants/fertilizing";
-import { nextPotFor, potNeedFor, potSheetFor, type SoilKind } from "../plants/pot-sheet";
+import { nextPotFor, potLabel, potNeedFor, potSheetFor, smallestFit, type SoilKind } from "../plants/pot-sheet";
 import { POT_LITERS, potSizeOf, type KnownPotSize } from "../plants/pot-size";
 import type { MaintenanceEvent } from "../reminders/reminder-engine";
 import { anticipationMonths } from "./anticipate";
@@ -60,7 +60,7 @@ export function sackText(liters: number) {
   return `${Math.ceil(liters / 50)} sacs de 50 L`;
 }
 
-const SIZE_TITLES: Record<KnownPotSize, string> = { small: "Petit pot (moins de 20 cm)", medium: "Pot moyen (20 à 30 cm)", large: "Grand pot (30 à 40 cm)", planter: "Jardinière de 60 cm" };
+const SIZE_TITLES: Record<KnownPotSize, string> = { small: "Petit pot (jusqu’à 20 cm)", medium: "Pot moyen (21 à 30 cm)", large: "Grand pot (31 à 40 cm)", planter: "Jardinière de 60 cm" };
 
 /**
  * Billes d'argile : une couche de 2 à 3 cm au fond du pot, jusqu'à 5 cm dans un grand contenant (fabricant et jardineries
@@ -171,14 +171,19 @@ export function shoppingList({ plants, events, springWishes = [], now, climate, 
       // Les plants sortent au balcon dans les 6 semaines : leur pot aussi.
       if (!months.some((candidate) => entry.plantMonths.includes(candidate))) return;
     }
-    const size = potSizeOf({ potSize });
+    // Taille pas notée : celle que conseille sa fiche, comme sur la fiche, le poids et l'arrosage (retour du 14/10) ;
+    // plus grand qu'un grand pot : un bac de sa largeur.
     const fiche = potNeedFor(need.entry);
-    if (size === "unknown") {
-      addPot(fiche.planter ? "planter" : `width-${fiche.widthCm}`, fiche.planter ? SIZE_TITLES.planter : `Pot d’au moins ${fiche.widthCm} cm de large`, need, need.plantId);
+    const noted = potSizeOf({ potSize });
+    if (noted === "unknown") {
+      const guessed = smallestFit(fiche);
+      // Même libellé que la fiche : « Pot conseillé : grand (31 à 40 cm) », avec « choisir la taille ».
+      addPot(`guess-${guessed ?? fiche.widthCm}`, potLabel(need.entry, "unknown").text, need, need.plantId);
       addSoil(need, fiche.liters);
-      addClay(need, fiche.planter ? CLAY_LITERS.planter : clayForWidth(fiche.widthCm, 2.5));
+      addClay(need, guessed ? CLAY_LITERS[guessed] : clayForWidth(fiche.widthCm, 2.5));
       return;
     }
+    const size: KnownPotSize = noted;
     addPot(size, SIZE_TITLES[size], need);
     addSoil(need, POT_LITERS[size]);
     addClay(need, CLAY_LITERS[size]);

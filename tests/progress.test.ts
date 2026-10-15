@@ -76,7 +76,8 @@ describe("petites victoires", () => {
     expect(celebrationFor(plants, [harvest], [event("basil-1", "pruning", 0), harvest], NOW)).toBeNull();
 
     // Série de jours suivis (chaque plante assoiffée arrosée) : 6 jours, puis l'arrosage du jour fait le 7ᵉ.
-    const basilOnly = plants.filter(({ plant }) => plant.id === "basil-1");
+    // En pot moyen (arrosé toutes les 36 h) : sans taille notée, il serait compté en petit pot, plus assoiffé.
+    const basilOnly = plants.filter(({ plant }) => plant.id === "basil-1").map((resolved) => ({ ...resolved, plant: { ...resolved.plant, potSize: "medium" as const } }));
     const week = [3, 5, 6].map((days) => event("basil-1", "watering", days));
     expect(title(basilOnly, week, [event("basil-1", "watering", 0), ...week], NOW)).toBe("Nouveau badge : Main verte");
 

@@ -125,7 +125,13 @@ export function potNeedText(need: PotNeed) {
   return `Il lui faut un pot de ${need.widthCm} cm de large, ${need.depthCm} cm de profondeur.`;
 }
 
-const fitsRound = (size: (typeof ROUND_SIZES)[number], need: PotNeed) => POT_SHAPES[size].widthCm + 3 >= need.widthCm && POT_SHAPES[size].depthCm >= need.depthCm * DEPTH_TOLERANCE;
+/**
+ * La largeur haute de chaque taille du choix (« Moyen, 21 à 30 cm » : 30). Elle fait foi pour ranger une largeur dans
+ * une taille, partout (fiche, poids, arrosage, courses) : un pot de 20 cm est petit, un de 40 cm grand (retour du 14/10).
+ */
+const SIZE_MAX_WIDTH: Record<(typeof ROUND_SIZES)[number], number> = { small: 20, medium: 30, large: 40 };
+
+const fitsRound = (size: (typeof ROUND_SIZES)[number], need: PotNeed) => SIZE_MAX_WIDTH[size] >= need.widthCm && POT_SHAPES[size].depthCm >= need.depthCm * DEPTH_TOLERANCE;
 const fitsPlanter = (need: PotNeed) => POT_SHAPES.planter.depthCm >= need.depthCm * DEPTH_TOLERANCE && PLANTER_LITERS >= need.liters * DEPTH_TOLERANCE;
 
 /** La plus petite taille du choix qui lui suffit (la jardinière d'abord si c'est sa culture), sinon null (plus grand qu'un grand pot). */
@@ -159,14 +165,12 @@ export function potFit(entry: Pick<CatalogPlant, "id" | "potLiters">, size: PotS
     return { tone: "ok", title: "Ta jardinière lui convient", detail: room > 1 ? `Place pour ${room} pieds dans 60 cm.` : "Place pour un seul pied dans 60 cm." };
   }
   if (fitsRound(size, need)) return { tone: "ok", title: "Ton pot lui convient", detail: potNeedText(need) };
-  const shallow = POT_SHAPES[size].widthCm + 3 >= need.widthCm;
+  const shallow = SIZE_MAX_WIDTH[size] >= need.widthCm;
   return { tone: "small", title: shallow ? "Pot trop peu profond" : "Pot trop petit", detail: `${potNeedText(need)} ${advice}` };
 }
 
 // --- Rempoter et pas-à-pas : le pot suivant et le terreau d'après la fiche ------------------------------------------
 
-/** La largeur haute de chaque taille du choix (« Moyen, 20 à 30 cm » : 30). */
-const SIZE_MAX_WIDTH: Record<(typeof ROUND_SIZES)[number], number> = { small: 20, medium: 30, large: 40 };
 
 /** La taille du choix qui correspond à une largeur, ou null au-delà d'un grand pot (un bac). */
 export function sizeForWidth(widthCm: number): KnownPotSize | null {
@@ -242,7 +246,23 @@ export function recommendedPotSize(entry: Pick<CatalogPlant, "id" | "potLiters">
   return smallestFit(potNeedFor(entry)) ?? "large";
 }
 
-/** « en grand pot (30 à 40 cm) », « en jardinière » : pour le message du bas après l'ajout. */
+const SIZE_NAMES: Record<KnownPotSize, string> = { small: "Petit pot (jusqu’à 20 cm)", medium: "Pot moyen (21 à 30 cm)", large: "Grand pot (31 à 40 cm)", planter: "Jardinière ou bac" };
+
+/**
+ * Le pot d'une plante, tel qu'on l'affiche (fiche, poids des pots) : « Pot moyen (21 à 30 cm) » quand la taille est
+ * notée ; sinon celle que conseille sa fiche, dite comme telle : « Pot conseillé : petit (jusqu’à 20 cm) », ou un bac
+ * au-delà d'un grand pot (retour du 14/10 : « Pot de 20 cm » faisait croire à une taille choisie).
+ */
+export function potLabel(entry: Pick<CatalogPlant, "id" | "potLiters">, potSize: PotSize): { text: string; chosen: boolean } {
+  if (potSize !== "unknown") return { text: SIZE_NAMES[potSize], chosen: true };
+  const need = potNeedFor(entry);
+  const fit = smallestFit(need);
+  if (!fit) return { text: `Pot conseillé : bac de ${need.widthCm} cm ou plus`, chosen: false };
+  const name = fit === "planter" ? "jardinière" : { small: "petit", medium: "moyen", large: "grand" }[fit];
+  return { text: `Pot conseillé : ${name}${fit === "planter" ? "" : ` (${SIZE_NAMES[fit].replace(/^.*\(/u, "")}`}`, chosen: false };
+}
+
+/** « en grand pot (31 à 40 cm) », « en jardinière » : pour le message du bas après l'ajout. */
 export function potSizePhrase(size: KnownPotSize) {
-  return { small: "en petit pot (moins de 20 cm)", medium: "en pot moyen (20 à 30 cm)", large: "en grand pot (30 à 40 cm)", planter: "en jardinière" }[size];
+  return { small: "en petit pot (jusqu’à 20 cm)", medium: "en pot moyen (21 à 30 cm)", large: "en grand pot (31 à 40 cm)", planter: "en jardinière" }[size];
 }

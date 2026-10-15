@@ -17,7 +17,7 @@ const DAY_MS = 24 * 60 * 60 * 1000;
 export type FirstPotLine = {
   plantId: string;
   name: string;
-  /** Une ligne courte : « Moyen (20 à 30 cm) », « Taille à choisir », « Trop petit : prends un grand pot ». */
+  /** Une ligne courte : « Moyen (21 à 30 cm) », « Taille à choisir », « Trop petit : prends un grand pot ». */
   detail: string;
   /** small : pot noté trop petit (orange) ; choose : taille inconnue ; prepare : plante à planter ; ok : pot noté qui convient. */
   tone: "small" | "choose" | "prepare" | "ok";

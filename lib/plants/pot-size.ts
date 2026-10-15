@@ -13,20 +13,20 @@ export type KnownPotSize = Exclude<PotSize, "unknown">;
  * (étape 9). Ordres de grandeur d'un pot rond (ou d'une jardinière courante), pas des mesures exactes.
  */
 export const POT_LITERS: Record<KnownPotSize, number> = {
-  /** Petit, moins de 20 cm au bord : pot de 15 à 18 cm, environ 2 à 5 L. */
+  /** Petit, jusqu’à 20 cm au bord : pot de 15 à 20 cm, environ 2 à 5 L. */
   small: 4,
-  /** Moyen, 20 à 30 cm : pot de 25 cm, environ 8 à 12 L. */
+  /** Moyen, 21 à 30 cm : pot de 25 cm, environ 8 à 12 L. */
   medium: 10,
-  /** Grand, 30 à 40 cm : pot de 35 cm, environ 18 à 28 L. */
+  /** Grand, 31 à 40 cm : pot de 35 cm, environ 18 à 28 L. */
   large: 22,
   /** Jardinière ou bac : jardinière de 60 à 80 cm, environ 15 à 25 L. */
   planter: 20,
 };
 
 export const POT_SIZE_CHOICES: readonly { id: PotSize; title: string; detail?: string }[] = [
-  { id: "small", title: "Petit", detail: "moins de 20 cm" },
-  { id: "medium", title: "Moyen", detail: "20 à 30 cm" },
-  { id: "large", title: "Grand", detail: "30 à 40 cm" },
+  { id: "small", title: "Petit", detail: "jusqu’à 20 cm" },
+  { id: "medium", title: "Moyen", detail: "21 à 30 cm" },
+  { id: "large", title: "Grand", detail: "31 à 40 cm" },
   { id: "planter", title: "Jardinière ou bac" },
   { id: "unknown", title: "Je ne sais pas" },
 ];
@@ -40,7 +40,7 @@ export function potSizeOf(plant: { potSize?: string | null }): PotSize {
   return isPotSize(plant.potSize) ? plant.potSize : "unknown";
 }
 
-/** « Moyen (20 à 30 cm) », « Jardinière ou bac », « Je ne sais pas ». */
+/** « Moyen (21 à 30 cm) », « Jardinière ou bac », « Je ne sais pas ». */
 export function potSizeLabel(size: PotSize) {
   const choice = POT_SIZE_CHOICES.find((item) => item.id === size) ?? POT_SIZE_CHOICES[POT_SIZE_CHOICES.length - 1];
   return choice.detail ? `${choice.title} (${choice.detail})` : choice.title;

@@ -29,7 +29,8 @@ export function potWeight({ plant, entry }: Plant): PotWeight {
   if (noted !== "unknown") return { plantId: plant.id, kg: Math.round(POT_LITERS[noted] * WET_SOIL_KG_PER_LITER + POT_SHELL_KG[noted]), size: noted, guessed: false };
   const need = potNeedFor(entry);
   const size = smallestFit(need);
-  const liters = size ? POT_LITERS[size] : need.liters;
+  // Le volume du pot de sa fiche ; sa taille (catégorie conseillée) donne le poids du pot vide.
+  const liters = need.liters;
   return { plantId: plant.id, kg: Math.round(liters * WET_SOIL_KG_PER_LITER + (size ? POT_SHELL_KG[size] : POT_SHELL_KG.large)), size, guessed: true };
 }
 

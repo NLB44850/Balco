@@ -46,7 +46,7 @@ import { PotSizeSheet } from "@/components/pot-size-sheet";
 import { PotSheetCard } from "@/components/pot-sheet-card";
 import { WateringCoachCard } from "@/components/watering-coach-card";
 import { potSizeOf } from "@/lib/plants/pot-size";
-import { potNeedFor } from "@/lib/plants/pot-sheet";
+import { potLabel } from "@/lib/plants/pot-sheet";
 
 
 /** Le graphique des semaines s'affiche à partir de 2 semaines soignées (une seule barre ne compare rien). */
@@ -104,6 +104,7 @@ export default function PlantScreen() {
   const day = dayOf(plan, plant.id);
   const status = day?.status ?? { tone: "new" as const, label: "Nouvelle" };
   const lastCare = plantStatus(resolved, events, now).meta.replace("Dernier soin · ", "dernier soin ");
+  const potShown = potLabel(entry, potSizeOf(plant));
   const statusColor = status.tone === "weather" ? colors.frost : status.tone === "watch" ? colors.warning : status.tone === "good" ? colors.primary : colors.muted;
   const variety = plantVariety(resolved);
   const gesture = day?.first ?? null;
@@ -246,9 +247,12 @@ export default function PlantScreen() {
           </Text>
 
           <View style={styles.pills}>
-            {[`☀️  ${sunlightLabel(entry)}`, `🪴  Pot de ${potNeedFor(entry).widthCm} cm`, `🌱  ${growingSince(plant.addedAt, now)}`].map((label) => (
-              <View key={label} style={[styles.fact, { backgroundColor: colors.surface }]}><Text style={[styles.factText, { color: colors.foreground }]}>{label}</Text></View>
-            ))}
+            <View style={[styles.fact, { backgroundColor: colors.surface }]}><Text style={[styles.factText, { color: colors.foreground }]}>☀️  {sunlightLabel(entry)}</Text></View>
+            {/* Taille notée, ou celle que conseille sa fiche : la toucher ouvre le choix de la taille. */}
+            <Pressable accessibilityRole="button" accessibilityLabel={`${potShown.text}, choisir la taille du pot`} onPress={() => setPotSheet(true)} style={({ pressed }) => [styles.fact, { backgroundColor: colors.surface }, pressed && styles.pressed]}>
+              <Text style={[styles.factText, { color: potShown.chosen ? colors.foreground : colors.primary }]}>🪴  {potShown.text}</Text>
+            </Pressable>
+            <View style={[styles.fact, { backgroundColor: colors.surface }]}><Text style={[styles.factText, { color: colors.foreground }]}>🌱  {growingSince(plant.addedAt, now)}</Text></View>
           </View>
 
           {/* Le prochain geste, en un bouton. */}

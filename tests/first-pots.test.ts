@@ -30,12 +30,12 @@ describe("première tâche liée au pot (étape 3c)", () => {
     expect(card.lines.map((line) => line.plantId)).toEqual(["tomato-1", "thyme-1", "chives-1", "basil-1"]);
     expect(card.lines[0].detail).toMatch(/^Pot trop petit : prends un [^.]+$/u);
     expect(card.lines[1].detail).toBe("Taille à choisir");
-    expect(card.lines[3].detail).toBe("Moyen (20 à 30 cm)");
+    expect(card.lines[3].detail).toBe("Moyen (21 à 30 cm)");
   });
 
   it("une plante seule : son nom dans le titre, son pot en résumé ; tous bons : à confirmer", () => {
     const one = resolvePlants([{ ...createGardenPlant("basil", now), id: "basil-1", potSize: "medium" }]);
-    expect(firstPotsCard({ answers, plants: one, dismissed: [], now })).toMatchObject({ title: "Vérifie le pot : basilic", summary: "Moyen (20 à 30 cm)" });
+    expect(firstPotsCard({ answers, plants: one, dismissed: [], now })).toMatchObject({ title: "Vérifie le pot : basilic", summary: "Moyen (21 à 30 cm)" });
     const two = resolvePlants([{ ...createGardenPlant("basil", now), id: "basil-1", potSize: "medium" }, { ...createGardenPlant("mint", now), id: "mint-1", potSize: "large" }]);
     expect(firstPotsCard({ answers, plants: two, dismissed: [], now })?.summary).toBe("Pots notés par Balco : c’est bien ça ?");
   });

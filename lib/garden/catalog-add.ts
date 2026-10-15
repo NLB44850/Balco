@@ -47,7 +47,7 @@ export function lateSeasonNote(entry: CatalogPlant, month: number) {
   return endsWithSeason(entry) && entry.care.frostSensitive && month >= 9 ? "Fin de saison : récolte avant les premières gelées" : null;
 }
 
-/** « Ajouté : Aubergine en pot moyen (20 à 30 cm) · Fin de saison : récolte avant les premières gelées » */
+/** « Ajouté : Aubergine en pot moyen (21 à 30 cm) · Fin de saison : récolte avant les premières gelées » */
 export function installedText(entry: CatalogPlant, month: number, potPhrase: string) {
   const late = lateSeasonNote(entry, month);
   return `Ajouté : ${afterColon(entry.name)}${potPhrase}${late ? ` · ${late}` : ""}`;

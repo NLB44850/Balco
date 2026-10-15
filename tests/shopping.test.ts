@@ -19,7 +19,7 @@ describe("liste de courses pour la jardinerie", () => {
   it("une plante à planter ce mois-ci : son pot et sa terre, selon la taille notée", () => {
     const may = new Date(2027, 4, 10, 10);
     const items = shoppingList({ plants: plants([{ id: "t", catalogId: "cherry-tomato", addedAt: may, toPlant: true, potSize: "large" }]), events: [], now: may });
-    expect(items.find((item) => item.section === "pots")).toMatchObject({ title: "Grand pot (30 à 40 cm)", plantIds: ["t"] });
+    expect(items.find((item) => item.section === "pots")).toMatchObject({ title: "Grand pot (31 à 40 cm)", plantIds: ["t"] });
     const soil = items.filter((item) => item.section === "soil");
     expect(soil.length).toBeGreaterThan(0);
     expect(soil[0].title).toMatch(/^Terreau · \d+ L, un sac de \d+ L$/u);
@@ -27,10 +27,10 @@ describe("liste de courses pour la jardinerie", () => {
     expect(items.find((item) => item.id === "clay")).toMatchObject({ section: "soil", title: "Billes d’argile · ≈ 3 L, un sac de 3 L" });
   });
 
-  it("pot noté « Je ne sais pas » : la largeur de la fiche, et « choisir la taille »", () => {
+  it("pot noté « Je ne sais pas » : la taille conseillée par la fiche, dite comme telle, et « choisir la taille »", () => {
     const may = new Date(2027, 4, 10, 10);
     const [pot] = shoppingList({ plants: plants([{ id: "t", catalogId: "cherry-tomato", addedAt: may, toPlant: true }]), events: [], now: may });
-    expect(pot.title).toMatch(/^Pot d’au moins \d+ cm de large$/u);
+    expect(pot.title).toBe("Pot conseillé : grand (31 à 40 cm)");
     expect(pot.chooseSizeOf).toBe("t");
   });
 
@@ -38,7 +38,7 @@ describe("liste de courses pour la jardinerie", () => {
     const may = new Date(2027, 4, 10, 10);
     const items = shoppingList({ plants: plants([{ id: "a", catalogId: "cherry-tomato", addedAt: may, toPlant: true, potSize: "large" }, { id: "b", catalogId: "eggplant", addedAt: may, toPlant: true, potSize: "large" }]), events: [], now: may });
     expect(items.filter((item) => item.section === "pots")).toHaveLength(1);
-    expect(items[0].title).toBe("2 × Grand pot (30 à 40 cm)");
+    expect(items[0].title).toBe("2 × Grand pot (31 à 40 cm)");
   });
 
   it("un semis au chaud qui arrive : godets et terreau de semis, pas encore de pot", () => {
@@ -86,7 +86,7 @@ describe("liste de courses pour la jardinerie", () => {
     const items = shoppingList({ plants: plants([{ id: "t", catalogId: "cherry-tomato", addedAt: may, toPlant: true, potSize: "large" }]), events: [], now: may });
     const text = shoppingShareText(items, new Set([items[0].id]));
     expect(text).toContain("Ma liste pour la jardinerie");
-    expect(text).toContain("Pots\n✓ Grand pot (30 à 40 cm)");
+    expect(text).toContain("Pots\n✓ Grand pot (31 à 40 cm)");
     expect(text).toContain("Terre et terreau\n☐ Terreau");
     expect(text.endsWith("Préparé avec Balco")).toBe(true);
   });

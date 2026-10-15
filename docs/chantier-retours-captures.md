@@ -32,7 +32,7 @@ téléphone avant la suivante. Pour chaque étape, on cherche aussi le même dé
 - Vu aussi : radis cochés dans la feuille des récoltes, puis « Oui » : la feuille du pot libre s'empilait sur celle des
   récoltes (Android). La feuille des récoltes se replie d'abord (`app/(tabs)/index.tsx`).
 
-## Étape 3 : le sens de « À surveiller » (faite le 14/10, à valider)
+## Étape 3 : le sens de « À surveiller » (validée le 15/10)
 
 - L'orange garde son sens d'alerte : « À surveiller » seulement pour un vrai souci (forte chaleur, problème vu par
   Observer, pot trop petit, plante en retard de soin depuis plusieurs jours).
@@ -50,11 +50,19 @@ téléphone avant la suivante. Pour chaque étape, on cherche aussi le même dé
 - Bleu : « Gel annoncé » (compté) et « Pluie annoncée » (plus comptée). Compteur du Balcon = `status.worry`.
 - Un arrosage ou une récolte du jour : « En forme ». E2e `27-a-surveiller`.
 
-## Étape 4 : taille choisie ou taille conseillée
+## Étape 4 : taille choisie ou taille conseillée (faite le 15/10, à valider)
 
 - Pas de taille choisie : « Pot conseillé : … » sur la fiche (le toucher ouvre le choix). Taille choisie : « Pot de … ».
 - La taille conseillée de chaque fiche doit tomber dans la bonne catégorie (petit, moyen, grand, jardinière), partout :
   fiche, poids, arrosage, liste de courses (le basilic affichait « Pot de 20 cm », limite du moyen, mais compté petit).
+- Vérifié sur les 101 fiches (test `tests/pot-sheet.test.ts`). Fait :
+  1. Bornes des tailles : « Petit (jusqu’à 20 cm) », « Moyen (21 à 30 cm) », « Grand (31 à 40 cm) » ; la largeur haute
+     (`SIZE_MAX_WIDTH`) range une largeur partout : 11 plantes à 20 cm sont petites, 3 à 40 cm sont grandes (elles
+     étaient « bac »). Une profondeur peut faire monter d'une taille (fraisier : 20 cm de large, 25 de profondeur, moyen).
+  2. `potLabel` : « Pot conseillé : petit (jusqu’à 20 cm) » ou « Pot moyen (21 à 30 cm) » ; « Pot conseillé : bac de
+     45 cm ou plus » au-delà (gombo). Fiche (pastille qui ouvre le choix), poids des pots, liste de courses.
+  3. Taille pas notée = taille conseillée partout : rythme d'arrosage (avant : celui d'un pot moyen), poids du pot vide,
+     ligne de la liste de courses ; le volume reste celui de la fiche (arrosage, poids, terreau).
 
 ## Étape 5 : finitions des textes
 
