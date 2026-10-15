@@ -328,7 +328,7 @@ Règles qui valent pour toutes les étapes :
    « souvent 350 kg par m² pour un balcon récent, parfois moins dans l'ancien » + demander au syndic ; « Pour alléger ».
    Pas de seuil « danger » (surface et état du balcon inconnus). Logique `lib/garden/balcony-weight.ts`, sources
    `docs/sources-poids.md`, tests `tests/balcony-weight.test.ts`, e2e `16-reglages`.
-10. **Écran Balco+ refait : codé le 14/10, à valider.** Écran à part `app/plus.tsx` (Réglages → Compte → Balco+, à la
+10. **Écran Balco+ refait : codé le 14/10, validé sur son téléphone le 14/10, fusionné avec l'étape 9 (PR #52). Chantier terminé.** Écran à part `app/plus.tsx` (Réglages → Compte → Balco+, à la
    place de la feuille du bas) : 4 avantages (gel et orage app fermée, coach d'arrosage, 20 photos et 100 questions,
    plusieurs téléphones), choix « À l'année · 29 € / an, soit 2,42 € par mois · 51 % de moins qu'au mois » coché d'office
    avec « Le plus avantageux », « Au mois · 4,99 € / mois · Sans engagement » ; 7 jours d'essai, pause ou arrêt à tout

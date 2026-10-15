@@ -22,7 +22,7 @@ import { useVacation } from "@/hooks/use-vacation";
 import { now as clockNow } from "@/lib/clock";
 import { useGarden } from "@/lib/garden/garden-context";
 import { dayKey, plantDisplayName } from "@/lib/garden/garden-logic";
-import { helperPlantWatering, helperPlants } from "@/lib/garden/helper-note";
+import { helperPlantWatering, helperPlants, helperVisits } from "@/lib/garden/helper-note";
 import { MOISTURE_TIPS, RETURN_STEPS, addDays, dayLabel, preparationSteps, vacationDays, vacationRange, vacationState, type Vacation } from "@/lib/garden/vacation";
 
 const START_CHOICES = [
@@ -152,6 +152,7 @@ export default function VacationScreen() {
   const plan = active ? preparationSteps(resolvedPlants, active, now) : [];
   const doneCount = plan.filter((step) => active?.done.includes(step.id)).length;
   const helped = active ? helperPlants(resolvedPlants, active) : [];
+  const visits = active ? helperVisits(helped, active) : null;
 
   const summary = active && (
     <>
@@ -202,13 +203,14 @@ export default function VacationScreen() {
       {state.phase !== "back" && active.helper && helped.length > 0 && (
         <View style={styles.section}>
           <Text style={[styles.sectionTitle, { color: colors.foreground }]}>Pour la personne qui arrose</Text>
+          <Text style={[styles.small, { color: colors.muted }]}>{visits?.text ?? "Pas besoin de passer avant ton retour, sauf forte chaleur."}</Text>
           <View style={[glass.card, styles.list]}>
             {helped.map((item, index) => (
               <View key={item.resolved.plant.id} style={[styles.stepRow, index < helped.length - 1 && glass.line]}>
                 <PlantPicture resolved={item.resolved} style={styles.thumb} />
                 <View style={styles.flex}>
                   <Text style={[styles.stepTitle, { color: colors.foreground }]}>{plantDisplayName(item.resolved)}</Text>
-                  <Text style={[styles.small, { color: colors.muted }]}>💧 {capitalize(helperPlantWatering(item))}</Text>
+                  <Text style={[styles.small, { color: colors.muted }]}>💧 {capitalize(helperPlantWatering(item, visits?.every ?? null))}</Text>
                   {item.harvest && <Text style={[styles.small, { color: colors.muted }]}>🧺 {item.harvest}</Text>}
                 </View>
               </View>

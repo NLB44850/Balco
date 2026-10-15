@@ -40,15 +40,15 @@ describe("modèles de guide et « Ce qu'il te faut »", () => {
 
   it("la liste dit quoi acheter, avec des mesures concrètes", () => {
     const lettuce = supplies(plant("lambs-lettuce"), "sow-pot");
-    expect(lettuce.map((item) => item.label)).toEqual(["Un sachet de graines de mâche", "Une jardinière de 60 cm", "Une poignée de billes d’argile", "Du terreau", "Un vaporisateur ou un arrosoir à pomme fine"]);
-    // Terreau, billes, arrosoir : communs à toutes les plantes (« J'ai déjà » vaut partout).
-    expect(lettuce.filter((item) => item.shared).map((item) => item.id)).toEqual(["clay-balls", "soil", "spray"]);
+    expect(lettuce.map((item) => item.label)).toEqual(["Un sachet de graines de mâche", "Une jardinière de 60 cm", "Du terreau", "Un vaporisateur ou un arrosoir à pomme fine"]);
+    // Terreau, arrosoir : communs à toutes les plantes (« J'ai déjà » vaut partout). Plus de billes d'argile (15/10).
+    expect(lettuce.filter((item) => item.shared).map((item) => item.id)).toEqual(["soil", "spray"]);
     expect(supplies(plant("blueberry"), "perennial-pot").map((item) => item.label)).toContain("De la terre de bruyère");
     expect(supplies(plant("basil"), "sow-indoor").map((item) => item.id)).toEqual(["seeds", "cells", "soil", "cover", "spray", "pot-later"]);
     expect(supplies(plant("microgreens"), "sow-pot").map((item) => item.id)).toEqual(["seeds", "tray", "seed-soil", "spray"]);
     // Gourmande : du compost en plus du terreau ; le pot dit sa profondeur.
     const tomato = supplies(plant("cherry-tomato"), "plant-seedling");
-    expect(tomato.map((item) => item.id)).toEqual(["plant", "pot", "clay-balls", "soil", "compost", "watering-can"]);
+    expect(tomato.map((item) => item.id)).toEqual(["plant", "pot", "soil", "compost", "watering-can"]);
     expect(tomato.find((item) => item.id === "pot")?.detail).toBe("30 cm de profondeur, des trous au fond et une soucoupe.");
     expect(supplies(plant("garlic"), "plant-bulb")[0].label).toBe("Des gousses d’ail à planter");
     expect(ofName("Agastache")).toBe("d’agastache");
@@ -68,7 +68,7 @@ describe("modèles de guide et « Ce qu'il te faut »", () => {
 });
 
 describe("les étapes du pas-à-pas (P7) : règles d'écriture", () => {
-  const VERBS = ["Mets", "Remplis", "Fais", "Pose", "Sème", "Recouvre", "Rebouche", "Laisse", "Arrose", "Couvre", "Pose-les", "Sors", "Ajoute", "Enfonce-les", "Regarde", "Démêle", "Gratte", "Remets", "Tasse", "Repère", "Coupe", "Coupe-le", "Pince-le", "Sors-les", "Laisse-la", "Laisse-le", "Laisse-les"];
+  const VERBS = ["Mets", "Remplis", "Fais", "Pose", "Sème", "Recouvre", "Rebouche", "Laisse", "Arrose", "Couvre", "Pose-les", "Sors", "Ajoute", "Enfonce-les", "Regarde", "Démêle", "Gratte", "Remets", "Tasse", "Repère", "Coupe", "Coupe-le", "Pince-le", "Sors-les", "Laisse-la", "Laisse-le", "Laisse-les", "Vérifie"];
   const words = (text: string) => text.split(/\s+/u).filter(Boolean).length;
   const models = ["sow-pot", "sow-indoor", "plant-seedling", "plant-bulb", "perennial-pot", "repot", "topdress", "thin", "pinch", "outdoors"] as const;
 
@@ -156,7 +156,7 @@ describe("les étapes du pas-à-pas (P7) : règles d'écriture", () => {
   it("des exemples concrets", async () => {
     const { guideSteps, guideTitle } = await import("../lib/plants/guide");
     const lettuce = guideSteps(plant("lambs-lettuce"), "sow-pot");
-    expect(lettuce[0]).toEqual({ illustration: "clay-balls", text: "Mets une poignée de billes d’argile au fond.", why: "Les racines ne baigneront pas dans l’eau." });
+    expect(lettuce[0]).toEqual({ illustration: "pot-holes", text: "Vérifie que ton pot a un trou au fond.", why: "Sans trou, l’eau stagne et les racines pourrissent." });
     expect(guideSteps(plant("basil"), "sow-indoor").at(-1)?.mistake).toBe("Erreur à éviter : loin de la fenêtre, les pousses filent et tombent.");
     expect(guideSteps(plant("lavender"), "plant-seedling").map((step) => step.text)).toContain("Pose la motte au centre, au même niveau qu’avant.");
     expect(guideSteps(plant("garlic"), "plant-bulb").map((step) => step.text)).toContain("Enfonce-les à 3 cm, pointe vers le haut.");
@@ -175,6 +175,6 @@ describe("les étapes du pas-à-pas (P7) : règles d'écriture", () => {
     expect(hasItem(have, "basil", supplies(plant("basil"), "sow-pot").find((item) => item.id === "soil")!)).toBe(true);
     expect(hasItem(have, "basil", supplies(plant("basil"), "sow-pot").find((item) => item.id === "seeds")!)).toBe(false);
     const missing = lettuce.filter((item) => !hasItem(have, "lambs-lettuce", item));
-    expect(shareText(plant("lambs-lettuce"), "sow-pot", missing)).toBe("Pour semer la mâche, il me faut :\n• Une jardinière de 60 cm\n• Une poignée de billes d’argile\n• Un vaporisateur ou un arrosoir à pomme fine");
+    expect(shareText(plant("lambs-lettuce"), "sow-pot", missing)).toBe("Pour semer la mâche, il me faut :\n• Une jardinière de 60 cm\n• Un vaporisateur ou un arrosoir à pomme fine");
   });
 });

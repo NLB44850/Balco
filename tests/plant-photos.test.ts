@@ -48,7 +48,8 @@ describe("photos des plantes", () => {
   it("dit depuis combien de temps la plante est sur le balcon", () => {
     expect(growingSince(now.toISOString(), now)).toBe("Depuis aujourd’hui");
     expect(growingSince(daysAgo(1).toISOString(), now)).toBe("Depuis 1 jour");
-    expect(growingSince(daysAgo(12).toISOString(), now)).toBe("Depuis 12 jours");
+    expect(growingSince(daysAgo(5).toISOString(), now)).toBe("Depuis 5 jours");
+    expect(growingSince(daysAgo(11).toISOString(), now)).toBe("Depuis 1 semaine");
     expect(growingSince(daysAgo(28).toISOString(), now)).toBe("Depuis 4 semaines");
     expect(growingSince(daysAgo(120).toISOString(), now)).toBe("Depuis 4 mois");
     expect(growingSince(daysAgo(800).toISOString(), now)).toBe("Depuis 2 ans");

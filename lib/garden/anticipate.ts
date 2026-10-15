@@ -41,10 +41,10 @@ export const ANTICIPATE_TO_DAYS = 42;
 const KIND_ORDER: Record<AnticipationKind, number> = { "sow-indoor": 0, sow: 1, plant: 2, repot: 3 };
 
 /** Les mois (après le mois en cours) qui chevauchent la fenêtre de 3 à 6 semaines, avec leur premier jour. */
-export function anticipationMonths(now: Date): Array<{ month: Month; startsOn: Date }> {
+export function anticipationMonths(now: Date): { month: Month; startsOn: Date }[] {
   const from = new Date(now.getTime() + ANTICIPATE_FROM_DAYS * DAY_MS);
   const to = new Date(now.getTime() + ANTICIPATE_TO_DAYS * DAY_MS);
-  const months: Array<{ month: Month; startsOn: Date }> = [];
+  const months: { month: Month; startsOn: Date }[] = [];
   for (let offset = 1; offset <= 2; offset += 1) {
     const startsOn = new Date(now.getFullYear(), now.getMonth() + offset, 1);
     const endsOn = new Date(startsOn.getFullYear(), startsOn.getMonth() + 1, 1);

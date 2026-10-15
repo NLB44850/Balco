@@ -6,7 +6,7 @@ import type { WeatherSnapshot } from "../reminders/reminder-engine";
 
 export type WeatherScenario = "none" | "rain" | "frost" | "storm" | "wind" | "heat";
 
-export const WEATHER_SCENARIOS: Array<{ id: WeatherScenario; label: string; hint: string }> = [
+export const WEATHER_SCENARIOS: { id: WeatherScenario; label: string; hint: string }[] = [
   { id: "none", label: "Météo réelle", hint: "Balco utilise la vraie météo de ta ville." },
   { id: "rain", label: "Pluie", hint: "8 mm dans les 12 h. Visible pour les plantes dont l’arrosage est dû." },
   { id: "frost", label: "Gel", hint: "-3 °C cette nuit. Alerte pour les plantes qui craignent le froid." },

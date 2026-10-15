@@ -1,6 +1,6 @@
 # Balco : récapitulatif à coller au début d'une conversation avec Claude
 
-*À jour au 14 octobre 2026 (tout est validé sur le téléphone ; dernière demande de fusion, PR #43, à fusionner ; l'app se met en ligne et se met à jour toute seule). Copier
+*À jour au 14 octobre 2026 au soir (tout est validé sur le téléphone et fusionné, dernière demande de fusion : PR #52 ; chantier « Pots et balcon » terminé ; l'app se met en ligne et se met à jour toute seule). Copier
 tout le texte sous la ligne ci-dessous dans une nouvelle conversation sur claude.ai, et y joindre au besoin les
 captures de `docs/captures/`.*
 
@@ -40,10 +40,11 @@ Balco dit chaque jour quoi faire pour chaque plante du balcon, selon la saison e
   Fond « lumière du balcon ». Feuilles qui montent du bas pour les détails et les choix.
 - **Technique** : Expo / React Native (Android d'abord), serveur Node (Express, tRPC, MySQL), IA Claude d'Anthropic
   pour Nora et l'analyse des photos, météo Open-Meteo.
-- **Offre** : gratuit (rappels du téléphone, calendrier, sauvegarde, 1 photo analysée et 5 questions à Nora par mois) ;
-  **Balco+** payant plus tard (alertes gel et orage même app fermée, plusieurs téléphones, 20 photos et 100 questions
-  par mois, prix fondateur pour les 500 premiers). Le paiement n'est pas encore branché (« Bientôt »), mais on peut
-  déjà demander à être prévenu de l'ouverture.
+- **Offre** : gratuit, sans limite de plantes (rappels du téléphone, calendrier, sauvegarde, 1 photo analysée et
+  5 questions à Nora par mois) ; **Balco+** payant plus tard : alertes gel et orage même app fermée, coach d'arrosage,
+  plusieurs téléphones, 20 photos et 100 questions par mois. Prix prévus : **29 € par an** (mis en avant, soit 2,42 € par
+  mois) ou **4,99 € par mois**, 7 jours d'essai, pause possible, prix fondateur pour les 500 premiers. Le paiement n'est
+  pas encore branché : on peut demander à être prévenu de l'ouverture, rien n'est prélevé.
 
 ## Ce qui est fait et validé sur mon téléphone
 
@@ -53,8 +54,9 @@ Balco dit chaque jour quoi faire pour chaque plante du balcon, selon la saison e
   visible même si l'arrosage attend (terre encore humide) ; alertes météo en bandeau ; eau économisée comptée.
 - **Saisons** : calendrier de 101 plantes vérifié auprès de semenciers, adapté au climat de ma ville ; suggestions du mois ;
   mêmes alertes qu'Aujourd'hui.
-- **Nora** : connaît mes plantes, ma ville, mon historique ; se souvient de ce que je lui dis ; je règle comment elle
-  me parle (simplement, avec des détails, en jardinier).
+- **Nora** : connaît mes plantes, ma ville, mon historique ; se souvient de ce que je lui dis, **même sur plusieurs
+  jours (validé le 14/10)** ; je règle comment elle me parle (simplement, avec des détails, en jardinier) ; elle ne
+  parle que des plantes affichées sur mon téléphone.
 - **Observer**, **progression** (Ma semaine, badges, niveaux), **mode vacances**, **catalogue** avec photos.
 - **Accueil** : déjà des plantes ou pas, soleil (avec « Je ne sais pas »), espace, envies, ville, rappels, premières
   plantes de saison ; l'hiver, des **envies du printemps** reproposées en mars.
@@ -63,12 +65,13 @@ Balco dit chaque jour quoi faire pour chaque plante du balcon, selon la saison e
 - **Après la récolte** des plantes récoltées en une fois (« Tout récolté ? », puis « Ton pot est libre ») et **fin de
   saison des annuelles** (« Ta saison de basilic est finie ? », soir de gel, « Me le reproposer au printemps »).
 - **Réglages refaits** (8 octobre) : une liste simple où chaque ligne montre sa valeur, la toucher ouvre une feuille du bas.
-  - Mon balcon : ville, soleil, espace, envies, envies du printemps (qu'on peut retirer).
+  - Mon balcon : ville, soleil, espace, envies, envies du printemps (qu'on peut retirer), diagnostic du balcon, poids
+    des pots.
   - Rappels : mode vacances, interrupteur, heure (dont 8 h 30 le matin ; la plage calme s'ajuste si besoin), plage
     calme, plantes suivies (décocher coupe seulement les notifications), « Je ne reçois pas les rappels » (autorisation,
     économie de batterie, rappel test).
   - Toi : prénom, comment Nora te parle.
-  - Compte : état de la sauvegarde, Balco+ avec « Me prévenir à l'ouverture » (compte, ou e-mail sans compte),
+  - Compte : état de la sauvegarde (avec la raison d'un échec), Balco+ (un écran à part, « Me prévenir à l'ouverture »),
     « Supprimer mon compte » (efface le compte sur le serveur, garde le balcon sur le téléphone).
   - À propos : donner mon avis (e-mail), confidentialité (bientôt), crédits photos, version.
 
@@ -98,53 +101,57 @@ D'après le brief écrit avec toi (plan et réponses validés, détail dans `doc
 - La feuille du bas remonte au-dessus du clavier (prénom, ville) ; « Se déconnecter » ne dépasse plus ; « Comment Nora te
   parle » bien aligné ; l'aperçu de la photo s'affiche dans Observer (galerie et appareil photo depuis Aujourd'hui).
 
-## Chantier en cours : « Pots et balcon » (plan validé le 11 octobre, détail dans `docs/chantier-pots-et-balcon.md`)
+## Chantier terminé le 14 octobre : « Pots et balcon » (10 étapes, détail dans `docs/chantier-pots-et-balcon.md`)
 
 Rendre Balco plus juste en tenant compte du pot de chaque plante et du balcon (soleil, poids), puis préparer Balco+.
 Règles : rien d'obligatoire (« Je ne sais pas » partout), une ligne par plante au plus sur Aujourd'hui (regroupée dès deux
 plantes), chaque valeur de jardinage vérifiée sur 2 sources, pas de nouveau module du téléphone sans me prévenir, aucune
 marque citée, jamais de produit chimique, tout en centimètres (jamais de litres de pot à l'écran).
 
-- **Fait et validé** :
-  - étape 1, taille du pot de chaque plante (5 choix dessinés), choisie d'office par Balco à l'ajout ;
-  - étape 2, fiches « Spécial pot » (profondeur, largeur, terreau, engrais ; « Pot trop petit » en dessin) ;
-  - étape 3, accueil enrichi : simulateur de soleil (orientation, couvert, vis-à-vis → heures de soleil), « Diagnostic de
-    ton balcon », et une ligne « Vérifie le pot de N plantes » après l'accueil (détail dans une feuille du bas) ;
-  - en plus (14/10) : sur Aujourd'hui, semis et plantations du mois regroupés dès deux plantes
-    (« Plante ou sème 7 plantes de saison »), PR #43 ;
-  - étape 4, rappels d'engrais tirés des fiches (« Arrose et nourris tes tomates », « Nourris 3 plantes », notification),
-    et fins de saison regroupées (« Fais le point sur N plantes en fin de saison »), PR #44 ;
-  - étape 5, liste de courses pour la jardinerie (pots, terreau en litres avec le sac à prendre, billes d'argile,
-    godets, engrais par famille ; on coche en magasin, partage par SMS ou WhatsApp), PR #46 ;
-  - étape 6a, arrosage selon la taille du pot (rythme, quantité « 💧 2 L » avec des bouteilles dessinées, balcon couvert
-    sans « N'arrose pas »), et le même format de détail pour tous les gestes (un repère en grand, des gestes courts avec
-    icône), PR #47 ;
-  - étape 6b, coach d'arrosage Balco+ (eau restante dans le pot selon la chaleur, le soleil du balcon, le vent, le pot ;
-    carte avec jauge dans la fiche) et interrupteur « Simuler Balco+ » dans la version de test, PR #48.
-- Depuis le 12/10, chaque demande de fusion vers `main` publie toute seule la mise à jour de l'app pour la tester.
-- Étape 7, consignes pour le voisin qui arrose, validée et fusionnée (PR #49) (mode vacances → « Oui,
-  un proche passera » → « Prépare les consignes pour qui arrose » : quand passer, plante par plante la quantité et le
-  rythme selon le pot et la saison, « chaque jour s'il fait plus de 30 °C », balcon couvert, quoi récolter ; texte
-  modifiable, gardé sur le téléphone, « Préparé avec Balco » à décocher, envoi par le partage du téléphone).
-- **Étape 8a, « Que planter à la place ? » : validée et fusionnée (PR #50, 14/10).** Quand un pot se libère
-  (« Ton pot est libre »), trois idées de saison qui tiennent dans ce pot, jamais de la même famille que la plante
-  d'avant (mêmes maladies dans la terre), les plantes sobres d'abord après une gourmande, avec le geste pour la terre ;
-  la nouvelle plante garde la taille du pot. Ensuite 8b, le traitement naturel dans les réponses d'Observer.
-- **Chantier « Cohérence » (14/10, avant la 8b)** : les mêmes boutons partout (vert plein = action principale, encadré =
-  secondaire, lien vert « › », plus de bouton noir), une seule façon de supprimer (avec « Annuler »), cases et « × »
-  identiques, boutons à l'infinitif. Livraison 1 (les boutons) validée ; 2 (suppression avec « Annuler », fiche plante refaite) validée, petits bugs corrigés, fusionnée (PR #50) ; 3 (cases rondes pour un geste fait, carrées pour une option, même « × » et même flèche de retour, boutons à l'infinitif) validée le 14/10.
-- **Étape 8b, traitement naturel dans Observer : validée et fusionnée (PR #51, 14/10).** Observer reconnaît le problème (pucerons, oïdium…) et Balco affiche son propre traitement vérifié : gestes à la main d'abord, recette simple (savon noir 1 cuillère à soupe par litre au plus), précautions, « Pas mieux dans 10 jours ? Montre-la en jardinerie. » Jamais de produit chimique.
-- **Étape 9, calculateur de poids : validée le 14/10.** Réglages → Mon balcon → « Poids de tes pots » : une estimation comptée large (terreau mouillé 1 kg par litre, pot en terre cuite), pot par pot, avec le repère « souvent 350 kg par m² » et le conseil de demander au syndic.
-- **Étape 10, écran Balco+ : codée le 14/10, à valider.** Un écran à part : les avantages, l'annuel mis en avant (29 € par an, soit 2,42 € par mois, contre 4,99 € par mois), 7 jours d'essai, pause, prix fondateur, « Me prévenir à l'ouverture » (rien n'est prélevé). Il s'ouvre aussi à la 2ᵉ photo du mois, à la 6ᵉ question à Nora, le premier soir de gel et depuis le coach d'arrosage.
+Toutes les étapes sont validées sur mon téléphone et fusionnées (PR #41 à #52) :
+1. **Taille du pot** de chaque plante (5 choix dessinés), choisie d'office à l'ajout.
+2. **Fiches « Spécial pot »** : profondeur, largeur, terreau, engrais ; « Pot trop petit » en dessin.
+3. **Accueil enrichi** : simulateur de soleil (orientation, couvert, vis-à-vis), « Diagnostic de ton balcon », une ligne
+   « Vérifie le pot de N plantes ». En plus : semis et plantations du mois regroupés dès deux plantes.
+4. **Rappels d'engrais** tirés des fiches (« Arrose et nourris tes tomates », « Nourris 3 plantes ») ; fins de saison regroupées.
+5. **Liste de courses** pour la jardinerie (pots, terreau avec le sac à prendre, billes d'argile, engrais), à cocher et partager.
+6. **Arrosage selon le pot** (rythme, quantité « 💧 2 L » avec des bouteilles dessinées, balcon couvert), même format de
+   détail pour tous les gestes ; puis **coach d'arrosage Balco+** (eau restante dans le pot, jauge dans la fiche) et
+   interrupteur « Simuler Balco+ » dans la version de test.
+7. **Consignes pour le voisin qui arrose** (mode vacances) : plante par plante, quantité et rythme, texte modifiable,
+   envoyé par le partage du téléphone.
+8. **« Que planter à la place ? »** quand un pot se libère (trois idées de saison qui tiennent dans le pot, jamais de la
+   même famille, geste pour la terre) ; au catalogue, un seul « + » qui demande « Où en est ton aubergine ? », hors
+   saison prévenu et gardé pour le printemps. Puis **traitement naturel dans Observer** : Observer reconnaît le problème
+   (9 au choix : pucerons, cochenilles, araignées rouges, mouches blanches, oïdium, mildiou, limaces, chenilles,
+   moucherons) et Balco affiche son propre traitement vérifié (gestes à la main d'abord, savon noir 1 cuillère à soupe
+   par litre au plus, bicarbonate 5 g par litre, précautions, « Pas mieux dans 10 jours ? Montre-la en jardinerie »).
+   Jamais de produit chimique, ni huile de neem, ni bouillie bordelaise.
+9. **Poids des pots** (Réglages → Mon balcon) : une estimation comptée large (terreau mouillé 1 kg par litre, pot en
+   terre cuite), pot par pot, avec « souvent 350 kg par m² pour un balcon récent » et le conseil de demander au syndic.
+10. **Écran Balco+ refait** : les avantages, l'annuel mis en avant, l'essai, la pause, le prix fondateur, « Me prévenir à
+    l'ouverture ». Il s'ouvre aussi par « Découvrir Balco+ › » à la 2ᵉ photo du mois, à la 6ᵉ question à Nora, le
+    premier soir de gel (une seule fois, sous l'alerte) et depuis le coach d'arrosage.
+
+## Chantier « Cohérence » (14 octobre, validé et fusionné)
+
+Après un tour de toute l'app, les mêmes règles partout (détail dans `docs/chantier-coherence.md`) :
+- **Boutons** : vert plein = l'action principale (une seule par écran), encadré = secondaire, texte vert suivi de « › » =
+  aller voir, petite pastille dans une carte, rouge plein seulement pour l'irréversible. Plus aucun bouton noir.
+- **Supprimer** : tout de suite, avec « Annuler » dans le message du bas (geste, photo, plante, souvenir de Nora,
+  conversation, liste, mode vacances). Seule la suppression du compte demande une confirmation rouge.
+- **Cases** : ronde = un geste fait, carrée = une option, rond avec un point = un seul choix ; même taille partout ; le même
+  « × » et la même flèche de retour partout.
+- **Textes des boutons à l'infinitif** (« Ajouter une photo ») ; le tutoiement reste pour les conseils (« Arrose le basilic »).
+- Fiche plante refaite : historique sans « Supprimer » répété, « Son nom » et « Retirer du balcon » en lignes comme Réglages.
 
 ## Ce qu'il reste à faire, dans l'ordre
 
 1. **Sainte-Catherine en vrai** : le 18 novembre, la notification (à l'heure de mes rappels) et la grande carte sans
    date simulée ; le bilan le 1er décembre.
-2. **Mémoire de Nora sur plusieurs jours** : test sur 2 ou 3 jours, retour à donner.
-3. **Faire tester par 3 à 5 personnes** avant de brancher le paiement (l'adresse Railway et l'APK de test le
+2. **Faire tester par 3 à 5 personnes** avant de brancher le paiement (l'adresse Railway et l'APK de test le
    permettent déjà ; ensuite piste de « test interne » du Play Store).
-4. **Avant la publication** :
+3. **Avant la publication** :
    - notifications envoyées par le serveur (Firebase), pour les alertes même app fermée ;
    - synchroniser avec le serveur les « Dans 3 h », les réponses « Tout récolté ? » / « Ta saison est finie ? »
      et les photos des plantes ;
@@ -154,7 +161,8 @@ marque citée, jamais de produit chimique, tout en centimètres (jamais de litre
    - un nom de domaine : adresse de contact (aujourd'hui contact_balco@gmail.com) et expéditeur des e-mails reconnu par
      Brevo (avec une adresse Outlook ou Gmail, les codes peuvent arriver dans les indésirables) ;
    - compte développeur Google et fiche Play Store ; offre payante d'Open-Meteo dès que Balco+ sera payant.
-5. **Version suivante** : suivi d'une plante en photos, balcon visuel (plan, emplacement, exposition), récoltes et
+   - afficher le montant du prix fondateur sur l'écran Balco+ (montant à décider avec le porteur).
+4. **Version suivante** : suivi d'une plante en photos, balcon visuel (plan, emplacement, exposition), récoltes et
    recettes, défis entre jardiniers, rentrer une plante pour l'hiver (piment, poivron, physalis).
 
 ## Décisions déjà prises (à ne pas remettre en question sans moi)
@@ -169,6 +177,11 @@ marque citée, jamais de produit chimique, tout en centimètres (jamais de litre
 - L'app ne copie pas les photos dans la galerie ; un compte gratuit sauvegarde depuis un seul téléphone.
 - Décocher une plante dans « Plantes suivies » ne coupe que ses notifications ; supprimer son compte garde le balcon
   sur le téléphone.
+- Chaque valeur de jardinage est vérifiée sur deux sources au moins (sources dans `docs/sources-*.md`) ; aucune marque ;
+  jamais de produit chimique ; tout en centimètres à l'écran (sauf l'eau à verser, en litres).
+- Le traitement affiché par Observer est écrit par Balco, jamais inventé par l'IA ; dans le doute, la jardinerie.
+- Balco ne dit jamais « danger » pour le poids : il ne connaît ni la surface ni l'état du balcon.
+- Balco+ ne bloque rien de ce qui est gratuit ; pas de limite de plantes ; il se propose à 4 moments seulement.
 
 ---
 

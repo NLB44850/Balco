@@ -156,7 +156,7 @@ export function buildTodayList({ groups, plan }: BuildTodayInput): TodayItem[] {
       const look = ALERT_LOOK[group.cause ?? "thirst"] ?? ALERT_LOOK.thirst;
       return { kind: "alert", key: `alert:${group.key}`, ...look, title: group.title, subtitle: alertSubtitle(group), gesture: "alert", done: false, group };
     });
-  const rows: Array<{ item: TodayItem; rank: number }> = [];
+  const rows: { item: TodayItem; rank: number }[] = [];
   for (const day of plan) {
     const gestures = day.gestures.filter((candidate) => candidate.kind !== "alert");
     const next = gestures.find((candidate) => !candidate.done);

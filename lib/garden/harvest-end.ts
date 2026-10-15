@@ -12,6 +12,7 @@
  */
 import { MONTH_LONG, type CatalogPlant, type Month, type OnboardingAnswers } from "../plants/catalog";
 import { adaptToClimate, type ClimateInfo } from "../plants/climate";
+import { familyOf } from "../plants/families";
 import { agree, bareName, byForm, capitalize, ofBare, partitive, possessive } from "../plants/grammar";
 import { guideModelFor, isSowing } from "../plants/guide";
 import { DEFAULT_HARVEST_DAYS } from "../plants/harvest-once";
@@ -279,6 +280,14 @@ export function canRestart(entry: CatalogPlant, month: number, climate?: Climate
   return adapted.sowMonths.includes(month as Month) || adapted.plantMonths.includes(month as Month);
 }
 
+/**
+ * Sous « Ressemer des radis » : une plante d'une famille à éviter (mêmes maladies dans la terre, comme le dit
+ * « Que planter à la place ? ») ne se ressème pas dans la même terre (retour du 14/10).
+ */
+export function restartDetail(entry: Pick<CatalogPlant, "id">) {
+  return familyOf(entry.id) === "other" ? "Dans le même pot, avec son pas-à-pas." : "Dans un autre pot, ou avec une terre neuve.";
+}
+
 export type FreePotOptions = { month: number; climate?: ClimateInfo | null; ownedCatalogIds?: string[]; seed?: string };
 
 /**
@@ -290,7 +299,7 @@ export function freePotChoices(resolved: ResolvedPlant, answers: OnboardingAnswe
   const { entry } = resolved;
   const choices: FreePotChoice[] = [];
   if (canRestart(entry, month, climate)) {
-    choices.push({ kind: "restart", key: "restart", label: restartLabel(entry, month, climate), detail: "Dans le même pot, avec son pas-à-pas." });
+    choices.push({ kind: "restart", key: "restart", label: restartLabel(entry, month, climate), detail: restartDetail(entry) });
   }
   for (const idea of replantIdeas(resolved, answers, { month, climate, ownedCatalogIds, seed })) {
     choices.push({ kind: "plant", key: `plant:${idea.entry.id}`, label: startLabel(idea.entry, idea.month, climate), detail: idea.reason, entry: idea.entry, month: idea.month });

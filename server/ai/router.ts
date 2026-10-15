@@ -38,6 +38,16 @@ export function quotaMessage(kind: AiKind, limit: number, resetsAt: string, plan
   return `Tu as utilisé ${used} ce mois-ci. Le compteur repart le ${date}.${plan === "free" ? ` ${plusQuotaHint(kind)}` : ""}`;
 }
 
+/**
+ * Panne, réponse vide ou illisible : on le dit tel quel, sans jamais inventer de réponse rassurante (retour du 15/10),
+ * et la question n'est pas décomptée.
+ */
+export function outageMessage(kind: AiKind) {
+  return kind === "scan"
+    ? "L’analyse n’a pas pu se faire pour l’instant. Réessaie dans un moment : cette analyse n’est pas décomptée."
+    : "Nora ne peut pas répondre pour l’instant. Réessaie dans un moment : cette question n’est pas décomptée.";
+}
+
 /** Réserve une place, appelle le modèle, puis solde la réservation selon l'issue. Refus et pannes ne sont pas décomptés. */
 async function withQuota<T>(user: { id: number; plan: string }, kind: AiKind, call: () => Promise<T & { usage: Parameters<typeof settle>[2] }>) {
   if (!aiAvailable()) throw new TRPCError({ code: "PRECONDITION_FAILED", message: kind === "scan" ? "Le scanner n’est pas encore disponible." : "Nora n’est pas encore disponible." });
@@ -67,7 +77,7 @@ async function withQuota<T>(user: { id: number; plan: string }, kind: AiKind, ca
     if (error instanceof AiUnavailableError) throw new TRPCError({ code: "PRECONDITION_FAILED", message: "Le service n’est pas encore disponible." });
     if (!(error instanceof AiBadResponseError) && !(error instanceof Anthropic.APIError)) console.error(`[ai] ${kind} failed`, error);
     else console.warn(`[ai] ${kind} failed`, error instanceof Error ? error.message : error);
-    throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Le service est momentanément indisponible. Réessaie dans un instant : cette tentative n’est pas décomptée." });
+    throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: outageMessage(kind) });
   }
 }
 
@@ -169,7 +179,7 @@ export const aiRouter = router({
         }
         await settle(requestId, "error", error instanceof AiBadResponseError ? error.usage : undefined);
         console.warn("[ai] guest scan failed", error instanceof Error ? error.message : error);
-        throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Le service est momentanément indisponible. Réessaie dans un instant : cette tentative n’est pas décomptée." });
+        throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: outageMessage("scan") });
       }
     }),
 

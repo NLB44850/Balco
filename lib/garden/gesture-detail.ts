@@ -24,7 +24,7 @@ export type DetailHero =
 export type GestureDetail = {
   banner?: { text: string; tone: "water" | "done" };
   hero?: DetailHero;
-  steps: Array<{ icon: string; text: string }>;
+  steps: { icon: string; text: string }[];
   /** Une phrase propre à la plante (« Le thym craint l'excès d'eau… »), en plus petit. */
   note?: string;
   /** Un encadré à part : l'engrais à donner après l'arrosage. */

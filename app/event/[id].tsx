@@ -17,8 +17,8 @@ import { glass } from "@/components/ui/glass";
 import { Button } from "@/components/ui/button";
 import { Text } from "@/components/ui/typography";
 import { useColors } from "@/hooks/use-colors";
-import { capitalize } from "@/lib/plants/grammar";
-import { potNeedShort, potSizePhrase, recommendedPotSize } from "@/lib/plants/pot-sheet";
+import { afterColon, capitalize } from "@/lib/plants/grammar";
+import { advisedPotPhrase, potNeedShort } from "@/lib/plants/pot-sheet";
 import { useDayPlan } from "@/hooks/use-day-plan";
 import { coldMode, eventAwardKey, eventById, eventMoment, eventPlanted, eventPlantings, protectionDone, protectionEvents } from "@/lib/events/events";
 import { addSpringWish, nextSpringReminder, SPRING_REMINDER_SOURCE, springReminderContent } from "@/lib/garden/spring";
@@ -67,7 +67,7 @@ export default function EventScreen() {
     const created = await addPlant(catalogId, { toPlant: true });
     if (Platform.OS !== "web") void Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
     const entry = getCatalogPlant(catalogId);
-    showToast(`Ajouté : ${name}${entry ? ` ${potSizePhrase(recommendedPotSize(entry))}` : ""}`, () => void removePlant(created.id));
+    showToast(`Ajouté : ${afterColon(name)}${entry ? ` ${advisedPotPhrase(entry)}` : ""}`, () => void removePlant(created.id));
   };
   const protect = async () => {
     const logged = protectionEvents(event, year, resolvedPlants, now);
@@ -89,7 +89,7 @@ export default function EventScreen() {
     springNotice(next);
     await grantAward(eventAwardKey(event, year));
     if (Platform.OS !== "web") void Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-    showToast(`Gardée pour le printemps : ${name}`, () => void (async () => {
+    showToast(`Gardée pour le printemps : ${afterColon(name)}`, () => void (async () => {
       const without = next.filter((id) => id !== catalogId);
       await updateOnboarding({ springWishes: without });
       springNotice(without);

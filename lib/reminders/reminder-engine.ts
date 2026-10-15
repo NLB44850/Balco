@@ -32,7 +32,7 @@ export type PlantCareProfile = {
   frostThresholdC: number;
   windThresholdKmh: number;
   frostSensitive?: boolean;
-  preferredWateringWindows?: Array<"morning" | "evening">;
+  preferredWateringWindows?: ("morning" | "evening")[];
   allowedTaskTypes?: MaintenanceTaskType[];
   /** Profondeur à laquelle tâter la terre avant d'arroser (2 cm par défaut). */
   soilCheckCm?: number;

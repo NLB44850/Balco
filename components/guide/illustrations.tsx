@@ -104,14 +104,6 @@ const DRAWINGS: Record<IllustrationId, () => ReactNode> = {
       <Path d="M24 110 L 96 110 L 92 116 L 28 116 Z" fill={LEAF} {...stroke} />
     </>
   ),
-  "clay-balls": () => (
-    <>
-      <Pot soilTop={null} />
-      {[[42, 99], [50, 97], [58, 99], [66, 97], [74, 99], [46, 92], [54, 91], [62, 92], [70, 91], [78, 93]].map(([cx, cy]) => <Circle key={`${cx}-${cy}`} cx={cx} cy={cy} r={3.6} fill={SOIL} {...thin} />)}
-      <Arrow d="M60 18 L 60 48" head="M53 41 L 60 48 L 67 41" />
-      {[[54, 14], [62, 10], [66, 18]].map(([cx, cy]) => <Circle key={`t${cx}`} cx={cx} cy={cy} r={3.6} fill={SOIL} {...thin} />)}
-    </>
-  ),
   "fill-soil": () => (
     <>
       <Pot soilTop={74} />

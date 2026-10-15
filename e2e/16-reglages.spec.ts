@@ -144,6 +144,8 @@ test("Mon balcon : poids des pots, estimation avec le repère du balcon (étape 
   await expect(sheet.getByText(/^Tes 2 pots, terre bien arrosée/u)).toBeVisible();
   // Les tailles ne sont pas notées : comptées à la taille conseillée, et c'est dit.
   await expect(sheet.getByText(/^2 pots sans taille notée/u)).toBeVisible();
+  // Le même libellé que la fiche : le basilic compté en petit pot, et c'est dit « conseillé ».
+  await expect(sheet.getByText("Pot conseillé : petit (jusqu’à 20 cm)")).toBeVisible();
   await expect(sheet.getByText(/350 kg par m².*syndic/u)).toBeVisible();
   expect(errors).toEqual([]);
 });

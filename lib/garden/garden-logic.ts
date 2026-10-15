@@ -450,7 +450,7 @@ export type Badge = {
 
 const plural = (count: number, singular: string, pluralForm = `${singular}s`) => `${count} ${count > 1 ? pluralForm : singular}`;
 
-const BADGE_RULES: Array<Pick<Badge, "id" | "title" | "icon" | "tone" | "thresholds" | "unit"> & { metric: (stats: GardenStats) => number }> = [
+const BADGE_RULES: (Pick<Badge, "id" | "title" | "icon" | "tone" | "thresholds" | "unit"> & { metric: (stats: GardenStats) => number })[] = [
   { id: "first-pot", title: "Plantes accueillies", icon: "❀", tone: "#DCE8C7", thresholds: [1, 5, 15], unit: (count) => plural(count, "plante accueillie", "plantes accueillies"), metric: (stats) => stats.plantsWelcomed },
   { id: "bees", title: "Ami des abeilles", icon: "✺", tone: "#F5D27C", thresholds: [3, 6, 10], unit: (count) => plural(count, "plante mellifère", "plantes mellifères"), metric: (stats) => stats.melliferousKinds },
   { id: "plate", title: "Du balcon à l’assiette", icon: "♡", tone: "#F0D2C5", thresholds: [1, 10, 50], unit: (count) => plural(count, "récolte"), metric: (stats) => stats.harvests },

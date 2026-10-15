@@ -19,10 +19,10 @@ describe("ajouter depuis le catalogue : une question, deux cartes", () => {
   });
 
   it("prévient en fin de saison pour une annuelle frileuse", () => {
-    expect(installedText(plant("eggplant"), 10, " en pot moyen")).toBe("Ajouté : Aubergine en pot moyen · Fin de saison : récolte avant les premières gelées");
+    expect(installedText(plant("eggplant"), 10, " en pot moyen")).toBe("Ajouté : aubergine en pot moyen · Fin de saison : récolte avant les premières gelées");
     expect(lateSeasonNote(plant("eggplant"), 7)).toBeNull();
     expect(lateSeasonNote(plant("thyme"), 10)).toBeNull();
-    expect(installedText(plant("thyme"), 10, "")).toBe("Ajouté : Thym");
+    expect(installedText(plant("thyme"), 10, "")).toBe("Ajouté : thym");
   });
 
   it("à planter hors saison : au printemps, elle rejoint les envies du printemps", () => {
@@ -31,13 +31,13 @@ describe("ajouter depuis le catalogue : une question, deux cartes", () => {
     expect(toPlantText(plant("cherry-tomato"), { kind: "spring", month: 3 }, "")).toBe("Tomates cerises : à semer au chaud dès mars. Balco te les reproposera au printemps");
     expect(toPlantText(plant("eggplant"), toPlantPlan(plant("eggplant"), 10), "")).toBe("Aubergine : à semer au chaud dès février. Balco te la reproposera au printemps");
     expect(toPlantPlan(plant("lavender"), 10)).toEqual({ kind: "now" });
-    expect(toPlantText(plant("lavender"), { kind: "now" }, " en pot moyen")).toBe("À planter : Lavande en pot moyen");
+    expect(toPlantText(plant("lavender"), { kind: "now" }, " en pot moyen")).toBe("À planter : lavande en pot moyen");
   });
 
   it("plus tard dans l'année : elle attend sur le balcon", () => {
     const plan = toPlantPlan(plant("lambs-lettuce"), 4);
     expect(plan.kind).toBe("later");
-    if (plan.kind === "later") expect(toPlantText(plant("lambs-lettuce"), plan, "")).toMatch(/^À planter en (juillet|août|juin) : Mâche$/u);
+    if (plan.kind === "later") expect(toPlantText(plant("lambs-lettuce"), plan, "")).toMatch(/^À planter en (juillet|août|juin) : mâche$/u);
   });
 
 });

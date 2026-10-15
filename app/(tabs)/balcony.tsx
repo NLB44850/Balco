@@ -44,7 +44,7 @@ export default function BalconyScreen() {
 
   // Le même plan du jour qu'Aujourd'hui et la fiche : même geste, même couleur.
   const { plan, ready } = useDayPlan();
-  const watching = !ready ? 0 : plan.filter((day) => day.status.tone === "watch" || day.status.tone === "weather").length;
+  const watching = !ready ? 0 : plan.filter((day) => day.status.worry).length;
   const subtitle = resolvedPlants.length === 0
     ? "Ajoute ta première plante"
     : `${resolvedPlants.length} plante${resolvedPlants.length > 1 ? "s" : ""}${!ready ? "" : watching ? ` · ${watching} à surveiller` : " · toutes en forme"}`;
@@ -83,7 +83,7 @@ export default function BalconyScreen() {
           {!hasPhoto && (
             <Pressable accessibilityRole="button" accessibilityLabel={`Ajouter une photo de ${name}`} hitSlop={6} onPress={() => capture.ask(plant.id, name)} style={({ pressed }) => [styles.addPhoto, pressed && styles.pressed]}>
               <IconSymbol name="camera.fill" size={15} color={colors.primary} />
-              <Text style={[styles.addPhotoText, { color: colors.primary }]}>Ta photo</Text>
+              <Text style={[styles.addPhotoText, { color: colors.primary }]}>Ajouter une photo</Text>
             </Pressable>
           )}
         </PlantPicture>
@@ -112,7 +112,7 @@ export default function BalconyScreen() {
         )}
 
         <Button label="Ajouter une plante" onPress={() => router.push("/garden/add")} />
-        {resolvedPlants.length > 0 && <Button variant="secondary" label="🛒  Ma liste de courses" onPress={() => router.push("/shopping")} />}
+        {resolvedPlants.length > 0 && <Button variant="secondary" label="🛒  Voir ma liste de courses" onPress={() => router.push("/shopping")} />}
         <Button variant="secondary" label="📷  Observer une plante avec Nora" onPress={() => router.push("/(tabs)/scanner")} />
       </ScrollView>
       {capture.sheet}

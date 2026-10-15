@@ -6,6 +6,7 @@
 import { SUNLIGHT_LABELS, type CatalogPlant, type Sunlight } from "../plants/catalog";
 import type { MaintenanceEvent } from "../reminders/reminder-engine";
 import { dayKey, daysBetween, eventsForPlant, historyDayLabel, relativeDay, type ResolvedPlant } from "./garden-logic";
+import { sinceLabel } from "./progress";
 
 export type PlantPhoto = {
   id: string;
@@ -63,15 +64,10 @@ export function photoDateLabel(takenAt: string, now = new Date()) {
   return `Ta photo du ${date.toLocaleDateString("fr-FR", { day: "numeric", month: "short", ...(date.getFullYear() !== now.getFullYear() && { year: "numeric" }) })}`;
 }
 
-/** Depuis combien de temps la plante est sur le balcon : « Depuis aujourd’hui », « Depuis 12 jours », « Depuis 3 mois »… */
+/** Depuis combien de temps la plante est sur le balcon : « Depuis aujourd’hui », « Depuis 5 jours », « Depuis 4 semaines », « Depuis 3 mois » (même format que `sinceLabel`). */
 export function growingSince(addedAt: string, now = new Date()) {
-  const days = Math.max(0, daysBetween(new Date(addedAt), now));
-  if (days === 0) return "Depuis aujourd’hui";
-  if (days < 21) return `Depuis ${days} jour${days > 1 ? "s" : ""}`;
-  if (days < 60) return `Depuis ${Math.round(days / 7)} semaines`;
-  if (days < 365) return `Depuis ${Math.round(days / 30.4)} mois`;
-  const years = Math.floor(days / 365);
-  return `Depuis ${years} an${years > 1 ? "s" : ""}`;
+  const label = sinceLabel(Math.max(0, daysBetween(new Date(addedAt), now)));
+  return label.charAt(0).toUpperCase() + label.slice(1);
 }
 
 /** « Soleil », « Soleil ou mi-ombre »… : ce que la plante aime, en une pastille. */

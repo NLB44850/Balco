@@ -70,4 +70,13 @@ describe("que planter à la place ?", () => {
     expect(replantSoilTip(getCatalogPlant("cherry-tomato")!)).toMatch(/^Avant de replanter, remplace un tiers de la terre/);
     expect(replantSoilTip(getCatalogPlant("radish")!)).toMatch(/poignée de compost/);
   });
+
+  it("à l'ombre, petit pot, la ciboulette déjà là : une plante du balcon plutôt que rien (retour du 14/10)", () => {
+    const [radish] = resolvePlants([{ id: "r", catalogId: "radish", addedAt: "2027-04-01T10:00:00.000Z" }]);
+    const ideas = replantIdeas(radish, { sunlight: "shade", space: "terrace", goals: [] }, { month: 5, ownedCatalogIds: ["radish", "chives", "mint", "basil"] });
+    expect(ideas.length).toBeGreaterThan(0);
+    const owned = ideas.find((idea) => idea.entry.id === "chives");
+    expect(owned?.reason).toMatch(/^Déjà sur ton balcon · /u);
+    for (const idea of ideas) expect(idea.entry.id).not.toBe("radish");
+  });
 });

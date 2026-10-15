@@ -9,7 +9,7 @@
  */
 import { MONTH_LONG, type CatalogPlant, type Month } from "../plants/catalog";
 import { adaptToClimate, type ClimateInfo } from "../plants/climate";
-import { agree, objectPronoun, possessive, verb } from "../plants/grammar";
+import { afterColon, agree, objectPronoun, possessive, verb } from "../plants/grammar";
 import { endsWithSeason } from "../plants/season-end";
 import { suggestionFor, type AddChoice } from "../plants/suggestions";
 
@@ -47,10 +47,10 @@ export function lateSeasonNote(entry: CatalogPlant, month: number) {
   return endsWithSeason(entry) && entry.care.frostSensitive && month >= 9 ? "Fin de saison : récolte avant les premières gelées" : null;
 }
 
-/** « Ajouté : Aubergine en pot moyen (20 à 30 cm) · Fin de saison : récolte avant les premières gelées » */
+/** « Ajouté : Aubergine en pot moyen (21 à 30 cm) · Fin de saison : récolte avant les premières gelées » */
 export function installedText(entry: CatalogPlant, month: number, potPhrase: string) {
   const late = lateSeasonNote(entry, month);
-  return `Ajouté : ${entry.name}${potPhrase}${late ? ` · ${late}` : ""}`;
+  return `Ajouté : ${afterColon(entry.name)}${potPhrase}${late ? ` · ${late}` : ""}`;
 }
 
 /** Le message après « à planter », selon le plan. */
@@ -60,8 +60,8 @@ export function toPlantText(entry: CatalogPlant, plan: ToPlantPlan, potPhrase: s
     const when = suggestionFor(entry, plan.month)?.indoors ? `à semer au chaud dès ${MONTH_LONG[plan.month - 1]}` : `pas avant ${MONTH_LONG[plan.month - 1]}`;
     return `${entry.name} : ${when}. Balco te ${objectPronoun(entry)} reproposera au printemps`;
   }
-  if (plan.kind === "later") return `À planter en ${MONTH_LONG[plan.month - 1]} : ${entry.name}${potPhrase}`;
-  return `À planter : ${entry.name}${potPhrase}`;
+  if (plan.kind === "later") return `À planter en ${MONTH_LONG[plan.month - 1]} : ${afterColon(entry.name)}${potPhrase}`;
+  return `À planter : ${afterColon(entry.name)}${potPhrase}`;
 }
 
 // --- La question du « + » (retour du 14/10 : le choix dans le message du bas faisait tourner en rond) ------------

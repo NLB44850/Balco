@@ -5,21 +5,28 @@
  * quantité. Logique pure, partagée par l'app et le serveur.
  */
 import type { CatalogPlant } from "./catalog";
-import { potNeedFor } from "./pot-sheet";
+import { potNeedFor, recommendedPotSize } from "./pot-sheet";
 import { POT_LITERS, type PotSize } from "./pot-size";
 
 /** Petit pot ≈ 30 % plus souvent, grand ≈ 30 % moins souvent, jardinière (peu profonde) ≈ 15 % plus souvent. */
-export const POT_WATERING_FACTOR: Record<PotSize, number> = { small: 0.7, medium: 1, large: 1.3, planter: 0.85, unknown: 1 };
+export const POT_WATERING_FACTOR: Record<PotSize, number> = { small: 0.7, medium: 1, large: 1.3, xlarge: 1.3, planter: 0.85, unknown: 1 };
 
-/** Le rythme d'arrosage de la plante dans son pot, en heures. */
-export function wateringIntervalHours(entry: Pick<CatalogPlant, "care">, potSize: PotSize | undefined) {
-  return Math.round(entry.care.wateringIntervalHours * POT_WATERING_FACTOR[potSize ?? "unknown"]);
+/**
+ * Le rythme d'arrosage de la plante dans son pot, en heures. Taille pas notée : celle que conseille sa fiche, comme
+ * pour le poids des pots (retour du 14/10 : un basilic compté en petit pot partout).
+ */
+export function wateringIntervalHours(entry: Pick<CatalogPlant, "care" | "id" | "potLiters">, potSize: PotSize | undefined) {
+  const size = potSize && potSize !== "unknown" ? potSize : recommendedPotSize(entry);
+  return Math.round(entry.care.wateringIntervalHours * POT_WATERING_FACTOR[size]);
 }
 
 /** Un arrosage ≈ 20 % du volume du pot (repère validé le 13/10, déjà celui de l'eau économisée). */
 export const WATERING_SHARE_OF_POT = 0.2;
 
-/** Litres d'un arrosage, arrondis au demi-litre : petit 1 L, moyen 2 L, grand 4,5 L, jardinière 4 L ; taille inconnue : le pot de sa fiche. */
+/**
+ * Litres d'un arrosage, arrondis au demi-litre : petit 1 L, moyen 2 L, grand 4,5 L, jardinière 4 L ; taille inconnue : le
+ * pot de sa fiche (son volume exact ; sa taille, la catégorie conseillée, donne le rythme).
+ */
 export function wateringLiters(entry: Pick<CatalogPlant, "id" | "potLiters">, potSize: PotSize | undefined) {
   const potLiters = potSize && potSize !== "unknown" ? POT_LITERS[potSize] : potNeedFor(entry).liters;
   return Math.max(0.5, Math.round(potLiters * WATERING_SHARE_OF_POT * 2) / 2);

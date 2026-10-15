@@ -21,7 +21,7 @@ const DIAGNOSIS = {
   seeExpert: false,
 };
 
-const NORA_REPLY = { answer: "Réponse de Nora : ta plante va bien, arrose quand la terre est sèche.", remember: [], forget: [] };
+const NORA_REPLY = { answer: "Réponse simulée (faux service des tests, pas une vraie réponse de Nora) : arrose quand la terre est sèche.", remember: [], forget: [] };
 
 createServer((req, res) => {
   if (req.method === "GET") return res.end("ok");

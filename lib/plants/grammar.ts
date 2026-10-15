@@ -60,6 +60,12 @@ export function possessive(plant: Agreeable) {
 
 export const capitalize = (text: string) => text.charAt(0).toUpperCase() + text.slice(1);
 
+/**
+ * Pas de majuscule après les deux-points (« À récolter : cueille-les… ») : la 1ʳᵉ lettre passe en minuscule, sauf
+ * un sigle (« PH », « UV ») ou un nom propre connu.
+ */
+export const afterColon = (text: string) => (/^\p{Lu}{2}|^(Saint|Sainte|Balco|Nora)\b/u.test(text) ? text : text.charAt(0).toLowerCase() + text.slice(1));
+
 /** « des radis », « de l’ail », « du pak choï », « de la mâche » : une quantité de la plante. */
 export function partitive(plant: Agreeable) {
   const bare = withoutArticle(plant);

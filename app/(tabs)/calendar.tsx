@@ -5,6 +5,7 @@
  * Aujourd'hui (le détail y renvoie). Sous la liste, « À semer ou planter en … » propose des plantes de
  * saison pour ton balcon, à ajouter d'un « + ».
  */
+import { afterColon } from "@/lib/plants/grammar";
 import { useRouter } from "expo-router";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Pressable, ScrollView, StyleSheet, View } from "react-native";
@@ -23,7 +24,7 @@ import { Button } from "@/components/ui/button";
 import { Text } from "@/components/ui/typography";
 import { useDayPlan } from "@/hooks/use-day-plan";
 import { useColors } from "@/hooks/use-colors";
-import { potNeedShort, potSizePhrase, recommendedPotSize } from "@/lib/plants/pot-sheet";
+import { advisedPotPhrase, potNeedShort } from "@/lib/plants/pot-sheet";
 import { useGarden } from "@/lib/garden/garden-context";
 import { skippedRepots } from "@/lib/garden/repot-skip";
 import { dayKey, plantDisplayName, potHistory, type ResolvedPlant } from "@/lib/garden/garden-logic";
@@ -158,7 +159,7 @@ export default function CalendarScreen() {
   const addSuggestion = async ({ entry }: SeasonalSuggestion) => {
     // Une idée de saison : choisie, à semer ou planter (premier geste sur Aujourd'hui).
     const created = await addPlant(entry.id, { toPlant: true });
-    showToast(`Ajouté : ${entry.name} ${potSizePhrase(recommendedPotSize(entry))}`, () => void removePlant(created.id));
+    showToast(`Ajouté : ${afterColon(entry.name)} ${advisedPotPhrase(entry)}`, () => void removePlant(created.id));
   };
 
   const addIdea = async (activity: CalendarActivity) => {

@@ -26,18 +26,19 @@ describe("première tâche liée au pot (étape 3c)", () => {
     ]);
     const card = firstPotsCard({ answers, plants, dismissed: [], now })!;
     expect(card.title).toBe("Vérifie le pot de 4 plantes");
-    expect(card.summary).toBe("1 trop petit · 2 à choisir");
-    expect(card.lines.map((line) => line.plantId)).toEqual(["tomato-1", "thyme-1", "chives-1", "basil-1"]);
+    expect(card.summary).toBe("1 trop petit");
+    expect(card.lines.map((line) => line.plantId)).toEqual(["tomato-1", "basil-1", "thyme-1", "chives-1"]);
     expect(card.lines[0].detail).toMatch(/^Pot trop petit : prends un [^.]+$/u);
-    expect(card.lines[1].detail).toBe("Taille à choisir");
-    expect(card.lines[3].detail).toBe("Moyen (20 à 30 cm)");
+    expect(card.lines[1].detail).toBe("Moyen (21 à 30 cm)");
+    // Pas de taille notée : la taille conseillée par sa fiche, dite comme telle (retour du 14/10).
+    expect(card.lines[2].detail).toBe("Pot conseillé : petit (jusqu’à 20 cm)");
   });
 
   it("une plante seule : son nom dans le titre, son pot en résumé ; tous bons : à confirmer", () => {
     const one = resolvePlants([{ ...createGardenPlant("basil", now), id: "basil-1", potSize: "medium" }]);
-    expect(firstPotsCard({ answers, plants: one, dismissed: [], now })).toMatchObject({ title: "Vérifie le pot : Basilic", summary: "Moyen (20 à 30 cm)" });
+    expect(firstPotsCard({ answers, plants: one, dismissed: [], now })).toMatchObject({ title: "Vérifie le pot : basilic", summary: "Moyen (21 à 30 cm)" });
     const two = resolvePlants([{ ...createGardenPlant("basil", now), id: "basil-1", potSize: "medium" }, { ...createGardenPlant("mint", now), id: "mint-1", potSize: "large" }]);
-    expect(firstPotsCard({ answers, plants: two, dismissed: [], now })?.summary).toBe("Pots notés par Balco : c’est bien ça ?");
+    expect(firstPotsCard({ answers, plants: two, dismissed: [], now })?.summary).toBe("Pots conseillés par Balco : c’est bien ça ?");
   });
 
   it("disparaît une fois fermée, après deux semaines, sans accueil fini ou sans plante", () => {

@@ -12,7 +12,7 @@ test("janvier : Prépare ton printemps, une plante gardée donne le badge", asyn
   await page.getByRole("button", { name: /^Prépare ton printemps\. Choisis tes plantes du printemps/u }).click();
   await expect(page.getByText("À garder pour le printemps")).toBeVisible();
   await page.getByRole("button", { name: "Garder Tomates cerises pour le printemps" }).click();
-  await expect(page.getByText("Gardée pour le printemps : Tomates cerises")).toBeVisible();
+  await expect(page.getByText("Gardée pour le printemps : tomates cerises")).toBeVisible();
   await expect(page.getByText("✓ Gardée")).toBeVisible();
   const stored = await page.evaluate(() => ({ prefs: JSON.parse(localStorage.getItem("balco.onboarding.preferences.v1") ?? "{}"), awards: JSON.parse(localStorage.getItem("balco.progress.awards.v1") ?? "{}") }));
   expect(stored.prefs.springWishes).toContain("cherry-tomato");

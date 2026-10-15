@@ -5,6 +5,7 @@
  * ligne « Préparé avec Balco » est à part, pour pouvoir la retirer. Logique pure.
  */
 import { MONTH_LONG, type Month } from "../plants/catalog";
+import { afterColon } from "../plants/grammar";
 import { litersText } from "../plants/watering";
 import { potSizeOf, type PotSize } from "../plants/pot-size";
 import { dayKey, plantDisplayName, wateringIntervalOf, wateringLitersOf, type ResolvedPlant } from "./garden-logic";
@@ -15,7 +16,7 @@ export const HEAT_C = 30;
 
 export const HELPER_NOTE_SIGNATURE = "Préparé avec Balco";
 
-const POT_SHORT: Record<PotSize, string | null> = { small: "petit pot", medium: "pot moyen", large: "grand pot", planter: "jardinière", unknown: null };
+const POT_SHORT: Record<PotSize, string | null> = { small: "petit pot", medium: "pot moyen", large: "grand pot", xlarge: "très grand pot", planter: "jardinière", unknown: null };
 
 /** Le rythme d'arrosage se rallonge hors de l'été (les pots sèchent moins vite). */
 function seasonFactor(month: Month) {
@@ -66,11 +67,25 @@ export function helperPlants(plants: ResolvedPlant[], vacation: Pick<Vacation, "
     });
 }
 
-/** « environ 2 L tous les 2 jours », « presque rien, un peu d'eau chaque semaine si la terre est sèche ». */
-export function helperPlantWatering(item: HelperPlant) {
+const EVERY_OTHER: Record<number, string> = { 2: "un passage sur deux", 3: "un passage sur trois", 4: "un passage sur quatre" };
+
+/**
+ * Ce que demande la plante, au rythme des passages (`visitEvery`, null s'il n'y en a pas avant le retour) :
+ * « environ 4 L à chaque passage, si la terre est sèche », « environ 2 L un passage sur deux, si la terre est sèche ».
+ * Par forte chaleur, une plante qui a besoin d'eau plus souvent que les passages le dit clairement.
+ */
+export function helperPlantWatering(item: HelperPlant, visitEvery: number | null) {
   if (item.everyDays === null) return "presque rien, un peu d’eau chaque semaine si la terre est sèche";
-  const heat = item.heatEveryDays ? `, ${everyDaysText(item.heatEveryDays)} s’il fait plus de ${HEAT_C} °C` : "";
-  return `environ ${litersText(item.liters)} ${everyDaysText(item.everyDays)}${heat}`;
+  const liters = `environ ${litersText(item.liters)}`;
+  if (visitEvery === null) return `${liters} si tu passes et que la terre est sèche`;
+  const ratio = Math.max(1, Math.round(item.everyDays / visitEvery));
+  const rhythm = ratio === 1 ? "à chaque passage" : (EVERY_OTHER[ratio] ?? "de temps en temps");
+  const base = `${liters} ${rhythm}, ${ratio > 4 ? "seulement " : ""}si la terre est sèche`;
+  if (!item.heatEveryDays) return base;
+  if (item.heatEveryDays < visitEvery) {
+    return `${base} ; s’il fait plus de ${HEAT_C} °C, passe plus souvent pour ${item.resolved.entry.label} si tu peux (${everyDaysText(item.heatEveryDays)})`;
+  }
+  return ratio > 1 ? `${base}, et à chaque passage s’il fait plus de ${HEAT_C} °C` : base;
 }
 
 /** « 20 juillet » */
@@ -122,8 +137,8 @@ export function helperNoteText(input: HelperNoteInput) {
   if (heat) lines.push(`Il fait chaud en ce moment (${heat} °C) : arrose le soir, et regarde chaque jour les petits pots.`);
   lines.push("", "Plante par plante");
   for (const item of items) {
-    lines.push(`• ${plantDisplayName(item.resolved)}${item.pot ? ` (${item.pot})` : ""} : ${helperPlantWatering(item)}.`);
-    if (item.harvest) lines.push(`  À récolter : ${item.harvest}`);
+    lines.push(`• ${plantDisplayName(item.resolved)}${item.pot ? ` (${item.pot})` : ""} : ${helperPlantWatering(item, visits?.every ?? null)}.`);
+    if (item.harvest) lines.push(`  À récolter : ${afterColon(item.harvest)}`);
   }
   lines.push(
     "",

@@ -76,7 +76,7 @@ export function sunSummary(hours: number) {
 }
 
 /** Les orientations du choix, dans l'accueil et dans Réglages. */
-export const ORIENTATION_OPTIONS: ReadonlyArray<{ id: Orientation; icon: string; title: string; text: string }> = [
+export const ORIENTATION_OPTIONS: readonly { id: Orientation; icon: string; title: string; text: string }[] = [
   { id: "S", icon: "☀️", title: "Plein sud", text: "Le soleil passe devant toi presque toute la journée." },
   { id: "E", icon: "🌅", title: "À l’est", text: "Le soleil du matin." },
   { id: "W", icon: "🌇", title: "À l’ouest", text: "Le soleil de l’après-midi et du soir." },

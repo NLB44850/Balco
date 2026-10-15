@@ -65,7 +65,7 @@ export function longDayText(day: string): string {
 }
 
 /** Les jours à essayer en un geste, pour l'année du jour réel (`today`, « AAAA-MM-JJ ») ou la suivante s'ils sont passés. */
-export function clockPresets(today: string): Array<{ day: string; label: string }> {
+export function clockPresets(today: string): { day: string; label: string }[] {
   const year = Number(today.slice(0, 4));
   const next = (monthDay: string) => {
     const day = `${year}-${monthDay}`;

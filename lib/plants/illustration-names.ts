@@ -1,7 +1,6 @@
 /** Les illustrations du pas-à-pas : leurs noms (sans dessin), utilisables partout, même dans les tests. */
 export type IllustrationId =
   | "pot-holes"
-  | "clay-balls"
   | "fill-soil"
   | "finger-hole"
   | "drop-seeds"
@@ -30,7 +29,6 @@ export type IllustrationId =
 /** Le nom de chaque dessin, pour l'écran de revue et l'accessibilité. */
 export const ILLUSTRATION_LABELS: Record<IllustrationId, string> = {
   "pot-holes": "Un pot percé, sur sa soucoupe",
-  "clay-balls": "Des billes d’argile au fond du pot",
   "fill-soil": "Le terreau versé dans le pot",
   "finger-hole": "Un doigt fait un petit trou",
   "drop-seeds": "Des graines tombent dans les trous",

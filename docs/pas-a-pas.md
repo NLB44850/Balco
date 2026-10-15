@@ -1,6 +1,6 @@
 # Tous les pas-à-pas de Balco
 
-Mis à jour le 12 octobre 2026. Ce document est tiré directement du code (`lib/plants/guide.ts`) : c'est
+Mis à jour le 15 octobre 2026. Ce document est tiré directement du code (`lib/plants/guide.ts`) : c'est
 exactement ce que l'app affiche. Les chiffres (taille du pot, profondeur, nombre de graines, délais) changent
 selon la plante ; chaque modèle est montré ici avec une plante d'exemple.
 
@@ -46,14 +46,13 @@ Exemple : **Semer la mâche**. Utilisé pour 37 plantes du catalogue (les chiffr
 
 - Un sachet de graines de mâche
 - Une jardinière de 60 cm : 20 cm de profondeur. Pour 10 plants, à 8 cm l’un de l’autre.
-- Une poignée de billes d’argile : Au fond du pot, l’eau s’écoule mieux.
 - Du terreau : Un sac de 20 L remplit deux ou trois pots moyens.
 - Un vaporisateur ou un arrosoir à pomme fine : Une pluie fine ne déplace pas les graines.
 
 **Les étapes** (une par écran, avec un dessin)
 
-1. **Mets une poignée de billes d’argile au fond.** Les racines ne baigneront pas dans l’eau.  
-   _Dessin : des billes d’argile au fond du pot._
+1. **Vérifie que ton pot a un trou au fond.** Sans trou, l’eau stagne et les racines pourrissent.  
+   _Dessin : un pot percé, sur sa soucoupe._
 2. **Remplis de terreau jusqu’à 2 cm du bord.** Il reste de la place pour arroser.  
    _Dessin : le terreau versé dans le pot._
 3. **Sème une graine tous les 4 cm.** Tu éclairciras ensuite à 8 cm.  
@@ -117,15 +116,14 @@ Exemple : **Planter la lavande**. Utilisé pour 57 plantes du catalogue (les chi
 
 - Un plant de lavande en godet
 - Un pot percé d’au moins 30 cm de large : 30 cm de profondeur, des trous au fond et une soucoupe.
-- Une poignée de billes d’argile : Au fond du pot, l’eau s’écoule mieux.
 - Du terreau : Un sac de 20 L remplit deux ou trois pots moyens.
 - Du sable de rivière : Un tiers de sable, mêlé au terreau.
 - Un arrosoir
 
 **Les étapes** (une par écran, avec un dessin)
 
-1. **Mets une poignée de billes d’argile au fond.** Les racines ne baigneront pas dans l’eau.  
-   _Dessin : des billes d’argile au fond du pot._
+1. **Vérifie que ton pot a un trou au fond.** Sans trou, l’eau stagne et les racines pourrissent.  
+   _Dessin : un pot percé, sur sa soucoupe._
 2. **Remplis de terreau mêlé d’un tiers de sable.** Jusqu’aux deux tiers du pot.  
    _Dessin : le terreau versé dans le pot._
 3. **Sors la motte du godet, sans tirer sur la tige.** Retourne le godet et tapote le fond.  
@@ -151,15 +149,14 @@ Exemple : **Planter l’ail**. Utilisé pour 5 plantes du catalogue (les chiffre
 
 - Des gousses d’ail à planter : 4 pour ce pot.
 - Un pot percé d’au moins 25 cm de large : 20 cm de profondeur. Pour 4 plants, à 12 cm l’un de l’autre.
-- Une poignée de billes d’argile : Au fond du pot, l’eau s’écoule mieux.
 - Du terreau : Un sac de 20 L remplit deux ou trois pots moyens.
 - Du sable de rivière : Un tiers de sable, mêlé au terreau.
 - Un arrosoir
 
 **Les étapes** (une par écran, avec un dessin)
 
-1. **Mets une poignée de billes d’argile au fond.** Les racines ne baigneront pas dans l’eau.  
-   _Dessin : des billes d’argile au fond du pot._
+1. **Vérifie que ton pot a un trou au fond.** Sans trou, l’eau stagne et les racines pourrissent.  
+   _Dessin : un pot percé, sur sa soucoupe._
 2. **Remplis de terreau jusqu’à 3 cm du bord.**  
    _Dessin : le terreau versé dans le pot._
 3. **Enfonce-les à 3 cm, pointe vers le haut.** Un tous les 12 cm, 4 en tout.  
@@ -184,15 +181,14 @@ Exemple : **Planter le groseillier**. Utilisé pour 11 plantes du catalogue (les
 
 - Un pied de groseillier en pot
 - Un grand pot percé de 40 cm de large ou plus : 40 cm de profondeur, des trous au fond et une soucoupe.
-- Une poignée de billes d’argile : Au fond du pot, l’eau s’écoule mieux.
 - Du terreau : Un sac de 20 L remplit deux ou trois pots moyens.
 - Du compost : Un tiers de compost, mêlé au terreau.
 - Un arrosoir
 
 **Les étapes** (une par écran, avec un dessin)
 
-1. **Mets 3 cm de billes d’argile au fond.** Les racines ne baigneront pas dans l’eau.  
-   _Dessin : des billes d’argile au fond du pot._
+1. **Vérifie que ton pot a un trou au fond.** Sans trou, l’eau stagne et les racines pourrissent.  
+   _Dessin : un pot percé, sur sa soucoupe._
 2. **Remplis de terreau mêlé d’un tiers de compost.** Jusqu’à la moitié du pot.  
    _Dessin : le terreau versé dans le pot._
 3. **Sors la motte du godet, sans tirer sur la tige.** Retourne le godet et tapote le fond.  
@@ -217,7 +213,6 @@ Exemple : **Rempoter le thym**. Pour les 37 vivaces qui restent plusieurs année
 **Ce qu'il te faut**
 
 - Un pot percé d’environ 20 cm de large : Un peu plus large que l’actuel.
-- Une poignée de billes d’argile : Au fond du pot, l’eau s’écoule mieux.
 - Du terreau : Un sac de 20 L remplit deux ou trois pots moyens.
 - Du sable de rivière : Un tiers de sable, mêlé au terreau.
 - Un arrosoir
@@ -226,8 +221,8 @@ Exemple : **Rempoter le thym**. Pour les 37 vivaces qui restent plusieurs année
 
 1. **Regarde sous le pot si des racines sortent.** Ou si l’eau ressort tout de suite : il manque de place.  
    _Dessin : des racines sortent sous le pot._
-2. **Mets des billes d’argile au fond du nouveau pot.** Environ 20 cm de large.  
-   _Dessin : des billes d’argile au fond du pot._  
+2. **Vérifie que le nouveau pot a un trou au fond.** Environ 20 cm de large.  
+   _Dessin : un pot percé, sur sa soucoupe._  
    ⚠️ Erreur à éviter : un pot bien plus grand. La terre resterait trempée.
 3. **Sors la plante en tapotant le pot retourné.** Arrosée la veille, la motte sort plus facilement.  
    _Dessin : la motte sort du godet._
@@ -359,7 +354,6 @@ Exemple : **Sortir tes plants de basilic**. Pour les plantes semées au chaud, q
 **Ce qu'il te faut**
 
 - Un pot percé d’au moins 20 cm de large : Un par plant, avec des trous au fond et une soucoupe.
-- Une poignée de billes d’argile : Au fond du pot, l’eau s’écoule mieux.
 - Du terreau : Un sac de 20 L remplit deux ou trois pots moyens.
 - Du compost : Un tiers de compost, mêlé au terreau.
 - Un arrosoir
@@ -369,8 +363,8 @@ Exemple : **Sortir tes plants de basilic**. Pour les plantes semées au chaud, q
 1. **Sors-les quelques heures par jour, pendant une semaine.** À l’ombre légère d’abord : ils s’habituent au vent et au soleil.  
    _Dessin : le plant à l’ombre légère, dehors._  
    ⚠️ Erreur à éviter : les sortir d’un coup en plein soleil. Ils brûleraient.
-2. **Mets une poignée de billes d’argile au fond du pot.**  
-   _Dessin : des billes d’argile au fond du pot._
+2. **Vérifie que ton pot a un trou au fond.** Sans trou, l’eau stagne et les racines pourrissent.  
+   _Dessin : un pot percé, sur sa soucoupe._
 3. **Remplis le pot de terreau aux deux tiers.**  
    _Dessin : le terreau versé dans le pot._
 4. **Sors la motte du godet, sans tirer sur la tige.** Retourne le godet et tapote le fond.  

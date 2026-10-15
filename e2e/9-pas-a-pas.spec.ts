@@ -14,17 +14,17 @@ test("pas-à-pas : ce qu'il te faut, les étapes, puis « C'est planté » coche
 
   // Ce qu'il te faut : « J'ai déjà » retire l'objet de ce qui manque.
   await expect(page.getByText("Planter la lavande")).toBeVisible();
-  await expect(page.getByRole("button", { name: "Partager ce qui manque · 6" })).toBeVisible();
-  await page.getByRole("checkbox", { name: "J’ai déjà : Du terreau" }).click();
   await expect(page.getByRole("button", { name: "Partager ce qui manque · 5" })).toBeVisible();
+  await page.getByRole("checkbox", { name: "J’ai déjà : Du terreau" }).click();
+  await expect(page.getByRole("button", { name: "Partager ce qui manque · 4" })).toBeVisible();
 
   // Les étapes, une par écran, jusqu'à « Et après ? ».
   await page.getByRole("button", { name: "Commencer le pas-à-pas" }).click();
-  await expect(page.getByText("Mets une poignée de billes d’argile au fond.")).toBeVisible();
+  await expect(page.getByText("Vérifie que ton pot a un trou au fond.")).toBeVisible();
 
   // Glisser du doigt change d'étape, comme « Suivant » et « Retour » : le texte et le compteur suivent.
   const swipe = async (fromX: number, toX: number) => {
-    const box = (await page.getByText(/^Mets une poignée|^Remplis de terreau/).first().boundingBox())!;
+    const box = (await page.getByText(/^Vérifie que ton pot|^Remplis de terreau/).first().boundingBox())!;
     const y = box.y - 60;
     await page.mouse.move(fromX, y);
     await page.mouse.down();
@@ -64,7 +64,7 @@ test("catalogue : « Ce qu'il te faut » seulement, et « J'ai déjà » commun 
   await page.getByRole("button", { name: "🧺  Ce qu’il te faut pour la planter ›" }).click();
   await expect(page.getByText("Ce qu’il te faut").first()).toBeVisible();
   // Le terreau coché pour une autre plante l'est ici aussi.
-  await expect(page.getByRole("button", { name: "Partager ce qui manque · 5" })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Partager ce qui manque · 4" })).toBeVisible();
   await expect(page.getByRole("button", { name: "Commencer le pas-à-pas" })).toHaveCount(0);
   expect(errors).toEqual([]);
 });

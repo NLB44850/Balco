@@ -1,6 +1,6 @@
 import { expect, test } from "@playwright/test";
 
-import { atDate, checkboxOf, denyGeolocation, mockWeather, open, openHarvests, openPlantings, seedBalcony, trackErrors, wateringGroup } from "./helpers";
+import { atDate, checkboxOf, DAY_MS, denyGeolocation, mockWeather, open, openHarvests, openPlantings, seedBalcony, trackErrors, wateringGroup } from "./helpers";
 
 /** Le parcours de tous les jours : arriver, créer son balcon, cocher, annuler, ajouter une plante. */
 
@@ -93,11 +93,11 @@ test("onboarding « Oui » : lesquelles (raccourci + recherche), soleil, espace,
   await page.getByRole("button", { name: /^Vérifie le pot de 2 plantes, / }).click();
   await page.getByRole("button", { name: /^Basilic : / }).click();
   await expect(page.getByText("Dans quel pot ?")).toBeVisible();
-  await page.getByText("Grand (30 à 40 cm)").click();
+  await page.getByText("Grand (31 à 40 cm)").click();
   await expect(page.getByText("Dans quel pot ?")).toHaveCount(0);
   await page.goBack();
   await page.getByRole("button", { name: /^Vérifie le pot de 2 plantes, / }).click();
-  await expect(page.getByRole("button", { name: "Basilic : Grand (30 à 40 cm)" })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Basilic : Grand (31 à 40 cm)" })).toBeVisible();
   await page.getByRole("button", { name: "C’est bon" }).click();
   await expect(page.getByRole("button", { name: /^Vérifie le pot de 2 plantes, / })).toHaveCount(0);
   expect(errors).toEqual([]);
@@ -174,7 +174,10 @@ test("une série de 3 jours se dit dans le message du bas, sans plein écran", a
   await mockWeather(page);
   // Thym arrosé il y a 2 jours (et 8), ciboulette il y a 3 jours : hier et avant-hier sont des jours
   // suivis, il y a 3 jours le thym avait soif. Aujourd'hui, seule la ciboulette est à arroser.
-  await seedBalcony(page, { plants: ["thyme", "chives"], waterings: { thyme: [2, 8], chives: [3] } });
+  // En pots moyens notés (sans taille, ils compteraient en petit pot, plus assoiffés).
+  const added = new Date(Date.now() - 30 * DAY_MS).toISOString();
+  const pots = [{ id: "thyme-e2e", catalogId: "thyme", addedAt: added, potSize: "medium" }, { id: "chives-e2e", catalogId: "chives", addedAt: added, potSize: "medium" }];
+  await seedBalcony(page, { plants: ["thyme", "chives"], waterings: { thyme: [2, 8], chives: [3] }, extra: { "balco.garden.plants.v1": JSON.stringify(pots) } });
   await open(page, "/", "Tes plantes");
   await page.getByRole("checkbox", { name: /^Marquer comme fait : Arrose la ciboulette/ }).click();
   await expect(page.getByText(/^🔥 3 jours de suite · /u)).toBeVisible();
@@ -214,14 +217,14 @@ test("catalogue : ajouter une plante d'un « + » puis ouvrir sa fiche", async (
   await expect(sheet.getByText("C’est le moment")).toBeVisible();
   await sheet.getByRole("button", { name: "Menthe : Déjà sur mon balcon" }).click();
   // Balco lui donne la taille de pot de sa fiche et le dit dans le message du bas (pas de question).
-  await expect(page.getByText("Ajouté : Menthe en pot moyen (20 à 30 cm)")).toBeVisible();
+  await expect(page.getByText("Ajouté : menthe · pot conseillé : moyen (21 à 30 cm)")).toBeVisible();
   await expect(page.getByText("Dans quel pot ?")).toHaveCount(0);
   await expect(page.getByText("✓ Sur ton balcon")).toBeVisible();
   // La lavande, pas encore plantée.
   await page.getByPlaceholder("Basilic, fraisier, lavande…").fill("lavande");
   await page.getByRole("button", { name: /^Ajouter Lavande/ }).first().click();
   await page.getByRole("dialog").getByRole("button", { name: "Lavande : Pas encore plantée" }).click();
-  await expect(page.getByText("À planter : Lavande en pot moyen (20 à 30 cm)")).toBeVisible();
+  await expect(page.getByText("À planter : lavande · pot conseillé : moyen (21 à 30 cm)")).toBeVisible();
   // L'aubergine en octobre : les cartes préviennent avant de choisir ; « Pas encore plantée » la garde pour le printemps.
   await page.getByPlaceholder("Basilic, fraisier, lavande…").fill("aubergine");
   await page.getByRole("button", { name: /^Ajouter Aubergine/ }).first().click();
@@ -240,26 +243,31 @@ test("catalogue : ajouter une plante d'un « + » puis ouvrir sa fiche", async (
   await expect(page.getByText(/Photo d’exemple|Ajouter une photo/).first()).toBeVisible();
   // Sa fiche « Spécial pot » compare son pot à celui qu'il lui faut, en centimètres (menthe : 30 cm de large).
   await expect(page.getByText("Spécial pot")).toBeVisible();
-  await expect(page.getByText("Ton pot lui convient", { exact: false })).toBeVisible();
+  // La taille n'est pas notée d'office : « Quel est ton pot ? » et la pastille « Pot conseillé : … ».
+  await expect(page.getByText("Quel est ton pot ?")).toBeVisible();
+  await expect(page.getByRole("button", { name: "Pot conseillé : moyen (21 à 30 cm), choisir la taille du pot" })).toBeVisible();
   await expect(page.getByText("Il lui faut un pot de 30 cm de large, 20 cm de profondeur.")).toBeVisible();
   await expect(page.getByText("Terreau universel")).toBeVisible();
   // Trop petit : un titre orange et ce qu'il faut prendre. La feuille marque la taille conseillée.
-  await page.getByRole("button", { name: "Ton pot : Moyen (20 à 30 cm)" }).click();
-  await expect(page.getByRole("radio", { name: "Moyen (20 à 30 cm)" })).toBeChecked();
+  await page.getByRole("button", { name: "Ton pot : Je ne sais pas" }).click();
+  await expect(page.getByRole("radio", { name: "Je ne sais pas" })).toBeChecked();
   await expect(page.getByText("✓ Conseillé")).toBeVisible();
-  await page.getByRole("radio", { name: "Petit (moins de 20 cm)" }).click();
-  await expect(page.getByText("Pot trop petit", { exact: false })).toBeVisible();
+  await page.getByRole("radio", { name: "Petit (jusqu’à 20 cm)" }).click();
+  // Dans « Spécial pot », et en orange dans l'état de la plante (retour du 14/10 : un vrai souci).
+  await expect(page.getByText(/^(⚠︎ )?Pot trop petit$/u)).toHaveCount(2);
   await expect(page.getByText("Il lui faut un pot de 30 cm de large, 20 cm de profondeur. Prends un pot moyen.")).toBeVisible();
   // Jardinière : combien de pieds y tiennent.
-  await page.getByRole("button", { name: "Ton pot : Petit (moins de 20 cm)" }).click();
-  await page.getByRole("radio", { name: "Jardinière ou bac" }).click();
+  await page.getByRole("button", { name: "Ton pot : Petit (jusqu’à 20 cm)" }).click();
+  await page.getByRole("radio", { name: "Jardinière (60 cm, peu profonde)" }).click();
   await expect(page.getByText("Ta jardinière lui convient", { exact: false })).toBeVisible();
   await expect(page.getByText("Place pour un seul pied dans 60 cm.")).toBeVisible();
   const stored = await page.evaluate(() => JSON.parse(localStorage.getItem("balco.garden.plants.v1") ?? "[]"));
   const kept = (catalogId: string) => stored.find((plant: { catalogId: string; removedAt?: string }) => plant.catalogId === catalogId && !plant.removedAt);
   expect(kept("mint")).toMatchObject({ potSize: "planter" });
   expect(kept("mint")?.toPlant).toBeFalsy();
-  expect(kept("lavender")).toMatchObject({ potSize: "medium", toPlant: true });
+  // Pas de taille notée d'office : seulement celle qu'on choisit (retour du 14/10).
+  expect(kept("lavender")).toMatchObject({ toPlant: true });
+  expect(kept("lavender")?.potSize).toBeUndefined();
   expect(errors).toEqual([]);
 });
 

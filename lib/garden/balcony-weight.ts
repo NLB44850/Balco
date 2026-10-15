@@ -14,7 +14,7 @@ import type { CatalogPlant } from "@/lib/plants/catalog";
 /** Terreau bien arrosé, compté large. */
 export const WET_SOIL_KG_PER_LITER = 1;
 /** Le pot vide, compté comme un pot en terre cuite (pots de 30 cm : 2 à 6 kg selon les fiches des magasins). */
-export const POT_SHELL_KG: Record<KnownPotSize, number> = { small: 1, medium: 3, large: 6, planter: 5 };
+export const POT_SHELL_KG: Record<KnownPotSize, number> = { small: 1, medium: 3, large: 6, xlarge: 15, planter: 5 };
 /** Charge souvent prévue pour un balcon récent, par m² (fiche de l'Agence qualité construction). */
 export const BALCONY_LOAD_KG_PER_M2 = 350;
 
@@ -29,7 +29,8 @@ export function potWeight({ plant, entry }: Plant): PotWeight {
   if (noted !== "unknown") return { plantId: plant.id, kg: Math.round(POT_LITERS[noted] * WET_SOIL_KG_PER_LITER + POT_SHELL_KG[noted]), size: noted, guessed: false };
   const need = potNeedFor(entry);
   const size = smallestFit(need);
-  const liters = size ? POT_LITERS[size] : need.liters;
+  // Le volume du pot de sa fiche ; sa taille (catégorie conseillée) donne le poids du pot vide.
+  const liters = need.liters;
   return { plantId: plant.id, kg: Math.round(liters * WET_SOIL_KG_PER_LITER + (size ? POT_SHELL_KG[size] : POT_SHELL_KG.large)), size, guessed: true };
 }
 
@@ -53,7 +54,7 @@ export function weightIntro(weight: BalconyWeight) {
 
 /** Le repère du balcon, avec la charge par m² et le conseil de demander au syndic. */
 export const BALCONY_LOAD_NOTE = `Un balcon récent est souvent prévu pour ${BALCONY_LOAD_KG_PER_M2} kg par m², parfois moins dans l’ancien. Un doute, ou un grand bac en projet ? Demande au syndic la charge prévue pour ton balcon.`;
-export const LIGHTER_TIP = "Pour alléger : des pots en plastique ou en résine, et des billes d’argile au fond plutôt que des cailloux.";
+export const LIGHTER_TIP = "Pour alléger : des pots en plastique ou en résine plutôt qu’en terre cuite.";
 /** Une taille de pot pas notée : comptée à la taille de sa fiche. */
 export function guessedNote(count: number) {
   return count > 1 ? `${count} pots sans taille notée : comptés à la taille conseillée. Note-la dans leur fiche pour un calcul plus juste.` : "Un pot sans taille notée : compté à la taille conseillée. Note-la dans sa fiche pour un calcul plus juste.";

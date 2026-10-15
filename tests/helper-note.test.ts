@@ -24,8 +24,21 @@ describe("consignes pour qui arrose", () => {
     expect(tomato.liters).toBe(4.5);
     expect(tomato.everyDays!).toBeGreaterThan(basil.everyDays!);
     expect(thyme.pot).toBeNull();
-    expect(helperPlantWatering(thyme)).toMatch(/^environ \d(,5)? L tous les \d jours, (chaque jour|tous les \d jours) s’il fait plus de 30 °C$/);
-    expect(helperPlantWatering(basil)).toBe("environ 1 L chaque jour");
+    expect(helperPlantWatering(basil, 1)).toBe("environ 1 L à chaque passage, si la terre est sèche");
+  });
+
+  it("suit les passages : chaque passage, un passage sur deux, ou passer plus souvent par forte chaleur", () => {
+    const [tomato, , thyme] = helperPlants(plants, july);
+    // Passages réglés sur la tomate : pas de rythme à part « tous les 4 jours ».
+    expect(helperPlantWatering(tomato, tomato.everyDays)).toMatch(/^environ 4,5 L à chaque passage, si la terre est sèche/);
+    expect(helperPlantWatering({ ...tomato, everyDays: 4, heatEveryDays: null }, 2)).toBe("environ 4,5 L un passage sur deux, si la terre est sèche");
+    expect(helperPlantWatering({ ...tomato, everyDays: 12, heatEveryDays: null }, 2)).toBe("environ 4,5 L de temps en temps, seulement si la terre est sèche");
+    expect(helperPlantWatering({ ...thyme, everyDays: 3, heatEveryDays: 1 }, 3)).toBe(
+      `environ ${thyme.liters.toString().replace(".", ",")} L à chaque passage, si la terre est sèche ; s’il fait plus de 30 °C, passe plus souvent pour le thym si tu peux (chaque jour)`,
+    );
+    expect(helperPlantWatering({ ...thyme, everyDays: 4, heatEveryDays: 2 }, 2)).toMatch(/un passage sur deux, si la terre est sèche, et à chaque passage s’il fait plus de 30 °C$/);
+    expect(helperPlantWatering(tomato, null)).toBe("environ 4,5 L si tu passes et que la terre est sèche");
+    for (const item of helperPlants(plants, july)) expect(helperPlantWatering(item, 1)).not.toMatch(/tous les \d jours,|tous les \d jours$/);
   });
 
   it("espace les arrosages hors de l'été et ne parle plus de chaleur", () => {
@@ -55,7 +68,10 @@ describe("consignes pour qui arrose", () => {
   it("écrit un texte clair avec les dates, plante par plante, et la signature à part", () => {
     const text = helperNoteText({ plants, vacation: july, firstName: " Nicolas ", covered: true, todayMaxC: 32, now: new Date(2026, 6, 17, 9) });
     expect(text).toContain("du 18 au 31 juillet");
-    expect(text).toContain("• Basilic cuisine (petit pot) : environ 1 L chaque jour.");
+    expect(text).toContain("• Basilic cuisine (petit pot) : environ 1 L à chaque passage, si la terre est sèche.");
+    expect(text).toContain("• Tomates cerises (grand pot) : environ 4,5 L un passage sur trois, si la terre est sèche, et à chaque passage s’il fait plus de 30 °C.");
+    expect(text).toContain("  À récolter : cueille-les");
+    expect(text).not.toMatch(/ : \p{Lu}\p{Ll}/u);
     expect(text).toContain("Il fait chaud en ce moment (32 °C)");
     expect(text).toContain("arrose même s’il pleut");
     expect(text).not.toContain("Radis");

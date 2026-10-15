@@ -23,6 +23,9 @@ import {
 } from "./harvest-end";
 import { activityDone, calendarActivities, eventForActivity, startActivity, type CalendarActivity, type CalendarSubject } from "../plants/calendar";
 import { tasksForMonth, type CareTask } from "../plants/catalog";
+import { agree } from "../plants/grammar";
+import { potFit } from "../plants/pot-sheet";
+import { potSizeOf } from "../plants/pot-size";
 import { waterAmountText } from "../plants/watering";
 import type { CoachAdvice } from "../plants/watering-coach";
 import type { ClimateInfo } from "../plants/climate";
@@ -32,6 +35,7 @@ import {
   dayKey,
   dayOfYear,
   eventForSessionTask,
+  inGroundSince,
   lastEventDate,
   plantDisplayName,
   potHistory,
@@ -77,11 +81,13 @@ export type PlanGesture = {
 };
 
 /**
- * L'état d'une plante, une couleur par sens : vert = en forme, orange = à surveiller (un geste pressant,
- * chaleur, vent, orage), bleu = gel ou pluie annoncés, gris = nouvelle (aucun soin noté).
+ * L'état d'une plante, une couleur par sens : vert = en forme, orange = un vrai souci (chaleur, orage, vent,
+ * problème vu par Observer, pot trop petit, arrosage en retard de 3 jours), bleu = gel ou pluie annoncés, gris =
+ * nouvelle (aucun soin noté). Un geste du jour (arroser, récolter) ne change pas l'état (retour du 14/10).
+ * `worry` : compté dans « N à surveiller » du Balcon (l'orange et le gel, pas la pluie).
  */
 export type PlantTone = "good" | "watch" | "weather" | "new";
-export type PlantDayStatus = { tone: PlantTone; label: string };
+export type PlantDayStatus = { tone: PlantTone; label: string; worry?: boolean };
 
 export type PlantDay = {
   resolved: ResolvedPlant;
@@ -117,11 +123,32 @@ export const TO_PLANT_LABEL = "À planter";
 const STATUS_LABEL: Record<PlantTone, string> = { good: "En forme", watch: "À surveiller", weather: "Météo", new: "Nouvelle" };
 
 /** Ce que veut dire chaque couleur, pour la légende. */
-export const STATUS_LEGEND: Array<{ tone: PlantTone; text: string }> = [
+export const STATUS_LEGEND: { tone: PlantTone; text: string }[] = [
   { tone: "good", text: "en forme" },
   { tone: "watch", text: "à surveiller" },
   { tone: "weather", text: "gel ou pluie annoncés" },
 ];
+
+/** Un arrosage en retard d'au moins ces jours sur le rythme de la plante passe en orange. */
+export const LATE_WATERING_DAYS = 3;
+/** Un problème vu par Observer reste en orange ces jours-là, sauf nouvelle analyse qui dit qu'elle va bien. */
+export const OBSERVER_PROBLEM_DAYS = 14;
+
+/** L'analyse d'Observer gardée dans l'historique, avec son verdict dans l'identifiant : `scan:<plante>:<ms>:<état>`. */
+export const scanEventId = (plantId: string, at: Date, health: string) => `scan:${plantId}:${at.getTime()}:${health}`;
+
+/** La dernière analyse d'Observer de moins de 14 jours a vu un problème (« À surveiller », « Besoin de soins »). */
+export function observerProblem(plantId: string, events: MaintenanceEvent[], now: Date) {
+  const prefix = `scan:${plantId}:`;
+  const last = events
+    .filter((event) => event.id.startsWith(prefix))
+    .sort((a, b) => new Date(b.completedAt).getTime() - new Date(a.completedAt).getTime())[0];
+  if (!last || now.getTime() - new Date(last.completedAt).getTime() > OBSERVER_PROBLEM_DAYS * 86_400_000) return false;
+  const health = last.id.slice(prefix.length).split(":")[1];
+  return health === "needs_attention" || health === "sick";
+}
+
+const ALERT_LABELS: Partial<Record<NonNullable<ReminderDecision["cause"]>, string>> = { heat: "Forte chaleur", storm: "Orage annoncé", wind: "Coup de vent" };
 
 function headline(title: string) {
   const stripped = title.replace(/^Aujourd’hui,\s*/u, "").replace(/\.$/u, "");
@@ -159,12 +186,17 @@ function decisionGesture(kind: GestureKind, decision: ReminderDecision): PlanGes
 
 const isWeatherAlert = (decision: ReminderDecision) => decision.cause !== undefined && decision.cause !== "thirst";
 
-function statusOf(resolved: ResolvedPlant, gestures: PlanGesture[], events: MaintenanceEvent[]): PlantDayStatus {
+function statusOf(resolved: ResolvedPlant, gestures: PlanGesture[], events: MaintenanceEvent[], now: Date, lateWateringDays: number | null): PlantDayStatus {
   const pending = gestures.filter((gesture) => !gesture.done);
   const alerts = pending.filter((gesture) => gesture.kind === "alert").map((gesture) => (gesture.source.type === "decision" ? gesture.source.decision.cause : undefined));
-  if (alerts.includes("frost")) return { tone: "weather", label: "Gel annoncé" };
+  if (alerts.includes("frost")) return { tone: "weather", label: "Gel annoncé", worry: true };
+  const alert = alerts.map((cause) => (cause ? ALERT_LABELS[cause] : undefined)).find(Boolean);
+  if (alert) return { tone: "watch", label: alert, worry: true };
+  if (observerProblem(resolved.plant.id, events, now)) return { tone: "watch", label: "Problème vu par Observer", worry: true };
+  const fit = potFit(resolved.entry, potSizeOf(resolved.plant));
+  if (fit.tone === "small") return { tone: "watch", label: fit.title, worry: true };
+  if (lateWateringDays !== null) return { tone: "watch", label: `Pas ${agree(resolved.entry, "arrosé")} depuis ${lateWateringDays} jours`, worry: true };
   if (alerts.includes("rain")) return { tone: "weather", label: "Pluie annoncée" };
-  if (alerts.length > 0 || pending.some((gesture) => gesture.kind === "watering")) return { tone: "watch", label: STATUS_LABEL.watch };
   if (!events.some((event) => event.plantId === resolved.plant.id)) return { tone: "new", label: STATUS_LABEL.new };
   return { tone: "good", label: STATUS_LABEL.good };
 }
@@ -234,6 +266,13 @@ export function planDay({ plants, events, now, decisions = [], allDecisions = de
     const thirstSnoozed = ownAll.some((decision) => decision.cause === "thirst" || decision.cause === "heat") && !thirst;
     const lastWatering = lastEventDate(events, plantId, "watering", today);
     const wateringDue = advice ? advice.due : !lastWatering || today.getTime() - lastWatering.getTime() >= wateringIntervalOf(resolved) * 3_600_000;
+    // En retard de 3 jours ou plus sur son rythme (pas arrosée aujourd'hui, arrosage de saison) : orange. Jamais
+    // arrosée dans l'app : compté depuis son arrivée ou sa mise en terre (vu le 14/10, aucune carte ne passait en orange).
+    const arrival = inGroundSince(resolved.plant, events);
+    const wateringSince = lastWatering ?? (arrival === null ? null : new Date(arrival));
+    const sinceWatering = wateringSince ? Math.round((today.getTime() - startOfDay(wateringSince).getTime()) / 86_400_000) : null;
+    const rhythmDays = Math.max(1, Math.round(wateringIntervalOf(resolved) / 24));
+    const lateWateringDays = !wateredToday && wateringTask && sinceWatering !== null && sinceWatering >= rhythmDays + LATE_WATERING_DAYS ? sinceWatering : null;
     if (wateredToday) {
       // Arrosée aujourd'hui : la ligne reste, cochée, même quand le conseil météo qui l'a demandée s'est tu.
       const task = wateringTask ?? { id: "check-soil", type: "watering" as const, title: `Arrose ${resolved.entry.label}`, instruction: "Enfonce un doigt sur 2 cm : arrose doucement au pied seulement si la terre est sèche.", minutes: 3, doneTitle: "Arrosage noté.", doneText: "" };
@@ -284,7 +323,7 @@ export function planDay({ plants, events, now, decisions = [], allDecisions = de
     const care = tasks.filter((task) => !["watering", "harvest", "fertilizing"].includes(task.type));
     if (care.length > 0) gestures.push(taskGesture("care", resolved, care[(dayOfYear(now) + index) % care.length], now, eventIds));
 
-    return { resolved, gestures, first: gestures[0] ?? null, status: statusOf(resolved, gestures, events) };
+    return { resolved, gestures, first: gestures[0] ?? null, status: statusOf(resolved, gestures, events, now, lateWateringDays) };
   });
 }
 

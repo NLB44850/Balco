@@ -4,7 +4,7 @@
  * Logique pure.
  */
 import { MONTH_LONG, type Month } from "../plants/catalog";
-import { capitalize, objectPronoun, stressedPronoun, subjectPronoun, verb } from "../plants/grammar";
+import { afterColon, capitalize, objectPronoun, stressedPronoun, subjectPronoun, verb } from "../plants/grammar";
 import type { MaintenanceEvent } from "../reminders/reminder-engine";
 import { badgeTierKey, computeBadges, computeProgress, computeStats, TIER_NAMES, type Badge, dayKey, daysBetween, followedDays, isAvoidedWatering, plantDisplayName, wateringLitersOf, type ResolvedPlant } from "./garden-logic";
 import type { PlantPhoto } from "./photos";
@@ -156,11 +156,21 @@ export function careWeeksLabel({ activeWeeks, trackedWeeks }: Pick<PlantProgress
   return trackedWeeks < WEEKS ? `${weeksLabel} sur ${trackedWeeks} depuis son arrivée` : `${weeksLabel} sur les 8 dernières`;
 }
 
-/** « depuis 12 jours », « depuis 3 mois » */
+/**
+ * Un seul format de durée partout (retour du 15/10 : « Depuis 4 semaines » en haut de la fiche, « depuis 30 jours »
+ * plus bas) : les jours la première semaine, puis les semaines, puis les mois après 8 semaines, puis les années.
+ * « depuis 5 jours », « depuis 4 semaines », « depuis 3 mois ».
+ */
 export function sinceLabel(days: number) {
   if (days <= 0) return "depuis aujourd’hui";
-  if (days < 60) return `depuis ${days} jour${days > 1 ? "s" : ""}`;
-  return `depuis ${Math.round(days / 30)} mois`;
+  if (days < 7) return `depuis ${days} jour${days > 1 ? "s" : ""}`;
+  if (days < 56) {
+    const weeks = Math.floor(days / 7);
+    return `depuis ${weeks} semaine${weeks > 1 ? "s" : ""}`;
+  }
+  if (days < 365) return `depuis ${Math.round(days / 30.4)} mois`;
+  const years = Math.floor(days / 365);
+  return `depuis ${years} an${years > 1 ? "s" : ""}`;
 }
 
 // --- Petites victoires -------------------------------------------------------------
@@ -219,7 +229,7 @@ export function awardCelebration(key: string): Celebration | null {
   if (rule) return { kind: "badge", emoji: rule.emoji, title: `Nouveau badge : ${seasonBadgeTitle(rule, Number(year))}`, detail: `${capitalize(rule.unit(rule.target))} : bravo !`, big: true, awardKey: key };
   // Nouvelle carte d'herbier : un mot, pas le plein écran.
   const entry = scope === "herbier" ? getCatalogPlant(id) : undefined;
-  if (entry) return { kind: "tier", emoji: "🌿", title: `Nouvelle carte dans ton herbier : ${entry.name}`, detail: "", big: false, awardKey: key };
+  if (entry) return { kind: "tier", emoji: "🌿", title: `Nouvelle carte dans ton herbier : ${afterColon(entry.name)}`, detail: "", big: false, awardKey: key };
   const [, badgeId, tierText] = key.split(":");
   const tier = (tierText ? Number(tierText) : 1) as 1 | 2 | 3;
   const badge = scope === "badge" ? computeBadges(computeStats([], [])).find((item) => item.id === badgeId) : undefined;

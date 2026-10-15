@@ -1,3 +1,6 @@
+import { now as clockNow } from "@/lib/clock";
+import { scanEventId } from "@/lib/garden/day-plan";
+import { afterColon } from "@/lib/plants/grammar";
 import { useFocusEffect, useRouter } from "expo-router";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Image } from "expo-image";
@@ -52,7 +55,7 @@ const CONFIDENCE = { high: "Confiance élevée", medium: "Confiance moyenne", lo
 function scannerNote(diagnosis: Diagnosis) {
   const actions = diagnosis.actions.map((action) => action.title).join(" · ");
   const remedy = remedyFor(diagnosis.problem);
-  return `Scanner : ${diagnosis.summary}${actions ? ` À faire : ${actions}.` : ""}${remedy ? ` Traitement naturel : ${remedy.name}.` : ""}`.slice(0, 480);
+  return `Scanner : ${afterColon(diagnosis.summary)}${actions ? ` À faire : ${afterColon(actions)}.` : ""}${remedy ? ` Traitement naturel : ${remedy.name}.` : ""}`.slice(0, 480);
 }
 
 export default function ScannerScreen() {
@@ -143,7 +146,8 @@ export default function ScannerScreen() {
 
   const saveObservation = async () => {
     if (!owned || !diagnosis) return;
-    await logEvent({ id: `scan:${owned.plant.id}:${Date.now()}`, plantId: owned.plant.id, type: "observation", completedAt: new Date().toISOString(), source: "manual", note: scannerNote(diagnosis) });
+    const at = clockNow();
+    await logEvent({ id: scanEventId(owned.plant.id, at, diagnosis.health), plantId: owned.plant.id, type: "observation", completedAt: at.toISOString(), source: "manual", note: scannerNote(diagnosis) });
     // La photo rejoint le journal de la plante : on la verra grandir (et guérir) photo après photo.
     if (photo) await addPhoto(owned.plant.id, photo, "scanner").catch((error) => console.warn("[scanner] photo not kept", error));
     setSavedNote(true);

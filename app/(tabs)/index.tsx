@@ -1,3 +1,4 @@
+import { afterColon } from "@/lib/plants/grammar";
 import { useIsFocused } from "@react-navigation/native";
 import { useRouter } from "expo-router";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
@@ -25,7 +26,7 @@ import { useDayPlan } from "@/hooks/use-day-plan";
 import { useBalcoPlus } from "@/hooks/use-balco-plus";
 import { useFirstFrostHint } from "@/hooks/use-first-frost-hint";
 import { useColors } from "@/hooks/use-colors";
-import { potSizePhrase, recommendedPotSize } from "@/lib/plants/pot-sheet";
+import { advisedPotPhrase } from "@/lib/plants/pot-sheet";
 import { useVacation } from "@/hooks/use-vacation";
 import { useWeatherSimulation } from "@/hooks/use-weather-simulation";
 import { cameraWasInterrupted } from "@/lib/ai/camera-interrupt";
@@ -353,7 +354,15 @@ export default function HomeScreen() {
     // Une plante récoltée en une fois : « Radis récoltés : noté · Tout récolté ? » avec « Oui » à la place de « Annuler ».
     const { resolved } = item.task;
     if (item.task.task.type === "harvest" && isHarvestedOnce(resolved.entry)) {
-      return showToast(withCheer(cheer(logged), harvestedToastText(resolved.entry)), () => void freePot.answerYes(resolved.plant.id), "Oui");
+      // Cochée depuis la feuille des récoltes : elle se replie avant que celle du pot libre monte (sinon les deux
+      // s'empilaient, vu le 14/10).
+      const answerYes = () => {
+        if (!openGroup && !sheetKey) return void freePot.answerYes(resolved.plant.id);
+        setOpenGroup(null);
+        setSheetKey(null);
+        setTimeout(() => void freePot.answerYes(resolved.plant.id), 320);
+      };
+      return showToast(withCheer(cheer(logged), harvestedToastText(resolved.entry)), answerYes, "Oui");
     }
     showToast(withCheer(cheer(logged), `${item.title} : noté · +${POINTS_PER_GESTURE * logged.length} points`), undo);
   };
@@ -404,7 +413,7 @@ export default function HomeScreen() {
   const addMonthIdea = async ({ entry }: SeasonalSuggestion) => {
     const created = await addPlant(entry.id, { toPlant: true });
     haptic();
-    showToast(`Ajouté : ${entry.name} ${potSizePhrase(recommendedPotSize(entry))}`, () => void removePlant(created.id));
+    showToast(`Ajouté : ${afterColon(entry.name)} ${advisedPotPhrase(entry)}`, () => void removePlant(created.id));
   };
 
   const closeSheet = () => setSheetKey(null);
@@ -790,7 +799,7 @@ export default function HomeScreen() {
             <Text style={[styles.sheetBody, { color: colors.foreground }]}>{anticipationOpen.prepare}</Text>
             <Text style={[styles.sheetBody, { color: colors.muted }]}>{anticipationOpen.detail}</Text>
             <Button label="Voir ce qu’il te faut" onPress={() => openNeeds(anticipationOpen)} />
-            <Button variant="secondary" label="🛒  Ma liste de courses" onPress={() => { setAnticipationOpen(null); router.push("/shopping"); }} />
+            <Button variant="secondary" label="🛒  Voir ma liste de courses" onPress={() => { setAnticipationOpen(null); router.push("/shopping"); }} />
           </View>
         )}
       </BottomSheet>

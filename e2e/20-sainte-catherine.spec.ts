@@ -29,7 +29,7 @@ test("Sainte-Catherine : grande carte d'arrivée, page, plantation, badge, puis 
   await page.goto("/event/sainte-catherine");
 
   await page.getByRole("button", { name: "Ajouter Framboisier" }).click();
-  await expect(page.getByText("Ajouté : Framboisier nain en grand pot (30 à 40 cm)")).toBeVisible();
+  await expect(page.getByText("Ajouté : framboisier nain · pot conseillé : grand (31 à 40 cm)")).toBeVisible();
   await expect(page.getByRole("button", { name: "Pas à pas : Framboisier" })).toBeVisible();
 
   await page.getByRole("button", { name: "C’est fait : Paille tes pots avant l’hiver" }).click();
