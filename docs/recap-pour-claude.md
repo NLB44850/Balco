@@ -1,6 +1,6 @@
 # Balco : récapitulatif à coller au début d'une conversation avec Claude
 
-*À jour au 14 octobre 2026 au soir (tout est validé sur le téléphone et fusionné, dernière demande de fusion : PR #52 ; chantier « Pots et balcon » terminé ; l'app se met en ligne et se met à jour toute seule). Copier
+*À jour au 15 octobre 2026 (tout est validé sur le téléphone et fusionné, dernière demande de fusion : PR #53 ; chantiers « Pots et balcon » et « Retours des captures » terminés ; l'app se met en ligne et se met à jour toute seule). Copier
 tout le texte sous la ligne ci-dessous dans une nouvelle conversation sur claude.ai, et y joindre au besoin les
 captures de `docs/captures/`.*
 
@@ -109,12 +109,14 @@ plantes), chaque valeur de jardinage vérifiée sur 2 sources, pas de nouveau mo
 marque citée, jamais de produit chimique, tout en centimètres (jamais de litres de pot à l'écran).
 
 Toutes les étapes sont validées sur mon téléphone et fusionnées (PR #41 à #52) :
-1. **Taille du pot** de chaque plante (5 choix dessinés), choisie d'office à l'ajout.
+1. **Taille du pot** de chaque plante (6 choix dessinés : petit jusqu'à 20 cm, moyen 21 à 30, grand 31 à 40, très grand
+   ou bac plus de 40, jardinière de 60 cm peu profonde, « Je ne sais pas ») ; tant que je ne l'ai pas choisie, Balco
+   affiche « Pot conseillé : … » et s'en sert partout.
 2. **Fiches « Spécial pot »** : profondeur, largeur, terreau, engrais ; « Pot trop petit » en dessin.
 3. **Accueil enrichi** : simulateur de soleil (orientation, couvert, vis-à-vis), « Diagnostic de ton balcon », une ligne
    « Vérifie le pot de N plantes ». En plus : semis et plantations du mois regroupés dès deux plantes.
 4. **Rappels d'engrais** tirés des fiches (« Arrose et nourris tes tomates », « Nourris 3 plantes ») ; fins de saison regroupées.
-5. **Liste de courses** pour la jardinerie (pots, terreau avec le sac à prendre, billes d'argile, engrais), à cocher et partager.
+5. **Liste de courses** pour la jardinerie (pots, terreau avec le sac à prendre, engrais), à cocher et partager.
 6. **Arrosage selon le pot** (rythme, quantité « 💧 2 L » avec des bouteilles dessinées, balcon couvert), même format de
    détail pour tous les gestes ; puis **coach d'arrosage Balco+** (eau restante dans le pot, jauge dans la fiche) et
    interrupteur « Simuler Balco+ » dans la version de test.
@@ -145,6 +147,25 @@ Après un tour de toute l'app, les mêmes règles partout (détail dans `docs/ch
 - **Textes des boutons à l'infinitif** (« Ajouter une photo ») ; le tutoiement reste pour les conseils (« Arrose le basilic »).
 - Fiche plante refaite : historique sans « Supprimer » répété, « Son nom » et « Retirer du balcon » en lignes comme Réglages.
 
+## Chantier « Retours des captures » (14 et 15 octobre, 7 étapes validées, fusionné : PR #53)
+
+Mes retours sur les captures de l'app (détail dans `docs/chantier-retours-captures.md`) :
+1. **Consignes du voisin** au rythme de ses passages (« environ 4 L à chaque passage, si la terre est sèche », « un
+   passage sur deux », « passe plus souvent s'il fait plus de 30 °C ») ; plus de majuscule après les deux-points.
+2. **Après la récolte des radis** : « Ressemer » dit « dans un autre pot, ou avec une terre neuve » ; « Que planter à la
+   place ? » propose aussi les plantes du mois suivant et celles déjà sur mon balcon ; une seule feuille s'ouvre.
+3. **L'orange seulement pour un vrai souci** (gel, pot trop petit, plante pas arrosée depuis 3 jours ou plus, problème vu
+   par Observer) ; le reste (pluie, nouvelle plante) en neutre. Le Balcon compte « N à surveiller ».
+4. **Taille du pot** : « Pot conseillé : petit (jusqu'à 20 cm) » tant que je ne l'ai pas choisie, « Pot moyen (21 à 30 cm) »
+   une fois choisie ; nouvelle taille « Très grand ou bac (plus de 40 cm) » (la courgette demande 45 cm).
+5. **Finitions** : « Ajouter une photo » ; les sous-titres de la liste de courses se lisent en entier ; « utilisable en
+   agriculture biologique » ; un seul format de durée (jours, puis semaines, puis mois après 8 semaines).
+6. **Nora en panne** : « Nora ne peut pas répondre pour l'instant. Réessaie dans un moment : cette question n'est pas
+   décomptée. » Jamais de réponse inventée. (La phrase « ta plante va bien » venait du faux service des tests.)
+7. **Plus de billes d'argile au fond des pots** : les sources sérieuses (RHS, université de l'État de Washington) disent
+   que cette couche ne draine pas. Le pas-à-pas dit « Vérifie que ton pot a un trou au fond », la liste de courses ne
+   les propose plus, les conseils des fiches parlent de pot percé et de soucoupe vidée.
+
 ## Ce qu'il reste à faire, dans l'ordre
 
 1. **Sainte-Catherine en vrai** : le 18 novembre, la notification (à l'heure de mes rappels) et la grande carte sans
@@ -162,7 +183,9 @@ Après un tour de toute l'app, les mêmes règles partout (détail dans `docs/ch
      Brevo (avec une adresse Outlook ou Gmail, les codes peuvent arriver dans les indésirables) ;
    - compte développeur Google et fiche Play Store ; offre payante d'Open-Meteo dès que Balco+ sera payant.
    - afficher le montant du prix fondateur sur l'écran Balco+ (montant à décider avec le porteur).
-4. **Version suivante** : suivi d'une plante en photos, balcon visuel (plan, emplacement, exposition), récoltes et
+4. **Idée à étudier avec moi (pas codée)** : une plante hors saison (basilic en octobre) affiche « Nouvelle · Rien à
+   faire » ; pistes : un état « Fin de saison » et une option « La rentrer à l'intérieur » (surtout par redoux).
+5. **Version suivante** : suivi d'une plante en photos, balcon visuel (plan, emplacement, exposition), récoltes et
    recettes, défis entre jardiniers, rentrer une plante pour l'hiver (piment, poivron, physalis).
 
 ## Décisions déjà prises (à ne pas remettre en question sans moi)
@@ -182,6 +205,8 @@ Après un tour de toute l'app, les mêmes règles partout (détail dans `docs/ch
 - Le traitement affiché par Observer est écrit par Balco, jamais inventé par l'IA ; dans le doute, la jardinerie.
 - Balco ne dit jamais « danger » pour le poids : il ne connaît ni la surface ni l'état du balcon.
 - Balco+ ne bloque rien de ce qui est gratuit ; pas de limite de plantes ; il se propose à 4 moments seulement.
+- L'orange est réservé aux vrais soucis ; pas de billes d'argile au fond des pots (un pot percé suffit) ; les boutons
+  sont à l'infinitif ; une durée se dit en jours, puis en semaines, puis en mois après 8 semaines.
 
 ---
 
