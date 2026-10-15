@@ -81,3 +81,12 @@ téléphone avant la suivante. Pour chaque étape, on cherche aussi le même dé
   d'état (le « × » caché) avec la barre « Voir mon balcon » par-dessus. Corrigé dans la feuille du bas commune
   (`components/today/bottom-sheet.tsx`) : le clavier est fermé et la feuille attend qu'il soit parti avant de monter.
   Vaut pour toutes les feuilles (catalogue, Nora, Réglages…).
+
+## Idée notée le 15/10, à étudier par le porteur (pas codée)
+
+- Une plante hors saison, comme un basilic en octobre (question « Ta saison est finie ? » déjà répondue « Pas
+  encore »), n'a plus aucun geste : la fiche dit « Nouvelle · Aucun soin noté » puis « Rien à faire aujourd'hui,
+  Basilic se repose ». C'est bizarre : elle vit encore, et elle pourrait continuer à l'intérieur (redoux).
+- Piste : un état « Fin de saison » plutôt que « Nouvelle », et une option « La rentrer à l'intérieur » (arrosage
+  d'intérieur, rebord de fenêtre lumineux). Rejoint « rentrer une plante pour l'hiver » de la version suivante
+  (piment, poivron, physalis, décidé le 08/10). À décider avec lui avant de coder.
