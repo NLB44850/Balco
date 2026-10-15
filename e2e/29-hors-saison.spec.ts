@@ -4,15 +4,15 @@ import { atDate, mockWeather, open, seedBalcony, trackErrors } from "./helpers";
 
 /** Chantier « Plante hors saison », étape 2 : un état juste, en neutre, au lieu de « Nouvelle · Rien à faire ». */
 
-test("15 octobre : le basilic est « Fin de saison », le thym reste « Nouvelle », rien en orange", async ({ page }) => {
+test("15 octobre : le basilic est « Fin de saison », le thym reste « En forme », rien en orange", async ({ page }) => {
   const errors = trackErrors(page);
   const now = await atDate(page, new Date(2026, 9, 15, 10));
   await mockWeather(page);
-  await seedBalcony(page, { plants: ["basil", "thyme"], now });
+  await seedBalcony(page, { plants: ["basil", "thyme"], wateredDaysAgo: 1, now });
 
   await open(page, "/balcony", "Ajouter une plante");
   await expect(page.getByRole("button", { name: /^Basilic, Fin de saison, voir la fiche$/u })).toBeVisible();
-  await expect(page.getByRole("button", { name: /^Thym, Nouvelle, voir la fiche$/u })).toBeVisible();
+  await expect(page.getByRole("button", { name: /^Thym, En forme, voir la fiche$/u })).toBeVisible();
   await expect(page.getByText(/à surveiller/u)).toHaveCount(0);
   // La fiche dit la même chose.
   await open(page, "/garden/basil-e2e", "Revoir le pas-à-pas ›");
