@@ -262,6 +262,12 @@ export function potLabel(entry: Pick<CatalogPlant, "id" | "potLiters">, potSize:
   return { text: `Pot conseillé : ${name}${fit === "planter" ? "" : ` (${SIZE_NAMES[fit].replace(/^.*\(/u, "")}`}`, chosen: false };
 }
 
+/** « · pot conseillé : moyen (21 à 30 cm) » : le message du bas après l'ajout (la taille n'est pas notée pour autant). */
+export function advisedPotPhrase(entry: Pick<CatalogPlant, "id" | "potLiters">) {
+  const text = potLabel(entry, "unknown").text;
+  return `· ${text.charAt(0).toLowerCase()}${text.slice(1)}`;
+}
+
 /** « en grand pot (31 à 40 cm) », « en jardinière » : pour le message du bas après l'ajout. */
 export function potSizePhrase(size: KnownPotSize) {
   return { small: "en petit pot (jusqu’à 20 cm)", medium: "en pot moyen (21 à 30 cm)", large: "en grand pot (31 à 40 cm)", planter: "en jardinière" }[size];

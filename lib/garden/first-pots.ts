@@ -6,7 +6,7 @@
  * deux semaines après l'accueil. Logique pure.
  */
 import { afterColon, capitalize } from "../plants/grammar";
-import { potFit, potNeedShort, soilPhrase } from "../plants/pot-sheet";
+import { potFit, potLabel, potNeedShort, soilPhrase } from "../plants/pot-sheet";
 import { potSizeLabel, potSizeOf } from "../plants/pot-size";
 import { plantDisplayName, type ResolvedPlant } from "./garden-logic";
 
@@ -42,7 +42,8 @@ function lineFor(resolved: ResolvedPlant): FirstPotLine {
   const name = plantDisplayName(resolved);
   if (plant.toPlant) return { plantId: plant.id, name, detail: `${capitalize(potNeedShort(entry, { pierced: true }))}, ${soilPhrase(entry)}`, tone: "prepare" };
   const size = potSizeOf(plant);
-  if (size === "unknown") return { plantId: plant.id, name, detail: "Taille à choisir", tone: "choose" };
+  // Pas de taille notée : la taille conseillée par sa fiche, dite comme telle (à confirmer sur la fiche).
+  if (size === "unknown") return { plantId: plant.id, name, detail: potLabel(entry, "unknown").text, tone: "ok" };
   const fit = potFit(entry, size);
   if (fit.tone === "small") {
     const advice = fit.detail.split(". ").pop()?.replace(/\.$/u, "") ?? "";
@@ -70,7 +71,7 @@ export function firstPotsCard({ answers, plants, dismissed, now }: {
   const verb = allToPlant ? "Prépare" : "Vérifie";
   const title = lines.length === 1 ? `${verb} le pot : ${afterColon(lines[0].name)}` : `${verb} le pot de ${lines.length} plantes`;
   const parts = [counted(count("small"), "trop petit", "trop petits"), counted(count("choose"), "à choisir", "à choisir"), counted(count("prepare"), "à préparer", "à préparer")].filter(Boolean);
-  const summary = lines.length === 1 ? lines[0].detail : parts.length > 0 ? parts.join(" · ") : "Pots notés par Balco : c’est bien ça ?";
+  const summary = lines.length === 1 ? lines[0].detail : parts.length > 0 ? parts.join(" · ") : "Pots conseillés par Balco : c’est bien ça ?";
   return {
     key,
     title,

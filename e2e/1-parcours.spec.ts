@@ -217,14 +217,14 @@ test("catalogue : ajouter une plante d'un « + » puis ouvrir sa fiche", async (
   await expect(sheet.getByText("C’est le moment")).toBeVisible();
   await sheet.getByRole("button", { name: "Menthe : Déjà sur mon balcon" }).click();
   // Balco lui donne la taille de pot de sa fiche et le dit dans le message du bas (pas de question).
-  await expect(page.getByText("Ajouté : menthe en pot moyen (21 à 30 cm)")).toBeVisible();
+  await expect(page.getByText("Ajouté : menthe · pot conseillé : moyen (21 à 30 cm)")).toBeVisible();
   await expect(page.getByText("Dans quel pot ?")).toHaveCount(0);
   await expect(page.getByText("✓ Sur ton balcon")).toBeVisible();
   // La lavande, pas encore plantée.
   await page.getByPlaceholder("Basilic, fraisier, lavande…").fill("lavande");
   await page.getByRole("button", { name: /^Ajouter Lavande/ }).first().click();
   await page.getByRole("dialog").getByRole("button", { name: "Lavande : Pas encore plantée" }).click();
-  await expect(page.getByText("À planter : lavande en pot moyen (21 à 30 cm)")).toBeVisible();
+  await expect(page.getByText("À planter : lavande · pot conseillé : moyen (21 à 30 cm)")).toBeVisible();
   // L'aubergine en octobre : les cartes préviennent avant de choisir ; « Pas encore plantée » la garde pour le printemps.
   await page.getByPlaceholder("Basilic, fraisier, lavande…").fill("aubergine");
   await page.getByRole("button", { name: /^Ajouter Aubergine/ }).first().click();
@@ -243,12 +243,14 @@ test("catalogue : ajouter une plante d'un « + » puis ouvrir sa fiche", async (
   await expect(page.getByText(/Photo d’exemple|Ajouter une photo/).first()).toBeVisible();
   // Sa fiche « Spécial pot » compare son pot à celui qu'il lui faut, en centimètres (menthe : 30 cm de large).
   await expect(page.getByText("Spécial pot")).toBeVisible();
-  await expect(page.getByText("Ton pot lui convient", { exact: false })).toBeVisible();
+  // La taille n'est pas notée d'office : « Quel est ton pot ? » et la pastille « Pot conseillé : … ».
+  await expect(page.getByText("Quel est ton pot ?")).toBeVisible();
+  await expect(page.getByRole("button", { name: "Pot conseillé : moyen (21 à 30 cm), choisir la taille du pot" })).toBeVisible();
   await expect(page.getByText("Il lui faut un pot de 30 cm de large, 20 cm de profondeur.")).toBeVisible();
   await expect(page.getByText("Terreau universel")).toBeVisible();
   // Trop petit : un titre orange et ce qu'il faut prendre. La feuille marque la taille conseillée.
-  await page.getByRole("button", { name: "Ton pot : Moyen (21 à 30 cm)" }).click();
-  await expect(page.getByRole("radio", { name: "Moyen (21 à 30 cm)" })).toBeChecked();
+  await page.getByRole("button", { name: "Ton pot : Je ne sais pas" }).click();
+  await expect(page.getByRole("radio", { name: "Je ne sais pas" })).toBeChecked();
   await expect(page.getByText("✓ Conseillé")).toBeVisible();
   await page.getByRole("radio", { name: "Petit (jusqu’à 20 cm)" }).click();
   // Dans « Spécial pot », et en orange dans l'état de la plante (retour du 14/10 : un vrai souci).
@@ -263,7 +265,9 @@ test("catalogue : ajouter une plante d'un « + » puis ouvrir sa fiche", async (
   const kept = (catalogId: string) => stored.find((plant: { catalogId: string; removedAt?: string }) => plant.catalogId === catalogId && !plant.removedAt);
   expect(kept("mint")).toMatchObject({ potSize: "planter" });
   expect(kept("mint")?.toPlant).toBeFalsy();
-  expect(kept("lavender")).toMatchObject({ potSize: "medium", toPlant: true });
+  // Pas de taille notée d'office : seulement celle qu'on choisit (retour du 14/10).
+  expect(kept("lavender")).toMatchObject({ toPlant: true });
+  expect(kept("lavender")?.potSize).toBeUndefined();
   expect(errors).toEqual([]);
 });
 

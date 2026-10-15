@@ -26,7 +26,7 @@ import { useDayPlan } from "@/hooks/use-day-plan";
 import { useBalcoPlus } from "@/hooks/use-balco-plus";
 import { useFirstFrostHint } from "@/hooks/use-first-frost-hint";
 import { useColors } from "@/hooks/use-colors";
-import { potSizePhrase, recommendedPotSize } from "@/lib/plants/pot-sheet";
+import { advisedPotPhrase } from "@/lib/plants/pot-sheet";
 import { useVacation } from "@/hooks/use-vacation";
 import { useWeatherSimulation } from "@/hooks/use-weather-simulation";
 import { cameraWasInterrupted } from "@/lib/ai/camera-interrupt";
@@ -413,7 +413,7 @@ export default function HomeScreen() {
   const addMonthIdea = async ({ entry }: SeasonalSuggestion) => {
     const created = await addPlant(entry.id, { toPlant: true });
     haptic();
-    showToast(`Ajouté : ${afterColon(entry.name)} ${potSizePhrase(recommendedPotSize(entry))}`, () => void removePlant(created.id));
+    showToast(`Ajouté : ${afterColon(entry.name)} ${advisedPotPhrase(entry)}`, () => void removePlant(created.id));
   };
 
   const closeSheet = () => setSheetKey(null);

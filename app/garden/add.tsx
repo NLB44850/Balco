@@ -16,7 +16,7 @@ import { ScreenHeader } from "@/components/screen-header";
 import { CatalogPicture } from "@/components/plant-picture";
 import { BottomSheet } from "@/components/today/bottom-sheet";
 import { UndoToast, type ToastMessage } from "@/components/today/undo-toast";
-import { potNeedFor, potNeedText, potSizePhrase, recommendedPotSize } from "@/lib/plants/pot-sheet";
+import { advisedPotPhrase, potNeedFor, potNeedText } from "@/lib/plants/pot-sheet";
 import { glass } from "@/components/ui/glass";
 import { Button } from "@/components/ui/button";
 import { CloseButton } from "@/components/ui/nav-buttons";
@@ -135,8 +135,8 @@ export default function AddPlantScreen() {
     setSheetId(null);
     if (!entry) return;
     const month = clockNow().getMonth() + 1;
-    // Balco lui donne la taille de pot de sa fiche et le dit ; on la change sur sa fiche (13/10 : moins d'efforts).
-    const pot = ` ${potSizePhrase(recommendedPotSize(entry))}`;
+    // Balco dit la taille de pot que conseille sa fiche ; elle n'est notée que quand on la choisit (retour du 14/10).
+    const pot = ` ${advisedPotPhrase(entry)}`;
     if (Platform.OS !== "web") void Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => undefined);
     const plan = choice === "toPlant" ? toPlantPlan(entry, month) : null;
     if (plan?.kind === "spring") {

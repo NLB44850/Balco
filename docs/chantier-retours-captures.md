@@ -60,9 +60,14 @@ téléphone avant la suivante. Pour chaque étape, on cherche aussi le même dé
      (`SIZE_MAX_WIDTH`) range une largeur partout : 11 plantes à 20 cm sont petites, 3 à 40 cm sont grandes (elles
      étaient « bac »). Une profondeur peut faire monter d'une taille (fraisier : 20 cm de large, 25 de profondeur, moyen).
   2. `potLabel` : « Pot conseillé : petit (jusqu’à 20 cm) » ou « Pot moyen (21 à 30 cm) » ; « Pot conseillé : bac de
-     45 cm ou plus » au-delà (gombo). Fiche (pastille qui ouvre le choix), poids des pots, liste de courses.
+     45 cm ou plus » au-delà (courgette). Fiche (pastille qui ouvre le choix), poids des pots, liste de courses.
   3. Taille pas notée = taille conseillée partout : rythme d'arrosage (avant : celui d'un pot moyen), poids du pot vide,
      ligne de la liste de courses ; le volume reste celui de la fiche (arrosage, poids, terreau).
+  4. Vu en testant (15/10) : le catalogue notait d'office la taille conseillée (« Ton pot : Grand » sur le gombo, comme
+     un choix). Plus de taille notée à l'ajout (`addPlant`) : message « Ajouté : menthe · pot conseillé : moyen (21 à
+     30 cm) » (`advisedPotPhrase`), carte « Vérifie le pot » : « Pot conseillé : … » et « Pots conseillés par Balco :
+     c'est bien ça ? ». Les plantes déjà ajoutées gardent la taille notée à l'époque (on ne sait pas la distinguer
+     d'un vrai choix) : la changer sur la fiche si besoin.
 
 ## Étape 5 : finitions des textes
 
