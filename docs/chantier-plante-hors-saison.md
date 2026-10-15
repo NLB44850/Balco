@@ -69,4 +69,13 @@ Une étape = un commit testé, validée sur son téléphone avant la suivante. D
 
 ## Avancement
 
-- Étape 1 : en cours (15/10).
+- Étape 1 codée le 15/10, à valider : `lib/plants/cold-hardiness.ts` (`COLD_TENDER`, `isColdTender`, `canComeIndoors`),
+  sources plante par plante dans `docs/sources-froid.md`, test `tests/cold-hardiness.test.ts`. 36 frileuses (toute la
+  liste des alertes gel sauf le romarin, rustique en pot protégé, et les micro-pousses, semées toute l'année), 65
+  rustiques. Rentrer : 9 « oui, passe l'hiver » (citronnelle, verveine citronnelle, stévia, sauge ananas, piment,
+  poivron, physalis, concombre à la souris, dahlia, citronnier : `place` « fenêtre lumineuse » ou « au frais hors
+  gel »), 3 « quelques semaines de plus » (basilic, shiso, tomates), le reste « non ». Les sources donnent rarement
+  une température de nuit : 21 seuils sur 36 sont des estimations (seuil des alertes gel du catalogue).
+  Questions posées au porteur avec le tableau : seuils des alertes gel du catalogue à aligner ou non ; plantes
+  vivaces frileuses (citronnier, dahlia…) : « Fin de saison » ou un autre mot ; dahlia et oca, cas à part (attendre
+  que le gel noircisse le feuillage).

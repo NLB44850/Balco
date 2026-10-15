@@ -1,6 +1,6 @@
 # Balco : récapitulatif à coller au début d'une conversation avec Claude
 
-*À jour au 14 octobre 2026 au soir (tout est validé sur le téléphone et fusionné, dernière demande de fusion : PR #52 ; chantier « Pots et balcon » terminé ; l'app se met en ligne et se met à jour toute seule). Copier
+*À jour au 15 octobre 2026 (tout est validé sur le téléphone et fusionné jusqu'à la PR #53 ; chantier « Plante hors saison » en cours ; l'app se met en ligne et se met à jour toute seule). Copier
 tout le texte sous la ligne ci-dessous dans une nouvelle conversation sur claude.ai, et y joindre au besoin les
 captures de `docs/captures/`.*
 
@@ -145,6 +145,17 @@ Après un tour de toute l'app, les mêmes règles partout (détail dans `docs/ch
 - **Textes des boutons à l'infinitif** (« Ajouter une photo ») ; le tutoiement reste pour les conseils (« Arrose le basilic »).
 - Fiche plante refaite : historique sans « Supprimer » répété, « Son nom » et « Retirer du balcon » en lignes comme Réglages.
 
+## Chantier en cours depuis le 15 octobre : « Plante hors saison » (5 étapes, détail dans `docs/chantier-plante-hors-saison.md`)
+
+Un basilic ajouté en octobre affichait « Nouvelle · Rien à faire » : faux, il souffre dès que les nuits passent sous
+10 °C et meurt au premier gel ; un thym, lui, n'a vraiment rien à faire. Le chantier avance une partie de « rentrer une
+plante pour l'hiver ». Étapes : 1) données des 101 plantes (frileuse ou rustique, seuil de nuit, la rentrer vaut-elle
+la peine : oui / quelques semaines / non) ; 2) un état juste dès l'ajout (« Fin de saison », « Au repos jusqu'en mars »,
+en neutre) ; 3) le choix en trois réponses (« Tout récolter », « La rentrer à l'intérieur », « La laisser dehors ») ;
+4) « Rentre ton basilic » quand une nuit sous le seuil est annoncée, état « À l'intérieur » (météo ignorée, arrosage
+plus rare, pas d'engrais) ; 5) « Ressors ton basilic » au feu vert des Saints de glace. Tout en neutre, jamais d'orange.
+Étape 1 codée le 15/10 (36 frileuses, sources dans `docs/sources-froid.md`), à valider.
+
 ## Ce qu'il reste à faire, dans l'ordre
 
 1. **Sainte-Catherine en vrai** : le 18 novembre, la notification (à l'heure de mes rappels) et la grande carte sans
@@ -163,7 +174,7 @@ Après un tour de toute l'app, les mêmes règles partout (détail dans `docs/ch
    - compte développeur Google et fiche Play Store ; offre payante d'Open-Meteo dès que Balco+ sera payant.
    - afficher le montant du prix fondateur sur l'écran Balco+ (montant à décider avec le porteur).
 4. **Version suivante** : suivi d'une plante en photos, balcon visuel (plan, emplacement, exposition), récoltes et
-   recettes, défis entre jardiniers, rentrer une plante pour l'hiver (piment, poivron, physalis).
+   recettes, défis entre jardiniers, rentrer une plante pour l'hiver (piment, poivron, physalis ; en partie avancé par le chantier « Plante hors saison »).
 
 ## Décisions déjà prises (à ne pas remettre en question sans moi)
 
