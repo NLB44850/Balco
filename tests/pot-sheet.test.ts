@@ -58,8 +58,8 @@ describe("fiches Spécial Pot", () => {
     expect(potFit(getCatalogPlant("basil")!, "planter")).toEqual({ tone: "ok", title: "Ta jardinière lui convient", detail: "Place pour 4 pieds dans 60 cm." });
     expect(potFit(getCatalogPlant("cut-lettuce")!, "planter")).toEqual({ tone: "ok", title: "Ta jardinière lui convient", detail: "C’est la culture conseillée en pot." });
     expect(potFit(getCatalogPlant("cut-lettuce")!, "unknown").detail).toBe("Il lui faut une jardinière de 60 cm, 20 cm de profondeur.");
-    // Plus grand qu'un grand pot : un bac.
-    expect(potFit(getCatalogPlant("zucchini")!, "large")).toMatchObject({ tone: "small", detail: expect.stringContaining("Prends un bac de 45 cm ou plus.") });
+    // Plus grand qu'un grand pot : un très grand pot ou un bac (15/10).
+    expect(potFit(getCatalogPlant("zucchini")!, "large")).toMatchObject({ tone: "small", detail: expect.stringContaining("Prends un très grand pot ou un bac.") });
     expect(potNeedShort(tomato, { pierced: true })).toBe("un pot percé d’au moins 35 cm de large");
     expect(ESTIMATE_TEXT).toContain("Estimation");
   });
@@ -76,25 +76,22 @@ describe("fiches Spécial Pot", () => {
     expect(recommendedPotSize(getCatalogPlant("mint")!)).toBe("medium");
     expect(recommendedPotSize(getCatalogPlant("thyme")!)).toBe("small");
     expect(recommendedPotSize(getCatalogPlant("cut-lettuce")!)).toBe("planter");
-    // Plus grand qu'un grand pot (courgette) : un grand pot, et sa fiche dira de prendre un bac.
-    expect(recommendedPotSize(getCatalogPlant("zucchini")!)).toBe("large");
+    // Plus grand qu'un grand pot (courgette) : « Très grand ou bac ».
+    expect(recommendedPotSize(getCatalogPlant("zucchini")!)).toBe("xlarge");
     expect(potSizePhrase("large")).toBe("en grand pot (31 à 40 cm)");
     expect(potSizePhrase("planter")).toBe("en jardinière");
   });
 });
 
 describe("taille conseillée : la même catégorie partout (retour du 14/10)", () => {
-  const RANGES = { small: [0, 20], medium: [21, 30], large: [31, 40] } as const;
+  const RANGES = { small: [0, 20], medium: [21, 30], large: [31, 40], xlarge: [41, 60] } as const;
   it("la largeur de la fiche tombe dans la taille conseillée ; fiche, poids et arrosage disent la même", () => {
     for (const entry of PLANT_CATALOG) {
       const need = potNeedFor(entry);
       const fit = smallestFit(need);
-      // Une largeur plus grande qu'un grand pot : un bac, dit tel quel.
-      if (!fit) {
-        expect(need.widthCm, entry.id).toBeGreaterThan(40);
-        expect(potLabel(entry, "unknown").text).toBe(`Pot conseillé : bac de ${need.widthCm} cm ou plus`);
-        continue;
-      }
+      // Toutes les fiches tiennent dans une taille du choix, la courgette dans « Très grand ou bac » (15/10).
+      expect(fit, entry.id).not.toBeNull();
+      if (!fit) continue;
       // La largeur ne dépasse jamais la taille conseillée (une profondeur peut faire monter d'une taille).
       if (fit !== "planter") expect(need.widthCm, entry.id).toBeLessThanOrEqual(RANGES[fit][1]);
       if (fit !== "planter" && !need.planter) expect(need.widthCm >= RANGES[fit][0] || need.depthCm * 0.9 > need.widthCm, entry.id).toBe(true);
@@ -114,6 +111,9 @@ describe("taille conseillée : la même catégorie partout (retour du 14/10)", (
     expect(smallestFit(potNeedFor(basil))).toBe("small");
     expect(potLabel(basil, "unknown")).toEqual({ text: "Pot conseillé : petit (jusqu’à 20 cm)", chosen: false });
     expect(potLabel(basil, "medium")).toEqual({ text: "Pot moyen (21 à 30 cm)", chosen: true });
-    expect(potLabel(basil, "planter")).toEqual({ text: "Jardinière ou bac", chosen: true });
+    expect(potLabel(basil, "planter")).toEqual({ text: "Jardinière (60 cm)", chosen: true });
+    expect(potLabel(getCatalogPlant("zucchini")!, "unknown").text).toBe("Pot conseillé : très grand ou bac (plus de 40 cm)");
+    expect(potFit(getCatalogPlant("zucchini")!, "large").tone).toBe("small");
+    expect(potFit(getCatalogPlant("zucchini")!, "xlarge").tone).toBe("ok");
   });
 });

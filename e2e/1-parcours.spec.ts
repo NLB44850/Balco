@@ -258,7 +258,7 @@ test("catalogue : ajouter une plante d'un « + » puis ouvrir sa fiche", async (
   await expect(page.getByText("Il lui faut un pot de 30 cm de large, 20 cm de profondeur. Prends un pot moyen.")).toBeVisible();
   // Jardinière : combien de pieds y tiennent.
   await page.getByRole("button", { name: "Ton pot : Petit (jusqu’à 20 cm)" }).click();
-  await page.getByRole("radio", { name: "Jardinière ou bac" }).click();
+  await page.getByRole("radio", { name: "Jardinière (60 cm, peu profonde)" }).click();
   await expect(page.getByText("Ta jardinière lui convient", { exact: false })).toBeVisible();
   await expect(page.getByText("Place pour un seul pied dans 60 cm.")).toBeVisible();
   const stored = await page.evaluate(() => JSON.parse(localStorage.getItem("balco.garden.plants.v1") ?? "[]"));

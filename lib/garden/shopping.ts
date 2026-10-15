@@ -60,13 +60,13 @@ export function sackText(liters: number) {
   return `${Math.ceil(liters / 50)} sacs de 50 L`;
 }
 
-const SIZE_TITLES: Record<KnownPotSize, string> = { small: "Petit pot (jusqu’à 20 cm)", medium: "Pot moyen (21 à 30 cm)", large: "Grand pot (31 à 40 cm)", planter: "Jardinière de 60 cm" };
+const SIZE_TITLES: Record<KnownPotSize, string> = { small: "Petit pot (jusqu’à 20 cm)", medium: "Pot moyen (21 à 30 cm)", large: "Grand pot (31 à 40 cm)", xlarge: "Très grand pot ou bac (plus de 40 cm)", planter: "Jardinière de 60 cm" };
 
 /**
  * Billes d'argile : une couche de 2 à 3 cm au fond du pot, jusqu'à 5 cm dans un grand contenant (fabricant et jardineries
  * concordent, docs/sources-pots.md). Litres de la couche, d'après la surface du fond de chaque taille.
  */
-const CLAY_LITERS: Record<KnownPotSize, number> = { small: 0.5, medium: 1.5, large: 3, planter: 3 };
+const CLAY_LITERS: Record<KnownPotSize, number> = { small: 0.5, medium: 1.5, large: 3, xlarge: 5, planter: 3 };
 /** La couche au fond d'un pot rond de cette largeur : 2,5 cm d'ordinaire, 4 cm dans un bac plus grand qu'un grand pot. */
 const clayForWidth = (widthCm: number, layerCm: number) => (Math.PI * (widthCm / 2) ** 2 * layerCm) / 1000;
 /** Les sacs de billes d'argile du commerce, en litres. */

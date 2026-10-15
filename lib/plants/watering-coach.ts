@@ -19,7 +19,7 @@ export const ALLOWED_DEPLETION = 0.5;
  * terre. Calé pour retrouver, un jour d'été ordinaire (26 °C à Paris, plein sud), le rythme de la version gratuite
  * (basilic : petit pot chaque jour, pot moyen toutes les 36 h, grand pot tous les 2 jours).
  */
-export const CONTAINER_FACTOR: Record<PotSize, number> = { small: 3.5, medium: 3, large: 2.6, planter: 3, unknown: 3 };
+export const CONTAINER_FACTOR: Record<PotSize, number> = { small: 3.5, medium: 3, large: 2.6, xlarge: 2.6, planter: 3, unknown: 3 };
 
 export type CoachWeather = { latitude: number; today: { temperatureMinC: number; temperatureMaxC: number; precipitationMm: number; windGustKmhMax: number } };
 export type CoachBalcony = { orientation?: Orientation; covered?: boolean; facing?: boolean };

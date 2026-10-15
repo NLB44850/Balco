@@ -16,7 +16,7 @@ export const HEAT_C = 30;
 
 export const HELPER_NOTE_SIGNATURE = "Préparé avec Balco";
 
-const POT_SHORT: Record<PotSize, string | null> = { small: "petit pot", medium: "pot moyen", large: "grand pot", planter: "jardinière", unknown: null };
+const POT_SHORT: Record<PotSize, string | null> = { small: "petit pot", medium: "pot moyen", large: "grand pot", xlarge: "très grand pot", planter: "jardinière", unknown: null };
 
 /** Le rythme d'arrosage se rallonge hors de l'été (les pots sèchent moins vite). */
 function seasonFactor(month: Month) {

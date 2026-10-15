@@ -87,15 +87,16 @@ export const POT_SHAPES: Record<KnownPotSize, { widthCm: number; depthCm: number
   small: { widthCm: 18, depthCm: 18 },
   medium: { widthCm: 27, depthCm: 27 },
   large: { widthCm: 36, depthCm: 36 },
+  xlarge: { widthCm: 50, depthCm: 45 },
   /** Jardinière de 60 cm vue de face : longue, peu profonde (environ 20 L). */
   planter: { widthCm: 60, depthCm: 18 },
 };
 const PLANTER_LITERS = 20;
-const ROUND_SIZES = ["small", "medium", "large"] as const;
+const ROUND_SIZES = ["small", "medium", "large", "xlarge"] as const;
 /** Une profondeur un peu plus faible que conseillé passe encore (les pots du commerce varient). */
 const DEPTH_TOLERANCE = 0.9;
 /** Les tailles du choix « Dans quel pot ? », pour dire laquelle prendre. */
-const SIZE_WORDS: Record<KnownPotSize, string> = { small: "un petit pot", medium: "un pot moyen", large: "un grand pot", planter: "une jardinière" };
+const SIZE_WORDS: Record<KnownPotSize, string> = { small: "un petit pot", medium: "un pot moyen", large: "un grand pot", xlarge: "un très grand pot ou un bac", planter: "une jardinière" };
 
 /** Largeur d'un pot rond à peu près aussi haut que large, arrondie aux 5 cm du dessus (ce qu'on lit en magasin). */
 export function roundPotWidthCm(liters: number) {
@@ -129,7 +130,7 @@ export function potNeedText(need: PotNeed) {
  * La largeur haute de chaque taille du choix (« Moyen, 21 à 30 cm » : 30). Elle fait foi pour ranger une largeur dans
  * une taille, partout (fiche, poids, arrosage, courses) : un pot de 20 cm est petit, un de 40 cm grand (retour du 14/10).
  */
-const SIZE_MAX_WIDTH: Record<(typeof ROUND_SIZES)[number], number> = { small: 20, medium: 30, large: 40 };
+const SIZE_MAX_WIDTH: Record<(typeof ROUND_SIZES)[number], number> = { small: 20, medium: 30, large: 40, xlarge: 60 };
 
 const fitsRound = (size: (typeof ROUND_SIZES)[number], need: PotNeed) => SIZE_MAX_WIDTH[size] >= need.widthCm && POT_SHAPES[size].depthCm >= need.depthCm * DEPTH_TOLERANCE;
 const fitsPlanter = (need: PotNeed) => POT_SHAPES.planter.depthCm >= need.depthCm * DEPTH_TOLERANCE && PLANTER_LITERS >= need.liters * DEPTH_TOLERANCE;
@@ -246,7 +247,7 @@ export function recommendedPotSize(entry: Pick<CatalogPlant, "id" | "potLiters">
   return smallestFit(potNeedFor(entry)) ?? "large";
 }
 
-const SIZE_NAMES: Record<KnownPotSize, string> = { small: "Petit pot (jusqu’à 20 cm)", medium: "Pot moyen (21 à 30 cm)", large: "Grand pot (31 à 40 cm)", planter: "Jardinière ou bac" };
+const SIZE_NAMES: Record<KnownPotSize, string> = { small: "Petit pot (jusqu’à 20 cm)", medium: "Pot moyen (21 à 30 cm)", large: "Grand pot (31 à 40 cm)", xlarge: "Très grand pot ou bac (plus de 40 cm)", planter: "Jardinière (60 cm)" };
 
 /**
  * Le pot d'une plante, tel qu'on l'affiche (fiche, poids des pots) : « Pot moyen (21 à 30 cm) » quand la taille est
@@ -258,7 +259,7 @@ export function potLabel(entry: Pick<CatalogPlant, "id" | "potLiters">, potSize:
   const need = potNeedFor(entry);
   const fit = smallestFit(need);
   if (!fit) return { text: `Pot conseillé : bac de ${need.widthCm} cm ou plus`, chosen: false };
-  const name = fit === "planter" ? "jardinière" : { small: "petit", medium: "moyen", large: "grand" }[fit];
+  const name = fit === "planter" ? "jardinière" : { small: "petit", medium: "moyen", large: "grand", xlarge: "très grand ou bac" }[fit];
   return { text: `Pot conseillé : ${name}${fit === "planter" ? "" : ` (${SIZE_NAMES[fit].replace(/^.*\(/u, "")}`}`, chosen: false };
 }
 
@@ -270,5 +271,5 @@ export function advisedPotPhrase(entry: Pick<CatalogPlant, "id" | "potLiters">) 
 
 /** « en grand pot (31 à 40 cm) », « en jardinière » : pour le message du bas après l'ajout. */
 export function potSizePhrase(size: KnownPotSize) {
-  return { small: "en petit pot (jusqu’à 20 cm)", medium: "en pot moyen (21 à 30 cm)", large: "en grand pot (31 à 40 cm)", planter: "en jardinière" }[size];
+  return { small: "en petit pot (jusqu’à 20 cm)", medium: "en pot moyen (21 à 30 cm)", large: "en grand pot (31 à 40 cm)", xlarge: "en très grand pot ou en bac (plus de 40 cm)", planter: "en jardinière" }[size];
 }

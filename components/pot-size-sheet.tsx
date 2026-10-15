@@ -1,7 +1,7 @@
 /**
  * La taille du pot d'une plante (chantier « Pots et balcon », étape 1) : un petit dessin de pot de taille croissante
- * par choix, et la feuille du bas « Dans quel pot ? », ouverte depuis la fiche de la plante. À l'ajout, Balco donne
- * d'office la taille conseillée par sa fiche (13/10) : cette feuille sert à la changer. Dessins en react-native-svg.
+ * par choix, et la feuille du bas « Dans quel pot ? », ouverte depuis la fiche de la plante. Pas de taille notée à
+ * l'ajout (15/10) : la taille conseillée par sa fiche vaut tant qu'on n'en choisit pas une ici. Dessins en react-native-svg.
  */
 import Svg, { Path, Rect, Text as SvgText } from "react-native-svg";
 
@@ -25,6 +25,7 @@ const SHAPES: Record<Exclude<PotSize, "unknown" | "planter">, [number, number, n
   small: [17, 31, 24],
   medium: [13, 35, 17],
   large: [8, 40, 9],
+  xlarge: [3, 45, 3],
 };
 
 /** Le dessin d'une taille de pot : petit, moyen, grand, une jardinière basse et longue, ou un pot en pointillés « ? ». */

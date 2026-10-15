@@ -9,7 +9,7 @@ import { potNeedFor, recommendedPotSize } from "./pot-sheet";
 import { POT_LITERS, type PotSize } from "./pot-size";
 
 /** Petit pot ≈ 30 % plus souvent, grand ≈ 30 % moins souvent, jardinière (peu profonde) ≈ 15 % plus souvent. */
-export const POT_WATERING_FACTOR: Record<PotSize, number> = { small: 0.7, medium: 1, large: 1.3, planter: 0.85, unknown: 1 };
+export const POT_WATERING_FACTOR: Record<PotSize, number> = { small: 0.7, medium: 1, large: 1.3, xlarge: 1.3, planter: 0.85, unknown: 1 };
 
 /**
  * Le rythme d'arrosage de la plante dans son pot, en heures. Taille pas notée : celle que conseille sa fiche, comme

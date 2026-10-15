@@ -5,7 +5,7 @@ import { POT_LITERS, POT_SIZE_CHOICES, POT_SIZE_IDS, isPotSize, potLitersOf, pot
 describe("taille du pot", () => {
   it("propose 5 choix, de taille croissante, « Je ne sais pas » en dernier", () => {
     expect(POT_SIZE_CHOICES.map((choice) => choice.id)).toEqual([...POT_SIZE_IDS]);
-    expect(POT_SIZE_CHOICES.map((choice) => potSizeLabel(choice.id))).toEqual(["Petit (jusqu’à 20 cm)", "Moyen (21 à 30 cm)", "Grand (31 à 40 cm)", "Jardinière ou bac", "Je ne sais pas"]);
+    expect(POT_SIZE_CHOICES.map((choice) => potSizeLabel(choice.id))).toEqual(["Petit (jusqu’à 20 cm)", "Moyen (21 à 30 cm)", "Grand (31 à 40 cm)", "Très grand ou bac (plus de 40 cm)", "Jardinière (60 cm, peu profonde)", "Je ne sais pas"]);
     expect(POT_LITERS.small).toBeLessThan(POT_LITERS.medium);
     expect(POT_LITERS.medium).toBeLessThan(POT_LITERS.large);
   });

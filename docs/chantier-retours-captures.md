@@ -68,6 +68,11 @@ téléphone avant la suivante. Pour chaque étape, on cherche aussi le même dé
      30 cm) » (`advisedPotPhrase`), carte « Vérifie le pot » : « Pot conseillé : … » et « Pots conseillés par Balco :
      c'est bien ça ? ». Les plantes déjà ajoutées gardent la taille notée à l'époque (on ne sait pas la distinguer
      d'un vrai choix) : la changer sur la fiche si besoin.
+  5. Vu en testant (15/10) : pas de taille au-delà de 40 cm. Ajout de « Très grand ou bac (plus de 40 cm) » (`xlarge` :
+     50 cm × 45 cm, 50 L, rythme d'arrosage comme un grand pot, pot vide 15 kg, sources dans `docs/sources-poids.md`) ;
+     « Jardinière ou bac » devient « Jardinière (60 cm, peu profonde) ». La courgette (45 cm) y tombe : plus aucune
+     fiche hors des tailles du choix. Le serveur accepte cette taille après la fusion seulement (avant : la sauvegarde
+     attend, rien ne se perd).
 
 ## Étape 5 : finitions des textes
 

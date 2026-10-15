@@ -14,7 +14,7 @@ import type { CatalogPlant } from "@/lib/plants/catalog";
 /** Terreau bien arrosé, compté large. */
 export const WET_SOIL_KG_PER_LITER = 1;
 /** Le pot vide, compté comme un pot en terre cuite (pots de 30 cm : 2 à 6 kg selon les fiches des magasins). */
-export const POT_SHELL_KG: Record<KnownPotSize, number> = { small: 1, medium: 3, large: 6, planter: 5 };
+export const POT_SHELL_KG: Record<KnownPotSize, number> = { small: 1, medium: 3, large: 6, xlarge: 15, planter: 5 };
 /** Charge souvent prévue pour un balcon récent, par m² (fiche de l'Agence qualité construction). */
 export const BALCONY_LOAD_KG_PER_M2 = 350;
 
