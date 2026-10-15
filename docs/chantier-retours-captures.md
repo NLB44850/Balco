@@ -50,7 +50,7 @@ téléphone avant la suivante. Pour chaque étape, on cherche aussi le même dé
 - Bleu : « Gel annoncé » (compté) et « Pluie annoncée » (plus comptée). Compteur du Balcon = `status.worry`.
 - Un arrosage ou une récolte du jour : « En forme ». E2e `27-a-surveiller`.
 
-## Étape 4 : taille choisie ou taille conseillée (faite le 15/10, à valider)
+## Étape 4 : taille choisie ou taille conseillée (validée le 15/10)
 
 - Pas de taille choisie : « Pot conseillé : … » sur la fiche (le toucher ouvre le choix). Taille choisie : « Pot de … ».
 - La taille conseillée de chaque fiche doit tomber dans la bonne catégorie (petit, moyen, grand, jardinière), partout :
@@ -74,12 +74,16 @@ téléphone avant la suivante. Pour chaque étape, on cherche aussi le même dé
      fiche hors des tailles du choix. Le serveur accepte cette taille après la fusion seulement (avant : la sauvegarde
      attend, rien ne se perd).
 
-## Étape 5 : finitions des textes
+## Étape 5 : finitions des textes (faite le 15/10, à valider)
 
-- Cartes du Balcon : « Ta photo » devient « Ajouter une photo ».
-- Liste de courses : plus aucun sous-titre coupé par « … » ; « En version organique » devient « utilisable en
-  agriculture biologique ».
-- Fiche plante : un seul format de durée (semaines, puis mois après 8 semaines).
+- Cartes du Balcon : « Ta photo » devient « Ajouter une photo ». Même défaut corrigé ailleurs : « Ma liste de courses »
+  devient « Voir ma liste de courses » (Balcon, Aujourd'hui), « Note-le dans ton herbier » devient « Le noter dans ton
+  herbier » (fiche).
+- Liste de courses : plus aucun sous-titre coupé par « … » (`fullSubtitle` de `TodayRow`, le texte passe à la ligne) ;
+  « en version organique » devient « utilisable en agriculture biologique ».
+- Fiche plante : un seul format de durée, `sinceLabel` (`lib/garden/progress.ts`), repris par `growingSince` : jours la
+  première semaine, puis semaines, puis mois à partir de 8 semaines, puis années (« Depuis 4 semaines » en haut,
+  « Sur ton balcon depuis 4 semaines » dans « Sa progression »).
 
 ## Étape 6 : réponse de Nora
 

@@ -156,11 +156,21 @@ export function careWeeksLabel({ activeWeeks, trackedWeeks }: Pick<PlantProgress
   return trackedWeeks < WEEKS ? `${weeksLabel} sur ${trackedWeeks} depuis son arrivée` : `${weeksLabel} sur les 8 dernières`;
 }
 
-/** « depuis 12 jours », « depuis 3 mois » */
+/**
+ * Un seul format de durée partout (retour du 15/10 : « Depuis 4 semaines » en haut de la fiche, « depuis 30 jours »
+ * plus bas) : les jours la première semaine, puis les semaines, puis les mois après 8 semaines, puis les années.
+ * « depuis 5 jours », « depuis 4 semaines », « depuis 3 mois ».
+ */
 export function sinceLabel(days: number) {
   if (days <= 0) return "depuis aujourd’hui";
-  if (days < 60) return `depuis ${days} jour${days > 1 ? "s" : ""}`;
-  return `depuis ${Math.round(days / 30)} mois`;
+  if (days < 7) return `depuis ${days} jour${days > 1 ? "s" : ""}`;
+  if (days < 56) {
+    const weeks = Math.floor(days / 7);
+    return `depuis ${weeks} semaine${weeks > 1 ? "s" : ""}`;
+  }
+  if (days < 365) return `depuis ${Math.round(days / 30.4)} mois`;
+  const years = Math.floor(days / 365);
+  return `depuis ${years} an${years > 1 ? "s" : ""}`;
 }
 
 // --- Petites victoires -------------------------------------------------------------

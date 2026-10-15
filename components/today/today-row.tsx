@@ -20,6 +20,8 @@ type TodayRowProps = {
   picture?: React.ReactNode;
   /** Une pastille qui se voit d'un coup d'œil, avant le rond (« 💧 2 L »). */
   badge?: string;
+  /** Sous-titre en entier (liste de courses : le conseil se lit jusqu'au bout, 15/10) ; sinon une seule ligne. */
+  fullSubtitle?: boolean;
 };
 
 /** Une ligne de la liste du jour : toucher la ligne ouvre le détail, toucher le rond valide le geste. */
@@ -33,7 +35,7 @@ const SPARKS = Array.from({ length: 8 }, (_, index) => {
   return { x: Math.cos(angle) * distance, y: Math.sin(angle) * distance, angle };
 });
 
-export function TodayRow({ icon, tone, title, subtitle, done, onToggle, onOpen, checkLabel, picture, badge }: TodayRowProps) {
+export function TodayRow({ icon, tone, title, subtitle, done, onToggle, onOpen, checkLabel, picture, badge, fullSubtitle }: TodayRowProps) {
   const colors = useColors();
   const scale = useRef(new Animated.Value(1)).current;
   const burst = useRef(new Animated.Value(1)).current;
@@ -68,7 +70,7 @@ export function TodayRow({ icon, tone, title, subtitle, done, onToggle, onOpen, 
         {picture ?? <View style={[styles.icon, { backgroundColor: alert ? colors.frostSoft : colors.surface }]}><Text style={[styles.iconText, alert && { color: toneColor }]}>{icon}</Text></View>}
         <View style={styles.copy}>
           <Text style={[styles.title, { color: done ? colors.muted : colors.foreground }, done && styles.doneTitle]} numberOfLines={2}>{title}</Text>
-          <Text style={[styles.subtitle, { color: alert && !done ? toneColor : colors.muted }, alert && !done && styles.subtitleStrong]} numberOfLines={1}>{subtitle}</Text>
+          <Text style={[styles.subtitle, { color: alert && !done ? toneColor : colors.muted }, alert && !done && styles.subtitleStrong]} numberOfLines={fullSubtitle ? undefined : 1}>{subtitle}</Text>
         </View>
       </Pressable>
       {badge && !done && (

@@ -45,6 +45,10 @@ describe("progression d'une plante", () => {
     expect(progress.stage.label).toBe("En récolte");
     expect(progress.milestones.map((milestone) => milestone.key)).toEqual(["harvest", "photo", "feed", "added"]);
     expect(sinceLabel(70)).toBe("depuis 2 mois");
+    // Un seul format (15/10) : semaines dès 7 jours, mois après 8 semaines.
+    expect(sinceLabel(30)).toBe("depuis 4 semaines");
+    expect(sinceLabel(55)).toBe("depuis 7 semaines");
+    expect(sinceLabel(56)).toBe("depuis 2 mois");
   });
 
   it("ne juge une jeune plante que sur les semaines où elle était là", () => {

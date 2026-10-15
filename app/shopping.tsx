@@ -99,6 +99,7 @@ export default function ShoppingScreen() {
                     tone={section === "feed" || section === "seeds" ? "season" : "care"}
                     title={item.title}
                     subtitle={item.chooseSizeOf ? `Touche pour choisir la taille du pot · ${item.detail}` : item.detail}
+                    fullSubtitle
                     done={checked.has(item.id)}
                     checkLabel={checked.has(item.id) ? "Retirer du panier" : "Dans le panier"}
                     onToggle={() => toggle(item)}
@@ -112,7 +113,7 @@ export default function ShoppingScreen() {
 
         {items.length > 0 && (
           <>
-            <Text style={[styles.small, { color: colors.muted }]}>Aucune marque : prends ce que propose ta jardinerie, en version organique.</Text>
+            <Text style={[styles.small, { color: colors.muted }]}>Aucune marque : prends ce que propose ta jardinerie, utilisable en agriculture biologique.</Text>
             <Button label="Partager ma liste" onPress={() => void share()} style={styles.cta} />
             {showText && <Text selectable style={[glass.card, styles.shareText, { color: colors.foreground }]}>{shoppingShareText(items, checked)}</Text>}
             {checked.size > 0 && left < items.length && (

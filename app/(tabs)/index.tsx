@@ -799,7 +799,7 @@ export default function HomeScreen() {
             <Text style={[styles.sheetBody, { color: colors.foreground }]}>{anticipationOpen.prepare}</Text>
             <Text style={[styles.sheetBody, { color: colors.muted }]}>{anticipationOpen.detail}</Text>
             <Button label="Voir ce qu’il te faut" onPress={() => openNeeds(anticipationOpen)} />
-            <Button variant="secondary" label="🛒  Ma liste de courses" onPress={() => { setAnticipationOpen(null); router.push("/shopping"); }} />
+            <Button variant="secondary" label="🛒  Voir ma liste de courses" onPress={() => { setAnticipationOpen(null); router.push("/shopping"); }} />
           </View>
         )}
       </BottomSheet>

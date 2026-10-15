@@ -286,7 +286,7 @@ export default function PlantScreen() {
               <Button variant="link" noChevron label={guideLinkText(entry, potTask)} onPress={() => router.push({ pathname: "/guide/[catalogId]", params: { catalogId: entry.id, plantId: plant.id, task: potTask } })} />
             )}
             {canMarkBloom(resolved, events, now) && (
-              <Button variant="link" label={`${byForm(entry, "Il a fleuri ?", "Elle a fleuri ?", "Ils ont fleuri ?", "Elles ont fleuri ?")} Note-le dans ton herbier`} onPress={() => void markBloom()} />
+              <Button variant="link" label={`${byForm(entry, "Il a fleuri ?", "Elle a fleuri ?", "Ils ont fleuri ?", "Elles ont fleuri ?")} Le noter dans ton herbier`} onPress={() => void markBloom()} />
             )}
             {!gesture && (
               <>
