@@ -177,7 +177,7 @@ describe.skipIf(!TEST_DATABASE_URL)("AI scanner and assistant (fake Messages API
       nextReplies = [{ body: message([], { stop_reason: "refusal", stop_details: { type: "refusal", category: null, explanation: null } }) }];
       await expect(caller().ai.diagnose({ imageBase64: JPEG })).rejects.toMatchObject({ code: "BAD_REQUEST", message: expect.stringContaining("Je ne peux pas analyser") });
       nextReplies = [{ status: 529, body: { type: "error", error: { type: "overloaded_error", message: "Overloaded" } } }];
-      await expect(caller().ai.diagnose({ imageBase64: JPEG })).rejects.toMatchObject({ code: "INTERNAL_SERVER_ERROR", message: expect.stringContaining("pas décomptée") });
+      await expect(caller().ai.diagnose({ imageBase64: JPEG })).rejects.toMatchObject({ code: "INTERNAL_SERVER_ERROR", message: expect.stringContaining("L’analyse n’a pas pu se faire pour l’instant") });
       nextReplies = [{ body: message([{ type: "text", text: "{pas du json" }]) }];
       await expect(caller().ai.diagnose({ imageBase64: JPEG })).rejects.toMatchObject({ code: "INTERNAL_SERVER_ERROR" });
       nextReplies = [{ body: message([{ type: "text", text: "{\"isPlant\": tr" }], { stop_reason: "max_tokens" }) }];
@@ -229,6 +229,21 @@ describe.skipIf(!TEST_DATABASE_URL)("AI scanner and assistant (fake Messages API
       expect([second.answer, third.answer]).toEqual([first.answer, first.answer]);
       expect(requests).toHaveLength(1);
       expect((await caller().ai.status()).chat.used).toBe(first.quota.used);
+    });
+
+    it("panne, réponse vide ou illisible : « Nora ne peut pas répondre pour l’instant », jamais une réponse inventée, et rien de décompté", async () => {
+      const before = (await caller().ai.status()).chat.used;
+      const outage = { code: "INTERNAL_SERVER_ERROR", message: "Nora ne peut pas répondre pour l’instant. Réessaie dans un moment : cette question n’est pas décomptée." };
+      const ask = () => caller().ai.ask({ messages: [{ role: "user", content: "Mon basilic va bien ?" }] });
+      nextReplies = [{ status: 529, body: { type: "error", error: { type: "overloaded_error", message: "Overloaded" } } }];
+      await expect(ask()).rejects.toMatchObject(outage);
+      nextReplies = [{ body: message([thinking, { type: "text", text: "" }]) }];
+      await expect(ask()).rejects.toMatchObject(outage);
+      nextReplies = [{ body: message([thinking, { type: "text", text: "{\"answer\": \"Ta pl" }]) }];
+      await expect(ask()).rejects.toMatchObject(outage);
+      nextReplies = [{ body: message([thinking, { type: "text", text: "{\"answer\": \"Ta pl" }], { stop_reason: "max_tokens" }) }];
+      await expect(ask()).rejects.toMatchObject(outage);
+      expect((await caller().ai.status()).chat.used).toBe(before);
     });
 
     it("remembers what the person tells, and forgets it on request or when contradicted", async () => {

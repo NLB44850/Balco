@@ -36,7 +36,7 @@ test("Nora : réponse perdue en route récupérée en silence ; connexion coupé
   await page.getByPlaceholder("Écris à Nora…").fill("Mon basilic a soif ?");
   await page.getByPlaceholder("Écris à Nora…").press("Enter");
   // L'app redemande en silence et récupère la réponse déjà faite : ni erreur, ni question comptée deux fois.
-  await expect(page.getByText(/^Réponse de Nora/)).toHaveCount(1, { timeout: 20_000 });
+  await expect(page.getByText(/^Réponse simulée/)).toHaveCount(1, { timeout: 20_000 });
   await expect(page.getByText(/s’est perdue en route|Failed to execute|JSON/)).toHaveCount(0);
   await expect.poll(remaining, { timeout: 10_000 }).toBe(before - 1);
 
@@ -49,7 +49,7 @@ test("Nora : réponse perdue en route récupérée en silence ; connexion coupé
   await page.getByRole("button", { name: "Réessayer" }).click();
   await expect(page.getByText(/s’est perdue en route/)).toHaveCount(0, { timeout: 15_000 });
   await expect(page.getByText("Et ma menthe ?")).toHaveCount(1);
-  await expect(page.getByText(/^Réponse de Nora/)).toHaveCount(2, { timeout: 15_000 });
+  await expect(page.getByText(/^Réponse simulée/)).toHaveCount(2, { timeout: 15_000 });
   await expect.poll(remaining, { timeout: 10_000 }).toBe(before - 2);
   expect(errors).toEqual([]);
 });

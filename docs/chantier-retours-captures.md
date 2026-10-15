@@ -74,7 +74,7 @@ téléphone avant la suivante. Pour chaque étape, on cherche aussi le même dé
      fiche hors des tailles du choix. Le serveur accepte cette taille après la fusion seulement (avant : la sauvegarde
      attend, rien ne se perd).
 
-## Étape 5 : finitions des textes (faite le 15/10, à valider)
+## Étape 5 : finitions des textes (validée le 15/10)
 
 - Cartes du Balcon : « Ta photo » devient « Ajouter une photo ». Même défaut corrigé ailleurs : « Ma liste de courses »
   devient « Voir ma liste de courses » (Balcon, Aujourd'hui), « Note-le dans ton herbier » devient « Le noter dans ton
@@ -85,7 +85,14 @@ téléphone avant la suivante. Pour chaque étape, on cherche aussi le même dé
   première semaine, puis semaines, puis mois à partir de 8 semaines, puis années (« Depuis 4 semaines » en haut,
   « Sur ton balcon depuis 4 semaines » dans « Sa progression »).
 
-## Étape 6 : réponse de Nora
+## Étape 6 : réponse de Nora (faite le 15/10, à valider)
+
+Fait : la phrase venait du faux service d'IA des tests (`e2e/fake-anthropic.mjs`), jamais de la vraie Nora ; elle dit
+maintenant « Réponse simulée (faux service des tests, pas une vraie réponse de Nora) ». Vérifié : aucun texte de secours
+ne répond à la place de Nora (le serveur ne renvoie que la réponse du modèle, une réponse vide, coupée ou illisible est
+une erreur). Panne : « Nora ne peut pas répondre pour l’instant. Réessaie dans un moment : cette question n’est pas
+décomptée. » (`outageMessage`, `server/ai/router.ts` ; Observer : « L’analyse n’a pas pu se faire pour l’instant… »),
+avec « Réessayer ». Test `ai.integration` : panne, réponse vide, illisible ou coupée → ce message, quota inchangé.
 
 - « Réponse de Nora : ta plante va bien, arrose quand la terre est sèche. » : dire d'abord si c'est la réponse simulée
   ou une vraie réponse. Un texte de secours ne dit jamais que tout va bien (« Nora ne peut pas répondre pour l'instant,

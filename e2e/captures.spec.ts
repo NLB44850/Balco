@@ -130,6 +130,6 @@ test("Nora : la conversation", async ({ page }) => {
   await expect(page.getByPlaceholder("Écris à Nora…")).toBeVisible({ timeout: 20_000 });
   await page.getByPlaceholder("Écris à Nora…").fill("Fais le point sur mes plantes");
   await page.getByPlaceholder("Écris à Nora…").press("Enter");
-  await expect(page.getByText(/Réponse de Nora/)).toBeVisible({ timeout: 30_000 });
+  await expect(page.getByText(/^Réponse simulée/)).toBeVisible({ timeout: 30_000 });
   await shot(page, "16-nora");
 });
