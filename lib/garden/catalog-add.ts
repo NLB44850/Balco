@@ -4,13 +4,16 @@
  * message du bas n'a plus que « Annuler ». Hors saison, la carte prévient :
  * - à planter alors que ce n'est pas sa saison : « Pas avant mai » et, si sa saison revient au printemps, elle rejoint
  *   les envies du printemps (carte de mars, notification du 1er mars) au lieu d'attendre sur le balcon ;
- * - déjà sur le balcon en fin de saison (annuelle frileuse, de septembre à décembre) : « récolte avant les gelées ».
+ * - déjà sur le balcon hors saison, en neutre (chantier « Plante hors saison », lib/garden/off-season.ts) : « Fin de
+ *   saison » (et « récolte avant les premières gelées » pour une frileuse), « À rentrer avant l'hiver », « Au repos
+ *   jusqu'en avril ».
  * Logique pure.
  */
 import { MONTH_LONG, type CatalogPlant, type Month } from "../plants/catalog";
 import { adaptToClimate, type ClimateInfo } from "../plants/climate";
 import { afterColon, agree, objectPronoun, possessive, verb } from "../plants/grammar";
-import { endsWithSeason } from "../plants/season-end";
+import { isColdTender } from "../plants/cold-hardiness";
+import { offSeasonOf } from "./off-season";
 import { suggestionFor, type AddChoice } from "../plants/suggestions";
 
 /** Le prochain mois (après celui-ci) où on peut la semer ou la planter, ou null si jamais. */
@@ -42,9 +45,13 @@ export function toPlantPlan(entry: CatalogPlant, month: number, climate?: Climat
   return SPRING_START_MONTHS.includes(next) ? { kind: "spring", month: next } : { kind: "later", month: next };
 }
 
-/** Une annuelle frileuse ajoutée de septembre à décembre : sa saison se termine avec les premières gelées. */
-export function lateSeasonNote(entry: CatalogPlant, month: number) {
-  return endsWithSeason(entry) && entry.care.frostSensitive && month >= 9 ? "Fin de saison : récolte avant les premières gelées" : null;
+/** Déjà sur le balcon hors saison : ce qui l'attend, en neutre (« Fin de saison », « Au repos jusqu'en avril »). */
+export function lateSeasonNote(entry: CatalogPlant, month: number, climate?: ClimateInfo | null) {
+  const off = offSeasonOf(entry, new Date(2026, month - 1, 15), climate);
+  if (!off) return null;
+  if (off.kind === "season-end") return isColdTender(entry) ? `${off.label} : récolte avant les premières gelées` : off.label;
+  if (off.kind === "before-winter") return `${off.label}, à l’abri du gel`;
+  return `${off.label} : rien à faire d’ici là`;
 }
 
 /** « Ajouté : Aubergine en pot moyen (21 à 30 cm) · Fin de saison : récolte avant les premières gelées » */
@@ -78,13 +85,11 @@ export type AddOption = {
   detail: string;
   /** « C'est le moment » sur la carte à planter, quand c'est sa saison. */
   badge: string | null;
-  /** Une fin de saison à surveiller (en orange). */
-  watch: boolean;
 };
 
 /** Les deux cartes, toujours dans le même ordre : déjà sur le balcon, puis pas encore plantée. */
 export function addOptions(entry: CatalogPlant, month: number, climate?: ClimateInfo | null): AddOption[] {
-  const late = lateSeasonNote(entry, month);
+  const late = lateSeasonNote(entry, month, climate);
   const plan = toPlantPlan(entry, month, climate);
   const later = (plan.kind === "spring" || plan.kind === "later") && plan.month;
   const when = later ? (suggestionFor(entry, later, climate)?.indoors ? `À semer au chaud dès ${MONTH_LONG[later - 1]}` : `Pas avant ${MONTH_LONG[later - 1]}`) : "";
@@ -94,7 +99,6 @@ export function addOptions(entry: CatalogPlant, month: number, climate?: Climate
       title: "Déjà sur mon balcon",
       detail: late ? `${late}.` : "Balco te dit quand l’arroser dès aujourd’hui.",
       badge: null,
-      watch: late !== null,
     },
     {
       choice: "toPlant",
@@ -106,7 +110,6 @@ export function addOptions(entry: CatalogPlant, month: number, climate?: Climate
             ? `${when} : Balco te ${objectPronoun(entry)} reproposera au printemps.`
             : `${when} : Balco te le rappellera le moment venu.`,
       badge: plan.kind === "now" ? "C’est le moment" : null,
-      watch: false,
     },
   ];
 }

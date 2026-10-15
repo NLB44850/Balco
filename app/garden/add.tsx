@@ -99,13 +99,13 @@ export default function AddPlantScreen() {
           accessibilityRole="button"
           accessibilityLabel={`${entry.name} : ${option.title}`}
           onPress={() => void add(entry.id, option.choice)}
-          style={({ pressed }) => [styles.option, { borderColor: option.watch ? colors.warning : colors.primary }, pressed && styles.pressed]}
+          style={({ pressed }) => [styles.option, { borderColor: colors.primary }, pressed && styles.pressed]}
         >
           <Text style={styles.optionIcon}>{option.choice === "installed" ? "🪴" : "🌱"}</Text>
           <View style={styles.flex}>
             {option.badge && <Text style={[styles.optionBadge, { color: colors.primary }]}>{option.badge}</Text>}
             <Text style={[styles.optionTitle, { color: colors.foreground }]}>{option.title}</Text>
-            <Text style={[styles.optionDetail, { color: option.watch ? colors.warning : colors.muted }]}>{option.detail}</Text>
+            <Text style={[styles.optionDetail, { color: colors.muted }]}>{option.detail}</Text>
           </View>
           <Text style={[styles.optionChevron, { color: colors.primary }]}>›</Text>
         </Pressable>

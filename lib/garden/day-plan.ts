@@ -7,6 +7,7 @@
  * geste le marque « fait » sans faire changer la liste sous le doigt. Logique pure.
  */
 import { followUpsFor } from "./follow-ups";
+import { offSeasonOf } from "./off-season";
 import {
   FREE_POT_TITLE,
   freePotIsQuiet,
@@ -83,10 +84,11 @@ export type PlanGesture = {
 /**
  * L'état d'une plante, une couleur par sens : vert = en forme, orange = un vrai souci (chaleur, orage, vent,
  * problème vu par Observer, pot trop petit, arrosage en retard de 3 jours), bleu = gel ou pluie annoncés, gris =
- * nouvelle (aucun soin noté). Un geste du jour (arroser, récolter) ne change pas l'état (retour du 14/10).
+ * nouvelle (aucun soin noté), gris aussi = hors saison (« Fin de saison », « Au repos jusqu'en avril », « À rentrer
+ * avant l'hiver », lib/garden/off-season.ts). Un geste du jour (arroser, récolter) ne change pas l'état (retour du 14/10).
  * `worry` : compté dans « N à surveiller » du Balcon (l'orange et le gel, pas la pluie).
  */
-export type PlantTone = "good" | "watch" | "weather" | "new";
+export type PlantTone = "good" | "watch" | "weather" | "new" | "rest";
 export type PlantDayStatus = { tone: PlantTone; label: string; worry?: boolean };
 
 export type PlantDay = {
@@ -120,7 +122,7 @@ export type DayPlanInput = {
 /** L'état d'une plante choisie mais pas encore en terre (Balcon, fiche). */
 export const TO_PLANT_LABEL = "À planter";
 
-const STATUS_LABEL: Record<PlantTone, string> = { good: "En forme", watch: "À surveiller", weather: "Météo", new: "Nouvelle" };
+const STATUS_LABEL: Record<PlantTone, string> = { good: "En forme", watch: "À surveiller", weather: "Météo", new: "Nouvelle", rest: "Au repos" };
 
 /** Ce que veut dire chaque couleur, pour la légende. */
 export const STATUS_LEGEND: { tone: PlantTone; text: string }[] = [
@@ -186,7 +188,15 @@ function decisionGesture(kind: GestureKind, decision: ReminderDecision): PlanGes
 
 const isWeatherAlert = (decision: ReminderDecision) => decision.cause !== undefined && decision.cause !== "thirst";
 
-function statusOf(resolved: ResolvedPlant, gestures: PlanGesture[], events: MaintenanceEvent[], now: Date, lateWateringDays: number | null): PlantDayStatus {
+/** Hors saison, l'état le dit en neutre, à la place de « Nouvelle » ou « En forme » (chantier « Plante hors saison »). */
+function calmStatus(resolved: ResolvedPlant, events: MaintenanceEvent[], now: Date, climate?: ClimateInfo | null): PlantDayStatus {
+  const off = offSeasonOf(resolved.entry, now, climate);
+  if (off) return { tone: "rest", label: off.label };
+  if (!events.some((event) => event.plantId === resolved.plant.id)) return { tone: "new", label: STATUS_LABEL.new };
+  return { tone: "good", label: STATUS_LABEL.good };
+}
+
+function statusOf(resolved: ResolvedPlant, gestures: PlanGesture[], events: MaintenanceEvent[], now: Date, lateWateringDays: number | null, climate?: ClimateInfo | null): PlantDayStatus {
   const pending = gestures.filter((gesture) => !gesture.done);
   const alerts = pending.filter((gesture) => gesture.kind === "alert").map((gesture) => (gesture.source.type === "decision" ? gesture.source.decision.cause : undefined));
   if (alerts.includes("frost")) return { tone: "weather", label: "Gel annoncé", worry: true };
@@ -197,8 +207,7 @@ function statusOf(resolved: ResolvedPlant, gestures: PlanGesture[], events: Main
   if (fit.tone === "small") return { tone: "watch", label: fit.title, worry: true };
   if (lateWateringDays !== null) return { tone: "watch", label: `Pas ${agree(resolved.entry, "arrosé")} depuis ${lateWateringDays} jours`, worry: true };
   if (alerts.includes("rain")) return { tone: "weather", label: "Pluie annoncée" };
-  if (!events.some((event) => event.plantId === resolved.plant.id)) return { tone: "new", label: STATUS_LABEL.new };
-  return { tone: "good", label: STATUS_LABEL.good };
+  return calmStatus(resolved, events, now, climate);
 }
 
 export function planDay({ plants, events, now, decisions = [], allDecisions = decisions, climate, postponed, repotSkips, harvestEnds, coach }: DayPlanInput): PlantDay[] {
@@ -240,11 +249,11 @@ export function planDay({ plants, events, now, decisions = [], allDecisions = de
     }
     if (harvestQuestionDue(resolved, events, now, harvestEnd, climate)) {
       const first: PlanGesture = { key: `harvest-end:${plantId}:question`, kind: "harvest", plantId, title: harvestQuestion(resolved.entry), instruction: HARVEST_QUESTION_DETAIL, minutes: 1, done: false, source: { type: "harvest-end", stage: "question", resolved } };
-      return { resolved, gestures: [first], first, status: { tone: "good" as const, label: STATUS_LABEL.good } };
+      return { resolved, gestures: [first], first, status: calmStatus(resolved, events, now, climate) };
     }
     if (seasonQuestionDue(resolved, events, now, harvestEnd, climate)) {
       const first: PlanGesture = { key: `harvest-end:${plantId}:question`, kind: "harvest", plantId, title: seasonQuestion(resolved.entry), instruction: seasonQuestionDetail(isSeasonRetry(harvestEnd, now)), minutes: 1, done: false, source: { type: "harvest-end", stage: "question", resolved } };
-      return { resolved, gestures: [first], first, status: { tone: "good" as const, label: STATUS_LABEL.good } };
+      return { resolved, gestures: [first], first, status: calmStatus(resolved, events, now, climate) };
     }
     const own = decisions.filter((decision) => decision.plantId === plantId);
     const ownAll = allDecisions.filter((decision) => decision.plantId === plantId);
@@ -323,7 +332,7 @@ export function planDay({ plants, events, now, decisions = [], allDecisions = de
     const care = tasks.filter((task) => !["watering", "harvest", "fertilizing"].includes(task.type));
     if (care.length > 0) gestures.push(taskGesture("care", resolved, care[(dayOfYear(now) + index) % care.length], now, eventIds));
 
-    return { resolved, gestures, first: gestures[0] ?? null, status: statusOf(resolved, gestures, events, now, lateWateringDays) };
+    return { resolved, gestures, first: gestures[0] ?? null, status: statusOf(resolved, gestures, events, now, lateWateringDays, climate) };
   });
 }
 

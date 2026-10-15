@@ -76,6 +76,18 @@ Une étape = un commit testé, validée sur son téléphone avant la suivante. D
   poivron, physalis, concombre à la souris, dahlia, citronnier : `place` « fenêtre lumineuse » ou « au frais hors
   gel »), 4 « quelques semaines de plus » (basilic, shiso, les deux tomates), le reste « non ». Les sources donnent rarement
   une température de nuit : 22 seuils sur 36 sont des estimations (seuil des alertes gel du catalogue).
-  Questions posées au porteur avec le tableau : seuils des alertes gel du catalogue à aligner ou non ; plantes
+  Validée le 15/10 (« Étape 1 validée »). Questions posées avec le tableau, sans réponse : on a pris les propositions
+  par défaut (alertes gel du catalogue inchangées ; vivaces frileuses « À rentrer avant l'hiver » ; dahlia rentré
+  après le gel qui noircit le feuillage ; oca sans « Fin de saison » en octobre). Les questions étaient : seuils des alertes gel du catalogue à aligner ou non ; plantes
   vivaces frileuses (citronnier, dahlia…) : « Fin de saison » ou un autre mot ; dahlia et oca, cas à part (attendre
   que le gel noircisse le feuillage).
+- Étape 2 codée le 15/10, à valider : `lib/garden/off-season.ts` (`offSeasonOf`), ton gris `rest` dans
+  `lib/garden/day-plan.ts` (`calmStatus` : à la place de « Nouvelle » ou « En forme », jamais à la place d'une alerte).
+  Règles : une annuelle (frileuse, ou qui finit au fil des cueillettes) est en « Fin de saison » après son dernier mois
+  de récolte de l'été ou de l'automne, et en janvier-février ; une frileuse dès ce dernier mois, à partir de septembre
+  (tomates, aubergine en octobre). Une vivace frileuse est « À rentrer avant l'hiver » d'octobre à février. Une plante
+  sans aucun geste ce mois-ci est « Au repos jusqu'en mars » (mois où ses gestes reprennent, un mois plus tôt dans le
+  Midi, un mois plus tard en montagne : estimation Balco, `restUntil`). Récoltées en une fois, micro-pousses, oca :
+  pas concernées. Le catalogue le dit sur la carte « Déjà sur mon balcon », en gris (plus d'orange) et dans le message
+  après l'ajout. L'accueil (« déjà des plantes ») ajoute les plantes installées : même état. Ses gestes restent (la
+  question « Ta saison de basilic est finie ? » garde sa place). Tests `tests/off-season.test.ts`, e2e `29-hors-saison`.

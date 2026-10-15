@@ -10,11 +10,11 @@ describe("ajouter depuis le catalogue : une question, deux cartes", () => {
     expect(addQuestion(plant("eggplant"))).toBe("Où en est ton aubergine ?");
     expect(addQuestion(plant("cherry-tomato"))).toBe("Où en sont tes tomates cerises ?");
     const [installed, toPlant] = addOptions(plant("eggplant"), 10);
-    expect(installed).toMatchObject({ choice: "installed", title: "Déjà sur mon balcon", detail: "Fin de saison : récolte avant les premières gelées.", watch: true });
+    expect(installed).toMatchObject({ choice: "installed", title: "Déjà sur mon balcon", detail: "Fin de saison : récolte avant les premières gelées." });
     expect(toPlant).toMatchObject({ choice: "toPlant", title: "Pas encore plantée", detail: "À semer au chaud dès février : Balco te la reproposera au printemps.", badge: null });
     const [, lavender] = addOptions(plant("lavender"), 10);
     expect(lavender).toMatchObject({ title: "Pas encore plantée", badge: "C’est le moment", detail: "Le pas-à-pas t’attend sur Aujourd’hui, étape par étape." });
-    expect(addOptions(plant("thyme"), 7)[0]).toMatchObject({ detail: "Balco te dit quand l’arroser dès aujourd’hui.", watch: false });
+    expect(addOptions(plant("thyme"), 7)[0]).toMatchObject({ detail: "Balco te dit quand l’arroser dès aujourd’hui." });
     expect(addOptions(plant("basil"), 10)[1].title).toBe("Pas encore planté");
   });
 

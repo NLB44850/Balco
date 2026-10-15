@@ -154,7 +154,9 @@ la peine : oui / quelques semaines / non) ; 2) un état juste dès l'ajout (« F
 en neutre) ; 3) le choix en trois réponses (« Tout récolter », « La rentrer à l'intérieur », « La laisser dehors ») ;
 4) « Rentre ton basilic » quand une nuit sous le seuil est annoncée, état « À l'intérieur » (météo ignorée, arrosage
 plus rare, pas d'engrais) ; 5) « Ressors ton basilic » au feu vert des Saints de glace. Tout en neutre, jamais d'orange.
-Étape 1 codée le 15/10 (36 frileuses, sources dans `docs/sources-froid.md`), à valider.
+Étape 1 validée le 15/10 (36 frileuses, sources dans `docs/sources-froid.md`). Étape 2 codée le 15/10, à valider : un
+basilic en octobre dit « Fin de saison », une menthe en novembre « Au repos jusqu'en mars », un citronnier « À rentrer
+avant l'hiver », en gris, sur le Balcon, la fiche, Aujourd'hui et au catalogue.
 
 ## Ce qu'il reste à faire, dans l'ordre
 
