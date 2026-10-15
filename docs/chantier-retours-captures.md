@@ -85,7 +85,7 @@ téléphone avant la suivante. Pour chaque étape, on cherche aussi le même dé
   première semaine, puis semaines, puis mois à partir de 8 semaines, puis années (« Depuis 4 semaines » en haut,
   « Sur ton balcon depuis 4 semaines » dans « Sa progression »).
 
-## Étape 6 : réponse de Nora (faite le 15/10, côté serveur visible après la fusion)
+## Étape 6 : réponse de Nora (validée le 15/10, côté serveur en ligne après la fusion)
 
 Fait : la phrase venait du faux service d'IA des tests (`e2e/fake-anthropic.mjs`), jamais de la vraie Nora ; elle dit
 maintenant « Réponse simulée (faux service des tests, pas une vraie réponse de Nora) ». Vérifié : aucun texte de secours
@@ -98,7 +98,7 @@ avec « Réessayer ». Test `ai.integration` : panne, réponse vide, illisible o
   ou une vraie réponse. Un texte de secours ne dit jamais que tout va bien (« Nora ne peut pas répondre pour l'instant,
   réessaie dans un moment »), et la question n'est pas décomptée.
 
-## Étape 7 : billes d'argile au fond des pots (faite le 15/10, à valider)
+## Étape 7 : billes d'argile au fond des pots (validée le 15/10)
 
 Fait : pas confirmé (`docs/sources-drainage.md`), textes validés par le porteur avant le changement. Pas-à-pas :
 « Vérifie que ton pot a un trou au fond. » (dessin `pot-holes`, le dessin des billes est retiré) ; billes retirées de
@@ -124,3 +124,9 @@ cuite. » ; 13 conseils des fiches refaits (« Un pot bien percé, et vide la so
 - Piste : un état « Fin de saison » plutôt que « Nouvelle », et une option « La rentrer à l'intérieur » (arrosage
   d'intérieur, rebord de fenêtre lumineux). Rejoint « rentrer une plante pour l'hiver » de la version suivante
   (piment, poivron, physalis, décidé le 08/10). À décider avec lui avant de coder.
+
+## Fin du chantier
+
+Les 7 étapes validées par le porteur le 15/10 ; fusionné dans `main` (PR #53). Idée notée, pas codée : une plante hors
+saison (basilic en octobre) affiche « Nouvelle · Rien à faire » ; pistes à étudier avec lui : un état « Fin de saison »
+et une option « La rentrer à l'intérieur ».
