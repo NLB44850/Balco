@@ -56,7 +56,7 @@ test("pots et balcon : courses, réglages, poids des pots, Balco+, consignes du 
   await seedBalcony(page, { plants: PLANTS, now, wateredDaysAgo: 2 });
   await page.goto("/balcony");
   await page.evaluate(() => {
-    // Deux plantes à planter : la liste a des pots, du terreau et des billes d'argile.
+    // Deux plantes à planter : la liste a des pots et du terreau.
     const plants = JSON.parse(window.localStorage.getItem("balco.garden.plants.v1") ?? "[]");
     plants.push({ id: "garlic-e2e", catalogId: "garlic", addedAt: new Date().toISOString(), toPlant: true }, { id: "strawberry-e2e", catalogId: "strawberry", addedAt: new Date().toISOString(), toPlant: true });
     window.localStorage.setItem("balco.garden.plants.v1", JSON.stringify(plants));

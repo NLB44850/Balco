@@ -36,7 +36,7 @@ Estimations (confiance faible) : Ail des ours, Alysse odorante, Arroche, Clayton
 
 ## Alysse odorante
 
-- Profondeur : 15 cm · Volume : 2 L (1 pied (ou 3 en jardinière de 40 cm)) · Terreau : terreau universel (« Mets des billes d’argile au fond : elle craint l’humidité. »)
+- Profondeur : 15 cm · Volume : 2 L (1 pied (ou 3 en jardinière de 40 cm)) · Terreau : terreau universel (« Pot percé et soucoupe vidée : elle craint l’humidité. »)
 - Engrais : tous les 28 jours · engrais liquide organique pour plantes fleuries à demi-dose · dès la floraison (mai, juin, juil., août, sept.)
 - Confiance faible (estimation affichée comme telle) · Profondeur de 15 à 20 cm citée par une seule source peu fiable ; apport mensuel confirmé par un service universitaire, sans excès.
 - Sources : [promessedefleurs.com](https://www.promessedefleurs.com/conseil-plantes-jardin/fichefamille/lobularia-alysse-odorant-semer-planter-cultiver/), [jardiner-malin.fr](https://www.jardiner-malin.fr/fiche/alysse-odorant.html), [truffaut.com](https://www.truffaut.com/alysse-odorant-barquette-6-plants-22543.html), [hgic.clemson.edu](https://hgic.clemson.edu/sweet-alyssum/)
@@ -64,14 +64,14 @@ Estimations (confiance faible) : Ail des ours, Alysse odorante, Arroche, Clayton
 
 ## Baselle
 
-- Profondeur : 30 cm · Volume : 15 L (1 pied avec tuteur) · Terreau : terreau enrichi de compost (« Mélange terre, terreau et compost, avec billes d’argile au fond. »)
+- Profondeur : 30 cm · Volume : 15 L (1 pied avec tuteur) · Terreau : terreau enrichi de compost (« Mélange terre, terreau et compost, dans un pot percé. »)
 - Engrais : un peu, une fois · compost mélangé au terreau · à la plantation (mai, juin)
 - Confiance moyenne · Pot d'au moins 30 cm de diamètre avec terre, terreau et compost ; profondeur non chiffrée, prise égale au diamètre ; rythme d'engrais non documenté.
 - Sources : [promessedefleurs.com](https://www.promessedefleurs.com/conseil-plantes-jardin/ficheconseil/cultiver-baselle-ou-epinard-de-malabar/), [gerbeaud.com](https://www.gerbeaud.com/jardin/fiches/baselle-basella-alba-epinard-de-malabar,2743.html), [jardiner-malin.fr](https://www.jardiner-malin.fr/fiche/potager/baselle.html)
 
 ## Basilic
 
-- Profondeur : 20 cm · Volume : 5 L (1 à 2 pieds) · Terreau : terreau enrichi de compost (« Mets des billes d’argile au fond : il craint l’eau stagnante. »)
+- Profondeur : 20 cm · Volume : 5 L (1 à 2 pieds) · Terreau : terreau enrichi de compost (« Pot percé et soucoupe vidée : il craint l’eau stagnante. »)
 - Engrais : tous les 30 jours · engrais liquide organique (algues) à demi-dose · un mois après la plantation (juin, juil., août, sept.)
 - Confiance moyenne · Pot de 20 cm de diamètre pour 1 à 2 plants (15 cm minimum selon une autre source) ; engrais toutes les 4 semaines environ, la profondeur n'est pas donnée explicitement.
 - Sources : [jardiner-malin.fr](https://www.jardiner-malin.fr/fiche/basilic-en-pot.html), [consoglobe.com](https://www.consoglobe.com/?p=10332158), [hornbach.ch](https://www.hornbach.ch/projets/couper-le-basilic/)
@@ -155,7 +155,7 @@ Estimations (confiance faible) : Ail des ours, Alysse odorante, Arroche, Clayton
 
 ## Citronnelle (Cymbopogon)
 
-- Profondeur : 30 cm · Volume : 20 L (une touffe) · Terreau : terreau enrichi de compost (« Mets des billes d’argile au fond pour drainer. »)
+- Profondeur : 30 cm · Volume : 20 L (une touffe) · Terreau : terreau enrichi de compost (« Un pot bien percé, et vide la soucoupe après l’arrosage. »)
 - Engrais : tous les 14 jours · engrais liquide organique riche en azote, à demi-dose · en début d’été (juin, juil., août, sept.)
 - Confiance moyenne · Pot d’au moins 30 cm de diamètre et de profondeur (site français) ou d’environ 19 L (30-35 cm, guides anglais) ; deux universités américaines conseillent un engrais à demi-dose chaque semaine à 10 jours de juin à septembre, ramené à 14 jours en organique, d’autres sources disent toutes les 2 à 6 semaines.
 - Sources : [jardiner-malin.fr](https://www.jardiner-malin.fr/fiche/citronnelle.html), [truffaut.com](https://www.truffaut.com/citronelle-plantation-entretien.html), [bunnings.co.nz](https://www.bunnings.co.nz/diy-advice/garden/planting-and-growing/how-to-grow-and-care-for-citronella), [hgtv.com](https://www.hgtv.com/gardening/edible-gardening/grow-your-own-lemongrass), [gardeningmentor.com](https://gardeningmentor.com/container-plant-information-lemongrass/), [extension.usu.edu](https://extension.usu.edu/yardandgarden/research/lemongrass-in-the-garden.php), [blogs.ifas.ufl.edu](https://blogs.ifas.ufl.edu/nassauco/2017/05/28/fact-sheet-lemongrass/)
@@ -477,7 +477,7 @@ Estimations (confiance faible) : Ail des ours, Alysse odorante, Arroche, Clayton
 
 ## Oignons botte
 
-- Profondeur : 25 cm · Volume : 10 L (une quinzaine d’oignons espacés de 5 cm) · Terreau : terreau universel (« Mets des billes d’argile au fond du pot. »)
+- Profondeur : 25 cm · Volume : 10 L (une quinzaine d’oignons espacés de 5 cm) · Terreau : terreau universel (« Un pot bien percé, et vide la soucoupe après l’arrosage. »)
 - Engrais : pas besoin
 - Confiance moyenne · Une source dit 25 à 30 cm de profondeur, l'autre au moins 20 cm et 30 cm de diamètre pour plusieurs oignons ; l'engrais n'est pas traité.
 - Sources : [jardiner-malin.fr](https://www.jardiner-malin.fr/fiche/oignon-en-pot.html), [willemsefrance.fr](https://www.willemsefrance.fr/blogs/nos-guides-de-jardinage/guide-etape-par-etape-pour-planter-les-oignons-dans-un-pot-1)
@@ -491,7 +491,7 @@ Estimations (confiance faible) : Ail des ours, Alysse odorante, Arroche, Clayton
 
 ## Oseille
 
-- Profondeur : 30 cm · Volume : 15 L (1 touffe) · Terreau : terreau enrichi de compost (« Mets des billes d’argile au fond pour le drainage. »)
+- Profondeur : 30 cm · Volume : 15 L (1 touffe) · Terreau : terreau enrichi de compost (« Un pot bien percé, et vide la soucoupe après l’arrosage. »)
 - Engrais : un peu, une fois · compost bien décomposé en surface · au printemps (mars, avr.)
 - Confiance moyenne · Pot de 30 cm de haut et 30 à 40 cm de large ; pour l'engrais, un site dit « aucun » et les autres un peu de compost chaque année, sans excès d'azote.
 - Sources : [promessedefleurs.com](https://www.promessedefleurs.com/conseil-plantes-jardin/ficheconseil/culture-oseille-en-pot/), [truffaut.com](https://www.truffaut.com/oseille-varietes-culture-conservation.html), [gerbeaud.com](https://www.gerbeaud.com/jardin/fiches/oseille-semis-culture-recolte.php)
@@ -505,7 +505,7 @@ Estimations (confiance faible) : Ail des ours, Alysse odorante, Arroche, Clayton
 
 ## Persil
 
-- Profondeur : 25 cm · Volume : 8 L (1 pied) · Terreau : terreau universel (« Mets 3 cm de billes d’argile au fond pour drainer. »)
+- Profondeur : 25 cm · Volume : 8 L (1 pied) · Terreau : terreau universel (« Un pot bien percé, et vide la soucoupe après l’arrosage. »)
 - Engrais : un peu, une fois · engrais organique complet ou compost · au printemps (mars, avr.)
 - Confiance moyenne · Racine pivotante : 20 à 30 cm de profondeur selon les sources ; volume déduit de la profondeur (pot rond de 25 cm), aucune source ne donne de minimum.
 - Sources : [jardiner-malin.fr](https://www.jardiner-malin.fr/fiche/persil-en-pot.html), [truffaut.com](https://www.truffaut.com/persil-plat-pot-14-cm-252030.html), [truffaut.com](https://www.truffaut.com/persil-simple-conteneur-2-5-litres-320093.html)
@@ -533,7 +533,7 @@ Estimations (confiance faible) : Ail des ours, Alysse odorante, Arroche, Clayton
 
 ## Piment
 
-- Profondeur : 30 cm · Volume : 15 L (1 pied) · Terreau : terreau enrichi de compost (« Mets des billes d’argile au fond pour drainer. »)
+- Profondeur : 30 cm · Volume : 15 L (1 pied) · Terreau : terreau enrichi de compost (« Un pot bien percé, et vide la soucoupe après l’arrosage. »)
 - Engrais : tous les 14 jours · engrais organique liquide riche en potasse (type tomates) · dès la reprise de la croissance (juin, juil., août, sept.)
 - Confiance moyenne · Profondeur 30 cm minimum concordante (60 cm idéal) ; volume entre 10 L (fiche d'un fabricant d'engrais) et 20-30 L (fiche d'une variété), 15 L retenu ; une fiche dit qu'il n'a pas besoin d'engrais, les autres conseillent un apport toutes les 2 semaines.
 - Sources : [jardiner-malin.fr](https://www.jardiner-malin.fr/fiche/piment-en-pot.html), [promessedefleurs.com](https://www.promessedefleurs.com/conseil-plantes-jardin/ficheconseil/cultiver-des-poivrons-et-des-piments-en-pot/), [willemsefrance.fr](https://www.willemsefrance.fr/blogs/nos-guides-de-jardinage/conseils-dentretien-des-plants-de-piment-1), [truffaut.com](https://www.truffaut.com/vilmorin-piment-bomber.html)
@@ -617,7 +617,7 @@ Estimations (confiance faible) : Ail des ours, Alysse odorante, Arroche, Clayton
 
 ## Sauge ananas
 
-- Profondeur : 30 cm · Volume : 25 L (1 pied) · Terreau : terreau universel (« Mets des billes d’argile au fond pour drainer. »)
+- Profondeur : 30 cm · Volume : 25 L (1 pied) · Terreau : terreau universel (« Un pot bien percé, et vide la soucoupe après l’arrosage. »)
 - Engrais : tous les 21 jours · engrais organique pour plantes fleuries · au printemps (avr., mai, juin, juil., août, sept.)
 - Confiance moyenne · Pot de 35 à 40 cm de diamètre ; engrais pour plantes fleuries 1 à 2 fois par mois au printemps et en été, arrêt en automne ; profondeur non chiffrée.
 - Sources : [jardiner-malin.fr](https://www.jardiner-malin.fr/fiche/sauge-ananas.html), [jardiner-malin.fr](https://www.jardiner-malin.fr/fiche/sauge-en-pot.html), [truffaut.com](https://www.truffaut.com/salvia-c-5l-tfe-532780-532780.html)
@@ -673,7 +673,7 @@ Estimations (confiance faible) : Ail des ours, Alysse odorante, Arroche, Clayton
 
 ## Tomates naines
 
-- Profondeur : 30 cm · Volume : 15 L (1 pied) · Terreau : terreau enrichi de compost (« Mets 5 cm de billes d’argile au fond du pot. »)
+- Profondeur : 30 cm · Volume : 15 L (1 pied) · Terreau : terreau enrichi de compost (« Un pot bien percé, et vide la soucoupe après l’arrosage. »)
 - Engrais : tous les 14 jours · engrais organique pour tomates · dès la floraison (juin, juil., août, sept.)
 - Confiance moyenne · 30 cm de profondeur concordant ; 10-15 L pour une variété naine (5-7 L pour une ultra-naine, 20-30 L pour une tomate cerise classique) ; engrais tomates toutes les 2 semaines, 1 à 2 fois par mois selon une fiche.
 - Sources : [gerbeaud.com](https://www.gerbeaud.com/jardin/fiches/culture-tomates-en-pot,2779.html), [aujardin.info](https://www.aujardin.info/fiches/planter-tomate-cerise-pot.php), [jardiner-malin.fr](https://www.jardiner-malin.fr/fiche/tomate-cerise.html), [edito.seloger.com](https://edito.seloger.com/tendances/amenagement-exterieur/balcon-terrasse-planter-tomates-pot-article-20567.html)
@@ -687,14 +687,14 @@ Estimations (confiance faible) : Ail des ours, Alysse odorante, Arroche, Clayton
 
 ## Tournesol nain
 
-- Profondeur : 30 cm · Volume : 15 L (1 pied) · Terreau : terreau universel (« Mets un lit de billes d’argile au fond. »)
+- Profondeur : 30 cm · Volume : 15 L (1 pied) · Terreau : terreau universel (« Un pot bien percé, et vide la soucoupe après l’arrosage. »)
 - Engrais : un peu, une fois · engrais organique équilibré, sans excès d’azote · au semis (avr., mai)
 - Confiance moyenne · Pot de 25 à 30 cm selon les sources, un seul pied par pot ; engrais au semis pour une source, engrais riche en potasse pour une autre.
 - Sources : [jardiner-malin.fr](https://www.jardiner-malin.fr/fiche/tournesol.html), [willemsefrance.fr](https://www.willemsefrance.fr/products/graines-tournesol-a-fleur-double-naine-teddy-bear), [promessedefleurs.com](https://www.promessedefleurs.com/conseil-plantes-jardin/fichefamille/tournesol-semis-plantation-entretien/)
 
 ## Verveine citronnelle
 
-- Profondeur : 30 cm · Volume : 15 L (1 pied) · Terreau : terreau universel (« Mets des billes d’argile au fond pour drainer. »)
+- Profondeur : 30 cm · Volume : 15 L (1 pied) · Terreau : terreau universel (« Un pot bien percé, et vide la soucoupe après l’arrosage. »)
 - Engrais : tous les 30 jours · engrais organique ou compost · au printemps (avr., mai, juin, juil., août)
 - Confiance moyenne · Pot d’au moins 30 cm de diamètre et de profondeur selon deux sources (20 à 30 cm pour une troisième) ; engrais une fois par mois au printemps et en été pour une source, toutes les deux semaines pour une autre (rythme mensuel retenu).
 - Sources : [jardiner-malin.fr](https://www.jardiner-malin.fr/fiche/verveine-citronnelle.html), [truffaut.com](https://www.truffaut.com/plant-verveine-citronnelle-pot-4-5-litres-718722.html), [promessedefleurs.ie](https://www.promessedefleurs.ie/gardening-tips/tutorial/how-to-successfully-plant-lemon-verbena-in-the-ground-or-in-a-pot/), [yates.co.nz](https://www.yates.co.nz/plants/herbs/lemon-verbena/how-to-grow-lemon-verbena/), [natureetdecouvertes.com](https://www.natureetdecouvertes.com/jardin/jardinage/semis-aromatiques/6-x-verveine-citronnelle-aloysia-triphylla-lippia-godet-9x9-cm-93344300)
@@ -708,7 +708,7 @@ Estimations (confiance faible) : Ail des ours, Alysse odorante, Arroche, Clayton
 
 ## Violas et pensées
 
-- Profondeur : 20 cm · Volume : 3 L (1 pied) · Terreau : terreau universel (« Mets des billes d’argile au fond du pot. »)
+- Profondeur : 20 cm · Volume : 3 L (1 pied) · Terreau : terreau universel (« Un pot bien percé, et vide la soucoupe après l’arrosage. »)
 - Engrais : tous les 14 jours · engrais organique liquide pour plantes fleuries · dès la floraison (mars, avr., mai, oct.)
 - Confiance faible (estimation affichée comme telle) · Profondeur de 15 cm pour une source et de 20 à 25 cm pour une autre (20 cm retenus) ; engrais toutes les deux semaines pendant la floraison confirmé par deux sources.
 - Sources : [promessedefleurs.com](https://www.promessedefleurs.com/conseil-plantes-jardin/ficheconseil/cultiver-pensees-viola-en-pot-ou-en-jardiniere/), [truffaut.com](https://www.truffaut.com/pensee-plantation-entretien.html), [wikifarmer.com](https://wikifarmer.com/library/fr/article/comment-prendre-soin-des-pensees-dans-le-jardin-et-les-pots), [promessedefleurs.ie](https://www.promessedefleurs.ie/gardening-tips/advicesheet/how-to-grow-pansies-in-pots-or-window-boxes-our-tips/), [truffaut.com](https://www.truffaut.com/viola-cornuta-pot-10-5-cm.html), [yates.co.nz](https://www.yates.co.nz/plants/flowers-and-ornamentals/violas/how-to-grow-violas/)
@@ -722,6 +722,9 @@ Estimations (confiance faible) : Ail des ours, Alysse odorante, Arroche, Clayton
 
 
 ## Billes d'argile au fond du pot (liste de courses, 13/10)
+
+**Retirées le 15/10** : la RHS et l'université de l'État de Washington disent que la couche du fond ne draine pas
+(détail dans `docs/sources-drainage.md`). Les sources ci-dessous sont des fiches de vente.
 
 Une couche de **2 à 3 cm** au fond d'un pot percé, jusqu'à **4 à 5 cm** dans un grand contenant ; on complète avec le
 terreau. Sacs du commerce : 3, 5, 6, 10, 20 et 50 L.

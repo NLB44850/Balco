@@ -54,7 +54,7 @@ export function weightIntro(weight: BalconyWeight) {
 
 /** Le repère du balcon, avec la charge par m² et le conseil de demander au syndic. */
 export const BALCONY_LOAD_NOTE = `Un balcon récent est souvent prévu pour ${BALCONY_LOAD_KG_PER_M2} kg par m², parfois moins dans l’ancien. Un doute, ou un grand bac en projet ? Demande au syndic la charge prévue pour ton balcon.`;
-export const LIGHTER_TIP = "Pour alléger : des pots en plastique ou en résine, et des billes d’argile au fond plutôt que des cailloux.";
+export const LIGHTER_TIP = "Pour alléger : des pots en plastique ou en résine plutôt qu’en terre cuite.";
 /** Une taille de pot pas notée : comptée à la taille de sa fiche. */
 export function guessedNote(count: number) {
   return count > 1 ? `${count} pots sans taille notée : comptés à la taille conseillée. Note-la dans leur fiche pour un calcul plus juste.` : "Un pot sans taille notée : compté à la taille conseillée. Note-la dans sa fiche pour un calcul plus juste.";

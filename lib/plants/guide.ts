@@ -99,7 +99,6 @@ export function supplies(entry: CatalogPlant, model: GuideModel, options: GuideO
     : { id: "pot", label: potLabel, detail: planting.perPot > 1 ? `${potNeedFor(entry).depthCm} cm de profondeur. Pour ${planting.perPot} plants, à ${planting.spacingCm} cm l’un de l’autre.` : `${potNeedFor(entry).depthCm} cm de profondeur, des trous au fond et une soucoupe.`, shared: false };
   // Le terreau de sa fiche Spécial pot : compost pour les gourmandes, sable pour celles qui craignent l'eau…
   const soil = soilSupplies(entry, "Un sac de 20 L remplit deux ou trois pots moyens.");
-  const clay: Supply = { id: "clay-balls", label: "Une poignée de billes d’argile", detail: "Au fond du pot, l’eau s’écoule mieux.", shared: true };
   const can: Supply = isSowing(model)
     ? { id: "spray", label: "Un vaporisateur ou un arrosoir à pomme fine", detail: "Une pluie fine ne déplace pas les graines.", shared: true }
     : { id: "watering-can", label: "Un arrosoir", shared: true };
@@ -112,7 +111,6 @@ export function supplies(entry: CatalogPlant, model: GuideModel, options: GuideO
   if (model === "outdoors") {
     return [
       { id: "pot", label: capitalize(potNeedShort(entry, { pierced: true })), detail: planting.perPot > 1 ? `Pour ${planting.perPot} plants, à ${planting.spacingCm} cm l’un de l’autre.` : "Un par plant, avec des trous au fond et une soucoupe.", shared: false },
-      clay,
       ...soil,
       { id: "watering-can", label: "Un arrosoir", shared: true },
     ];
@@ -127,7 +125,7 @@ export function supplies(entry: CatalogPlant, model: GuideModel, options: GuideO
       ...(entry.plantMonths.length > 0 ? [{ ...pot, id: "pot-later", label: `Plus tard : ${pot.label.charAt(0).toLowerCase()}${pot.label.slice(1)}` }] : []),
     ];
   }
-  return isDenseSowing(planting) ? [what, pot, ...soil, can] : [what, pot, clay, ...soil, can];
+  return isDenseSowing(planting) ? [what, pot, ...soil, can] : [what, pot, ...soil, can];
 }
 
 /** Le pot suivant (un tiers de plus) ; la terre du dessus ne demande qu'une fourchette et un peu de terreau. */
@@ -143,7 +141,6 @@ function potCareSupplies(entry: CatalogPlant, task: PotTask, { repots = 0, potSi
   const next = nextPotFor(entry, potSize, repots);
   return [
     { id: "next-pot", label: `Un pot percé d’environ ${next.widthCm} cm de large`, detail: next.tooSmall ? `Le tien est trop petit : ${potNeedFor(entry).depthCm} cm de profondeur au moins.` : "Un peu plus large que l’actuel.", shared: false },
-    { id: "clay-balls", label: "Une poignée de billes d’argile", detail: "Au fond du pot, l’eau s’écoule mieux.", shared: true },
     ...soilSupplies(entry, "Un sac de 20 L remplit deux ou trois pots moyens."),
     can,
   ];
@@ -218,7 +215,7 @@ function sowingSteps(entry: CatalogPlant, planting: Planting, indoors: boolean):
   if (indoors) steps.push({ illustration: "cells", text: "Remplis des godets de terreau, sans tasser.", why: "Un godet par graine, ou par pincée de graines." });
   else if (dense) steps.push({ illustration: "fill-soil", text: "Remplis la barquette de 3 cm de terreau." });
   else {
-    steps.push({ illustration: "clay-balls", text: "Mets une poignée de billes d’argile au fond.", why: "Les racines ne baigneront pas dans l’eau." });
+    steps.push({ illustration: "pot-holes", text: "Vérifie que ton pot a un trou au fond.", why: "Sans trou, l’eau stagne et les racines pourrissent." });
     const fill = fillText(entry, "Remplis de terreau jusqu’à 2 cm du bord.");
     steps.push({ illustration: "fill-soil", text: fill, why: fill.includes("2 cm") ? "Il reste de la place pour arroser." : "Jusqu’à 2 cm du bord, pour arroser." });
   }
@@ -249,7 +246,7 @@ function plantingSteps(entry: CatalogPlant, planting: Planting, model: GuideMode
   const bulb = BULBS[entry.id];
   const several = planting.perPot > 1 ? `Un tous les ${planting.spacingCm} cm, ${planting.perPot} en tout.` : undefined;
   const steps: GuideStep[] = [
-    { illustration: "clay-balls", text: model === "perennial-pot" ? "Mets 3 cm de billes d’argile au fond." : "Mets une poignée de billes d’argile au fond.", why: "Les racines ne baigneront pas dans l’eau." },
+    { illustration: "pot-holes", text: "Vérifie que ton pot a un trou au fond.", why: "Sans trou, l’eau stagne et les racines pourrissent." },
   ];
   if (bulb) {
     steps.push({ illustration: "fill-soil", text: "Remplis de terreau jusqu’à 3 cm du bord." });
@@ -283,7 +280,7 @@ function repotSteps(entry: CatalogPlant, { repots = 0, potSize }: GuideOptions):
   const next = nextPotFor(entry, potSize, repots);
   return [
     { illustration: "roots-out", text: "Regarde sous le pot si des racines sortent.", why: `Ou si l’eau ressort tout de suite : ${subjectPronoun(entry)} ${verb(entry, "manque", "manquent")} de place.` },
-    { illustration: "clay-balls", text: "Mets des billes d’argile au fond du nouveau pot.", why: `Environ ${next.widthCm} cm de large.`, mistake: next.tooSmall ? undefined : "Erreur à éviter : un pot bien plus grand. La terre resterait trempée." },
+    { illustration: "pot-holes", text: "Vérifie que le nouveau pot a un trou au fond.", why: `Environ ${next.widthCm} cm de large.`, mistake: next.tooSmall ? undefined : "Erreur à éviter : un pot bien plus grand. La terre resterait trempée." },
     { illustration: "unpot", text: "Sors la plante en tapotant le pot retourné.", why: "Arrosée la veille, la motte sort plus facilement." },
     { illustration: "loosen-roots", text: "Démêle du bout des doigts les racines qui tournent.", why: "Elles partiront dans la terre neuve." },
     { illustration: "place-plant", text: "Pose la motte au centre, au même niveau qu’avant.", why: "Mets un peu de terreau dessous pour la remonter." },
@@ -345,7 +342,7 @@ function pinchSteps(entry: CatalogPlant, planting: Planting): GuideStep[] {
 function outdoorsSteps(planting: Planting): GuideStep[] {
   return [
     { illustration: "harden-off", text: "Sors-les quelques heures par jour, pendant une semaine.", why: "À l’ombre légère d’abord : ils s’habituent au vent et au soleil.", mistake: "Erreur à éviter : les sortir d’un coup en plein soleil. Ils brûleraient." },
-    { illustration: "clay-balls", text: "Mets une poignée de billes d’argile au fond du pot." },
+    { illustration: "pot-holes", text: "Vérifie que ton pot a un trou au fond.", why: "Sans trou, l’eau stagne et les racines pourrissent." },
     { illustration: "fill-soil", text: "Remplis le pot de terreau aux deux tiers." },
     { illustration: "unpot", text: "Sors la motte du godet, sans tirer sur la tige.", why: "Retourne le godet et tapote le fond." },
     { illustration: "place-plant", text: "Pose la motte au centre, au même niveau qu’avant.", why: planting.perPot > 1 ? `Un tous les ${planting.spacingCm} cm, ${planting.perPot} en tout.` : undefined },

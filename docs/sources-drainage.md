@@ -15,8 +15,9 @@ Les pages qui conseillent les billes sont surtout des fiches de vente (jardineri
 
 Conclusion : les deux sources de référence disent que la couche ne sert pas à drainer ; la seule étude récente qui la
 défend mesure un petit effet, surtout avec du sable. Ce qui compte et fait consensus : **un pot percé**, un terreau
-adapté et une soucoupe vidée après l'arrosage. Les billes ne sont donc plus conseillées pour drainer (textes à
-valider avec le porteur avant de changer l'app).
+adapté et une soucoupe vidée après l'arrosage. Les billes ne sont donc plus conseillées pour drainer : textes validés
+par le porteur le 15/10 (pas-à-pas « Vérifie que ton pot a un trou au fond », plus de billes dans « Ce qu'il te faut » ni
+la liste de courses, « Pour alléger » sans billes, 13 conseils des fiches « Spécial pot »).
 
 Liens :
 - https://rhs.org.uk/garden-inspiration/get-gardening/top-five-gardening-myths

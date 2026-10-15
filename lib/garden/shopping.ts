@@ -5,7 +5,8 @@
  *   la fiche avec « Choisir la taille »), et les pots plus grands des rempotages annoncés.
  * - Terre : le terreau de ces pots en litres, selon le terreau de chaque fiche (compost, sable, terre de bruyère…),
  *   avec le sac à prendre.
- * - Billes d'argile : une couche au fond de chaque pot de la liste (ajoutées le 13/10, à sa demande).
+ * - Plus de billes d'argile (retirées le 15/10 : la couche du fond ne draine pas, docs/sources-drainage.md) ; le pot
+ *   est dit « Percé au fond ».
  * - Semis : godets et terreau de semis des semis au chaud qui arrivent.
  * - Engrais : celui des fiches, seulement pendant ses mois, un par famille (« pour tomates », « pour fleurs »…).
  * Logique pure : l'écran garde les coches sur le téléphone.
@@ -61,16 +62,6 @@ export function sackText(liters: number) {
 }
 
 const SIZE_TITLES: Record<KnownPotSize, string> = { small: "Petit pot (jusqu’à 20 cm)", medium: "Pot moyen (21 à 30 cm)", large: "Grand pot (31 à 40 cm)", xlarge: "Très grand pot ou bac (plus de 40 cm)", planter: "Jardinière de 60 cm" };
-
-/**
- * Billes d'argile : une couche de 2 à 3 cm au fond du pot, jusqu'à 5 cm dans un grand contenant (fabricant et jardineries
- * concordent, docs/sources-pots.md). Litres de la couche, d'après la surface du fond de chaque taille.
- */
-const CLAY_LITERS: Record<KnownPotSize, number> = { small: 0.5, medium: 1.5, large: 3, xlarge: 5, planter: 3 };
-/** La couche au fond d'un pot rond de cette largeur : 2,5 cm d'ordinaire, 4 cm dans un bac plus grand qu'un grand pot. */
-const clayForWidth = (widthCm: number, layerCm: number) => (Math.PI * (widthCm / 2) ** 2 * layerCm) / 1000;
-/** Les sacs de billes d'argile du commerce, en litres. */
-const CLAY_SACKS = [3, 5, 10, 20, 50];
 
 /** Volume d'un pot rond aussi haut que large (l'inverse de roundPotWidthCm). */
 const litersForWidth = (widthCm: number) => Math.round((0.707 * widthCm ** 3) / 1000);
@@ -139,11 +130,6 @@ export function shoppingList({ plants, events, springWishes = [], now, climate, 
   const pots = new Map<string, { title: string; detail: string; names: string[]; plantIds: string[]; chooseSizeOf?: string }>();
   const soil = new Map<string, { liters: number; names: Set<string> }>();
   const indoor: Need[] = [];
-  const clay = { liters: 0, names: [] as string[] };
-  const addClay = (need: Need, liters: number) => {
-    clay.liters += liters;
-    clay.names.push(need.name);
-  };
   const feeds = new Map<FeedFamily, { names: string[]; plantIds: string[] }>();
 
   const addPot = (key: string, title: string, need: Need, chooseSizeOf?: string) => {
@@ -180,13 +166,11 @@ export function shoppingList({ plants, events, springWishes = [], now, climate, 
       // Même libellé que la fiche : « Pot conseillé : grand (31 à 40 cm) », avec « choisir la taille ».
       addPot(`guess-${guessed ?? fiche.widthCm}`, potLabel(need.entry, "unknown").text, need, need.plantId);
       addSoil(need, fiche.liters);
-      addClay(need, guessed ? CLAY_LITERS[guessed] : clayForWidth(fiche.widthCm, 2.5));
       return;
     }
     const size: KnownPotSize = noted;
     addPot(size, SIZE_TITLES[size], need);
     addSoil(need, POT_LITERS[size]);
-    addClay(need, CLAY_LITERS[size]);
   };
 
   for (const resolved of plants) {
@@ -205,7 +189,6 @@ export function shoppingList({ plants, events, springWishes = [], now, climate, 
       const next = nextPotFor(entry, subject.potSize, history.repots);
       addPot(`width-${next.widthCm}`, `Pot d’environ ${next.widthCm} cm de large`, need);
       addSoil(need, next.size ? POT_LITERS[next.size] : litersForWidth(next.widthCm));
-      addClay(need, next.size ? CLAY_LITERS[next.size] : clayForWidth(next.widthCm, 4));
     }
     // L'engrais de sa fiche, s'il sert maintenant ou dans les 6 semaines.
     const feeding = feedingFor(entry.id);
@@ -238,11 +221,6 @@ export function shoppingList({ plants, events, springWishes = [], now, climate, 
     const rounded = Math.max(1, Math.ceil(liters));
     const amount = line === "compost" || line === "sand" ? `≈ ${rounded} L` : `${rounded} L, ${sackText(rounded)}`;
     items.push({ id: look.id, section: line === "seed" ? "seeds" : "soil", icon: line === "seed" ? "🌱" : "🟫", title: `${look.title} · ${amount}`, detail: `${look.detail} · ${activityGroupSummary([...names])}`, plantIds: [] });
-  }
-  if (clay.liters > 0) {
-    const rounded = Math.max(1, Math.ceil(clay.liters));
-    const sack = CLAY_SACKS.find((size) => rounded <= size);
-    items.push({ id: "clay", section: "soil", icon: "🟤", title: `Billes d’argile · ≈ ${rounded} L, ${sack ? `un sac de ${sack} L` : sackText(rounded)}`, detail: `2 à 3 cm au fond de chaque pot, pour drainer · ${activityGroupSummary(clay.names)}`, plantIds: [] });
   }
   for (const [family, line] of feeds) {
     items.push({ id: `feed:${family}`, section: "feed", icon: "🌿", title: FEED_TITLES[family], detail: activityGroupSummary(line.names), plantIds: line.plantIds });

@@ -27,7 +27,7 @@ test("les conseils se lisent en entier, sans « … » (retour du 15/10)", async
   const errors = trackErrors(page);
   const now = await atDate(page, new Date(2026, 9, 15, 10));
   await mockWeather(page);
-  // De l'ail à planter en octobre : la liste a un pot, du terreau et des billes d'argile.
+  // De l'ail à planter en octobre : la liste a un pot et du terreau.
   await seedBalcony(page, { plants: ["thyme"], now, wateredDaysAgo: 1, extra: { "balco.garden.plants.v1": JSON.stringify([{ id: "garlic-e2e", catalogId: "garlic", addedAt: now.toISOString(), toPlant: true }]) } });
   await open(page, "/shopping", "Liste de courses");
   const soil = page.getByText(/^Un terreau neuf, sans tourbe si possible · /u);

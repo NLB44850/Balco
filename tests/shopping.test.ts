@@ -23,8 +23,9 @@ describe("liste de courses pour la jardinerie", () => {
     const soil = items.filter((item) => item.section === "soil");
     expect(soil.length).toBeGreaterThan(0);
     expect(soil[0].title).toMatch(/^Terreau · \d+ L, un sac de \d+ L$/u);
-    // Billes d'argile : 2 à 3 cm au fond du grand pot, environ 3 L.
-    expect(items.find((item) => item.id === "clay")).toMatchObject({ section: "soil", title: "Billes d’argile · ≈ 3 L, un sac de 3 L" });
+    // Plus de billes d'argile (15/10 : la couche du fond ne draine pas) ; le pot est dit percé.
+    expect(items.some((item) => item.id === "clay")).toBe(false);
+    expect(items.find((item) => item.section === "pots")?.detail).toMatch(/^Percé au fond/u);
   });
 
   it("pot noté « Je ne sais pas » : la taille conseillée par la fiche, dite comme telle, et « choisir la taille »", () => {
@@ -46,7 +47,7 @@ describe("liste de courses pour la jardinerie", () => {
     const items = shoppingList({ plants: [], events: [], springWishes: ["cherry-tomato"], now: february });
     expect(items.map((item) => item.id)).toEqual(expect.arrayContaining(["seed-pots", "seed-soil"]));
     expect(items.some((item) => item.section === "pots")).toBe(false);
-    // Pas de pot, pas de billes d'argile (les godets n'en ont pas besoin).
+    // Pas de pot pour un semis en godets.
     expect(items.some((item) => item.id === "clay")).toBe(false);
     // Fin avril : semis au chaud, et la plantation de mai tombe dans les 6 semaines : son pot aussi.
     const april = shoppingList({ plants: [], events: [], springWishes: ["cherry-tomato"], now: new Date(2027, 3, 20) });

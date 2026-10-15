@@ -85,7 +85,7 @@ téléphone avant la suivante. Pour chaque étape, on cherche aussi le même dé
   première semaine, puis semaines, puis mois à partir de 8 semaines, puis années (« Depuis 4 semaines » en haut,
   « Sur ton balcon depuis 4 semaines » dans « Sa progression »).
 
-## Étape 6 : réponse de Nora (faite le 15/10, à valider)
+## Étape 6 : réponse de Nora (faite le 15/10, côté serveur visible après la fusion)
 
 Fait : la phrase venait du faux service d'IA des tests (`e2e/fake-anthropic.mjs`), jamais de la vraie Nora ; elle dit
 maintenant « Réponse simulée (faux service des tests, pas une vraie réponse de Nora) ». Vérifié : aucun texte de secours
@@ -98,7 +98,12 @@ avec « Réessayer ». Test `ai.integration` : panne, réponse vide, illisible o
   ou une vraie réponse. Un texte de secours ne dit jamais que tout va bien (« Nora ne peut pas répondre pour l'instant,
   réessaie dans un moment »), et la question n'est pas décomptée.
 
-## Étape 7 : billes d'argile au fond des pots
+## Étape 7 : billes d'argile au fond des pots (faite le 15/10, à valider)
+
+Fait : pas confirmé (`docs/sources-drainage.md`), textes validés par le porteur avant le changement. Pas-à-pas :
+« Vérifie que ton pot a un trou au fond. » (dessin `pot-holes`, le dessin des billes est retiré) ; billes retirées de
+« Ce qu'il te faut » et de la liste de courses ; « Pour alléger : des pots en plastique ou en résine plutôt qu’en terre
+cuite. » ; 13 conseils des fiches refaits (« Un pot bien percé, et vide la soucoupe après l’arrosage. »).
 
 - Revérifier sur deux sources sérieuses (notées dans `docs/sources-*.md`). Si ce n'est pas confirmé : « Vérifie que ton
   pot a un trou au fond », retirer les billes de la liste de courses, revoir « Pour alléger ». Montrer les textes au
