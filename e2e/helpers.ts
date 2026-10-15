@@ -56,6 +56,8 @@ type Seed = {
   extra?: Record<string, string>;
   /** La date du balcon (par défaut maintenant) : la même que l'horloge de la page quand le test la fixe. */
   now?: Date;
+  /** Choix pour l'hiver déjà fait, par plante (« basil »: "outside") : pour un test qui ne parle pas de l'hiver. */
+  winter?: Record<string, "harvest" | "indoors" | "outside">;
   /** Laisser la grande carte d'arrivée des temps forts s'ouvrir (par défaut déjà vue, pour ne pas gêner les autres tests). */
   eventIntro?: boolean;
 };
@@ -80,7 +82,12 @@ export const DAY_MS = 86_400_000;
  */
 export async function seedBalcony(page: Page, seed: Seed) {
   const now = seed.now?.getTime() ?? Date.now();
-  const plants = seed.plants.map((catalogId, index) => ({ id: `${catalogId}-e2e`, catalogId, addedAt: new Date(now - (30 - index) * DAY_MS).toISOString() }));
+  const plants = seed.plants.map((catalogId, index) => ({
+    id: `${catalogId}-e2e`,
+    catalogId,
+    addedAt: new Date(now - (30 - index) * DAY_MS).toISOString(),
+    ...(seed.winter?.[catalogId] ? { winter: { choice: seed.winter[catalogId], decidedAt: new Date(now - 2 * DAY_MS).toISOString() } } : {}),
+  }));
   const events = [
     ...(seed.wateredDaysAgo === undefined ? [] : plants.map((plant) => ({ id: `w-${plant.id}`, plantId: plant.id, type: "watering", completedAt: new Date(now - seed.wateredDaysAgo! * DAY_MS).toISOString(), source: "manual" }))),
     ...Object.entries(seed.waterings ?? {}).flatMap(([catalogId, days]) => days.map((days) => ({ id: `w-${catalogId}-${days}`, plantId: `${catalogId}-e2e`, type: "watering", completedAt: new Date(now - days * DAY_MS).toISOString(), source: "manual" }))),

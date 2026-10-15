@@ -37,7 +37,7 @@ const QUERY = {
   current: "temperature_2m,apparent_temperature,weather_code,is_day",
   hourly: "precipitation,precipitation_probability,wind_gusts_10m",
   daily: "precipitation_sum,temperature_2m_min,temperature_2m_max,wind_gusts_10m_max",
-  forecast_days: "2",
+  forecast_days: "4",
   timezone: "auto",
 };
 

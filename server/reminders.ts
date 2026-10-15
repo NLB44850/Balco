@@ -4,6 +4,7 @@ import { careProfileFor, resolvePlants, type GardenPlant } from "../lib/garden/g
 import { awayOn, isValidVacation, type Vacation } from "../lib/garden/vacation";
 import type { OnboardingAnswers } from "../lib/plants/catalog";
 import { isPotSize } from "../lib/plants/pot-size";
+import { parseWinterPlan } from "../lib/garden/winter-plan";
 import {
   decideReminders,
   type MaintenanceEvent,
@@ -198,6 +199,7 @@ function toSyncPlant(row: typeof reminderPlants.$inferSelect): SyncPlant | null 
     varietyId: row.varietyId ?? undefined,
     ...(isPotSize(row.potSize) && row.potSize !== "unknown" ? { potSize: row.potSize } : {}),
     ...(row.toPlant ? { toPlant: true } : {}),
+    ...(parseWinterPlan(row.winterJson) ? { winter: parseWinterPlan(row.winterJson) } : {}),
     addedAt: (row.addedAt ?? row.createdAt).toISOString(),
     updatedAt: (row.clientUpdatedAt ?? row.updatedAt).toISOString(),
     removedAt: row.removedAt?.toISOString(),
@@ -265,6 +267,7 @@ async function applyPush(db: Db, userId: number, push: SyncPush) {
       addedAt: new Date(plant.addedAt),
       removedAt: plant.removedAt ? new Date(plant.removedAt) : null,
       toPlant: plant.toPlant ? 1 : 0,
+      winterJson: plant.winter ? JSON.stringify(plant.winter) : null,
       active: plant.removedAt ? 0 : 1,
       clientUpdatedAt: incomingUpdatedAt,
     };

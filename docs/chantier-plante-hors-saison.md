@@ -81,7 +81,7 @@ Une étape = un commit testé, validée sur son téléphone avant la suivante. D
   après le gel qui noircit le feuillage ; oca sans « Fin de saison » en octobre). Les questions étaient : seuils des alertes gel du catalogue à aligner ou non ; plantes
   vivaces frileuses (citronnier, dahlia…) : « Fin de saison » ou un autre mot ; dahlia et oca, cas à part (attendre
   que le gel noircisse le feuillage).
-- Étape 2 codée le 15/10, à valider : `lib/garden/off-season.ts` (`offSeasonOf`), ton gris `rest` dans
+- Étape 2 validée le 15/10 (« Étape 2 validée ») : `lib/garden/off-season.ts` (`offSeasonOf`), ton gris `rest` dans
   `lib/garden/day-plan.ts` (`calmStatus` : à la place de « Nouvelle » ou « En forme », jamais à la place d'une alerte).
   Règles : une annuelle (frileuse, ou qui finit au fil des cueillettes) est en « Fin de saison » après son dernier mois
   de récolte de l'été ou de l'automne, et en janvier-février ; une frileuse dès ce dernier mois, à partir de septembre
@@ -91,3 +91,25 @@ Une étape = un commit testé, validée sur son téléphone avant la suivante. D
   pas concernées. Le catalogue le dit sur la carte « Déjà sur mon balcon », en gris (plus d'orange) et dans le message
   après l'ajout. L'accueil (« déjà des plantes ») ajoute les plantes installées : même état. Ses gestes restent (la
   question « Ta saison de basilic est finie ? » garde sa place). Tests `tests/off-season.test.ts`, e2e `29-hors-saison`.
+- Étape 3 codée le 15/10, à valider :
+  - Choix gardé sur la plante, donc dans la sauvegarde du compte : `GardenPlant.winter` (`lib/garden/winter-plan.ts` :
+    `harvest`, `indoors` ou `outside`, avec le jour), colonne `winterJson` (migration 0019), synchro testée.
+  - Logique `lib/garden/winter-choice.ts` : concerne une frileuse en fin de saison ou à rentrer avant l'hiver (étape 2).
+    Réponses dans l'ordre : « Tout récolter » (annuelles seulement), « Le rentrer à l'intérieur » (seulement si
+    l'étape 1 dit oui ou quelques semaines), « Le laisser dehors ». Textes accordés (« Ton basilic n'aime pas le froid.
+    Que veux-tu faire ? », « Il souffre quand les nuits passent sous 10 °C. », estimation dite quand il le faut).
+  - Aujourd'hui : « Décide pour ton basilic avant le froid » le premier jour (jour gardé `winter-asked:<id>:<jour>`),
+    puis seulement quand une nuit sous son seuil est annoncée dans les 3 jours (`coldNightAhead`, minimales de la météo
+    sur 4 jours : `nights` du `WeatherSnapshot`, `forecast_days` 4 sur le téléphone et le serveur). Dès deux plantes :
+    « Prépare 2 plantes pour le froid » (groupe `winter`), une feuille du bas pour choisir plante par plante.
+  - Fiche : la carte avec les trois réponses tant que rien n'est choisi, puis « Pour l'hiver : le rentrer à
+    l'intérieur » et « Changer d'avis ».
+  - Harmonisé avec « Ta saison … est finie ? » (jamais deux questions) : sans réponse, la question de fin de saison
+    attend ; « Tout récolter » → « Ton basilic est-il tout récolté ? » chaque jour, avec l'astuce de conservation
+    (`lib/plants/conservation.ts`, 14 plantes, sources `docs/sources-conservation.md`), puis « Ton pot est libre » ;
+    « Le laisser dehors » → rien jusqu'au soir de gel (« Récolte tout ton basilic avant cette nuit »), puis « Ta saison
+    de basilic est finie ? » le lendemain ; « Le rentrer » → plus de question, et l'alerte gel ne dit plus « récolte
+    tout » mais « protège » (`careProfileFor`), en attendant l'étape 4.
+  - Version de test : simulation météo « Nuit fraîche » (9 °C, sous le seuil du basilic, au-dessus de son alerte gel).
+  - Tests `tests/winter-choice.test.ts` ; les anciens tests sur une frileuse en automne lui donnent « Le laisser dehors »,
+    ceux de « Ta saison … est finie ? » sans gel portent sur la bourrache (rustique) ; e2e `30-choix-hiver`.

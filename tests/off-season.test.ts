@@ -54,7 +54,8 @@ describe("état hors saison (chantier « Plante hors saison », étape 2)", () =
     ]);
     const [basil, thyme] = planDay({ plants: plants.slice(0, 2), events: [], now });
     expect(basil.status).toEqual({ tone: "rest", label: "Fin de saison" });
-    expect(basil.first?.title).toBe("Ta saison de basilic est finie ?");
+    // Frileuse : son choix pour l'hiver d'abord (étape 3).
+    expect(basil.first?.title).toBe("Décide pour ton basilic avant le froid");
     expect(thyme.status).toEqual({ tone: "new", label: "Nouvelle" });
     const [mint] = planDay({ plants: plants.slice(2), events: [], now: on(11) });
     expect(mint.status).toEqual({ tone: "rest", label: "Au repos jusqu’en mars" });

@@ -34,6 +34,7 @@ import { replantSoilTip, rotationNote } from "@/lib/garden/replant";
 import { startActivity } from "@/lib/plants/calendar";
 import { MONTH_LONG } from "@/lib/plants/catalog";
 import { potSizeOf } from "@/lib/plants/pot-size";
+import { conservationTip } from "@/lib/plants/conservation";
 import type { ClimateInfo } from "@/lib/plants/climate";
 import { addSpringWish, nextSpringReminder, SPRING_REMINDER_SOURCE, springReminderContent } from "@/lib/garden/spring";
 import { getCatalogPlant, type CatalogPlant } from "@/lib/plants/catalog";
@@ -60,6 +61,9 @@ export function useFreePot({ climate, onDone, overlay }: { climate?: ClimateInfo
   const choices = resolved ? freePotChoices(resolved, onboarding, { month, climate, ownedCatalogIds: resolvedPlants.map(({ entry }) => entry.id), seed: dayKey(now) }) : [];
   const close = () => setOpen(null);
   const seasonal = resolved ? endsWithSeason(resolved.entry) : false;
+  // « Tout récolter » choisi pour l'hiver (chantier « Plante hors saison ») : la question devient « Ton basilic est-il
+  // tout récolté ? », avec l'astuce de conservation.
+  const seasonWording = seasonal && resolved?.plant.winter?.choice !== "harvest";
   // Proposée quand on ne peut plus ressemer : la plante reviendra dans les envies du printemps.
   const offerSpring = choices.length > 0 && !choices.some((choice) => choice.kind === "restart");
   useEffect(() => {
@@ -118,10 +122,10 @@ export function useFreePot({ climate, onDone, overlay }: { climate?: ClimateInfo
     <BottomSheet visible={open !== null && resolved !== null} onClose={close} overlay={open ? overlay : undefined}>
       {resolved && open?.stage === "question" && (
         <View style={styles.sheet}>
-          <Text style={[styles.kind, { color: colors.primary }]}>{seasonal ? "🍂  Fin de saison" : "🧺  Fin de la récolte"}</Text>
-          <Text style={[styles.title, { color: colors.foreground }]}>{seasonal ? seasonQuestion(resolved.entry) : harvestQuestion(resolved.entry)}</Text>
-          <Text style={[styles.body, { color: colors.muted }]}>{open.detail ?? (seasonal ? seasonQuestionDetail(false) : HARVEST_QUESTION_DETAIL)}</Text>
-          <Button label={seasonal ? "Oui, la saison est finie" : "Oui, tout est récolté"} onPress={() => void answerYes(resolved.plant.id)} />
+          <Text style={[styles.kind, { color: colors.primary }]}>{seasonWording ? "🍂  Fin de saison" : "🧺  Fin de la récolte"}</Text>
+          <Text style={[styles.title, { color: colors.foreground }]}>{seasonWording ? seasonQuestion(resolved.entry) : harvestQuestion(resolved.entry)}</Text>
+          <Text style={[styles.body, { color: colors.muted }]}>{open.detail ?? (seasonWording ? seasonQuestionDetail(false) : conservationTip(resolved.entry.id) ?? HARVEST_QUESTION_DETAIL)}</Text>
+          <Button label={seasonWording ? "Oui, la saison est finie" : "Oui, tout est récolté"} onPress={() => void answerYes(resolved.plant.id)} />
           <Button variant="secondary" label="Pas encore" onPress={close} />
         </View>
       )}

@@ -22,6 +22,8 @@ import { showGlobalToast } from "@/lib/ui/global-toast";
 import type { MaintenanceEvent } from "@/lib/reminders/reminder-engine";
 import { careWeeksLabel, celebrationFor, milestoneDate, plantProgress, sinceLabel, withCheer } from "@/lib/garden/progress";
 import { endsWithSeason, harvestedToastText, isHarvestedOnce } from "@/lib/garden/harvest-end";
+import { asksWinter } from "@/lib/garden/winter-choice";
+import { useChooseWinter, WinterChoiceCard, WinterChoiceSummary } from "@/components/winter-choice";
 import { IconSymbol } from "@/components/ui/icon-symbol";
 import { Button } from "@/components/ui/button";
 import { BackButton } from "@/components/ui/nav-buttons";
@@ -60,7 +62,7 @@ export default function PlantScreen() {
   const insets = useSafeAreaInsets();
   const { width } = useWindowDimensions();
   const { id, pot } = useLocalSearchParams<{ id: string; /** « 1 » : ouvrir « Dans quel pot ? » (carte « Vérifie tes pots »). */ pot?: string }>();
-  const { loaded, resolvedPlants, pastPlants, events, awards, markAwardsSeen, logEvent, removeEvent, removePlant, restorePlant, renamePlant, setPlantVariety, setPlantPotSize } = useGarden();
+  const { loaded, resolvedPlants, pastPlants, events, awards, markAwardsSeen, logEvent, removeEvent, removePlant, restorePlant, renamePlant, setPlantVariety, setPlantPotSize, setPlantWinter } = useGarden();
   const { plan, ready, snoozes, reminderSettings, climate, coach, isPlus } = useDayPlan();
   const { photos, removePhoto, restorePhoto, forgetPhotoFile } = usePlantPhotos();
   const [shownPhotoId, setShownPhotoId] = useState<string | null>(null);
@@ -76,6 +78,8 @@ export default function PlantScreen() {
   // Après la récolte d'une plante récoltée en une fois. Pot vidé ou donné à une autre plante : la fiche se ferme.
   const freePot = useFreePot({ climate, onDone: (text, kind) => (kind === "restart" ? showToast(text) : back()), overlay: <><UndoToast message={toast} onDone={hideToast} bottom={insets.bottom + 16} />{celebration}</> });
   const capture = usePlantPhotoCapture(showToast);
+  // Frileuse en fin de saison : son choix pour l'hiver (chantier « Plante hors saison »).
+  const chooseWinter = useChooseWinter((text, onUndo) => showToast(text, onUndo));
   const now = clockNow();
   const resolved = resolvedPlants.find((item) => item.plant.id === id);
   const back = () => (router.canGoBack() ? router.back() : router.replace("/(tabs)/balcony"));
@@ -108,6 +112,9 @@ export default function PlantScreen() {
   const statusColor = status.tone === "weather" ? colors.frost : status.tone === "watch" ? colors.warning : status.tone === "good" ? colors.primary : colors.muted;
   const variety = plantVariety(resolved);
   const gesture = day?.first ?? null;
+  // « Décide pour ton basilic avant le froid » : la carte du choix pour l'hiver le dit déjà, pas deux fois.
+  const winterAsked = asksWinter(resolved, now, climate);
+  const decideToday = gesture?.source.type === "harvest-end" && gesture.source.stage === "decide";
   // Le geste du pot de ce mois (rempoter ou terre du dessus) : le pas-à-pas de la fiche le suit.
   const potGesture = day?.gestures.find((candidate) => candidate.source.type === "season" && candidate.source.activity.kind === "repot");
   const potTask = potGesture?.source.type === "season" && potGesture.source.activity.topdress ? "topdress" : "repot";
@@ -257,12 +264,12 @@ export default function PlantScreen() {
 
           {/* Le prochain geste, en un bouton. */}
           {ready && <FadeIn delay={40} style={[styles.next, { borderColor: colors.border }]}>
-            {gesture && !gesture.done && (
+            {gesture && !gesture.done && !decideToday && (
               <>
                 <Text style={[styles.kicker, { color: colors.primary }]}>Aujourd’hui · {gesture.minutes} min</Text>
                 <Text style={[styles.nextTitle, { color: colors.foreground }]}>{gesture.title}</Text>
                 <Text style={[styles.text, { color: colors.muted }]}>{gesture.instruction}</Text>
-                <Button label={gesture.source.type === "harvest-end" ? (gesture.source.stage === "question" ? (endsWithSeason(entry) ? "Oui, la saison est finie" : "Oui, tout est récolté") : "Choisir quoi y mettre") : "C’est fait"} onPress={() => void doGesture()} style={styles.cta} />
+                <Button label={gesture.source.type === "harvest-end" ? (gesture.source.stage === "question" ? (endsWithSeason(entry) && plant.winter?.choice !== "harvest" ? "Oui, la saison est finie" : "Oui, tout est récolté") : "Choisir quoi y mettre") : "C’est fait"} onPress={() => void doGesture()} style={styles.cta} />
               </>
             )}
             {gesture?.done && (
@@ -288,11 +295,23 @@ export default function PlantScreen() {
             {canMarkBloom(resolved, events, now) && (
               <Button variant="link" label={`${byForm(entry, "Il a fleuri ?", "Elle a fleuri ?", "Ils ont fleuri ?", "Elles ont fleuri ?")} Le noter dans ton herbier`} onPress={() => void markBloom()} />
             )}
-            {!gesture && (
+            {(!gesture || decideToday) && !(winterAsked && !plant.winter) && (
               <>
                 <Text style={[styles.nextTitle, { color: colors.foreground }]}>Rien à faire aujourd’hui</Text>
                 <Text style={[styles.text, { color: colors.muted }]}>{name} se repose. Balco te dira quand revenir.</Text>
               </>
+            )}
+            {/* Frileuse en fin de saison : « Ton basilic n'aime pas le froid. Que veux-tu faire ? », puis le choix fait. */}
+            {winterAsked && !plant.winter && <WinterChoiceCard resolved={resolved} climate={climate} onChoose={(choice) => void chooseWinter(resolved, choice)} />}
+            {winterAsked && plant.winter && (
+              <WinterChoiceSummary
+                resolved={resolved}
+                onChange={() => {
+                  const previous = plant.winter;
+                  void setPlantWinter(plant.id, undefined);
+                  showToast("Choisis à nouveau pour l’hiver", () => void setPlantWinter(plant.id, previous));
+                }}
+              />
             )}
           </FadeIn>}
 

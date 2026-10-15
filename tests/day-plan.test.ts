@@ -15,7 +15,8 @@ import { groupReminders } from "../lib/reminders/reminder-groups";
 // Le balcon de démonstration du test utilisateur : 5 plantes, arrosées il y a 3 jours, début octobre à Lyon.
 const NOW = new Date(2026, 9, 4, 11);
 const DEMO = ["basil", "mint", "thyme", "cherry-tomato", "strawberry"];
-const plants = resolvePlants(DEMO.map((id) => ({ id: `${id}-1`, catalogId: id, addedAt: new Date(2026, 8, 5).toISOString() })));
+// Ces tests ne parlent pas de l'hiver : les frileuses ont déjà choisi « Le laisser dehors » (rien ne change pour elles).
+const plants = resolvePlants(DEMO.map((id) => ({ id: `${id}-1`, catalogId: id, addedAt: new Date(2026, 8, 5).toISOString(), winter: { choice: "outside" as const, decidedAt: "2026-08-01T00:00:00.000Z" } })));
 const at = (days: number, hour = 9) => new Date(2026, 9, 4 - days, hour).toISOString();
 const watered: MaintenanceEvent[] = plants.map(({ plant }) => ({ id: `w-${plant.id}`, plantId: plant.id, type: "watering", completedAt: at(3), source: "manual" }));
 
@@ -130,8 +131,8 @@ describe("état d'une plante : une couleur, un sens", () => {
   });
 
   it("orange : un pot choisi trop petit pour la plante ; sans taille choisie, rien", () => {
-    const small = resolvePlants([{ id: "tomato-s", catalogId: "cherry-tomato", potSize: "small", addedAt: new Date(2026, 8, 5).toISOString() }]);
-    const unknown = resolvePlants([{ id: "tomato-u", catalogId: "cherry-tomato", addedAt: new Date(2026, 8, 5).toISOString() }]);
+    const small = resolvePlants([{ id: "tomato-s", catalogId: "cherry-tomato", potSize: "small", winter: { choice: "outside" as const, decidedAt: "2026-08-01T00:00:00.000Z" }, addedAt: new Date(2026, 8, 5).toISOString() }]);
+    const unknown = resolvePlants([{ id: "tomato-u", catalogId: "cherry-tomato", winter: { choice: "outside" as const, decidedAt: "2026-08-01T00:00:00.000Z" }, addedAt: new Date(2026, 8, 5).toISOString() }]);
     const events = [{ ...watered[0], plantId: "tomato-s" }, { ...watered[0], id: "w-u", plantId: "tomato-u" }];
     expect(planDay({ plants: small, events, now: NOW })[0].status).toMatchObject({ tone: "watch", label: expect.stringMatching(/^Pot trop (petit|peu profond)$/u), worry: true });
     expect(planDay({ plants: unknown, events, now: NOW })[0].status.label).toBe("Fin de saison");

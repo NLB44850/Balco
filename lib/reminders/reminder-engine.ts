@@ -71,6 +71,8 @@ export type WeatherSnapshot = {
     temperatureMaxC: number;
     windGustKmhMax: number;
   };
+  /** Les minimales des jours qui viennent, aujourd'hui d'abord (chantier « Plante hors saison » : une nuit froide arrive). */
+  nights?: number[];
 };
 
 export type ReminderSettings = {

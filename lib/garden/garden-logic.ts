@@ -7,6 +7,7 @@ import { endsWithSeason, seasonFrostText } from "../plants/season-end";
 import type { MaintenanceEvent, MaintenanceTaskType, PlantCareProfile } from "../reminders/reminder-engine";
 import { alertCauseOf } from "../reminders/alert-cause";
 import type { PotSize } from "../plants/pot-size";
+import type { WinterPlan } from "./winter-plan";
 import { wateringIntervalHours, wateringLiters } from "../plants/watering";
 
 export type GardenPlant = {
@@ -28,6 +29,8 @@ export type GardenPlant = {
    * ou « Plante… »). Absent ou false : installée sur le balcon. Cocher le premier geste l'installe.
    */
   toPlant?: boolean;
+  /** Frileuse en fin de saison : le choix pour l'hiver (lib/garden/winter-plan.ts) ; absent : pas encore décidé. */
+  winter?: WinterPlan;
 };
 
 export type ResolvedPlant = { plant: GardenPlant; entry: CatalogPlant };
@@ -124,7 +127,8 @@ export function careProfileFor(resolved: ResolvedPlant, balcony?: { covered?: bo
     ...(balcony?.covered ? { sheltered: true } : {}),
     allowedTaskTypes: Array.from(new Set<MaintenanceTaskType>([...entry.tasks.map((task) => task.type), "observation", "protection"])),
     soilCheckCm: soilCheckDepthCm(entry),
-    ...(endsWithSeason(entry) && entry.care.frostSensitive ? { seasonFrost: seasonFrostText(entry) } : {}),
+    // Choisie pour rentrer à l'intérieur (chantier « Plante hors saison ») : le gel ne finit pas sa saison.
+    ...(endsWithSeason(entry) && entry.care.frostSensitive && plant.winter?.choice !== "indoors" ? { seasonFrost: seasonFrostText(entry) } : {}),
   };
 }
 

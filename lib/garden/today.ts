@@ -29,10 +29,10 @@ export type TodayItem =
   | (TodayBase & { kind: "task"; done: boolean; task: SessionTask })
   | (TodayBase & { kind: "season"; done: boolean; activity: CalendarActivity })
   /** « Tes radis sont-ils tous récoltés ? » ou « Ton pot est libre » : la ligne ouvre la feuille du pot libre. */
-  | (TodayBase & { kind: "harvest-end"; done: false; stage: "question" | "free"; resolved: ResolvedPlant });
+  | (TodayBase & { kind: "harvest-end"; done: false; stage: "question" | "free" | "decide"; resolved: ResolvedPlant });
 
 /** Les gestes regroupés en une ligne dès qu'ils concernent deux plantes : arrosages, récoltes, semis, plantations, engrais. */
-export type GroupedGesture = "watering" | "harvest" | "planting" | "feeding" | "season-end";
+export type GroupedGesture = "watering" | "harvest" | "planting" | "feeding" | "season-end" | "winter";
 
 /**
  * Une ligne de l'écran : un geste seul, les arrosages ou les récoltes regroupés (« Vérifie la terre de 3 plantes »,
@@ -53,6 +53,8 @@ const GROUP_LOOK: Record<GroupedGesture, { icon: string; tone: TodayTone; title:
   feeding: { icon: "🌿", tone: "care", title: (count) => `Nourris ${count} plantes`, todo: () => FEED_WHEN },
   // 12/10 : « Ta saison de basilic est finie ? », « Tes radis sont-ils tous récoltés ? »… une ligne chacune, c'était trop.
   "season-end": { icon: "🍂", tone: "care", title: (count) => `Fais le point sur ${count} plantes en fin de saison`, todo: () => "Saison finie ? Le pot est libre" },
+  // Chantier « Plante hors saison » : « Décide pour ton basilic avant le froid », regroupé dès deux plantes.
+  winter: { icon: "🍂", tone: "care", title: (count) => `Prépare ${count} plantes pour le froid`, todo: () => "Un choix par plante" },
 };
 
 /** Le sous-titre d'un groupe d'engrais : quand le donner. */
@@ -85,6 +87,7 @@ function groupedAs(item: TodayItem): GroupedGesture | null {
   if (item.kind === "season" && (item.activity.kind === "sow" || item.activity.kind === "plant")) return "planting";
   if (item.gesture === "fertilizing" && item.kind === "task") return "feeding";
   if (item.kind === "harvest-end" && item.stage === "question") return "season-end";
+  if (item.kind === "harvest-end" && item.stage === "decide") return "winter";
   return null;
 }
 
@@ -209,7 +212,7 @@ function rowFor(day: PlantDay, gesture: PlantDay["gestures"][number], groups: Re
     };
   }
   if (source.type === "harvest-end") {
-    return { kind: "harvest-end", key: gesture.key, ...common, tone: "care", icon: endsWithSeason(source.resolved.entry) ? "🍂" : "🧺", title: gesture.title, subtitle: gesture.instruction, done: false, stage: source.stage, resolved: source.resolved, ...(source.quiet ? { quiet: true } : {}) };
+    return { kind: "harvest-end", key: gesture.key, ...common, tone: "care", icon: source.stage === "decide" || endsWithSeason(source.resolved.entry) ? "🍂" : "🧺", title: gesture.title, subtitle: gesture.instruction, done: false, stage: source.stage, resolved: source.resolved, ...(source.quiet ? { quiet: true } : {}) };
   }
   return { kind: "season", key: `season:${source.activity.key}`, ...common, tone: "season", icon: source.activity.entry.emoji, title: gesture.title, subtitle: "De saison · à faire ce mois-ci", done: gesture.done, activity: source.activity };
 }
@@ -253,7 +256,8 @@ const NOT_URGENT: GestureKind[] = ["fertilizing", "care"];
 /**
  * La liste telle qu'elle s'affiche : alertes, arrosages, récoltes, semis, plantations et engrais regroupés dès qu'il y
  * en a deux (une seule ligne « Vérifie la terre de N plantes », « Récolte ce qui est prêt sur N plantes », « Plante ou
- * sème N plantes de saison », « Nourris N plantes », « Fais le point sur N plantes en fin de saison »), autres gestes
+ * sème N plantes de saison », « Nourris N plantes », « Fais le point sur N plantes en fin de saison », « Prépare N
+ * plantes pour le froid »), autres gestes
  * de saison, puis, au-delà de
  * 5 lignes à faire, l'engrais et l'entretien repliés sous « X autres gestes, pas urgents ». Ce qui est fait passe à
  * la fin. Alertes, arrosages et récoltes restent toujours visibles.
@@ -261,7 +265,7 @@ const NOT_URGENT: GestureKind[] = ["fertilizing", "care"];
 export function layoutTodayList(items: TodayItem[]): TodayLine[] {
   const single = (item: TodayItem): TodayLine => ({ type: "item", key: item.key, item });
   const groups: Extract<TodayLine, { type: "group" }>[] = [];
-  for (const gesture of ["watering", "harvest", "planting", "feeding", "season-end"] as const) {
+  for (const gesture of ["watering", "harvest", "planting", "feeding", "season-end", "winter"] as const) {
     const members = items.filter((item) => groupedAs(item) === gesture);
     if (members.length < 2) continue;
     const look = GROUP_LOOK[gesture];

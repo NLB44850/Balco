@@ -110,6 +110,7 @@ function buildSnapshot(payload: OpenMeteoPayload, city: string, latitude: number
       temperatureMaxC: numberAt(daily.temperature_2m_max, 0),
       windGustKmhMax: numberAt(daily.wind_gusts_10m_max, 0),
     },
+    nights: (daily.temperature_2m_min ?? []).filter((value): value is number => typeof value === "number" && Number.isFinite(value)),
   };
 }
 

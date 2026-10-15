@@ -132,6 +132,8 @@ export const reminderPlants = mysqlTable("reminder_plants", {
   varietyId: varchar("varietyId", { length: 64 }),
   /** Taille du pot (lib/plants/pot-size.ts : small, medium, large, planter) ; NULL : « Je ne sais pas ». */
   potSize: varchar("potSize", { length: 16 }),
+  /** Frileuse en fin de saison : le choix pour l'hiver, en JSON (lib/garden/winter-plan.ts) ; NULL : pas décidé. */
+  winterJson: varchar("winterJson", { length: 255 }),
   addedAt: timestamp("addedAt"),
   removedAt: timestamp("removedAt"),
   /** 1 : choisie mais pas encore en terre (« à planter ») ; ni rappel ni alerte météo tant qu'elle l'est. */

@@ -8,6 +8,8 @@
  */
 import { followUpsFor } from "./follow-ups";
 import { offSeasonOf } from "./off-season";
+import { asksWinter, winterDecideSubtitle, winterDecideTitle, winterDecisionDue } from "./winter-choice";
+import { conservationTip } from "../plants/conservation";
 import {
   FREE_POT_TITLE,
   freePotIsQuiet,
@@ -59,8 +61,11 @@ export type GestureSource =
   | { type: "decision"; decision: ReminderDecision }
   | { type: "task"; task: SessionTask }
   | { type: "season"; activity: CalendarActivity }
-  /** Après la récolte d'une plante récoltée en une fois : la question « Tout récolté ? », puis le pot libre. */
-  | { type: "harvest-end"; stage: "question" | "free"; resolved: ResolvedPlant; quiet?: boolean };
+  /**
+   * Après la récolte d'une plante récoltée en une fois : la question « Tout récolté ? », puis le pot libre. `decide` :
+   * une frileuse en fin de saison, « Décide pour ton basilic avant le froid » (lib/garden/winter-choice.ts).
+   */
+  | { type: "harvest-end"; stage: "question" | "free" | "decide"; resolved: ResolvedPlant; quiet?: boolean };
 
 export type PlanGesture = {
   key: string;
@@ -117,6 +122,8 @@ export type DayPlanInput = {
   harvestEnds?: Map<string, HarvestEndState>;
   /** Coach d'arrosage Balco+ (étape 6b) : plante → conseil du jour ; absent en offre gratuite. */
   coach?: Map<string, CoachAdvice>;
+  /** Les minimales annoncées, aujourd'hui d'abord : une nuit froide ramène « Décide pour ton basilic avant le froid ». */
+  nights?: number[];
 };
 
 /** L'état d'une plante choisie mais pas encore en terre (Balcon, fiche). */
@@ -210,7 +217,7 @@ function statusOf(resolved: ResolvedPlant, gestures: PlanGesture[], events: Main
   return calmStatus(resolved, events, now, climate);
 }
 
-export function planDay({ plants, events, now, decisions = [], allDecisions = decisions, climate, postponed, repotSkips, harvestEnds, coach }: DayPlanInput): PlantDay[] {
+export function planDay({ plants, events, now, decisions = [], allDecisions = decisions, climate, postponed, repotSkips, harvestEnds, coach, nights }: DayPlanInput): PlantDay[] {
   const today = startOfDay(now);
   const todayKey = dayKey(now);
   const month = now.getMonth() + 1;
@@ -251,7 +258,24 @@ export function planDay({ plants, events, now, decisions = [], allDecisions = de
       const first: PlanGesture = { key: `harvest-end:${plantId}:question`, kind: "harvest", plantId, title: harvestQuestion(resolved.entry), instruction: HARVEST_QUESTION_DETAIL, minutes: 1, done: false, source: { type: "harvest-end", stage: "question", resolved } };
       return { resolved, gestures: [first], first, status: calmStatus(resolved, events, now, climate) };
     }
-    if (seasonQuestionDue(resolved, events, now, harvestEnd, climate)) {
+    // Frileuse en fin de saison (chantier « Plante hors saison ») : son choix pour l'hiver passe avant « Ta saison … est
+    // finie ? ». Sans réponse : « Décide pour ton basilic avant le froid » le premier jour, puis quand le froid arrive.
+    // « Tout récolter » : « Ton basilic est-il tout récolté ? » chaque jour, avec l'astuce de conservation. « Le
+    // laisser dehors » : la question de fin de saison attend le lendemain du soir de gel. « Le rentrer » : plus de question.
+    const winter = resolved.plant.winter;
+    let seasonQuestionWaits = false;
+    if (asksWinter(resolved, now, climate)) {
+      if (!winter && winterDecisionDue(resolved, now, harvestEnd, nights, climate)) {
+        const first: PlanGesture = { key: `harvest-end:${plantId}:decide`, kind: "harvest", plantId, title: winterDecideTitle(resolved.entry), instruction: winterDecideSubtitle(resolved.entry), minutes: 1, done: false, source: { type: "harvest-end", stage: "decide", resolved } };
+        return { resolved, gestures: [first], first, status: calmStatus(resolved, events, now, climate) };
+      }
+      if (winter?.choice === "harvest" && !resolved.entry.perennial && !harvestEnd?.answered) {
+        const first: PlanGesture = { key: `harvest-end:${plantId}:question`, kind: "harvest", plantId, title: harvestQuestion(resolved.entry), instruction: conservationTip(resolved.entry.id) ?? HARVEST_QUESTION_DETAIL, minutes: 1, done: false, source: { type: "harvest-end", stage: "question", resolved } };
+        return { resolved, gestures: [first], first, status: calmStatus(resolved, events, now, climate) };
+      }
+      seasonQuestionWaits = !winter || winter.choice === "indoors" || (winter.choice === "outside" && !harvestEnd?.frostOn);
+    }
+    if (!seasonQuestionWaits && seasonQuestionDue(resolved, events, now, harvestEnd, climate)) {
       const first: PlanGesture = { key: `harvest-end:${plantId}:question`, kind: "harvest", plantId, title: seasonQuestion(resolved.entry), instruction: seasonQuestionDetail(isSeasonRetry(harvestEnd, now)), minutes: 1, done: false, source: { type: "harvest-end", stage: "question", resolved } };
       return { resolved, gestures: [first], first, status: calmStatus(resolved, events, now, climate) };
     }
