@@ -109,7 +109,7 @@ export default function CalendarScreen() {
   const subjects = useMemo<CalendarSubject[]>(
     () => starters
       ? starters.plants.map((entry) => ({ id: entry.id, entry, displayName: entry.name }))
-      : resolvedPlants.map((resolved) => ({ id: resolved.plant.id, entry: resolved.entry, displayName: plantDisplayName(resolved), addedAt: resolved.plant.addedAt, toPlant: resolved.plant.toPlant, ...potHistory(resolved.plant, events), repotSkippedUntil: repotSkips.get(resolved.plant.id), potSize: resolved.plant.potSize })),
+      : resolvedPlants.map((resolved) => ({ id: resolved.plant.id, entry: resolved.entry, displayName: plantDisplayName(resolved), addedAt: resolved.plant.addedAt, toPlant: resolved.plant.toPlant, ...potHistory(resolved.plant, events), repotSkippedUntil: repotSkips.get(resolved.plant.id), potSize: resolved.plant.potSize, ...(resolved.plant.winter?.choice === "indoors" ? { bringsIndoors: true } : {}) })),
     [events, repotSkips, resolvedPlants, starters],
   );
   const resolvedById = useMemo(() => new Map<string, ResolvedPlant>(resolvedPlants.map((resolved) => [resolved.plant.id, resolved])), [resolvedPlants]);

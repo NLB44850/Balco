@@ -25,7 +25,7 @@ import {
   seasonQuestionDue,
   type HarvestEndState,
 } from "./harvest-end";
-import { activityDone, calendarActivities, eventForActivity, startActivity, type CalendarActivity, type CalendarSubject } from "../plants/calendar";
+import { activityDone, calendarActivities, eventForActivity, isWinterShelterTask, startActivity, type CalendarActivity, type CalendarSubject } from "../plants/calendar";
 import { tasksForMonth, type CareTask } from "../plants/catalog";
 import { agree } from "../plants/grammar";
 import { potFit } from "../plants/pot-sheet";
@@ -226,7 +226,7 @@ export function planDay({ plants, events, now, decisions = [], allDecisions = de
   const eventIds = new Set(events.map((event) => event.id));
   // Pluie ou orage annoncés : on ne dit d'arroser aucune plante, même une fois l'alerte cochée.
   const rainComing = allDecisions.some((decision) => decision.cause === "rain" || decision.cause === "storm");
-  const subjectOf = (resolved: ResolvedPlant): CalendarSubject => ({ id: resolved.plant.id, entry: resolved.entry, displayName: plantDisplayName(resolved), addedAt: resolved.plant.addedAt, toPlant: resolved.plant.toPlant, ...potHistory(resolved.plant, events), repotSkippedUntil: repotSkips?.get(resolved.plant.id), potSize: resolved.plant.potSize });
+  const subjectOf = (resolved: ResolvedPlant): CalendarSubject => ({ id: resolved.plant.id, entry: resolved.entry, displayName: plantDisplayName(resolved), addedAt: resolved.plant.addedAt, toPlant: resolved.plant.toPlant, ...potHistory(resolved.plant, events), repotSkippedUntil: repotSkips?.get(resolved.plant.id), potSize: resolved.plant.potSize, ...(resolved.plant.winter?.choice === "indoors" ? { bringsIndoors: true } : {}) });
   const subjects = plants.filter((resolved) => !resolved.plant.toPlant).map(subjectOf);
   const seasonByPlant = new Map<string, CalendarActivity[]>();
   for (const activity of calendarActivities(subjects, month, { climate, now })) {
@@ -301,7 +301,9 @@ export function planDay({ plants, events, now, decisions = [], allDecisions = de
     // À l'intérieur : l'arrosage continue tout l'hiver, à son rythme (sauf une plante gardée au sec) ; pas d'engrais.
     const indoorWater = indoors && wateringIntervalOf(resolved) < 365 * 24 ? resolved.entry.tasks.find((task) => task.type === "watering") : undefined;
     const monthTasks = tasksForMonth(resolved.entry, month).filter((task) => !task.everyDays || spacedTaskDue(resolved, task, events, today));
-    const tasks = indoors ? [...(indoorWater ? [indoorWater] : []), ...monthTasks.filter((task) => task.type !== "watering" && task.type !== "fertilizing")] : monthTasks;
+    // Choisie pour rentrer : « Abrite le citronnier » ferait doublon avec « Rentre ton… » (vu le 16/10).
+    const ownTasks = resolved.plant.winter?.choice === "indoors" ? monthTasks.filter((task) => !isWinterShelterTask(task)) : monthTasks;
+    const tasks = indoors ? [...(indoorWater ? [indoorWater] : []), ...ownTasks.filter((task) => task.type !== "watering" && task.type !== "fertilizing")] : ownTasks;
     // La consigne de la plante, puis la quantité selon son pot (étape 6a) : « Arrose environ 1 L, jusqu'à ce que ça coule. »
     // Balco+ : le coach dit si la terre a soif et combien verser ; sinon, le rythme et la quantité selon le pot.
     const advice = coach?.get(plantId);

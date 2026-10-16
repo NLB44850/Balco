@@ -137,3 +137,8 @@ Une étape = un commit testé, validée sur son téléphone avant la suivante. D
     « Comment le rentrer, pas à pas » et « Changer d'avis ».
   - Choisie pour rentrer : plus d'alerte « Nuit fraîche : protège le basilic » (la ligne « Rentre » la remplace).
   - Tests `tests/indoors.test.ts`, e2e `31-rentrer`. Sources de l'arrosage d'hiver : `docs/sources-froid.md`.
+  - Validée le 16/10 (« parcours simple d'utilisation et de compréhension »), avec un retour : « Abrite le citronnier »
+    restait dans Saisons une fois le citronnier rentré. Les gestes d'hiver des fiches (`shelter` du citronnier, de la
+    citronnelle et de la stévia, `store-tubers` du dahlia, `isWinterShelterTask` de `lib/plants/calendar.ts`) ne
+    s'affichent plus, ni dans Saisons ni sur Aujourd'hui, dès qu'on a choisi de rentrer la plante (`bringsIndoors` du
+    `CalendarSubject`) ; ils restent pour une plante laissée dehors ou sans choix.

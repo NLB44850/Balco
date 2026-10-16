@@ -4,6 +4,7 @@ import { careProfileFor, resolvePlants, wateringIntervalOf, type GardenPlant } f
 import { backOutside, bringInSubtitle, bringInTitle, broughtIn, indoorCareText, indoorWatering, indoorWeeksNote, isIndoors, waitsToComeIn } from "../lib/garden/indoors";
 import { buildTodayList, layoutTodayList } from "../lib/garden/today";
 import { getCatalogPlant } from "../lib/plants/catalog";
+import { calendarActivities } from "../lib/plants/calendar";
 import { guideLinkText, guideSteps, guideTitle, nextGestures, supplies, whatsNext } from "../lib/plants/guide";
 import { wateringIntervalHours } from "../lib/plants/watering";
 import { decideReminder, type MaintenanceEvent, type WeatherSnapshot } from "../lib/reminders/reminder-engine";
@@ -93,5 +94,16 @@ describe("rentrer une plante à l'intérieur (chantier « Plante hors saison »,
     }
     expect(whatsNext(entry("basil"), "indoors")[1]).toBe("À l’intérieur, il tiendra souvent quelques semaines de plus.");
     expect(nextGestures(entry("basil"), "indoors")).toEqual(["Au printemps, Balco te dira quand le ressortir."]);
+  });
+
+  it("choisie pour rentrer : plus de « Abrite le citronnier » dans Saisons ni sur Aujourd'hui (vu le 16/10)", () => {
+    const subject = (bringsIndoors: boolean) => ({ id: "l", entry: entry("lemon-tree"), displayName: "Citronnier", addedAt: new Date(2026, 4, 1).toISOString(), ...(bringsIndoors ? { bringsIndoors: true } : {}) });
+    const titles = (bringsIndoors: boolean) => calendarActivities([subject(bringsIndoors)], 11, { now: NOV_2 }).map((activity) => activity.title);
+    expect(titles(false)).toContain("Abrite le citronnier");
+    expect(titles(true)).not.toContain("Abrite le citronnier");
+    for (const winter of [chosen, inside]) {
+      const days = Array.from({ length: 7 }, (_, offset) => planDay({ plants: [plant("lemon-tree", { winter })], events: [watered("lemon-tree", 1)], now: new Date(2026, 10, 2 + offset, 9), nights: [12] })[0]);
+      expect(days.flatMap((day) => day.gestures.map((gesture) => gesture.title))).not.toContain("Abrite le citronnier");
+    }
   });
 });

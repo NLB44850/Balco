@@ -1,6 +1,6 @@
 import { dayKey, sessionEventId, startEventId } from "../garden/garden-logic";
 import type { MaintenanceEvent, MaintenanceTaskType } from "../reminders/reminder-engine";
-import { describeSowing, formatMonthRange, MONTH_LONG, sowsIndoors, type CatalogPlant, type Month } from "./catalog";
+import { describeSowing, formatMonthRange, MONTH_LONG, sowsIndoors, type CareTask, type CatalogPlant, type Month } from "./catalog";
 import { adaptToClimate, type ClimateInfo } from "./climate";
 import { byForm, capitalize, objectPronoun, subjectPronoun, verb, type Agreeable } from "./grammar";
 import { sowsOnWindowsill } from "./indoor";
@@ -59,10 +59,19 @@ export type CalendarSubject = {
   repotSkippedUntil?: string;
   /** La taille de son pot (étape 1 de « Pots et balcon ») : un pot trop petit avance le rempotage. */
   potSize?: PotSize;
+  /**
+   * Choisie pour rentrer à l'intérieur cet hiver (chantier « Plante hors saison ») : « Abrite le citronnier »,
+   * « Rentre la citronnelle »… font doublon avec « Rentre ton… » et l'état « À l'intérieur » (vu le 16/10).
+   */
+  bringsIndoors?: boolean;
 };
 export type CalendarOptions = { climate?: ClimateInfo | null; now?: Date };
 
 const GENERIC_TASK_IDS = new Set(["check-soil", "observe", "harvest"]);
+
+/** Les gestes d'hiver des fiches de soin (« Abrite le citronnier », « Mets les dahlias à l'abri ») : remplacés par « Rentre ton… ». */
+const WINTER_SHELTER_TASK_IDS = new Set(["shelter", "store-tubers"]);
+export const isWinterShelterTask = (task: Pick<CareTask, "id" | "type">) => task.type === "protection" && WINTER_SHELTER_TASK_IDS.has(task.id);
 const ORDER: Record<CalendarActivityKind, number> = { harvest: 0, care: 1, repot: 2, plant: 3, sow: 4 };
 
 /** « Aujourd’hui, retire les gourmands des tomates. » → « Retire les gourmands des tomates » */
@@ -110,6 +119,7 @@ export function calendarActivities(subjects: CalendarSubject[], month: number, o
     }
     for (const task of entry.tasks) {
       if (GENERIC_TASK_IDS.has(task.id) || !task.months?.includes(m)) continue;
+      if (subject.bringsIndoors && isWinterShelterTask(task)) continue;
       const feed = task.type === "fertilizing";
       const description = !feed || !task.months
         ? task.instruction
