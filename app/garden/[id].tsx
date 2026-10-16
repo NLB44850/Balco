@@ -127,6 +127,8 @@ export default function PlantScreen() {
   // « Décide pour ton basilic avant le froid » : la carte du choix pour l'hiver le dit déjà, pas deux fois.
   const winterAsked = asksWinter(resolved, now, climate);
   // Décider, rentrer, ressortir : la carte de l'hiver s'en charge, toujours à la même place (retour du 16/10).
+  // Pot libre (saison finie, tout récolté) : plus de question pour l'hiver (retour du 16/10, basilic).
+  const potFree = gesture?.source.type === "harvest-end" && gesture.source.stage === "free";
   const winterGesture = gesture?.source.type === "harvest-end" && (gesture.source.stage === "decide" || gesture.source.stage === "bring-in" || gesture.source.stage === "bring-out");
   // Le geste du pot de ce mois (rempoter ou terre du dessus) : le pas-à-pas de la fiche le suit.
   const potGesture = day?.gestures.find((candidate) => candidate.source.type === "season" && candidate.source.activity.kind === "repot");
@@ -308,7 +310,7 @@ export default function PlantScreen() {
 
           {/* L'hiver d'une frileuse, toujours ici, avant le geste du jour : le choix à faire, le choix fait (« C'est
               rentré »), ou « À l'intérieur » (au printemps : « C'est ressorti »). */}
-          {ready && winterAsked && !plant.winter && <WinterChoiceCard resolved={resolved} climate={climate} onChoose={(choice) => void chooseWinter(resolved, choice)} />}
+          {ready && !potFree && winterAsked && !plant.winter && <WinterChoiceCard resolved={resolved} climate={climate} onChoose={(choice) => void chooseWinter(resolved, choice)} />}
           {ready && isIndoors(plant) && (
             <IndoorCard
               resolved={resolved}
@@ -324,7 +326,7 @@ export default function PlantScreen() {
             />
           )}
           {/* Le choix fait, tant qu'elle n'est pas rentrée (le choix d'un hiver passé s'efface le 1er mars). */}
-          {ready && plant.winter && !isIndoors(plant) && (
+          {ready && !potFree && plant.winter && !isIndoors(plant) && (
             <WinterChoiceSummary
               resolved={resolved}
               urgent={bringInToday ? bringInUrgent(entry) : undefined}

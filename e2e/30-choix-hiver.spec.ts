@@ -65,3 +65,15 @@ test("sans réponse, la ligne attend le froid : rien le lendemain, de retour qua
   await expect(page.getByText("Décide pour ton basilic avant le froid")).toBeVisible({ timeout: 20_000 });
   expect(errors).toEqual([]);
 });
+
+test("pot libre (saison du basilic finie) : la fiche ne demande plus quoi faire pour l'hiver", async ({ page }) => {
+  const errors = trackErrors(page);
+  const now = await atDate(page, new Date(2026, 9, 15, 10));
+  await mockWeather(page);
+  const until = new Date(now.getTime() + 60 * 86_400_000).toISOString();
+  await seedBalcony(page, { plants: ["basil"], wateredDaysAgo: 1, now, extra: { "balco.reminder.snoozes.v1": JSON.stringify([{ key: "harvest-done:basil-e2e:2026-10-15", kind: "skip", until }]) } });
+  await open(page, "/garden/basil-e2e", "Choisir quoi y mettre");
+  await expect(page.getByText("Ton basilic n’aime pas le froid. Que veux-tu faire ?")).toHaveCount(0);
+  await expect(page.getByRole("button", { name: "Basilic : Le rentrer à l’intérieur" })).toHaveCount(0);
+  expect(errors).toEqual([]);
+});

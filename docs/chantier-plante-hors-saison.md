@@ -172,6 +172,9 @@ Une étape = un commit testé, validée sur son téléphone avant la suivante. D
     printemps « Feu vert des Saints de glace : ressors-le. »), le bouton (« C'est rentré » / « C'est ressorti »), le
     pas-à-pas facultatif, puis « Changer d'avis » (ou « Le remettre dehors »). La carte « Aujourd'hui » ne reprend plus
     ces gestes (décider, rentrer, ressortir) et garde les alertes météo. E2e « même place pour toutes » (`31-rentrer`).
+  - Retour du 16/10 (basilic : « d'un côté il me demande ce que je veux faire, de l'autre il me dit que mon pot est
+    libre ») : quand le pot est libre (saison finie, tout récolté), la fiche ne pose plus la question de l'hiver et
+    n'affiche plus de choix pour l'hiver ; seule reste « Ton pot est libre ». E2e dans `30-choix-hiver`.
 
 ## En plus : la fiche plante condensée (16/10, à sa demande)
 
