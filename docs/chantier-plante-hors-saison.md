@@ -143,7 +143,7 @@ Une étape = un commit testé, validée sur son téléphone avant la suivante. D
     s'affichent plus, ni dans Saisons ni sur Aujourd'hui, dès qu'on a choisi de rentrer la plante (`bringsIndoors` du
     `CalendarSubject`) ; ils restent pour une plante laissée dehors ou sans choix.
 
-- Étape 5 codée le 16/10, à valider : « Ressors ton basilic » (`lib/garden/spring-out.ts`).
+- Étape 5 validée le 16/10 (« c'est parfait »), chantier terminé et fusionné dans `main` (PR #54) : « Ressors ton basilic » (`lib/garden/spring-out.ts`).
   - Feu vert : le 14 mai (lendemain des Saints de glace) en climat océanique, tempéré ou continental, comme la carte du
     temps fort ; 15 avril dans le Midi et 15 juin en montagne, en estimation Balco (pas de source par région).
   - Et pas de nuit sous le seuil de la plante annoncée dans les 3 jours (10 °C pour le basilic, sources : nuits
