@@ -526,18 +526,3 @@ export function initials(firstName?: string | null) {
   if (!name) return null;
   return name.split(/\s+/).slice(0, 2).map((part) => part[0]!.toUpperCase()).join("");
 }
-
-const TIPS = [
-  "L’eau de cuisson des légumes, refroidie et sans sel, est un bon coup de pouce pour tes plantes.",
-  "Arrose le matin ou le soir : en pleine chaleur, une bonne partie de l’eau s’évapore avant d’atteindre les racines.",
-  "Une soucoupe pleine d’eau en permanence fait pourrir les racines : vide-la une heure après l’arrosage.",
-  "Un paillage de 2 cm (chanvre, feuilles mortes) garde la terre fraîche et divise les arrosages.",
-  "Le marc de café s’utilise en fine couche, mélangé à la terre : en couche épaisse, il moisit.",
-  "Tourne tes pots d’un quart de tour chaque semaine pour que les plantes poussent droit vers la lumière.",
-  "Les pots en terre cuite respirent mais sèchent vite : ils demandent plus d’eau que le plastique.",
-  "Laisse fleurir une aromatique ou deux : les pollinisateurs visiteront aussi tes tomates.",
-];
-
-export function dailyTip(now = new Date()) {
-  return TIPS[dayOfYear(now) % TIPS.length];
-}

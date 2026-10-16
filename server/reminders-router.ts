@@ -5,6 +5,7 @@ import { can, planOf } from "../lib/plans";
 import { POT_SIZE_IDS } from "../lib/plants/pot-size";
 import { WINTER_CHOICES } from "../lib/garden/winter-plan";
 import { protectedProcedure, router } from "./_core/trpc";
+import { hitRateLimit } from "./rate-limit";
 import { checkSyncDevice, OtherDeviceError, recalculateUserReminders, registerPushToken, syncGarden, unregisterPushToken } from "./reminders";
 
 const taskType = z.enum(["watering", "observation", "pruning", "protection", "harvest", "repotting", "fertilizing"]);
@@ -80,12 +81,20 @@ const syncInput = z.object({
   claimDevice: z.boolean().optional(),
 });
 
+/** Synchros permises par compte et par heure : bien plus qu'une journée de jardinage n'en demande. */
+export const SYNCS_PER_HOUR = 300;
+const HOUR_MS = 60 * 60 * 1000;
+
 export const remindersRouter = router({
   /**
    * Envoie les changements locaux et renvoie l'état complet du jardin, qui fait foi.
    * Appelé à vide, il sert aussi à récupérer le jardin sur un nouvel appareil.
    */
   sync: protectedProcedure.input(syncInput).mutation(async ({ ctx, input }) => {
+    // Chaque synchro relit la météo du compte : un appareil qui s'emballe ne doit pas la marteler.
+    if (!(await hitRateLimit(`sync-user:${ctx.user.id}`, SYNCS_PER_HOUR, HOUR_MS))) {
+      throw new TRPCError({ code: "TOO_MANY_REQUESTS", message: "Trop de sauvegardes d’un coup. Balco réessaiera dans quelques minutes." });
+    }
     const plan = planOf(ctx.user.plan);
     const { deviceId, claimDevice, ...push } = input;
     try {

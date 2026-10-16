@@ -141,6 +141,13 @@
       "when": 1792089997368,
       "tag": "0019_winter_choice",
       "breakpoints": true
+    },
+    {
+      "idx": 20,
+      "version": "5",
+      "when": 1792162941518,
+      "tag": "0020_revoked_sessions",
+      "breakpoints": true
     }
   ]
 }

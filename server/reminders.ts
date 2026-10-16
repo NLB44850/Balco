@@ -141,6 +141,9 @@ export function nextScheduledDate(now: Date, settings: Pick<ReminderSettingsInpu
 
 // --- Météo ----------------------------------------------------------------------
 
+/** Délai maximal des appels à Open-Meteo et au service de notifications d'Expo. */
+const EXTERNAL_TIMEOUT_MS = 10_000;
+
 export async function fetchWeather(location: SyncLocation, now = new Date()): Promise<WeatherSnapshot> {
   const url = new URL(OPEN_METEO_URL);
   url.searchParams.set("latitude", String(location.latitude));
@@ -153,7 +156,8 @@ export async function fetchWeather(location: SyncLocation, now = new Date()): Pr
   url.searchParams.set("hourly", "precipitation,precipitation_probability,wind_gusts_10m");
   url.searchParams.set("daily", "precipitation_sum,temperature_2m_min,temperature_2m_max,wind_gusts_10m_max");
 
-  const response = await fetch(url);
+  // Délai maximal : une météo qui ne répond pas ne bloque ni la synchro ni le passage des rappels.
+  const response = await fetch(url, { signal: AbortSignal.timeout(EXTERNAL_TIMEOUT_MS) });
   if (!response.ok) throw new Error(`Open-Meteo failed with ${response.status}`);
   const data = (await response.json()) as OpenMeteoResponse;
   const hourly = data.hourly ?? {};
@@ -539,8 +543,12 @@ export async function dispatchDueReminderNotifications(now = new Date()) {
           channelId: "balco-reminders",
           categoryId: group.action === "skip" ? "balco-reminder-info" : "balco-reminder",
         }))),
+        signal: AbortSignal.timeout(EXTERNAL_TIMEOUT_MS),
+      }).catch((error: unknown) => {
+        console.warn("[reminders] envoi des notifications impossible :", error instanceof Error ? error.message : error);
+        return null;
       });
-      if (!response.ok) {
+      if (!response?.ok) {
         skipped += groupRows.length;
         continue;
       }

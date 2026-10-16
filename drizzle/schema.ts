@@ -52,6 +52,15 @@ export const loginCodes = mysqlTable("login_codes", {
 }, (table) => ({ emailIndex: index("login_codes_email_index").on(table.email, table.createdAt), createdIndex: index("login_codes_created_index").on(table.createdAt) }));
 
 /**
+ * Sessions fermées par « Se déconnecter » (server/auth/session.ts) : l'empreinte du jeton, refusée jusqu'à sa fin de
+ * validité, puis purgée (server/purge.ts).
+ */
+export const revokedSessions = mysqlTable("revoked_sessions", {
+  tokenHash: varchar("tokenHash", { length: 64 }).primaryKey(),
+  expiresAt: timestamp("expiresAt").notNull(),
+}, (table) => ({ expiresIndex: index("revoked_sessions_expires_index").on(table.expiresAt) }));
+
+/**
  * Limites de débit partagées par toutes les instances du serveur (server/rate-limit.ts) : un compteur
  * par clé (« code-ip:<empreinte de l'IP> ») et par fenêtre de temps. Les vieilles fenêtres sont purgées.
  */
@@ -171,7 +180,7 @@ export const reminderDecisions = mysqlTable("reminder_decisions", {
   sentAt: timestamp("sentAt"),
   status: varchar("status", { length: 32 }).default("pending").notNull(),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
-}, (table) => ({ decisionUnique: uniqueIndex("reminder_decisions_user_key_unique").on(table.userId, table.decisionKey), userStatusIndex: index("reminder_decisions_user_status_index").on(table.userId, table.status), validUntilIndex: index("reminder_decisions_valid_until_index").on(table.validUntil) }));
+}, (table) => ({ decisionUnique: uniqueIndex("reminder_decisions_user_key_unique").on(table.userId, table.decisionKey), userStatusIndex: index("reminder_decisions_user_status_index").on(table.userId, table.status), dueIndex: index("reminder_decisions_due_index").on(table.status, table.scheduledFor), validUntilIndex: index("reminder_decisions_valid_until_index").on(table.validUntil) }));
 
 export const devicePushTokens = mysqlTable("device_push_tokens", {
   id: int("id").autoincrement().primaryKey(),

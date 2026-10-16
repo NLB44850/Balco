@@ -1,10 +1,12 @@
+import { createHash, randomUUID } from "node:crypto";
 import type { Request } from "express";
-import { jwtVerify, SignJWT } from "jose";
+import { eq } from "drizzle-orm";
+import { decodeJwt, jwtVerify, SignJWT } from "jose";
 
 import { COOKIE_NAME } from "../../shared/const";
-import type { User } from "../../drizzle/schema";
+import { revokedSessions, type User } from "../../drizzle/schema";
 import { ENV } from "../_core/env";
-import { getUserByOpenId } from "../db";
+import { getDb, getUserByOpenId } from "../db";
 
 export const SESSION_TTL_SECONDS = 60 * 60 * 24 * 180;
 const ISSUER = "balco";
@@ -19,6 +21,8 @@ export async function signSession(user: Pick<User, "openId">) {
     .setProtectedHeader({ alg: "HS256", typ: "JWT" })
     .setIssuer(ISSUER)
     .setSubject(user.openId)
+    // Identifiant propre à chaque connexion : deux téléphones connectés la même seconde ont deux jetons distincts.
+    .setJti(randomUUID())
     .setIssuedAt()
     .setExpirationTime(`${SESSION_TTL_SECONDS}s`)
     .sign(secretKey());
@@ -50,8 +54,31 @@ export function sessionTokenFromRequest(req: Pick<Request, "headers">) {
   return readCookie(req.headers.cookie, COOKIE_NAME);
 }
 
+const tokenHash = (token: string) => createHash("sha256").update(token).digest("hex");
+
+/**
+ * « Se déconnecter » : le jeton de ce téléphone est refusé jusqu'à sa fin de validité (les autres appareils du compte
+ * restent connectés). Un jeton déjà invalide n'est pas noté.
+ */
+export async function revokeSession(token: string | undefined | null) {
+  if (!token || !(await verifySession(token))) return;
+  const db = await getDb();
+  if (!db) return;
+  const exp = decodeJwt(token).exp;
+  const expiresAt = new Date((exp ?? Date.now() / 1000 + SESSION_TTL_SECONDS) * 1000);
+  await db.insert(revokedSessions).values({ tokenHash: tokenHash(token), expiresAt }).onDuplicateKeyUpdate({ set: { expiresAt } });
+}
+
+async function isRevoked(token: string) {
+  const db = await getDb();
+  if (!db) return false;
+  const [row] = await db.select({ tokenHash: revokedSessions.tokenHash }).from(revokedSessions).where(eq(revokedSessions.tokenHash, tokenHash(token))).limit(1);
+  return Boolean(row);
+}
+
 export async function authenticateRequest(req: Pick<Request, "headers">): Promise<User | null> {
-  const openId = await verifySession(sessionTokenFromRequest(req));
-  if (!openId) return null;
+  const token = sessionTokenFromRequest(req);
+  const openId = await verifySession(token);
+  if (!openId || (await isRevoked(token!))) return null;
   return (await getUserByOpenId(openId)) ?? null;
 }

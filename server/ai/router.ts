@@ -9,7 +9,7 @@ import { AiBadResponseError, AiRefusedError, AiUnavailableError, aiAvailable, as
 import { NORA_PREFERENCES } from "../../lib/ai/memory";
 import { describeGarden, loadGardenFacts, loadMemory } from "./context";
 import { forgetNotes, learnFromAnswer, updatePreferences } from "./memory-store";
-import { DEVICE_ID_PATTERN, GuestLimitError, guestScanLeft, takeGuestScan } from "./guest";
+import { DEVICE_ID_PATTERN, GuestLimitError, guestScanLeft, takeGuestScan, type GuestLimitReason } from "./guest";
 import { planOf, QuotaExceededError, quotaStatus, reserve, reserveGuest, settle, type AiKind, type Plan } from "./quotas";
 import { PLANS, plusQuotaHint } from "../../lib/plans";
 
@@ -84,11 +84,11 @@ async function withQuota<T>(user: { id: number; plan: string }, kind: AiKind, ca
 /** Ce qu'une analyse sans compte sait du balcon : rien, la personne n'a pas de compte. */
 const GUEST_GARDEN = "Personne sans compte Balco : aucun balcon enregistré. Réponds pour un balcon en ville, en France.";
 
-export function guestLimitMessage(reason: "device" | "network") {
+export function guestLimitMessage(reason: GuestLimitReason) {
   const monthly = PLANS.free.aiQuota.scan > 1 ? `${PLANS.free.aiQuota.scan} analyses offertes chaque mois` : "une analyse offerte chaque mois";
-  return reason === "device"
-    ? `Ton analyse sans compte est déjà utilisée sur ce téléphone. Crée ton compte gratuit : ${monthly}, et le suivi de tes plantes.`
-    : "Trop d’analyses sans compte depuis ce réseau aujourd’hui. Crée ton compte gratuit, ou réessaie demain.";
+  if (reason === "device") return `Ton analyse sans compte est déjà utilisée sur ce téléphone. Crée ton compte gratuit : ${monthly}, et le suivi de tes plantes.`;
+  if (reason === "network") return "Trop d’analyses sans compte depuis ce réseau aujourd’hui. Crée ton compte gratuit, ou réessaie demain.";
+  return "Les analyses sans compte sont toutes prises pour aujourd’hui. Crée ton compte gratuit, ou réessaie demain.";
 }
 
 const imageInput = z.string().min(100).max(Math.ceil((MAX_IMAGE_BYTES * 4) / 3) + 16);
@@ -149,7 +149,7 @@ export const aiRouter = router({
     .query(async ({ input }) => ({ available: aiAvailable(), paused: pauseMessage((await budgetState()).level, "free"), scanLeft: await guestScanLeft(input.deviceId) })),
 
   /**
-   * Une analyse sans compte : 1 par appareil, 3 par réseau et par jour, comptées côté serveur et dans le
+   * Une analyse sans compte : 1 par appareil, 3 par réseau et par jour, 30 par jour en tout, comptées côté serveur et dans le
    * budget du mois (pause dès 80 %, comme les comptes gratuits). Une analyse refusée ou en panne est rendue.
    */
   diagnoseGuest: publicProcedure
