@@ -75,7 +75,8 @@ export default function BalconyScreen() {
       >
         <PlantPicture resolved={resolved} style={[styles.picture, { height: cardWidth * 1.2 }]}>
           {status && (
-            <View style={styles.statusChip}>
+            // Jamais plus large que la carte : un état long (« Au repos jusqu'en février ») passe à la ligne.
+            <View style={[styles.statusChip, { maxWidth: cardWidth - 16 }]}>
               <View style={[styles.dot, { backgroundColor: toneColor(status.tone) }]} />
               <Text style={[styles.statusText, { color: colors.foreground }]}>{status.label}</Text>
             </View>
@@ -132,7 +133,7 @@ const styles = StyleSheet.create({
   picture: { borderRadius: 18, marginBottom: 4 },
   statusChip: { position: "absolute", top: 8, left: 8, flexDirection: "row", alignItems: "center", gap: 6, borderRadius: 999, paddingHorizontal: 9, paddingVertical: 5, backgroundColor: "rgba(255,255,255,0.9)" },
   dot: { width: 9, height: 9, borderRadius: 5 },
-  statusText: { fontSize: 12, fontWeight: "700" },
+  statusText: { fontSize: 12, fontWeight: "700", flexShrink: 1 },
   addPhoto: { position: "absolute", bottom: 8, left: 8, right: 8, flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 6, borderRadius: 12, paddingVertical: 8, backgroundColor: "rgba(255,255,255,0.9)" },
   addPhotoText: { fontSize: 13, fontWeight: "700" },
   name: { fontSize: 16, fontWeight: "700" },
