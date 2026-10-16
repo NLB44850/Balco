@@ -158,6 +158,9 @@ Une étape = un commit testé, validée sur son téléphone avant la suivante. D
     aussi côté serveur). La question revient donc l'automne suivant, et une plante jamais rentrée n'a plus de « Rentre
     ton basilic » au printemps. Une plante rentrée garde son choix jusqu'à sa sortie.
   - Tests `tests/spring-out.test.ts`, e2e `33-ressortir`.
+  - Retour du 16/10 (« je ne peux pas tester, alerte coup de vent même quand je simule ») : les simulations modifient
+    la vraie météo, qui en octobre garde son vent et ses nuits fraîches. Nouvelle simulation « Nuits douces » (14 °C
+    la nuit, sans vent ni pluie, `lib/weather/simulation.ts`) pour tester la sortie avec une date simulée en mai.
 
 ## En plus : la fiche plante condensée (16/10, à sa demande)
 

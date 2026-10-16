@@ -6,6 +6,8 @@ import { buildTodayList, layoutTodayList } from "../lib/garden/today";
 import { currentWinterPlan } from "../lib/garden/winter-plan";
 import { getCatalogPlant } from "../lib/plants/catalog";
 import { climateZoneFor } from "../lib/plants/climate";
+import { applyWeatherScenario } from "../lib/weather/simulation";
+import type { WeatherSnapshot } from "../lib/reminders/reminder-engine";
 import { guideLinkText, guideSteps, guideTitle, supplies, whatsNext } from "../lib/plants/guide";
 
 const entry = (id: string) => getCatalogPlant(id)!;
@@ -83,5 +85,20 @@ describe("ressortir au printemps (chantier « Plante hors saison », étape 5)",
     expect(guideSteps(entry("dahlia"), "spring")).toHaveLength(2);
     for (const step of [...steps, ...guideSteps(entry("dahlia"), "spring")]) expect(step.text.split(/\s+/u).length).toBeLessThan(12);
     expect(whatsNext(entry("chili"), "spring")).toContain("Un coup de froid annoncé ? Rentre-le quelques nuits.");
+  });
+
+  it("simulation « Nuits douces » : la vraie météo d'octobre (vent, nuits fraîches) ne cache plus la sortie", () => {
+    const october: WeatherSnapshot = {
+      fetchedAt: MAY_20.toISOString(), timezone: "Europe/Paris", city: "Lyon", latitude: 45.76, longitude: 4.84,
+      current: { temperatureC: 9, apparentTemperatureC: 6, weatherCode: 3 },
+      next12h: { precipitationMm: 2, precipitationProbabilityMax: 60, windGustKmhMax: 70 },
+      today: { precipitationMm: 3, temperatureMinC: 5, temperatureMaxC: 12, windGustKmhMax: 70 },
+      nights: [5, 6, 4, 5],
+    };
+    const mild = applyWeatherScenario(october, "mild", MAY_20);
+    expect(mild.today).toMatchObject({ temperatureMinC: 14, windGustKmhMax: 15, precipitationMm: 0 });
+    expect(mild.next12h.windGustKmhMax).toBe(15);
+    expect(bringOutDue(plant("chili", { winter: inside }), MAY_20, LYON, mild.nights)).toBe(true);
+    expect(bringOutDue(plant("chili", { winter: inside }), MAY_20, LYON, october.nights)).toBe(false);
   });
 });
