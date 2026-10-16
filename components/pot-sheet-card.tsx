@@ -4,6 +4,7 @@
  * « Changer la taille ». Puis le terreau et l'engrais de sa fiche vérifiée. Tout en centimètres : jamais de litres à
  * l'écran (retour du porteur, 12/10).
  */
+import type { ReactNode } from "react";
 import { Pressable, StyleSheet, View } from "react-native";
 import Svg, { Line, Path, Rect, Text as SvgText } from "react-native-svg";
 
@@ -65,7 +66,11 @@ function PotCompare({ size, need, tone }: { size: PotSize; need: PotNeed; tone: 
   );
 }
 
-export function PotSheetCard({ entry, potSize, onChoosePot }: { entry: CatalogPlant; potSize: PotSize; onChoosePot: () => void }) {
+/**
+ * `extraRows` : des lignes de la fiche rangées sous Terreau et Engrais (la variété). Toucher la carte du pot ouvre le
+ * choix de la taille, comme la pastille du haut (plus de ligne « Ton pot » en double, 16/10).
+ */
+export function PotSheetCard({ entry, potSize, onChoosePot, extraRows }: { entry: CatalogPlant; potSize: PotSize; onChoosePot: () => void; extraRows?: ReactNode }) {
   const colors = useColors();
   const sheet = potSheetFor(entry.id);
   const need = potNeedFor(entry);
@@ -74,20 +79,16 @@ export function PotSheetCard({ entry, potSize, onChoosePot }: { entry: CatalogPl
   return (
     <View style={styles.wrap}>
       <Text style={[styles.title, { color: colors.foreground }]}>Spécial pot</Text>
-      <View style={[glass.card, styles.potCard, fit.tone === "small" && { borderColor: ORANGE, borderWidth: 1.5 }]}>
+      <Pressable accessibilityRole="button" accessibilityLabel={`Ton pot : ${potSizeLabel(potSize)}`} onPress={onChoosePot} style={({ pressed }) => [glass.card, styles.potCard, fit.tone === "small" && { borderColor: ORANGE, borderWidth: 1.5 }, pressed && styles.pressed]}>
         <PotCompare size={potSize} need={need} tone={fit.tone} />
         <Text style={[styles.fitTitle, { color: toneColor }]}>{fit.tone === "ok" ? "✓ " : fit.tone === "small" ? "⚠︎ " : ""}{fit.title}</Text>
         <Text style={[styles.fitDetail, { color: colors.muted }]}>{fit.detail}</Text>
-        <Pressable accessibilityRole="button" accessibilityLabel={`Ton pot : ${potSizeLabel(potSize)}`} onPress={onChoosePot} style={({ pressed }) => [styles.change, { borderColor: colors.border }, pressed && styles.pressed]}>
-          <Text style={[styles.changeLabel, { color: colors.muted }]}>Ton pot</Text>
-          <Text style={[styles.changeValue, { color: colors.foreground }]}>{potSizeLabel(potSize)}</Text>
-          <Text style={[styles.changeAction, { color: colors.primary }]}>{potSize === "unknown" ? "Choisir ›" : "Changer ›"}</Text>
-        </Pressable>
-      </View>
-      {sheet && (
+      </Pressable>
+      {(sheet || extraRows) && (
         <SettingsGroup>
-          <SettingRow label="Terreau" value={SOIL_LABELS[sheet.soil]} subtitle={sheet.soilTip ?? undefined} />
-          <SettingRow label="Engrais" value={feedingValue(sheet.feeding)} subtitle={feedingDetail(entry, sheet.feeding)} />
+          {sheet && <SettingRow key="soil" label="Terreau" value={SOIL_LABELS[sheet.soil]} subtitle={sheet.soilTip ?? undefined} />}
+          {sheet && <SettingRow key="feeding" label="Engrais" value={feedingValue(sheet.feeding)} subtitle={feedingDetail(entry, sheet.feeding)} />}
+          {extraRows}
         </SettingsGroup>
       )}
       {sheet?.confidence === "low" && <Text style={[styles.estimate, { color: colors.muted }]}>{ESTIMATE_TEXT}</Text>}
@@ -102,10 +103,6 @@ const styles = StyleSheet.create({
   potCard: { paddingHorizontal: 16, paddingTop: 14, paddingBottom: 14, gap: 6 },
   fitTitle: { fontSize: 17, fontWeight: "800", marginTop: 6 },
   fitDetail: { fontSize: 14, lineHeight: 20 },
-  change: { flexDirection: "row", alignItems: "center", gap: 8, borderTopWidth: StyleSheet.hairlineWidth, marginTop: 8, paddingTop: 12 },
-  changeLabel: { fontSize: 14, fontWeight: "600" },
-  changeValue: { flex: 1, fontSize: 14 },
-  changeAction: { fontSize: 14, fontWeight: "700" },
   pressed: { opacity: 0.7 },
   estimate: { fontSize: 13, lineHeight: 18, marginTop: 8, paddingHorizontal: 4 },
 });

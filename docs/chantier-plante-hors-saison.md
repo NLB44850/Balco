@@ -142,3 +142,22 @@ Une étape = un commit testé, validée sur son téléphone avant la suivante. D
     citronnelle et de la stévia, `store-tubers` du dahlia, `isWinterShelterTask` de `lib/plants/calendar.ts`) ne
     s'affichent plus, ni dans Saisons ni sur Aujourd'hui, dès qu'on a choisi de rentrer la plante (`bringsIndoors` du
     `CalendarSubject`) ; ils restent pour une plante laissée dehors ou sans choix.
+
+## En plus : la fiche plante condensée (16/10, à sa demande)
+
+Question du porteur : « trop d'informations sur la fiche plante ? » Maquettes avant / après montrées, validées avec
+« replie la croissance également ». Rien n'est supprimé, le détail s'ouvre en touchant (`app/garden/[id].tsx`) :
+
+1. Photo moins haute (72 % de la largeur, 320 points au plus, au lieu de 105 % et 460).
+2. Légende des couleurs : dans une feuille du bas, en touchant l'état (« En forme ⓘ »).
+3. Pas-à-pas : un seul s'affiche en lien comme avant ; dès deux, « Pas-à-pas · 2 guides › » ouvre la liste (le geste
+   du jour en premier). « Il a fleuri ? » reste à part : c'est un geste à noter, pas un pas-à-pas.
+4. Coach d'arrosage en offre gratuite : une ligne qui ouvre l'écran Balco+ (`components/watering-coach-card.tsx`).
+5. Spécial pot : plus de ligne « Ton pot » en double avec la pastille ; la carte du pot se touche pour changer la taille.
+6. Variété : une ligne sous Terreau et Engrais (`extraRows` de `PotSheetCard`), le choix dans une feuille du bas.
+7. « Récolte : juin à octobre » passe dans les pastilles du haut ; l'historique montre les 5 derniers jours avec un
+   geste, sans les photos (déjà dans « Tes photos »), puis « Voir tout l'historique (N gestes) ».
+8. Sa progression repliée : le stade et ses chiffres ; la toucher déplie le détail, les semaines et les étapes.
+
+Pour un basilic suivi depuis 5 semaines, la fiche passe d'environ 4 écrans un tiers à moins de 3. E2e `32-fiche-condensee`.
+

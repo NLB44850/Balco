@@ -1,10 +1,13 @@
 /**
- * Fiche d'une plante, « photo d'abord » comme une annonce : ta photo datée en grand, l'état en un
- * point de couleur, trois pastilles (soleil, pot, depuis quand), le prochain geste en un bouton,
- * puis tes photos et tout l'historique (gestes, observations, diagnostics de Nora).
+ * Fiche d'une plante, « photo d'abord » comme une annonce : ta photo datée, l'état en un point de couleur (le toucher
+ * ouvre la légende), les pastilles (soleil, pot, depuis quand, récolte), le prochain geste en un bouton, puis tes photos
+ * et l'historique (gestes, observations, diagnostics de Nora).
+ * Condensée le 16/10 (moins de défilement, rien de perdu) : photo moins haute, pas-à-pas regroupés dans une feuille du
+ * bas dès qu'il y en a deux, coach en une ligne en offre gratuite, variété en une ligne, progression repliée,
+ * historique des 5 derniers jours puis « Voir tout l'historique ».
  */
 import { useLocalSearchParams, useRouter } from "expo-router";
-import { useCallback, useRef, useState } from "react";
+import { useCallback, useState } from "react";
 import { Pressable, ScrollView, StyleSheet, View, useWindowDimensions } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import * as Haptics from "expo-haptics";
@@ -54,6 +57,8 @@ import { potLabel } from "@/lib/plants/pot-sheet";
 
 /** Le graphique des semaines s'affiche à partir de 2 semaines soignées (une seule barre ne compare rien). */
 const MIN_CHART_WEEKS = 2;
+/** L'historique montre ces derniers jours, puis « Voir tout l'historique ». */
+const HISTORY_DAYS_SHOWN = 5;
 
 const clock = (iso: string) => new Date(iso).toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" });
 
@@ -72,9 +77,14 @@ export default function PlantScreen() {
   const [nameSheet, setNameSheet] = useState(false);
   const [nameDraft, setNameDraft] = useState("");
   const [potSheet, setPotSheet] = useState(pot === "1");
+  // Les feuilles du bas de la fiche condensée : légende des couleurs, pas-à-pas, variété.
+  const [legendSheet, setLegendSheet] = useState(false);
+  const [guidesSheet, setGuidesSheet] = useState(false);
+  const [varietySheet, setVarietySheet] = useState(false);
+  const [progressOpen, setProgressOpen] = useState(false);
+  const [historyOpen, setHistoryOpen] = useState(false);
   const { toast, show, hide: hideToast } = useUndoToast();
   const { celebrate, overlay: celebration } = useCelebration();
-  const scrollRef = useRef<ScrollView>(null);
   const showToast = useCallback((text: string, onUndo?: () => void, actionLabel?: string) => show({ text, onUndo, actionLabel }), [show]);
   // Après la récolte d'une plante récoltée en une fois. Pot vidé ou donné à une autre plante : la fiche se ferme.
   const freePot = useFreePot({ climate, onDone: (text, kind) => (kind === "restart" ? showToast(text) : back()), overlay: <><UndoToast message={toast} onDone={hideToast} bottom={insets.bottom + 16} />{celebration}</> });
@@ -126,6 +136,9 @@ export default function PlantScreen() {
   const shown = plantPhotos.find((photo) => photo.id === shownPhotoId) ?? plantPhotos[0] ?? null;
   const days = journalByDay(events, photos, plant.id, now);
   const count = days.reduce((total, day) => total + day.events.length, 0);
+  // Les photos sont dans « Tes photos » : l'historique ne garde que les jours avec un geste.
+  const gestureDays = days.filter((day) => day.events.length > 0);
+  const shownDays = historyOpen ? gestureDays : gestureDays.slice(0, HISTORY_DAYS_SHOWN);
   const progress = plantProgress(resolved, events, photos, now);
   const busiestWeek = Math.max(1, ...progress.weeks);
   const totals = [
@@ -134,7 +147,18 @@ export default function PlantScreen() {
     progress.harvests ? `${progress.harvests} récolte${progress.harvests > 1 ? "s" : ""}` : null,
     progress.photos ? `${progress.photos} photo${progress.photos > 1 ? "s" : ""}` : null,
   ].filter(Boolean).join(" · ");
-  const heroHeight = Math.min(Math.round(width * 1.05), 460) + insets.top;
+  const heroHeight = Math.min(Math.round(width * 0.72), 320) + insets.top;
+  // Les pas-à-pas de la plante : un seul s'affiche en lien, à partir de deux ils passent dans une feuille du bas.
+  const openGuide = (task?: string) => router.push({ pathname: "/guide/[catalogId]", params: { catalogId: entry.id, plantId: plant.id, ...(task ? { task } : {}) } });
+  const guides = [
+    // Éclaircir, pincer ou sortir les plants aujourd'hui : son pas-à-pas d'abord.
+    ...(followUpTask ? [{ key: followUpTask, label: guideLinkText(entry, followUpTask), task: followUpTask as string | undefined }] : []),
+    // Pour la planter, ou pour revoir comment elle l'a été.
+    { key: "plant", label: plant.toPlant ? "Pas à pas, avec ce qu’il te faut" : "Revoir le pas-à-pas", task: undefined },
+    // Une vivace installée : le pas-à-pas du pot (celui du geste du jour s'il y en a un).
+    ...(!plant.toPlant && REPOTTING[entry.id] ? [{ key: potTask, label: guideLinkText(entry, potTask), task: potTask as string | undefined }] : []),
+  ];
+  const guideLabel = (label: string) => label.replace(/ ›$/u, "");
 
   const doGesture = async () => {
     if (!gesture || gesture.done) return;
@@ -208,7 +232,7 @@ export default function PlantScreen() {
 
   return (
     <View style={[styles.screen, { backgroundColor: colors.background }]}>
-      <ScrollView ref={scrollRef} showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: insets.bottom + 40 }}>
+      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: insets.bottom + 40 }}>
         {/* La photo d'abord. */}
         <PlantPicture resolved={resolved} photo={shown} hideEmoji style={{ height: heroHeight }}>
           {!shown && stockPhoto(entry.id) !== undefined && (
@@ -247,19 +271,16 @@ export default function PlantScreen() {
           <Text style={[styles.name, { color: colors.foreground }]}>{name}</Text>
           <Text style={[styles.text, { color: colors.muted }]}>{[plant.nickname ? entry.name : null, variety?.name, CATEGORY_LABELS[entry.category]].filter(Boolean).join(" · ")}</Text>
           <View style={styles.statusRow}>
-            {/* Tant que la météo n'est pas chargée, pas d'état qui changerait aussitôt. */}
-            {ready && <View style={[styles.dot, { backgroundColor: statusColor }]} />}
-            {ready && <Text style={[styles.statusText, { color: statusColor }]}>{status.label}</Text>}
+            {/* Tant que la météo n'est pas chargée, pas d'état qui changerait aussitôt. Le toucher : la légende des couleurs. */}
+            {ready && (
+              <Pressable accessibilityRole="button" accessibilityLabel={`${status.label}, voir ce que disent les couleurs`} hitSlop={8} onPress={() => setLegendSheet(true)} style={({ pressed }) => [styles.statusChip, { backgroundColor: colors.surface }, pressed && styles.pressed]}>
+                <View style={[styles.dot, { backgroundColor: statusColor }]} />
+                <Text style={[styles.statusText, { color: statusColor }]}>{status.label}</Text>
+                <Text style={[styles.small, { color: colors.muted }]}>ⓘ</Text>
+              </Pressable>
+            )}
             <Text style={[styles.text, { color: colors.muted }]}>{ready ? "· " : ""}{lastCare}</Text>
           </View>
-          <Text accessibilityLabel={`Légende : ${STATUS_LEGEND.map((item) => item.text).join(", ")}`} style={[styles.legend, { color: colors.muted }]}>
-            {STATUS_LEGEND.map((item, index) => (
-              <Text key={item.tone}>
-                {index > 0 ? "   " : ""}
-                <Text style={{ color: item.tone === "weather" ? colors.frost : item.tone === "watch" ? colors.warning : colors.primary }}>●</Text> {item.text}
-              </Text>
-            ))}
-          </Text>
 
           <View style={styles.pills}>
             <View style={[styles.fact, { backgroundColor: colors.surface }]}><Text style={[styles.factText, { color: colors.foreground }]}>☀️  {sunlightLabel(entry)}</Text></View>
@@ -268,6 +289,7 @@ export default function PlantScreen() {
               <Text style={[styles.factText, { color: potShown.chosen ? colors.foreground : colors.primary }]}>🪴  {potShown.text}</Text>
             </Pressable>
             <View style={[styles.fact, { backgroundColor: colors.surface }]}><Text style={[styles.factText, { color: colors.foreground }]}>🌱  {growingSince(plant.addedAt, now)}</Text></View>
+            {entry.harvestMonths.length > 0 && <View style={[styles.fact, { backgroundColor: colors.surface }]}><Text style={[styles.factText, { color: colors.foreground }]}>🧺  Récolte {formatMonthRange(entry.harvestMonths)}</Text></View>}
           </View>
 
           {/* Le prochain geste, en un bouton. */}
@@ -290,15 +312,11 @@ export default function PlantScreen() {
                 <Button small variant="secondary" label="Annuler" onPress={() => void undoGesture()} style={styles.okButton} />
               </View>
             )}
-            {/* Le pas-à-pas : pour la planter, ou pour revoir comment elle l'a été. */}
-            <Button variant="link" label={plant.toPlant ? "Pas à pas, avec ce qu’il te faut" : "Revoir le pas-à-pas"} onPress={() => router.push({ pathname: "/guide/[catalogId]", params: { catalogId: entry.id, plantId: plant.id } })} />
-            {/* Éclaircir, pincer ou sortir les plants aujourd'hui : son pas-à-pas. */}
-            {followUpTask && (
-              <Button variant="link" noChevron label={guideLinkText(entry, followUpTask)} onPress={() => router.push({ pathname: "/guide/[catalogId]", params: { catalogId: entry.id, plantId: plant.id, task: followUpTask } })} />
-            )}
-            {/* Une vivace installée : le pas-à-pas du pot (celui du geste du jour s'il y en a un). */}
-            {!plant.toPlant && REPOTTING[entry.id] && (
-              <Button variant="link" noChevron label={guideLinkText(entry, potTask)} onPress={() => router.push({ pathname: "/guide/[catalogId]", params: { catalogId: entry.id, plantId: plant.id, task: potTask } })} />
+            {/* Les pas-à-pas : un seul en lien, plusieurs dans une feuille du bas. */}
+            {guides.length === 1 ? (
+              <Button variant="link" label={guideLabel(guides[0].label)} onPress={() => openGuide(guides[0].task)} />
+            ) : (
+              <Button variant="link" label={`Pas-à-pas · ${guides.length} guides`} onPress={() => setGuidesSheet(true)} />
             )}
             {canMarkBloom(resolved, events, now) && (
               <Button variant="link" label={`${byForm(entry, "Il a fleuri ?", "Elle a fleuri ?", "Ils ont fleuri ?", "Elles ont fleuri ?")} Le noter dans ton herbier`} onPress={() => void markBloom()} />
@@ -340,7 +358,12 @@ export default function PlantScreen() {
           {/* Le coach d'arrosage (Balco+), ou ce qu'il apportera (étape 6b). Pas pour une plante pas encore en terre. */}
           {!plant.toPlant && <WateringCoachCard advice={coach?.get(plant.id)} isPlus={isPlus} />}
 
-          <PotSheetCard entry={entry} potSize={potSizeOf(plant)} onChoosePot={() => setPotSheet(true)} />
+          <PotSheetCard
+            entry={entry}
+            potSize={potSizeOf(plant)}
+            onChoosePot={() => setPotSheet(true)}
+            extraRows={entry.varieties.length > 0 ? <SettingRow key="variety" label="Variété" value={variety?.name ?? "À choisir"} onPress={() => setVarietySheet(true)} /> : undefined}
+          />
 
           {/* Tes photos : toucher une photo l'affiche en grand. */}
           {plantPhotos.length > 0 && (
@@ -365,29 +388,19 @@ export default function PlantScreen() {
             </View>
           )}
 
-          {entry.varieties.length > 0 && (
-            <View style={styles.section}>
-              <Text style={[styles.sectionTitle, { color: colors.foreground }]}>Variété</Text>
-              <Text style={[styles.text, { color: colors.muted }]}>{variety ? variety.note : "Tu connais la variété de ton plant ? Choisis-la : Nora en tiendra compte dans ses conseils."}</Text>
-              <View style={styles.pills}>
-                {entry.varieties.map((item) => {
-                  const active = item.id === variety?.id;
-                  return (
-                    <Pressable key={item.id} accessibilityRole="button" accessibilityState={{ selected: active }} onPress={() => void setPlantVariety(plant.id, active ? undefined : item.id)} style={({ pressed }) => [styles.chip, { borderColor: active ? colors.primary : colors.border, backgroundColor: active ? colors.primary : colors.background }, pressed && styles.pressed]}>
-                      <Text style={[styles.chipText, { color: active ? "#FFFFFF" : colors.foreground }]}>{active ? "✓ " : ""}{item.name}</Text>
-                    </Pressable>
-                  );
-                })}
-              </View>
-            </View>
-          )}
-
           <View style={styles.section}>
             <Text style={[styles.sectionTitle, { color: colors.foreground }]}>Sa progression</Text>
+            {/* Repliée : son stade et ses chiffres ; la toucher déplie le détail, les semaines et les étapes. */}
             <View style={[styles.progress, { borderColor: colors.border }]}>
-              <Text style={[styles.stage, { color: colors.primary }]}>{progress.stage.label}</Text>
+              <Pressable accessibilityRole="button" accessibilityState={{ expanded: progressOpen }} accessibilityLabel={`${progress.stage.label}, ${progressOpen ? "replier" : "voir le détail"}`} onPress={() => setProgressOpen((open) => !open)} style={({ pressed }) => [styles.progressHead, pressed && styles.pressed]}>
+                <View style={styles.flex}>
+                  <Text style={[styles.stage, { color: colors.primary }]}>{progress.stage.label}</Text>
+                  <Text style={[styles.small, { color: colors.muted }]}>Sur ton balcon {sinceLabel(progress.daysOnBalcony)}{totals ? ` · ${totals}` : ""}</Text>
+                </View>
+                <Text style={[styles.eventChevron, { color: colors.primary, transform: [{ rotate: progressOpen ? "90deg" : "0deg" }] }]}>›</Text>
+              </Pressable>
+              {progressOpen && <>
               <Text style={[styles.text, { color: colors.muted }]}>{progress.stage.detail}</Text>
-              <Text style={[styles.small, { color: colors.muted }]}>Sur ton balcon {sinceLabel(progress.daysOnBalcony)}{totals ? ` · ${totals}` : ""}</Text>
               {/* Le graphique des semaines seulement quand il y a de quoi comparer (une seule barre ne dit rien). */}
               {progress.activeWeeks >= MIN_CHART_WEEKS && (
                 <View style={styles.bars} accessibilityLabel={careWeeksLabel(progress)}>
@@ -407,27 +420,18 @@ export default function PlantScreen() {
                   <Text style={[styles.small, { color: colors.muted }]}>{milestoneDate(milestone.date, now)}</Text>
                 </View>
               ))}
+              </>}
             </View>
           </View>
 
           <View style={styles.section}>
             <Text style={[styles.sectionTitle, { color: colors.foreground }]}>Historique{count > 0 ? ` · ${count} geste${count > 1 ? "s" : ""}` : ""}</Text>
-            <Text style={[styles.small, { color: colors.muted }]}>Récolte : {formatMonthRange(entry.harvestMonths)}</Text>
-            {days.length === 0 && (
+            {gestureDays.length === 0 && (
               <Text style={[styles.text, { color: colors.muted }]}>Rien de noté pour l’instant. Coche tes gestes sur l’accueil ou ici, prends une photo de temps en temps : tout s’affichera ici, jour par jour.</Text>
             )}
-            {days.map((day) => (
+            {shownDays.map((day) => (
               <View key={day.key} style={styles.day}>
                 <Text style={[styles.dayLabel, { color: colors.muted }]}>{day.label}</Text>
-                {day.photos.length > 0 && (
-                  <View style={styles.dayPhotos}>
-                    {day.photos.map((photo) => (
-                      <Pressable key={photo.id} accessibilityRole="button" accessibilityLabel="Voir cette photo en grand" onPress={() => { setShownPhotoId(photo.id); scrollRef.current?.scrollTo({ y: 0, animated: true }); }}>
-                        <PlantPicture resolved={resolved} photo={photo} style={styles.dayThumb} />
-                      </Pressable>
-                    ))}
-                  </View>
-                )}
                 {day.events.map((event) => {
                   const type = EVENT_TYPE_LABELS[event.type];
                   const scanner = isScannerEvent(event);
@@ -448,6 +452,9 @@ export default function PlantScreen() {
                 })}
               </View>
             ))}
+            {gestureDays.length > shownDays.length && (
+              <Button variant="link" label={`Voir tout l’historique (${count} geste${count > 1 ? "s" : ""})`} onPress={() => setHistoryOpen(true)} />
+            )}
           </View>
 
           {/* Son nom et la retirer du balcon : des lignes comme dans Réglages. */}
@@ -476,6 +483,38 @@ export default function PlantScreen() {
           </View>
         )}
       </BottomSheet>
+      <BottomSheet visible={legendSheet} onClose={() => setLegendSheet(false)}>
+        <SheetHeading title="Ce que disent les couleurs" intro={`${name} : ${status.label.toLowerCase()}.`} />
+        <View style={styles.sheetList}>
+          {STATUS_LEGEND.map((item) => (
+            <View key={item.tone} style={styles.legendRow}>
+              <View style={[styles.dot, { backgroundColor: item.tone === "weather" ? colors.frost : item.tone === "watch" ? colors.warning : colors.primary }]} />
+              <Text style={[styles.text, { color: colors.foreground }]}>{item.text[0].toUpperCase() + item.text.slice(1)}</Text>
+            </View>
+          ))}
+        </View>
+      </BottomSheet>
+      <BottomSheet visible={guidesSheet} onClose={() => setGuidesSheet(false)}>
+        <SheetHeading title="Ses pas-à-pas" intro="Chaque geste expliqué en images, avec ce qu’il te faut." />
+        <SettingsGroup>
+          {guides.map((guide) => (
+            <SettingRow key={guide.key} label={guideLabel(guide.label)} onPress={() => { setGuidesSheet(false); openGuide(guide.task); }} />
+          ))}
+        </SettingsGroup>
+      </BottomSheet>
+      <BottomSheet visible={varietySheet} onClose={() => setVarietySheet(false)}>
+        <SheetHeading title="Sa variété" intro={variety ? variety.note : "Tu connais la variété de ton plant ? Choisis-la : Nora en tiendra compte dans ses conseils."} />
+        <View style={[styles.pills, styles.sheetList]}>
+          {entry.varieties.map((item) => {
+            const active = item.id === variety?.id;
+            return (
+              <Pressable key={item.id} accessibilityRole="button" accessibilityState={{ selected: active }} onPress={() => void setPlantVariety(plant.id, active ? undefined : item.id)} style={({ pressed }) => [styles.chip, { borderColor: active ? colors.primary : colors.border, backgroundColor: active ? colors.primary : colors.background }, pressed && styles.pressed]}>
+                <Text style={[styles.chipText, { color: active ? "#FFFFFF" : colors.foreground }]}>{active ? "✓ " : ""}{item.name}</Text>
+              </Pressable>
+            );
+          })}
+        </View>
+      </BottomSheet>
       <PotSizeSheet entry={entry} visible={potSheet} onClose={() => setPotSheet(false)} value={potSizeOf(plant)} onPick={(size) => { setPotSheet(false); void setPlantPotSize(plant.id, size); }} />
       {!freePot.isOpen && <UndoToast message={toast} onDone={hideToast} bottom={insets.bottom + 16} />}
       {!freePot.isOpen && celebration}
@@ -501,7 +540,10 @@ const styles = StyleSheet.create({
   name: { fontSize: 30, fontWeight: "800", letterSpacing: -0.8 },
   text: { fontSize: 14, lineHeight: 20 },
   small: { fontSize: 13, lineHeight: 18 },
-  legend: { fontSize: 12, marginTop: -4 },
+  statusChip: { flexDirection: "row", alignItems: "center", gap: 6, borderRadius: 999, paddingLeft: 9, paddingRight: 10, paddingVertical: 4 },
+  legendRow: { flexDirection: "row", alignItems: "center", gap: 10 },
+  sheetList: { marginTop: 14, gap: 12 },
+  progressHead: { flexDirection: "row", alignItems: "center", gap: 10 },
   statusRow: { flexDirection: "row", alignItems: "center", gap: 6, flexWrap: "wrap" },
   dot: { width: 10, height: 10, borderRadius: 5 },
   statusText: { fontSize: 14, fontWeight: "700" },
@@ -533,8 +575,6 @@ const styles = StyleSheet.create({
   chipText: { fontSize: 13, fontWeight: "700" },
   day: { gap: 4, marginTop: 6 },
   dayLabel: { fontSize: 13, fontWeight: "700" },
-  dayPhotos: { flexDirection: "row", flexWrap: "wrap", gap: 8, paddingVertical: 4 },
-  dayThumb: { width: 64, height: 64, borderRadius: 12 },
   event: { flexDirection: "row", gap: 12, paddingVertical: 10, borderBottomWidth: StyleSheet.hairlineWidth },
   eventIcon: { width: 36, height: 36, borderRadius: 10, alignItems: "center", justifyContent: "center" },
   eventIconText: { fontSize: 17 },

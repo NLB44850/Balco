@@ -1,11 +1,10 @@
 /**
  * La carte « Coach d'arrosage » de la fiche d'une plante (étape 6b) : en Balco+, ce qui reste d'eau dans le pot (jauge)
- * et ce qu'il faut faire aujourd'hui ; en offre gratuite, ce que le coach apportera (« bientôt avec Balco+ »).
+ * et ce qu'il faut faire aujourd'hui ; en offre gratuite, une ligne « bientôt avec Balco+ » vers l'écran Balco+.
  */
 import { useRouter } from "expo-router";
-import { StyleSheet, View } from "react-native";
+import { Pressable, StyleSheet, View } from "react-native";
 
-import { Button } from "@/components/ui/button";
 import { glass } from "@/components/ui/glass";
 import { Text } from "@/components/ui/typography";
 import { useColors } from "@/hooks/use-colors";
@@ -15,13 +14,12 @@ export function WateringCoachCard({ advice, isPlus }: { advice: CoachAdvice | un
   const colors = useColors();
   const router = useRouter();
   if (!isPlus) {
+    // Une seule ligne sur la fiche (16/10) : la toucher ouvre l'écran Balco+, qui détaille le coach.
     return (
-      <View style={[glass.card, styles.card]}>
-        <Text style={[styles.kind, { color: colors.frost }]}>✨  Coach d’arrosage · bientôt avec Balco+</Text>
-        <Text style={[styles.text, { color: colors.muted }]}>La quantité juste pour cette plante, chaque jour, selon la chaleur, le vent et le soleil de ton balcon.</Text>
-        {/* Étape 10 : le coach ouvre l'écran Balco+. */}
-        <Button variant="link" label="Découvrir Balco+" onPress={() => router.push({ pathname: "/plus", params: { from: "coach" } })} />
-      </View>
+      <Pressable accessibilityRole="button" accessibilityLabel="Coach d’arrosage, bientôt avec Balco+ : découvrir Balco+" onPress={() => router.push({ pathname: "/plus", params: { from: "coach" } })} style={({ pressed }) => [glass.card, styles.row, pressed && styles.pressed]}>
+        <Text style={[styles.kind, styles.flex, { color: colors.frost }]}>✨  Coach d’arrosage · bientôt avec Balco+</Text>
+        <Text style={[styles.arrow, { color: colors.muted }]}>›</Text>
+      </Pressable>
     );
   }
   if (!advice) return null;
@@ -46,6 +44,10 @@ export function WateringCoachCard({ advice, isPlus }: { advice: CoachAdvice | un
 
 const styles = StyleSheet.create({
   card: { padding: 16, gap: 6 },
+  row: { flexDirection: "row", alignItems: "center", gap: 10, paddingHorizontal: 16, paddingVertical: 14, marginTop: 4 },
+  flex: { flex: 1 },
+  arrow: { fontSize: 20 },
+  pressed: { opacity: 0.75 },
   kind: { fontSize: 14, fontWeight: "700" },
   title: { fontSize: 20, fontWeight: "800", letterSpacing: -0.3 },
   text: { fontSize: 14, lineHeight: 20 },

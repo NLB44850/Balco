@@ -163,7 +163,11 @@ puis seulement quand une nuit froide est annoncée (« Prépare 3 plantes pour l
 est gardé dans la sauvegarde du compte (validée le 16/10). Étape 4 validée le 16/10 : « Rentre ton basilic »
 quand une nuit froide arrive (« Rentre 2 plantes » dès deux), pas-à-pas en 4 écrans dessinés (pucerons, soucoupe,
 fenêtre lumineuse, loin du radiateur), puis « 🏠 À l'intérieur » : la météo ne compte plus pour elle, arrosage plus
-espacé, pas d'engrais, « Le remettre dehors » sur la fiche.
+espacé, pas d'engrais, « Le remettre dehors » sur la fiche. Puis, à ma demande (16/10, maquettes avant / après
+validées) : fiche plante condensée, rien de perdu (photo moins haute, légende des couleurs en touchant l'état,
+pas-à-pas regroupés dans une feuille du bas dès deux, coach en une ligne, variété en une ligne, « Récolte » dans les
+pastilles, progression repliée, historique des 5 derniers jours puis « Voir tout l'historique »). Prochaine : étape 5,
+la sortie au printemps.
 
 ## Ce qu'il reste à faire, dans l'ordre
 
