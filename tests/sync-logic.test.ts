@@ -99,6 +99,17 @@ describe("applying the server snapshot", () => {
     expect(applied.events.map((item) => item.id)).toEqual(["e1"]);
   });
 
+  it("keeps the phone's copy of the same edit when the server does not know a field yet (16/10)", () => {
+    // Le choix pour l'hiver testé avant la fusion : l'ancien serveur renvoie la plante sans `winter`.
+    const mine = plant("p1", "2026-09-20T10:00:00.000Z", { winter: { choice: "harvest", decidedAt: "2026-09-20T10:00:00.000Z" } });
+    const applied = applySnapshot(snapshot({ plants: [plant("p1", "2026-09-20T10:00:00.000Z") as GardenPlant & { updatedAt: string }] }), emptyOutbox(), local({ plants: [mine] }));
+    expect(applied.plants[0].winter?.choice).toBe("harvest");
+    // Une modification plus récente faite ailleurs l'emporte toujours.
+    const newer = applySnapshot(snapshot({ plants: [plant("p1", "2026-09-21T10:00:00.000Z", { nickname: "Ailleurs" }) as GardenPlant & { updatedAt: string }] }), emptyOutbox(), local({ plants: [mine] }));
+    expect(newer.plants[0]).toMatchObject({ nickname: "Ailleurs" });
+    expect(newer.plants[0].winter).toBeUndefined();
+  });
+
   it("drops what another device deleted", () => {
     const applied = applySnapshot(snapshot({ events: [event("kept")] }), emptyOutbox(), local({ events: [event("kept"), event("deleted-elsewhere")] }));
     expect(applied.events.map((item) => item.id)).toEqual(["kept"]);

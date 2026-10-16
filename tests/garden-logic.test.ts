@@ -29,7 +29,8 @@ const now = new Date(2026, 8, 26, 10, 0); // samedi 26 septembre 2026
 const daysAgo = (days: number, hour = 10) => new Date(2026, 8, 26 - days, hour, 0);
 
 function gardenPlant(catalogId: string, id = catalogId, addedDaysAgo = 10): GardenPlant {
-  return { id, catalogId, addedAt: daysAgo(addedDaysAgo).toISOString() };
+  // Ces tests ne parlent pas de l'hiver : les frileuses ont déjà choisi « Le laisser dehors » (rien ne change pour elles).
+  return { id, catalogId, addedAt: daysAgo(addedDaysAgo).toISOString(), winter: { choice: "outside" as const, decidedAt: "2026-08-01T00:00:00.000Z" } };
 }
 
 function event(plantId: string, type: MaintenanceEvent["type"], date: Date, overrides: Partial<MaintenanceEvent> = {}): MaintenanceEvent {

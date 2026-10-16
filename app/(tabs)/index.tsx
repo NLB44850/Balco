@@ -22,6 +22,9 @@ import { useCelebration } from "@/components/today/celebration";
 import { UndoToast, type ToastMessage } from "@/components/today/undo-toast";
 import { WeatherBanner } from "@/components/today/weather-banner";
 import { useFreePot } from "@/components/free-pot-sheet";
+import { useWinterChoiceSheet } from "@/components/winter-choice";
+import { broughtIn, broughtInToast } from "@/lib/garden/indoors";
+import { broughtOutToast } from "@/lib/garden/spring-out";
 import { useDayPlan } from "@/hooks/use-day-plan";
 import { useBalcoPlus } from "@/hooks/use-balco-plus";
 import { useFirstFrostHint } from "@/hooks/use-first-frost-hint";
@@ -109,7 +112,7 @@ const haptic = () => {
 export default function HomeScreen() {
   const colors = useColors();
   const router = useRouter();
-  const { loaded, resolvedPlants, pastPlants, events, awards, takeUnseenAwards, onboarding, account, addPlant, removePlant, logEvent, removeEvent, reportLocation, updateOnboarding } = useGarden();
+  const { loaded, resolvedPlants, pastPlants, events, awards, takeUnseenAwards, onboarding, account, addPlant, removePlant, logEvent, removeEvent, reportLocation, updateOnboarding, setPlantWinter } = useGarden();
   const aiStatus = trpc.ai.status.useQuery(undefined, { enabled: account.signedIn, retry: false });
   // Sans compte : l'analyse offerte de cet appareil (Observer sans compte).
   const [device, setDevice] = useState<string | null>(null);
@@ -264,6 +267,8 @@ export default function HomeScreen() {
   const hideToast = useCallback(() => setToast(null), []);
   // Après la récolte d'une plante récoltée en une fois : « Tout récolté ? », puis « Ton pot est libre ».
   const freePot = useFreePot({ climate, onDone: (text) => showToast(text), overlay: <><UndoToast message={toast} onDone={hideToast} bottom={insets.bottom + 16} />{celebration}</> });
+  // « Décide pour ton basilic avant le froid » (chantier « Plante hors saison ») : la feuille du choix pour l'hiver.
+  const winterSheet = useWinterChoiceSheet({ climate, onDone: (text, onUndo) => showToast(text, onUndo), overlay: <UndoToast message={toast} onDone={hideToast} bottom={insets.bottom + 16} /> });
 
   /**
    * Un badge, un niveau, une série ou une récolte débloqués par ce geste : plein écran pour un badge ou une
@@ -323,6 +328,24 @@ export default function HomeScreen() {
     // La pluie se lit seulement : son eau économisée est déjà comptée.
     if (isInfoBanner(item)) return;
     // « Tes radis sont-ils tous récoltés ? » cochée : oui ; « Ton pot est libre » : ses choix.
+    if (item.kind === "harvest-end" && item.stage === "decide") return winterSheet.open(item.resolved.plant.id);
+    // « Rentre ton basilic » cochée : la plante passe « À l'intérieur » (chantier « Plante hors saison », étape 4).
+    if (item.kind === "harvest-end" && item.stage === "bring-in") {
+      const { plant, entry } = item.resolved;
+      if (!plant.winter) return;
+      const previous = plant.winter;
+      await setPlantWinter(plant.id, broughtIn(previous, clockNow()));
+      haptic();
+      return showToast(broughtInToast(entry), () => void setPlantWinter(plant.id, previous));
+    }
+    // « Ressors ton basilic » cochée (étape 5) : son choix pour l'hiver s'efface, ses rappels normaux reprennent.
+    if (item.kind === "harvest-end" && item.stage === "bring-out") {
+      const { plant, entry } = item.resolved;
+      const previous = plant.winter;
+      await setPlantWinter(plant.id, undefined);
+      haptic();
+      return showToast(broughtOutToast(entry), () => void setPlantWinter(plant.id, previous));
+    }
     if (item.kind === "harvest-end") return item.stage === "question" ? freePot.answerYes(item.resolved.plant.id) : freePot.openFreePot(item.resolved.plant.id);
     if (item.kind === "alert") return completeAlert(item.group, item.feed);
     if (item.kind === "season") {
@@ -417,6 +440,8 @@ export default function HomeScreen() {
   };
 
   const closeSheet = () => setSheetKey(null);
+  // Le pas-à-pas pour rentrer une plante (facultatif) : « C'est rentré » la passe « À l'intérieur ».
+  const openBringIn = (resolved: ResolvedPlant, task: "indoors" | "spring" = "indoors") => router.push({ pathname: "/guide/[catalogId]", params: { catalogId: resolved.entry.id, plantId: resolved.plant.id, task } });
   const itemRow = (item: TodayItem) => (
     <TodayRow
       key={item.key}
@@ -428,7 +453,7 @@ export default function HomeScreen() {
       done={item.done}
       picture={seasonPicture(item)}
       onToggle={() => void toggleItem(item)}
-      onOpen={() => (item.kind === "harvest-end" ? (item.stage === "question" ? freePot.openQuestion(item.resolved.plant.id, item.subtitle) : freePot.openFreePot(item.resolved.plant.id)) : setSheetKey(item.key))}
+      onOpen={() => (item.kind === "harvest-end" ? (item.stage === "bring-in" ? openBringIn(item.resolved) : item.stage === "bring-out" ? openBringIn(item.resolved, "spring") : item.stage === "decide" ? winterSheet.open(item.resolved.plant.id) : item.stage === "question" ? freePot.openQuestion(item.resolved.plant.id, item.subtitle) : freePot.openFreePot(item.resolved.plant.id)) : setSheetKey(item.key))}
     />
   );
   const evening = now.getHours() >= 17;
@@ -754,6 +779,12 @@ export default function HomeScreen() {
                 ? groupSheet.items.some((item) => item.feed)
                   ? "Enfonce ton doigt dans la terre de chaque pot : si elle est sèche, arrose au pied la quantité indiquée. Puis donne l’engrais à celles qui en ont besoin, et coche. Touche une ligne pour le détail."
                   : "Enfonce ton doigt dans la terre de chaque pot : si elle est sèche, arrose au pied la quantité indiquée et coche. Touche une ligne pour le détail."
+                : groupSheet.gesture === "outdoors"
+                  ? "Les nuits se radoucissent. Coche une plante une fois dehors ; touche-la pour le pas-à-pas."
+                : groupSheet.gesture === "indoors"
+                  ? "Une nuit froide arrive. Coche une plante une fois rentrée ; touche-la pour le pas-à-pas."
+                : groupSheet.gesture === "winter"
+                  ? "Elles n’aiment pas le froid. Touche une plante pour choisir : tout récolter, la rentrer ou la laisser dehors."
                 : groupSheet.gesture === "season-end"
                   ? "Coche une plante dont la saison est finie : Balco te propose quoi mettre dans son pot. Pas encore finie ? Laisse-la, tu as le temps."
                 : groupSheet.gesture === "feeding"
@@ -775,14 +806,14 @@ export default function HomeScreen() {
                   picture={seasonPicture(item)}
                   onToggle={() => {
                     // Fin de saison : la feuille du pot libre s'ouvre une fois celle du groupe repliée.
-                    if (item.kind !== "harvest-end") return void toggleItem(item);
+                    if (item.kind !== "harvest-end" || item.stage === "bring-in" || item.stage === "bring-out") return void toggleItem(item);
                     setOpenGroup(null);
                     setTimeout(() => void toggleItem(item), 320);
                   }}
                   onOpen={() => {
                     // Le détail s'ouvre une fois la feuille du groupe repliée.
                     setOpenGroup(null);
-                    setTimeout(() => (item.kind === "harvest-end" ? freePot.openQuestion(item.resolved.plant.id, item.subtitle) : setSheetKey(item.key)), 320);
+                    setTimeout(() => (item.kind === "harvest-end" ? (item.stage === "bring-in" ? openBringIn(item.resolved) : item.stage === "bring-out" ? openBringIn(item.resolved, "spring") : item.stage === "decide" ? winterSheet.open(item.resolved.plant.id) : freePot.openQuestion(item.resolved.plant.id, item.subtitle)) : setSheetKey(item.key)), 320);
                   }}
                 />
               ))}
@@ -805,10 +836,11 @@ export default function HomeScreen() {
       </BottomSheet>
 
       {freePot.sheet}
+      {winterSheet.sheet}
 
       {/* Pendant que la feuille des arrosages, des récoltes ou du pot libre est ouverte, ils s'affichent par-dessus elle. */}
-      {groupSheet === null && !freePot.isOpen && <UndoToast message={toast} onDone={hideToast} />}
-      {groupSheet === null && !freePot.isOpen && celebration}
+      {groupSheet === null && !freePot.isOpen && !winterSheet.isOpen && <UndoToast message={toast} onDone={hideToast} />}
+      {groupSheet === null && !freePot.isOpen && !winterSheet.isOpen && celebration}
       <EventIntro
         event={intro?.event ?? null}
         text={intro ? eventCardText(intro.event, { now, year: intro.year, frostAnnounced: weatherCauses.includes("frost") }) : ""}

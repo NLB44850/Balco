@@ -9,8 +9,9 @@ import { groupReminders } from "../lib/reminders/reminder-groups";
 
 const now = new Date(2026, 8, 29, 18, 30);
 const plants = resolvePlants([
-  { id: "basil-1", catalogId: "basil", addedAt: new Date(2026, 8, 1).toISOString() },
-  { id: "tomato-1", catalogId: "cherry-tomato", addedAt: new Date(2026, 8, 1).toISOString() },
+  // Ces tests ne parlent pas de l'hiver : les frileuses ont déjà choisi « Le laisser dehors ».
+  { id: "basil-1", catalogId: "basil", addedAt: new Date(2026, 8, 1).toISOString(), winter: { choice: "outside" as const, decidedAt: "2026-08-01T00:00:00.000Z" } },
+  { id: "tomato-1", catalogId: "cherry-tomato", addedAt: new Date(2026, 8, 1).toISOString(), winter: { choice: "outside" as const, decidedAt: "2026-08-01T00:00:00.000Z" } },
   { id: "lavender-1", catalogId: "lavender", addedAt: new Date(2026, 8, 1).toISOString() },
 ]);
 const watered: MaintenanceEvent[] = plants.map(({ plant }) => ({ id: `w-${plant.id}`, plantId: plant.id, type: "watering", completedAt: new Date(2026, 8, 26, 9).toISOString(), source: "manual" }));

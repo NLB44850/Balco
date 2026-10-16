@@ -3,6 +3,7 @@ import { z } from "zod";
 
 import { can, planOf } from "../lib/plans";
 import { POT_SIZE_IDS } from "../lib/plants/pot-size";
+import { WINTER_CHOICES } from "../lib/garden/winter-plan";
 import { protectedProcedure, router } from "./_core/trpc";
 import { checkSyncDevice, OtherDeviceError, recalculateUserReminders, registerPushToken, syncGarden, unregisterPushToken } from "./reminders";
 
@@ -56,6 +57,7 @@ const syncInput = z.object({
     nickname: z.string().max(128).optional(),
     varietyId: z.string().max(64).optional(),
     potSize: z.enum(POT_SIZE_IDS).optional(),
+    winter: z.object({ choice: z.enum(WINTER_CHOICES), decidedAt: z.iso.datetime(), indoorsAt: z.iso.datetime().optional() }).optional(),
     toPlant: z.boolean().optional(),
     addedAt: z.iso.datetime(),
     updatedAt: z.iso.datetime(),

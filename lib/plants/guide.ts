@@ -14,6 +14,9 @@ import type { ClimateInfo } from "./climate";
 import { agree, byForm, elides, capitalize, objectBefore, objectPronoun, stressedPronoun, subjectPronoun, verb } from "./grammar";
 import { feedingNext, nextPotFor, potNeedFor, potNeedShort, potSheetFor, soilPhrase, soilSupplies } from "./pot-sheet";
 import type { PotSize } from "./pot-size";
+import { coldTenderOf } from "./cold-hardiness";
+import { wateringIntervalHours } from "./watering";
+import { indoorCareText, indoorWeeksNote } from "../garden/indoors";
 
 export type GuideModel = "sow-pot" | "sow-indoor" | "plant-seedling" | "plant-bulb" | "perennial-pot" | GuideTask;
 
@@ -23,9 +26,13 @@ export const isPotTask = (value: unknown): value is PotTask => value === "repot"
 /** Les gestes de suite d'un semis ou d'une plantation (lib/garden/follow-ups.ts). */
 export type FollowUpTask = "thin" | "pinch" | "outdoors";
 export const isFollowUpTask = (value: unknown): value is FollowUpTask => value === "thin" || value === "pinch" || value === "outdoors";
+/** Rentrer une frileuse pour l'hiver (chantier « Plante hors saison », étape 4). */
+/** Rentrer une frileuse pour l'hiver, puis la ressortir au printemps (chantier « Plante hors saison »). */
+export type WinterTask = "indoors" | "spring";
+export const isWinterTask = (value: unknown): value is WinterTask => value === "indoors" || value === "spring";
 /** Un pas-à-pas pour un geste précis, ouvert depuis ce geste (`task=` de la route du guide). */
-export type GuideTask = PotTask | FollowUpTask;
-export const isGuideTask = (value: unknown): value is GuideTask => isPotTask(value) || isFollowUpTask(value);
+export type GuideTask = PotTask | FollowUpTask | WinterTask;
+export const isGuideTask = (value: unknown): value is GuideTask => isPotTask(value) || isFollowUpTask(value) || isWinterTask(value);
 
 /** Le pas-à-pas d'un geste du calendrier, s'il en a un (sinon celui pour planter, ou aucun). */
 export function guideTaskOf(activity: { kind: string; topdress?: true; followUp?: FollowUpTask }): GuideTask | null {
@@ -89,6 +96,8 @@ export type Supply = { id: string; label: string; detail?: string; shared: boole
 const isDenseSowing = (planting: Planting) => planting.perPot === 0;
 
 export function supplies(entry: CatalogPlant, model: GuideModel, options: GuideOptions = {}): Supply[] {
+  // Rentrer une plante : rien à acheter, le pas-à-pas commence tout de suite.
+  if (model === "indoors" || model === "spring") return [];
   const planting = plantingOf(entry);
   if (model === "repot" || model === "topdress") return potCareSupplies(entry, model, options);
   if (model === "thin") return [{ id: "scissors", label: "Une petite paire de ciseaux", detail: "Des ciseaux à ongles font très bien l’affaire.", shared: true }, { id: "spray", label: "Un vaporisateur ou un arrosoir à pomme fine", detail: "Une pluie fine ne couche pas les pousses.", shared: true }];
@@ -161,6 +170,8 @@ export function delayText([min, max]: [number, number], unit: "days" | "weeks") 
  * Ex. « Les pousses sortent dans 7 à 10 jours. Garde la terre humide. »
  */
 export function whatsNext(entry: CatalogPlant, model: GuideModel): string[] {
+  if (model === "spring") return entry.id === "dahlia" ? ["Les premières pousses sortent en quelques semaines.", "Balco reprend ses rappels quand elles sont là."] : ["Balco reprend ses rappels d’arrosage et d’engrais.", `Un coup de froid annoncé ? Rentre-${objectPronoun(entry)} quelques nuits.`];
+  if (model === "indoors") return [indoorCareText(entry, wateringIntervalHours(entry, undefined)), ...(indoorWeeksNote(entry) ? [indoorWeeksNote(entry)!] : [])];
   const feeding = feedingNext(entry);
   if (model === "repot") return [`Garde-${objectPronoun(entry)} quelques jours à l’ombre légère : ${verb(entry, "ses", "leurs")} racines s’installent.`, "Arrose un peu moins les deux premières semaines.", ...(feeding ? [feeding] : [])];
   if (model === "topdress") return [`Le terreau neuf ${objectBefore(entry, "nourrit")} pour toute la saison.`];
@@ -351,8 +362,55 @@ function outdoorsSteps(planting: Planting): GuideStep[] {
   ];
 }
 
+/**
+ * Rentrer une frileuse pour l'hiver : 4 écrans au plus. Près d'une fenêtre (basilic, piment…), au frais hors gel
+ * (citronnier, citronnelle…), ou le dahlia, gardé au sec après que le gel a noirci ses feuilles (docs/sources-froid.md).
+ */
+function indoorsSteps(entry: CatalogPlant): GuideStep[] {
+  const pests: GuideStep = { illustration: "leaf-underside", text: "Vérifie les pucerons sous les feuilles.", why: "Dedans, ils se multiplient vite : retire-les avant de rentrer." };
+  const saucer: GuideStep = { illustration: "empty-saucer", text: "Vide la soucoupe.", why: "L’eau qui stagne fait pourrir les racines." };
+  if (entry.id === "dahlia") {
+    return [
+      { illustration: "thin", text: "Coupe les tiges à 15 cm du sol.", why: "Quand le premier gel a noirci les feuilles : les réserves sont faites." },
+      saucer,
+      { illustration: "away-radiator", text: "Range le pot au sec, hors gel.", why: "Une cave ou un garage, entre 5 et 8 °C. N’arrose plus jusqu’au printemps." },
+    ];
+  }
+  const cool = coldTenderOf(entry)?.place === "cool";
+  return [
+    pests,
+    saucer,
+    cool
+      ? { illustration: "windowsill", text: "Choisis une pièce fraîche et lumineuse, hors gel.", why: "Entre 5 et 12 °C environ : une entrée, une véranda, une chambre peu chauffée." }
+      : { illustration: "windowsill", text: "Choisis la fenêtre la plus lumineuse.", why: "En hiver, la lumière manque : près de la vitre, côté sud si tu peux." },
+    { illustration: "away-radiator", text: `Éloigne-${objectPronoun(entry)} du radiateur.`, why: cool ? `Au chaud, ${subjectPronoun(entry)} ${verb(entry, "s’épuise", "s’épuisent")} au lieu de se reposer.` : "L’air chaud et sec dessèche les feuilles." },
+  ];
+}
+
+/**
+ * Ressortir au printemps une plante rentrée : quelques heures à l'ombre et à l'abri du vent, un peu plus chaque jour,
+ * puis au soleil, en une semaine environ (docs/sources-froid.md, § « Au printemps »). Le dahlia, gardé au sec dans son
+ * pot : au soleil, un peu d'eau, puis rien jusqu'aux premières feuilles.
+ */
+function springSteps(entry: CatalogPlant): GuideStep[] {
+  if (entry.id === "dahlia") {
+    return [
+      { illustration: "harden-off", text: "Sors le pot dehors, à l’abri du vent.", why: "Les tubercules se réveillent à la chaleur du printemps." },
+      { illustration: "fine-water", text: "Arrose un peu, une seule fois.", why: "Puis attends les premières feuilles pour arroser encore.", mistake: "Erreur à éviter : arroser souvent avant les feuilles. Les tubercules pourriraient." },
+    ];
+  }
+  const it = objectPronoun(entry);
+  return [
+    { illustration: "harden-off", text: `Sors-${it} quelques heures, à l’ombre et à l’abri du vent.`, why: "Après l’hiver dedans, les feuilles ne supportent plus le plein soleil.", mistake: `Erreur à éviter : ${it} mettre d’un coup en plein soleil. Les feuilles brûleraient.` },
+    { illustration: "harden-off", text: `Laisse-${it} dehors un peu plus longtemps chaque jour.`, why: "Au bout de quelques jours, passe au soleil du matin." },
+    { illustration: "water-well", text: `Installe-${it} à sa place au soleil, puis arrose bien.`, why: "Après une semaine environ : dehors jour et nuit." },
+  ];
+}
+
 /** Les étapes du guide, selon son modèle et les données de la plante. */
 export function guideSteps(entry: CatalogPlant, model: GuideModel, options: GuideOptions = {}): GuideStep[] {
+  if (model === "indoors") return indoorsSteps(entry);
+  if (model === "spring") return springSteps(entry);
   if (model === "repot") return repotSteps(entry, options);
   if (model === "topdress") return topdressSteps();
   if (model === "thin") return thinSteps(plantingOf(entry));
@@ -369,6 +427,8 @@ export function guideTitle(entry: CatalogPlant, model: GuideModel) {
   if (model === "thin") return `Éclaircir ${entry.label}`;
   if (model === "pinch") return `Pincer ${entry.label}`;
   if (model === "outdoors") return `Sortir tes plants ${ofName(entry.name)}`;
+  if (model === "indoors") return `Rentrer ${entry.label}`;
+  if (model === "spring") return `Ressortir ${entry.label}`;
   return `${isSowing(model) ? "Semer" : "Planter"} ${entry.label}`;
 }
 
@@ -377,6 +437,8 @@ export function guideLinkText(entry: CatalogPlant, task: GuideTask | "need") {
   if (task === "thin") return `Comment ${objectBefore(entry, "éclaircir")}, pas à pas ›`;
   if (task === "pinch") return `Comment ${objectBefore(entry, "pincer")}, pas à pas ›`;
   if (task === "outdoors") return "Comment sortir les plants, pas à pas ›";
+  if (task === "indoors") return `Comment ${objectBefore(entry, "rentrer")}, pas à pas ›`;
+  if (task === "spring") return `Comment ${objectBefore(entry, "ressortir")}, pas à pas ›`;
   if (task === "repot") return `Comment ${objectBefore(entry, "rempoter")} ›`;
   if (task === "topdress") return "Changer la terre du dessus, pas à pas ›";
   return `Ce qu’il te faut pour ${objectBefore(entry, "planter")} ›`;
@@ -390,6 +452,8 @@ function laterPinch(entry: CatalogPlant) {
 /** « Et après ? », en plus de la levée et de la récolte : les gestes de suite que Balco rappellera. */
 export function nextGestures(entry: CatalogPlant, model: GuideModel): string[] {
   if (model === "thin") return [];
+  if (model === "spring") return [];
+  if (model === "indoors") return [`Au printemps, Balco te dira quand ${objectBefore(entry, "ressortir")}.`];
   if (model === "pinch") return ["Tu peux recommencer à chaque fois qu’une tige s’allonge trop."];
   if (model === "outdoors") return plantingOf(entry).pinching ? [`Dans deux semaines, ${laterPinch(entry)}`] : [];
   if (model === "repot" || model === "topdress") {

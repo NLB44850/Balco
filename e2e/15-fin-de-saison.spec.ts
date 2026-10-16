@@ -2,7 +2,10 @@ import { expect, test } from "@playwright/test";
 
 import { mockWeather, open, seedBalcony, trackErrors } from "./helpers";
 
-/** Fin de saison des annuelles : « Ta saison de basilic est finie ? », le soir de gel, puis « Ton pot est libre ». */
+/**
+ * Fin de saison des annuelles : « Ta saison de basilic est finie ? », le soir de gel, puis « Ton pot est libre ». Le
+ * basilic, frileux, passe d'abord par son choix pour l'hiver (chantier « Plante hors saison », étape 3).
+ */
 
 const basil = { id: "basil-e2e", catalogId: "basil", addedAt: new Date(2027, 3, 1).toISOString() };
 const sown = { id: "basil-e2e:start", plantId: "basil-e2e", type: "observation", completedAt: new Date(2027, 3, 10, 9).toISOString(), source: "manual", note: "Sème le basilic au chaud" };
@@ -12,22 +15,26 @@ async function springWishes(page: Parameters<typeof seedBalcony>[0]) {
   return (JSON.parse(stored ?? "{}") as { springWishes?: string[] }).springWishes ?? [];
 }
 
-const seed = (page: Parameters<typeof seedBalcony>[0]) => seedBalcony(page, { plants: [], extra: { "balco.garden.plants.v1": JSON.stringify([basil]), "balco.garden.events.v1": JSON.stringify([sown]) } });
+const seed = (page: Parameters<typeof seedBalcony>[0], plant: object = basil) => seedBalcony(page, { plants: [], extra: { "balco.garden.plants.v1": JSON.stringify([plant]), "balco.garden.events.v1": JSON.stringify([sown]) } });
 
-test("basilic en octobre : « Ta saison de basilic est finie ? » → Oui → pot au repos, avec le conseil", async ({ page }) => {
+test("basilic en octobre : « Décide… » → « Tout récolter » → « Tout récolté ? » → Oui → pot au repos, avec le conseil", async ({ page }) => {
   const errors = trackErrors(page);
   await page.clock.install({ time: new Date(2027, 9, 2, 10) });
   await page.clock.resume();
   await mockWeather(page);
   await seed(page);
 
-  await open(page, "/", "Ta saison de basilic est finie ?");
-  // Une seule ligne pour la plante : la question remplace son geste habituel.
+  await open(page, "/", "Décide pour ton basilic avant le froid");
+  // Une seule ligne pour la plante : le choix pour l'hiver remplace son geste habituel et « Ta saison … est finie ? ».
   await expect(page.getByText("Arrose le basilic")).toHaveCount(0);
-  await page.getByRole("button", { name: "Ta saison de basilic est finie ?, détail" }).click();
+  await expect(page.getByText("Ta saison de basilic est finie ?")).toHaveCount(0);
+  await page.getByRole("button", { name: "Décide pour ton basilic avant le froid, détail" }).click();
+  await page.getByRole("dialog").getByRole("button", { name: "Basilic : Tout récolter" }).click();
+  await expect(page.getByText("Ton basilic est-il tout récolté ?")).toBeVisible();
+  await page.getByRole("button", { name: "Ton basilic est-il tout récolté ?, détail" }).click();
   const sheet = page.getByRole("dialog");
-  await expect(sheet.getByText("Pas encore ? Balco te le redemandera dans deux semaines.", { exact: false })).toBeVisible();
-  await sheet.getByRole("button", { name: "Oui, la saison est finie" }).click();
+  await expect(sheet.getByText("Hache-le sous l’huile d’olive, en bac à glaçons, au congélateur.")).toBeVisible();
+  await sheet.getByRole("button", { name: "Oui, tout est récolté" }).click();
 
   await expect(sheet.getByText("Ton pot est libre")).toBeVisible();
   await expect(sheet.getByText("Saison de basilic finie")).toBeVisible();
@@ -38,17 +45,17 @@ test("basilic en octobre : « Ta saison de basilic est finie ? » → Oui → po
   await expect(sheet.getByRole("checkbox", { name: "Me le reproposer au printemps" })).toBeChecked();
   await sheet.getByRole("button", { name: "Laisser le pot au repos jusqu’au printemps" }).click();
   await expect(page.getByText("Pot au repos : tes récoltes restent dans ta progression")).toBeVisible();
-  await expect(page.getByText("Ta saison de basilic est finie ?")).toHaveCount(0);
+  await expect(page.getByText("Ton basilic est-il tout récolté ?")).toHaveCount(0);
   expect(await springWishes(page)).toEqual(["basil"]);
   expect(errors).toEqual([]);
 });
 
-test("soir de gel en septembre : « Récolte tout ton basilic avant cette nuit », puis la question le lendemain", async ({ page }) => {
+test("« Le laisser dehors » : le soir de gel, « Récolte tout ton basilic avant cette nuit », puis la question le lendemain", async ({ page }) => {
   const errors = trackErrors(page);
   await page.clock.install({ time: new Date(2027, 8, 20, 17) });
   await page.clock.resume();
   await mockWeather(page, { min: 3 });
-  await seed(page);
+  await seed(page, { ...basil, winter: { choice: "outside", decidedAt: new Date(2027, 8, 15).toISOString() } });
 
   await open(page, "/", "Récolte tout ton basilic avant cette nuit");
   await page.getByRole("button", { name: "C’est fait : Récolte tout ton basilic avant cette nuit" }).click();
@@ -74,7 +81,7 @@ test("soir de gel en septembre : « Récolte tout ton basilic avant cette nuit �
   expect(errors).toEqual([]);
 });
 
-test("basilic ajouté « déjà sur mon balcon » en octobre : la question vient tout de suite", async ({ page }) => {
+test("basilic ajouté « déjà sur mon balcon » en octobre : son choix pour l'hiver vient tout de suite", async ({ page }) => {
   const errors = trackErrors(page);
   const now = new Date(2027, 9, 8, 10);
   await page.clock.install({ time: now });
@@ -82,7 +89,7 @@ test("basilic ajouté « déjà sur mon balcon » en octobre : la question vient
   await mockWeather(page);
   const arrived = { id: "basil-e2e", catalogId: "basil", addedAt: now.toISOString() };
   await seedBalcony(page, { plants: [], extra: { "balco.garden.plants.v1": JSON.stringify([arrived]), "balco.garden.events.v1": "[]" } });
-  await open(page, "/", "Ta saison de basilic est finie ?");
+  await open(page, "/", "Décide pour ton basilic avant le froid");
   await expect(page.getByText("Arrose le basilic")).toHaveCount(0);
   expect(errors).toEqual([]);
 });

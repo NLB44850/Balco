@@ -15,7 +15,8 @@ import { groupReminders } from "../lib/reminders/reminder-groups";
 // Le balcon de démonstration du test utilisateur : 5 plantes, arrosées il y a 3 jours, début octobre à Lyon.
 const NOW = new Date(2026, 9, 4, 11);
 const DEMO = ["basil", "mint", "thyme", "cherry-tomato", "strawberry"];
-const plants = resolvePlants(DEMO.map((id) => ({ id: `${id}-1`, catalogId: id, addedAt: new Date(2026, 8, 5).toISOString() })));
+// Ces tests ne parlent pas de l'hiver : les frileuses ont déjà choisi « Le laisser dehors » (rien ne change pour elles).
+const plants = resolvePlants(DEMO.map((id) => ({ id: `${id}-1`, catalogId: id, addedAt: new Date(2026, 8, 5).toISOString(), winter: { choice: "outside" as const, decidedAt: "2026-08-01T00:00:00.000Z" } })));
 const at = (days: number, hour = 9) => new Date(2026, 9, 4 - days, hour).toISOString();
 const watered: MaintenanceEvent[] = plants.map(({ plant }) => ({ id: `w-${plant.id}`, plantId: plant.id, type: "watering", completedAt: at(3), source: "manual" }));
 
@@ -92,13 +93,18 @@ describe("état d'une plante : une couleur, un sens", () => {
     // La pluie reste bleue mais n'est pas un souci : pas comptée dans « à surveiller ».
     expect(dayOf(scene(watered, { rainMm: 9 }).plan, "basil-1")!.status).toEqual({ tone: "weather", label: "Pluie annoncée" });
     // Un arrosage à faire aujourd'hui ne change pas l'état (retour du 14/10) : le geste s'affiche, la plante reste en forme.
-    const due = dayOf(scene().plan, "basil-1")!;
+    const due = dayOf(scene().plan, "mint-1")!;
     expect(due.first?.kind).toBe("watering");
     expect(due.status).toEqual({ tone: "good", label: "En forme" });
+    // Hors saison (chantier « Plante hors saison ») : le basilic début octobre est en fin de saison, en gris, ses gestes restent.
+    expect(dayOf(scene().plan, "basil-1")!.status).toEqual({ tone: "rest", label: "Fin de saison" });
+    expect(dayOf(scene().plan, "basil-1")!.first?.kind).toBe("watering");
     expect(scene().plan.filter((day) => day.status.worry)).toHaveLength(0);
     const today = plants.map(({ plant }) => ({ ...watered[0], id: `t-${plant.id}`, plantId: plant.id, completedAt: at(0, 8) }));
-    expect(dayOf(scene([...watered, ...today]).plan, "basil-1")!.status).toEqual({ tone: "good", label: "En forme" });
-    expect(planDay({ plants: resolvePlants([{ id: "l", catalogId: "lavender", addedAt: at(2) }]), events: [], now: new Date(2026, 0, 10) })[0].status).toEqual({ tone: "new", label: "Nouvelle" });
+    expect(dayOf(scene([...watered, ...today]).plan, "mint-1")!.status).toEqual({ tone: "good", label: "En forme" });
+    expect(planDay({ plants: resolvePlants([{ id: "l", catalogId: "lavender", addedAt: at(2) }]), events: [], now: new Date(2026, 0, 10) })[0].status).toEqual({ tone: "rest", label: "Au repos jusqu’en avril" });
+    // Gris sans soin : une plante rustique en saison, jamais soignée dans l'app.
+    expect(planDay({ plants: resolvePlants([{ id: "l", catalogId: "lavender", addedAt: at(2) }]), events: [], now: NOW })[0].status).toEqual({ tone: "new", label: "Nouvelle" });
   });
 
   it("orange : arrosage en retard de 3 jours ou plus sur son rythme", () => {
@@ -119,24 +125,24 @@ describe("état d'une plante : une couleur, un sens", () => {
     const scan = (days: number, health: string): MaintenanceEvent => ({ id: scanEventId("basil-1", new Date(at(days)), health), plantId: "basil-1", type: "observation", completedAt: at(days), source: "manual", note: "Scanner : pucerons." });
     expect(dayOf(scene([...watered, scan(3, "sick")]).plan, "basil-1")!.status).toEqual({ tone: "watch", label: "Problème vu par Observer", worry: true });
     expect(dayOf(scene([...watered, scan(3, "needs_attention")]).plan, "basil-1")!.status.label).toBe("Problème vu par Observer");
-    expect(dayOf(scene([...watered, scan(20, "sick")]).plan, "basil-1")!.status.tone).toBe("good");
-    expect(dayOf(scene([...watered, scan(5, "sick"), scan(1, "healthy")]).plan, "basil-1")!.status.tone).toBe("good");
+    expect(dayOf(scene([...watered, scan(20, "sick")]).plan, "basil-1")!.status.label).toBe("Fin de saison");
+    expect(dayOf(scene([...watered, scan(5, "sick"), scan(1, "healthy")]).plan, "basil-1")!.status.label).toBe("Fin de saison");
     expect(observerProblem("basil-1", [{ id: "scan:basil-1:123", plantId: "basil-1", type: "observation", completedAt: at(1), source: "manual" }], NOW)).toBe(false);
   });
 
   it("orange : un pot choisi trop petit pour la plante ; sans taille choisie, rien", () => {
-    const small = resolvePlants([{ id: "tomato-s", catalogId: "cherry-tomato", potSize: "small", addedAt: new Date(2026, 8, 5).toISOString() }]);
-    const unknown = resolvePlants([{ id: "tomato-u", catalogId: "cherry-tomato", addedAt: new Date(2026, 8, 5).toISOString() }]);
+    const small = resolvePlants([{ id: "tomato-s", catalogId: "cherry-tomato", potSize: "small", winter: { choice: "outside" as const, decidedAt: "2026-08-01T00:00:00.000Z" }, addedAt: new Date(2026, 8, 5).toISOString() }], NOW);
+    const unknown = resolvePlants([{ id: "tomato-u", catalogId: "cherry-tomato", winter: { choice: "outside" as const, decidedAt: "2026-08-01T00:00:00.000Z" }, addedAt: new Date(2026, 8, 5).toISOString() }], NOW);
     const events = [{ ...watered[0], plantId: "tomato-s" }, { ...watered[0], id: "w-u", plantId: "tomato-u" }];
     expect(planDay({ plants: small, events, now: NOW })[0].status).toMatchObject({ tone: "watch", label: expect.stringMatching(/^Pot trop (petit|peu profond)$/u), worry: true });
-    expect(planDay({ plants: unknown, events, now: NOW })[0].status.tone).toBe("good");
+    expect(planDay({ plants: unknown, events, now: NOW })[0].status.label).toBe("Fin de saison");
   });
 
   it("les pastilles d'Aujourd'hui et les cartes Balcon lisent le même état", () => {
     const { plan } = scene();
     // Les deux écrans lisent `status` du même plan : on vérifie qu'il n'y a qu'un état par plante.
     expect(new Set(plan.map((day) => day.resolved.plant.id)).size).toBe(plan.length);
-    expect(plan.every((day) => ["good", "watch", "weather", "new"].includes(day.status.tone))).toBe(true);
+    expect(plan.every((day) => ["good", "watch", "weather", "new", "rest"].includes(day.status.tone))).toBe(true);
   });
 });
 

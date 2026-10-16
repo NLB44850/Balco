@@ -48,17 +48,18 @@ describe("quelles plantes ont une fin de saison", () => {
 });
 
 describe("quand demander « Ta saison … est finie ? »", () => {
-  it("sans gel, à la fin de ses mois de récolte : le basilic semé en avril, le 1ᵉʳ octobre", () => {
-    const basil = plant("basil");
+  // Une annuelle rustique (la bourrache) : le basilic, frileux, passe d'abord par son choix pour l'hiver (winter-choice.test.ts).
+  it("sans gel, à la fin de ses mois de récolte : la bourrache semée en avril, le 1ᵉʳ octobre", () => {
+    const basil = plant("borage");
     const events = [started(new Date(2026, 3, 10))];
     expect(seasonQuestionDate(basil, events, undefined)).toEqual(new Date(2026, 9, 1));
     expect(seasonQuestionDue(basil, events, new Date(2026, 8, 30, 12), undefined)).toBe(false);
     const day = planDay({ plants: [basil], events, now: new Date(2026, 9, 1, 9) })[0];
-    expect(day.gestures.map((gesture) => [gesture.title, gesture.instruction])).toEqual([["Ta saison de basilic est finie ?", "Si oui, Balco te propose quoi mettre dans le pot. Pas encore ? Balco te le redemandera dans deux semaines."]]);
+    expect(day.gestures.map((gesture) => [gesture.title, gesture.instruction])).toEqual([["Ta saison de bourrache est finie ?", "Si oui, Balco te propose quoi mettre dans le pot. Pas encore ? Balco te le redemandera dans deux semaines."]]);
   });
 
   it("« Pas encore » : une seule relance deux semaines plus tard, puis plus jamais", () => {
-    const basil = plant("basil");
+    const basil = plant("borage");
     const events = [started(new Date(2026, 3, 10))];
     const first = new Date(2026, 9, 1, 9);
     let snoozes = markSeasonAsked([], "p", first);
@@ -192,8 +193,8 @@ describe("fin de saison : une ligne pour toutes les questions, rien pour une sai
     const { buildTodayList, layoutTodayList } = await import("../lib/garden/today");
     const now = new Date(2026, 9, 5, 10);
     const plants = resolvePlants([
-      { id: "a", catalogId: "basil", addedAt: new Date(2026, 4, 1).toISOString() },
-      { id: "b", catalogId: "basil", addedAt: new Date(2026, 4, 1).toISOString() },
+      { id: "a", catalogId: "borage", addedAt: new Date(2026, 4, 1).toISOString() },
+      { id: "b", catalogId: "borage", addedAt: new Date(2026, 4, 1).toISOString() },
     ]);
     const events: MaintenanceEvent[] = ["a", "b"].map((id) => ({ id: startEventId(id), plantId: id, type: "observation", completedAt: new Date(2026, 4, 1).toISOString(), source: "manual" }));
     const lines = layoutTodayList(buildTodayList({ groups: [], plan: planDay({ plants, events, now }) }));

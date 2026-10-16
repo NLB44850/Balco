@@ -48,6 +48,7 @@ import { seasonAwards } from "./season-badges";
 import { BACKFILL_VERSION, backfillAwards, badgesEarnedNow, capAwards, mergeAwards, newAwards, unseenAwards, type Awards } from "./awards";
 import { now as clockNow } from "@/lib/clock";
 import type { KnownPotSize, PotSize } from "@/lib/plants/pot-size";
+import type { WinterPlan } from "./winter-plan";
 import { getCatalogPlant } from "@/lib/plants/catalog";
 
 export const GARDEN_PLANTS_STORAGE_KEY = "balco.garden.plants.v1";
@@ -117,6 +118,8 @@ type GardenContextValue = {
   setPlantVariety: (plantId: string, varietyId: string | undefined) => Promise<void>;
   /** « Je ne sais pas » retire la taille notée. */
   setPlantPotSize: (plantId: string, potSize: PotSize) => Promise<void>;
+  /** Le choix pour l'hiver d'une frileuse ; undefined l'efface. */
+  setPlantWinter: (plantId: string, winter: WinterPlan | undefined) => Promise<void>;
   logEvent: (event: MaintenanceEvent) => Promise<void>;
   removeEvent: (eventId: string) => Promise<void>;
   updateProfile: (patch: Partial<UserProfile>) => Promise<void>;
@@ -428,11 +431,14 @@ export function GardenProvider({ children }: { children: ReactNode }) {
     const { remove, add } = archiveSeason(eventsRef.current, plantId);
     await saveEvents([...add, ...eventsRef.current.filter((event) => !remove.includes(event.id))].slice(0, MAX_STORED_EVENTS));
     queue((outbox) => add.reduce(recordEvent, remove.reduce(recordEventDeletion, outbox)));
-    await updatePlant(plantId, (plant) => ({ ...plant, toPlant: true }));
+    // Une nouvelle saison : le choix pour l'hiver de la précédente ne vaut plus.
+    await updatePlant(plantId, ({ winter: _winter, ...plant }) => ({ ...plant, toPlant: true }));
   }, [queue, saveEvents, updatePlant]);
   const renamePlant = useCallback((plantId: string, nickname: string) => updatePlant(plantId, (plant) => ({ ...plant, nickname: nickname.trim() || undefined })), [updatePlant]);
   const setPlantVariety = useCallback((plantId: string, varietyId: string | undefined) => updatePlant(plantId, (plant) => ({ ...plant, varietyId })), [updatePlant]);
   const setPlantPotSize = useCallback((plantId: string, potSize: PotSize) => updatePlant(plantId, (plant) => ({ ...plant, potSize: potSize === "unknown" ? undefined : potSize })), [updatePlant]);
+  // Le choix pour l'hiver d'une frileuse (chantier « Plante hors saison ») ; undefined : « Changer d'avis ».
+  const setPlantWinter = useCallback((plantId: string, winter: WinterPlan | undefined) => updatePlant(plantId, ({ winter: _winter, ...plant }) => (winter ? { ...plant, winter } : plant)), [updatePlant]);
 
   const logEvent = useCallback(async (event: MaintenanceEvent) => {
     await saveEvents(appendEvent(eventsRef.current, event));
@@ -527,7 +533,9 @@ export function GardenProvider({ children }: { children: ReactNode }) {
   }, [deleteServerAccount, setOutbox]);
 
   const plants = useMemo(() => activePlants(allPlants), [allPlants]);
-  const resolvedPlants = useMemo(() => resolvePlants(plants), [plants]);
+  // Le jour compte : au printemps, le choix pour l'hiver passé ne vaut plus (`currentWinterPlan`).
+  const today = clockNow().toDateString();
+  const resolvedPlants = useMemo(() => resolvePlants(plants, new Date(today)), [plants, today]);
   const pastPlants = useMemo(() => resolvePlants(allPlants.filter((plant) => plant.removedAt)), [allPlants]);
 
   // Rien ne se perd : chaque badge débloqué est noté (avec sa date), d'où qu'il vienne (geste, notification, pluie).
@@ -580,8 +588,8 @@ export function GardenProvider({ children }: { children: ReactNode }) {
   }), [auth.isAuthenticated, auth.loading, auth.user?.email, auth.user?.name, founder, lastSyncedAt, plan, serverPush, syncError, syncStatus]);
 
   const value = useMemo<GardenContextValue>(
-    () => ({ loaded, plants, resolvedPlants, pastPlants, events, awards, takeUnseenAwards, markAwardsSeen, grantAward, profile, onboarding, account, addPlant, removePlant, restorePlant, restartPlant, renamePlant, setPlantVariety, setPlantPotSize, logEvent, removeEvent, updateProfile, reloadOnboarding, updateOnboarding, reportLocation, signIn, signOut, syncNow, claimThisDevice, refreshAccount, completeSignIn, deleteAccount }),
-    [loaded, plants, resolvedPlants, pastPlants, events, awards, takeUnseenAwards, markAwardsSeen, grantAward, profile, onboarding, account, addPlant, removePlant, restorePlant, restartPlant, renamePlant, setPlantVariety, setPlantPotSize, logEvent, removeEvent, updateProfile, reloadOnboarding, updateOnboarding, reportLocation, signIn, signOut, syncNow, claimThisDevice, refreshAccount, completeSignIn, deleteAccount],
+    () => ({ loaded, plants, resolvedPlants, pastPlants, events, awards, takeUnseenAwards, markAwardsSeen, grantAward, profile, onboarding, account, addPlant, removePlant, restorePlant, restartPlant, renamePlant, setPlantVariety, setPlantPotSize, setPlantWinter, logEvent, removeEvent, updateProfile, reloadOnboarding, updateOnboarding, reportLocation, signIn, signOut, syncNow, claimThisDevice, refreshAccount, completeSignIn, deleteAccount }),
+    [loaded, plants, resolvedPlants, pastPlants, events, awards, takeUnseenAwards, markAwardsSeen, grantAward, profile, onboarding, account, addPlant, removePlant, restorePlant, restartPlant, renamePlant, setPlantVariety, setPlantPotSize, setPlantWinter, logEvent, removeEvent, updateProfile, reloadOnboarding, updateOnboarding, reportLocation, signIn, signOut, syncNow, claimThisDevice, refreshAccount, completeSignIn, deleteAccount],
   );
 
   return <GardenContext.Provider value={value}>{children}</GardenContext.Provider>;

@@ -64,7 +64,7 @@ describe("photos des plantes", () => {
 });
 
 describe("fiche plante", () => {
-  const [basil] = resolvePlants([{ ...createGardenPlant("basil", daysAgo(10)), id: "basil-1" }]);
+  const [basil] = resolvePlants([{ ...createGardenPlant("basil", daysAgo(10)), id: "basil-1", winter: { choice: "outside" as const, decidedAt: daysAgo(1).toISOString() } }]);
 
   it("propose le prochain geste du jour (le plan du jour), puis le montre fait une fois coché", () => {
     const gesture = planDay({ plants: [basil], events: [], now })[0].first;

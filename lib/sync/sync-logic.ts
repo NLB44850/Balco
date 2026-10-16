@@ -178,7 +178,15 @@ export type AppliedSnapshot = {
  * pendant l'appel réseau (`pending`), qui n'ont pas encore été envoyés.
  */
 export function applySnapshot(snapshot: SyncSnapshotPayload, pending: Outbox, local: LocalGardenState, maxEvents = 1000): AppliedSnapshot {
-  const plants = new Map<string, GardenPlant>(snapshot.plants.map((plant) => [plant.id, plant]));
+  // La même modification des deux côtés : la copie du téléphone fait foi. Un serveur pas encore à jour (une demande de
+  // fusion testée avant d'être en ligne) ne renvoie pas les champs qu'il ignore, comme le choix pour l'hiver (16/10).
+  const localPlants = new Map(local.plants.map((plant) => [plant.id, plant]));
+  const plants = new Map<string, GardenPlant>(
+    snapshot.plants.map((plant) => {
+      const mine = localPlants.get(plant.id);
+      return [plant.id, mine && plantTimestamp(mine) === plantTimestamp(plant) ? mine : plant];
+    }),
+  );
   for (const plant of Object.values(pending.plants)) {
     const server = plants.get(plant.id);
     if (!server || plantTimestamp(plant) >= plantTimestamp(server)) plants.set(plant.id, plant);

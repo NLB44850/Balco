@@ -383,3 +383,48 @@ Exemple : **Sortir tes plants de basilic**. Pour les plantes semées au chaud, q
 - Engrais tous les 30 jours, un mois après la plantation : engrais liquide organique (algues) à demi-dose.
 - Dans deux semaines, tu le pinceras pour qu’il soit plus touffu.
 
+
+## 12. Rentrer une plante pour l'hiver (nouveau, chantier « Plante hors saison »)
+
+Exemple : **Rentrer le basilic**. Pour une frileuse dont on a choisi « Le rentrer à l'intérieur », depuis la ligne
+« Rentre ton basilic » (quand une nuit froide est annoncée) ou la fiche. Rien à acheter : les étapes commencent tout de
+suite. Bouton final : « C'est rentré » (la plante passe « 🏠 À l'intérieur »).
+
+**Les étapes** (près d'une fenêtre : basilic, piment, poivron, tomates, shiso)
+
+1. **Vérifie les pucerons sous les feuilles.** Dedans, ils se multiplient vite : retire-les avant de rentrer.  
+   _Dessin : une loupe regarde sous une feuille._
+2. **Vide la soucoupe.** L'eau qui stagne fait pourrir les racines.  
+   _Dessin : on vide l'eau de la soucoupe._
+3. **Choisis la fenêtre la plus lumineuse.** En hiver, la lumière manque : près de la vitre, côté sud si tu peux.  
+   _Dessin : le pot près d'une fenêtre._
+4. **Éloigne-le du radiateur.** L'air chaud et sec dessèche les feuilles.  
+   _Dessin : le pot éloigné du radiateur._
+
+Au frais, hors gel (citronnier, citronnelle, verveine citronnelle, stévia, sauge ananas, physalis, concombre à la
+souris) : l'étape 3 devient **Choisis une pièce fraîche et lumineuse, hors gel.** (entre 5 et 12 °C environ), l'étape 4
+dit « Au chaud, il s'épuise au lieu de se reposer ».
+
+Dahlia (3 écrans) : **Coupe les tiges à 15 cm du sol** (quand le premier gel a noirci les feuilles), **Vide la
+soucoupe**, **Range le pot au sec, hors gel** (cave ou garage, 5 à 8 °C, plus d'arrosage jusqu'au printemps).
+
+**Et après ?** Comment l'arroser à l'intérieur (« Arrose environ tous les N jours, si la terre est sèche sur 2 cm
+(estimation Balco). Pas d'engrais jusqu'au printemps. »), « À l'intérieur, il tiendra souvent quelques semaines de
+plus. » pour le basilic, le shiso et les tomates, et « Au printemps, Balco te dira quand le ressortir. »
+
+## 13. Ressortir une plante au printemps (nouveau, chantier « Plante hors saison », étape 5)
+
+Exemple : **Ressortir le basilic**. Pour une frileuse rentrée l'hiver, depuis la ligne « Ressors ton basilic » (au feu
+vert des Saints de glace, nuits douces) ou la fiche. Rien à acheter : les étapes commencent tout de suite.
+
+1. **Sors-le quelques heures, à l'ombre et à l'abri du vent.** Après l'hiver dedans, les feuilles ne supportent plus
+   le plein soleil. *Erreur à éviter : le mettre d'un coup en plein soleil. Les feuilles brûleraient.*
+2. **Laisse-le dehors un peu plus longtemps chaque jour.** Au bout de quelques jours, passe au soleil du matin.
+3. **Installe-le à sa place au soleil, puis arrose bien.** Après une semaine environ : dehors jour et nuit.
+
+Le dahlia, gardé au sec dans son pot, en 2 écrans : **Sors le pot dehors, à l'abri du vent**, puis **Arrose un peu,
+une seule fois** (*erreur à éviter : arroser souvent avant les feuilles, les tubercules pourriraient*).
+
+**Et après ?** « Balco reprend ses rappels d'arrosage et d'engrais. » et « Un coup de froid annoncé ? Rentre-le
+quelques nuits. » (dahlia : « Les premières pousses sortent en quelques semaines. »). Bouton **C'est ressorti** : la
+plante reprend son état et ses rappels normaux.

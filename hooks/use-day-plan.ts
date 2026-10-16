@@ -9,8 +9,9 @@ import { useLocalWeather } from "@/hooks/use-local-weather";
 import { planDay } from "@/lib/garden/day-plan";
 import { postponedStarts } from "@/lib/garden/postpone";
 import { skippedRepots } from "@/lib/garden/repot-skip";
-import { endsWithSeason, harvestEndStates, markHarvestAsked, markSeasonAsked, markSeasonFrost, potIsFree, settleLongOverSeasons } from "@/lib/garden/harvest-end";
+import { endsWithSeason, harvestEndStates, markHarvestAsked, markSeasonAsked, markSeasonFrost, markWinterAsked, potIsFree, settleLongOverSeasons } from "@/lib/garden/harvest-end";
 import { dayKey, lastEventDate } from "@/lib/garden/garden-logic";
+import { isIndoors } from "@/lib/garden/indoors";
 import { useBalcoPlus } from "@/hooks/use-balco-plus";
 import { coachAdvice } from "@/lib/plants/watering-coach";
 import { useGarden } from "@/lib/garden/garden-context";
@@ -79,7 +80,8 @@ export function useDayPlan() {
     if (!isPlus || weather.isFallback) return undefined;
     const balcony = onboarding?.skipped ? {} : { orientation: onboarding?.orientation, covered: onboarding?.covered, facing: onboarding?.facing };
     const coachWeather = { latitude: weather.latitude, today: weatherSnapshot.today };
-    return new Map(reminderPlants.map((resolved) => [resolved.plant.id, coachAdvice({ entry: resolved.entry, potSize: resolved.plant.potSize, lastWatering: lastEventDate(events, resolved.plant.id, "watering"), weather: coachWeather, balcony, now })] as const));
+    // Une plante rentrée à l'intérieur n'a plus la météo du balcon : son rythme d'intérieur suffit.
+    return new Map(reminderPlants.filter((resolved) => !isIndoors(resolved.plant)).map((resolved) => [resolved.plant.id, coachAdvice({ entry: resolved.entry, potSize: resolved.plant.potSize, lastWatering: lastEventDate(events, resolved.plant.id, "watering"), weather: coachWeather, balcony, now })] as const));
   }, [events, isPlus, now, onboarding, reminderPlants, weather.isFallback, weather.latitude, weatherSnapshot.today]);
   // Tous les conseils météo du moment (« rappels activés » ne décide que des notifications).
   const allDecisions = useMemo(() => {
@@ -98,7 +100,9 @@ export function useDayPlan() {
   const visibleGroups = useMemo(() => groupReminders(visibleDecisions), [visibleDecisions]);
   const postponed = useMemo(() => postponedStarts(snoozes, now), [now, snoozes]);
   const repotSkips = useMemo(() => skippedRepots(snoozes, now), [now, snoozes]);
-  const plan = useMemo(() => planDay({ plants: resolvedPlants, events, now, decisions: visibleDecisions, allDecisions, climate, postponed, repotSkips, harvestEnds, coach }), [allDecisions, climate, coach, events, harvestEnds, now, postponed, repotSkips, resolvedPlants, visibleDecisions]);
+  // Les minimales annoncées : une nuit sous le seuil d'une frileuse ramène « Décide pour ton basilic avant le froid ».
+  const nights = useMemo(() => (weather.isFallback ? undefined : weatherSnapshot.nights?.length ? weatherSnapshot.nights : [weatherSnapshot.today.temperatureMinC]), [weather.isFallback, weatherSnapshot.nights, weatherSnapshot.today.temperatureMinC]);
+  const plan = useMemo(() => planDay({ plants: resolvedPlants, events, now, decisions: visibleDecisions, allDecisions, climate, postponed, repotSkips, harvestEnds, coach, nights }), [allDecisions, climate, coach, events, harvestEnds, nights, now, postponed, repotSkips, resolvedPlants, visibleDecisions]);
 
   // « Tes radis sont-ils tous récoltés ? » ne se pose qu'un jour, « Ta saison de basilic est finie ? » un jour puis
   // une relance : on note le jour où elle s'affiche. Et le soir de gel qui finit la saison d'une annuelle frileuse.
@@ -111,9 +115,12 @@ export function useDayPlan() {
       return endsWithSeason(day.resolved.entry) ? !state?.seasonAsked?.includes(today) : !state?.askedOn;
     });
     const frosts = allDecisions.filter((decision) => decision.cause === "frost" && decision.taskType === "harvest" && !harvestEnds.get(decision.plantId)?.frostOn);
-    if (asked.length === 0 && frosts.length === 0) return;
+    // « Décide pour ton basilic avant le froid » : le premier jour où elle s'affiche (ensuite, seulement quand le froid arrive).
+    const winterAsked = plan.filter((day) => day.first?.source.type === "harvest-end" && day.first.source.stage === "decide" && !harvestEnds.get(day.resolved.plant.id)?.winterAskedOn);
+    if (asked.length === 0 && frosts.length === 0 && winterAsked.length === 0) return;
     void loadReminderSnoozes().then((stored) => {
       let next = asked.reduce((current, day) => (endsWithSeason(day.resolved.entry) ? markSeasonAsked : markHarvestAsked)(current, day.resolved.plant.id, now), stored);
+      next = winterAsked.reduce((current, day) => markWinterAsked(current, day.resolved.plant.id, now), next);
       next = frosts.reduce((current, decision) => markSeasonFrost(current, decision.plantId, now), next);
       return saveReminderSnoozes(next);
     });

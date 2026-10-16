@@ -7,7 +7,8 @@ import { mockWeather, open, openHarvests, seedBalcony, trackErrors, wateringGrou
  * même geste du jour et le même état sur Aujourd'hui, la carte Balcon et sa fiche ; un geste fait se voit
  * dans Saisons, Ma semaine et Moi, avec les mêmes chiffres.
  */
-const DEMO = { plants: ["basil", "mint", "thyme", "cherry-tomato", "strawberry"], wateredDaysAgo: 3, pastGestureDays: [1, 2, 4] };
+// L'hiver n'est pas le sujet : basilic et tomates ont déjà choisi « Le laisser dehors » (rien ne change pour eux).
+const DEMO = { plants: ["basil", "mint", "thyme", "cherry-tomato", "strawberry"], wateredDaysAgo: 3, pastGestureDays: [1, 2, 4], winter: { basil: "outside", "cherry-tomato": "outside" } as const };
 const NAMES: Record<string, string> = { basil: "Basilic", mint: "Menthe", thyme: "Thym", "cherry-tomato": "Tomates cerises", strawberry: "Fraisier" };
 const NOTHING = "Rien à faire aujourd’hui";
 

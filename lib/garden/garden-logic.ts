@@ -7,6 +7,8 @@ import { endsWithSeason, seasonFrostText } from "../plants/season-end";
 import type { MaintenanceEvent, MaintenanceTaskType, PlantCareProfile } from "../reminders/reminder-engine";
 import { alertCauseOf } from "../reminders/alert-cause";
 import type { PotSize } from "../plants/pot-size";
+import { currentWinterPlan, type WinterPlan } from "./winter-plan";
+import { indoorWatering, isIndoors, waitsToComeIn } from "./indoors";
 import { wateringIntervalHours, wateringLiters } from "../plants/watering";
 
 export type GardenPlant = {
@@ -28,6 +30,8 @@ export type GardenPlant = {
    * ou « Plante… »). Absent ou false : installée sur le balcon. Cocher le premier geste l'installe.
    */
   toPlant?: boolean;
+  /** Frileuse en fin de saison : le choix pour l'hiver (lib/garden/winter-plan.ts) ; absent : pas encore décidé. */
+  winter?: WinterPlan;
 };
 
 export type ResolvedPlant = { plant: GardenPlant; entry: CatalogPlant };
@@ -84,10 +88,14 @@ export function activePlants(plants: GardenPlant[]) {
   return plants.filter((plant) => !plant.removedAt);
 }
 
-export function resolvePlants(plants: GardenPlant[]): ResolvedPlant[] {
+/** `now` : le choix pour l'hiver d'un hiver passé ne compte plus (`currentWinterPlan`). */
+export function resolvePlants(plants: GardenPlant[], now = new Date()): ResolvedPlant[] {
   return plants.flatMap((plant) => {
     const entry = getCatalogPlant(plant.catalogId);
-    return entry ? [{ plant, entry }] : [];
+    if (!entry) return [];
+    if (!plant.winter) return [{ plant, entry }];
+    const winter = currentWinterPlan(plant.winter, now);
+    return [{ plant: winter === plant.winter ? plant : { ...plant, winter }, entry }];
   });
 }
 
@@ -101,8 +109,15 @@ export function plantVariety({ plant, entry }: ResolvedPlant) {
 }
 
 /** Le rythme d'arrosage d'une plante dans son pot (étape 6a : petit pot plus souvent, grand pot moins souvent). */
+/** Une plante gardée au sec à l'intérieur (dahlia) : plus d'arrosage avant le printemps (un an, nombre fini pour la sauvegarde). */
+const NO_WATERING_HOURS = 365 * 24;
+
 export function wateringIntervalOf(resolved: ResolvedPlant) {
-  return wateringIntervalHours(resolved.entry, resolved.plant.potSize);
+  const outdoor = wateringIntervalHours(resolved.entry, resolved.plant.potSize);
+  // Rentrée à l'intérieur (chantier « Plante hors saison ») : son rythme d'intérieur, plus espacé.
+  if (!isIndoors(resolved.plant)) return outdoor;
+  const indoor = indoorWatering(resolved.entry, outdoor);
+  return indoor.kind === "dry" ? NO_WATERING_HOURS : indoor.hours;
 }
 
 /** Litres d'un arrosage selon son pot, arrondis au demi-litre. */
@@ -122,9 +137,13 @@ export function careProfileFor(resolved: ResolvedPlant, balcony?: { covered?: bo
     wateringIntervalHours: coach?.intervalHours ?? wateringIntervalOf(resolved),
     wateringLiters: coach?.liters ?? wateringLitersOf(resolved),
     ...(balcony?.covered ? { sheltered: true } : {}),
+    ...(isIndoors(plant) ? { indoors: true } : {}),
+    // Choisie pour rentrer, pas encore rentrée : « Rentre ton basilic » remplace l'alerte « protège-le ».
+    ...(waitsToComeIn(plant) ? { frostSensitive: false } : {}),
     allowedTaskTypes: Array.from(new Set<MaintenanceTaskType>([...entry.tasks.map((task) => task.type), "observation", "protection"])),
     soilCheckCm: soilCheckDepthCm(entry),
-    ...(endsWithSeason(entry) && entry.care.frostSensitive ? { seasonFrost: seasonFrostText(entry) } : {}),
+    // Choisie pour rentrer à l'intérieur (chantier « Plante hors saison ») : le gel ne finit pas sa saison.
+    ...(endsWithSeason(entry) && entry.care.frostSensitive && plant.winter?.choice !== "indoors" ? { seasonFrost: seasonFrostText(entry) } : {}),
   };
 }
 

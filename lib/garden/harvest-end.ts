@@ -66,6 +66,7 @@ export const freePotSubtitle = (entry: CatalogPlant) => `${potFreedBy(entry)} ·
 const ASKED = "harvest-asked:";
 const SEASON_ASKED = "season-asked:";
 const SEASON_FROST = "season-frost:";
+const WINTER_ASKED = "winter-asked:";
 const DONE = "harvest-done:";
 const keep = (now: Date) => new Date(now.getTime() + KEEP_DAYS * DAY_MS).toISOString();
 
@@ -77,7 +78,7 @@ const isDoneKey = (key: string, plantId: string) => key === `${DONE}${plantId}` 
  * `askedOn` : jour de la question « Tout récolté ? » ; `seasonAsked` : jours de « Ta saison … est finie ? » (la
  * question et sa relance) ; `frostOn` : soir de gel annoncé qui finit la saison d'une frileuse.
  */
-export type HarvestEndState = { askedOn?: string; answered: boolean; answeredOn?: string; seasonAsked?: string[]; frostOn?: string };
+export type HarvestEndState = { askedOn?: string; answered: boolean; answeredOn?: string; seasonAsked?: string[]; frostOn?: string; winterAskedOn?: string };
 
 /** `<prefixe><plante>:<jour>` → [plante, jour]. */
 const keyParts = (key: string, prefix: string) => [key.slice(prefix.length, key.lastIndexOf(":")), key.slice(key.lastIndexOf(":") + 1)] as const;
@@ -101,6 +102,11 @@ export function harvestEndStates(snoozes: ReminderSnooze[], now: Date) {
       const state = states.get(plantId);
       // Le premier soir de gel compte : c'est lui qui a fini la saison.
       states.set(plantId, { ...state, answered: state?.answered ?? false, frostOn: state?.frostOn && state.frostOn < day ? state.frostOn : day });
+    } else if (snooze.key.startsWith(WINTER_ASKED)) {
+      // « Décide pour ton basilic avant le froid » : le premier jour où la ligne s'est affichée.
+      const [plantId, day] = keyParts(snooze.key, WINTER_ASKED);
+      const state = states.get(plantId);
+      states.set(plantId, { ...state, answered: state?.answered ?? false, winterAskedOn: state?.winterAskedOn && state.winterAskedOn < day ? state.winterAskedOn : day });
     } else if (snooze.key.startsWith(ASKED)) {
       const [plantId, day] = [snooze.key.slice(ASKED.length, snooze.key.lastIndexOf(":")), snooze.key.slice(snooze.key.lastIndexOf(":") + 1)];
       states.set(plantId, { ...states.get(plantId), answered: states.get(plantId)?.answered ?? false, askedOn: day });
@@ -127,6 +133,12 @@ export function markSeasonFrost(snoozes: ReminderSnooze[], plantId: string, now:
   return [...snoozes, { key: `${SEASON_FROST}${plantId}:${dayKey(now)}`, kind: "skip", until: keep(now) }];
 }
 
+/** « Décide pour ton basilic avant le froid » affichée aujourd'hui pour la première fois (chantier « Plante hors saison »). */
+export function markWinterAsked(snoozes: ReminderSnooze[], plantId: string, now: Date): ReminderSnooze[] {
+  if (snoozes.some((snooze) => snooze.key.startsWith(`${WINTER_ASKED}${plantId}:`))) return snoozes;
+  return [...snoozes, { key: `${WINTER_ASKED}${plantId}:${dayKey(now)}`, kind: "skip", until: keep(now) }];
+}
+
 /** « Oui, tout est récolté. » */
 export function answerAllHarvested(snoozes: ReminderSnooze[], plantId: string, now: Date): ReminderSnooze[] {
   return [...snoozes.filter((snooze) => !isDoneKey(snooze.key, plantId)), { key: `${DONE}${plantId}:${dayKey(now)}`, kind: "skip", until: keep(now) }];
@@ -134,7 +146,7 @@ export function answerAllHarvested(snoozes: ReminderSnooze[], plantId: string, n
 
 /** Ressemée : une nouvelle saison commence, la question pourra revenir. */
 export function clearHarvestEnd(snoozes: ReminderSnooze[], plantId: string): ReminderSnooze[] {
-  return snoozes.filter((snooze) => !isDoneKey(snooze.key, plantId) && ![ASKED, SEASON_ASKED, SEASON_FROST].some((prefix) => snooze.key.startsWith(`${prefix}${plantId}:`)));
+  return snoozes.filter((snooze) => !isDoneKey(snooze.key, plantId) && ![ASKED, SEASON_ASKED, SEASON_FROST, WINTER_ASKED].some((prefix) => snooze.key.startsWith(`${prefix}${plantId}:`)));
 }
 
 // --- Quand poser la question ---------------------------------------------------------------------------
