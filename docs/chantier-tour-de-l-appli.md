@@ -18,13 +18,15 @@ serveur, solidité de l'app. Ce document garde les constats, le plan proposé et
 
 ## Le plan (une étape = un commit testé, validé sur le téléphone)
 
-### Étape 1. Ménage (rien de visible)
+### Étape 1. Ménage (rien de visible) : faite le 16/10
 Supprimer ce qui reste du modèle de départ et ne sert plus : page de démonstration `app/dev/theme-lab.tsx`
 (ouvrable par lien dans la version publiée), composants `external-link`, `hello-wave`, `parallax-scroll-view`,
 `collapsible`, `contextual-reminder-card`, fichiers `constants/const.ts`, `shared/*`, `drizzle/relations.ts`,
 `scripts/reset-project.js`, fonctions `dailyTip` et `defaultAiQuota`, dépendances `cookie`, `expo-keep-awake`,
 `@expo/ngrok`, `@types/cookie`, images `react-logo*`, notes à la racine (vers `docs/`), TODO du modèle. Environ
 1 000 lignes en moins.
+Fait : tout supprimé sauf `shared/const.ts` (encore lu par le serveur) ; notes de la racine déplacées en
+`docs/notes-meteo.md` et `docs/spec-rappels-contextuels.md`. 760 tests et 95 e2e verts.
 
 ### Étape 2. Sécurité du serveur (le plus important)
 1. **Code de connexion devinable** en envoyant beaucoup d'essais en même temps : compteur d'essais en une seule

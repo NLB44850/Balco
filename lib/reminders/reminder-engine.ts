@@ -2,7 +2,7 @@
  * Moteur de décision des rappels contextuels Balco.
  *
  * Pur et déterministe : aucun accès à AsyncStorage, au réseau ou aux notifications.
- * Ordre d'évaluation (cf. spec-contextual-reminders.md §6) :
+ * Ordre d'évaluation (cf. docs/spec-rappels-contextuels.md §6) :
  *   1. garde-fous (météo périmée, rappel déjà envoyé)
  *   2. sécurité (orage, vent, gel)
  *   3. suppression d'un geste inutile (pluie prévue)

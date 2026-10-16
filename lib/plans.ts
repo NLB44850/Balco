@@ -154,10 +154,6 @@ export function can(plan: Plan | string | null | undefined, feature: Feature) {
   return PLANS[planOf(plan)].features[feature];
 }
 
-export function defaultAiQuota(plan: Plan, kind: AiKind) {
-  return PLANS[plan].aiQuota[kind];
-}
-
 /**
  * Prix fondateur : les premiers abonnés à Balco+ gardent un prix réduit. Le prix lui-même se règle dans
  * les stores (produit à part) ; Balco retient seulement qui y a droit (`users.founderSince`), et ce droit

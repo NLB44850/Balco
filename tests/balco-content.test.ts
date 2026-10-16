@@ -181,13 +181,9 @@ describe("Balco MVP content", () => {
     const home = readProjectFile("app/(tabs)/index.tsx");
     // Les conseils sont calculés une fois pour Aujourd'hui, Balcon et la fiche (hooks/use-day-plan.ts).
     const plan = readProjectFile("hooks/use-day-plan.ts");
-    const card = readProjectFile("components/contextual-reminder-card.tsx");
     expect(home).toContain("reminderDecisions");
     expect(plan).toContain("groupReminders");
     expect(plan).toContain("decideReminders");
-    expect(card).toContain("onComplete");
-    expect(card).toContain("onSnooze");
-    expect(card).toContain("Pas aujourd’hui");
   });
 
   it("keeps the Balco nature palette in the theme tokens", () => {
