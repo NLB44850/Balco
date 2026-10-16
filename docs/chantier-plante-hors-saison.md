@@ -113,3 +113,7 @@ Une étape = un commit testé, validée sur son téléphone avant la suivante. D
   - Version de test : simulation météo « Nuit fraîche » (9 °C, sous le seuil du basilic, au-dessus de son alerte gel).
   - Tests `tests/winter-choice.test.ts` ; les anciens tests sur une frileuse en automne lui donnent « Le laisser dehors »,
     ceux de « Ta saison … est finie ? » sans gel portent sur la bourrache (rustique) ; e2e `30-choix-hiver`.
+  - Retour du 16/10 (connecté à son compte) : le choix disparaissait aussitôt (« Décide… » revenait, « Ton pot est
+    libre » ne venait pas). Cause : le serveur en ligne n'a pas encore la colonne `winterJson` (il n'est mis à jour
+    qu'à la fusion) et la synchro remplaçait la plante par sa copie sans `winter`. Corrigé dans `applySnapshot`
+    (`lib/sync/sync-logic.ts`) : pour la même modification (même date des deux côtés), la copie du téléphone fait foi.
