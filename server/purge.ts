@@ -5,8 +5,8 @@
  */
 import { lt } from "drizzle-orm";
 
-import { aiRequests, loginCodes, reminderDecisions } from "../drizzle/schema";
-import { getDb } from "./db";
+import { aiRequests, loginCodes, reminderDecisions, revokedSessions } from "../drizzle/schema";
+import { affectedRows, getDb } from "./db";
 import { acquireJobLock, releaseJobLock } from "./job-lock";
 import { purgeRateLimits } from "./rate-limit";
 
@@ -28,9 +28,6 @@ export function purgeCutoffs(now: Date) {
   };
 }
 
-function affectedRows(result: unknown) {
-  return Number((result as [{ affectedRows?: number }])[0]?.affectedRows ?? 0);
-}
 
 /** Supprime par paquets jusqu'à ce qu'il ne reste rien à supprimer ; renvoie le nombre de lignes. */
 async function deleteInBatches(run: () => Promise<unknown>) {
@@ -52,6 +49,8 @@ export async function purgeOldData(now = new Date()) {
   const loginCodesDeleted = await deleteInBatches(() => db.delete(loginCodes).where(lt(loginCodes.createdAt, cutoffs.loginCodesBefore)).limit(BATCH));
   const aiRequestsDeleted = await deleteInBatches(() => db.delete(aiRequests).where(lt(aiRequests.createdAt, cutoffs.aiRequestsBefore)).limit(BATCH));
   await purgeRateLimits(cutoffs.rateLimitsBefore);
+  // Sessions fermées : une fois le jeton périmé, il est refusé de toute façon.
+  await deleteInBatches(() => db.delete(revokedSessions).where(lt(revokedSessions.expiresAt, now)).limit(BATCH));
   return { reminderDecisions: reminderDecisionsDeleted, loginCodes: loginCodesDeleted, aiRequests: aiRequestsDeleted };
 }
 

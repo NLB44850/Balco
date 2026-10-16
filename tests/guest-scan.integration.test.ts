@@ -51,6 +51,15 @@ describe.skipIf(!TEST_DATABASE_URL)("analyses sans compte (MySQL)", () => {
     await takeGuestScan(device(13), ip(2), now + 86_400_000);
   });
 
+  it("30 par jour pour tous les invités réunis, puis refus sans rien consommer", async () => {
+    const day = now + 7 * 86_400_000;
+    for (let n = 0; n < 30; n++) await takeGuestScan(device(100 + n), ip(100 + (n % 50)), day);
+    const refused = await takeGuestScan(device(200), ip(199), day).catch((error: unknown) => error);
+    expect((refused as GuestLimitError).reason).toBe("day");
+    expect(await guestScanLeft(device(200), day)).toBe(true);
+    expect(guestLimitMessage("day")).toBe("Les analyses sans compte sont toutes prises pour aujourd’hui. Crée ton compte gratuit, ou réessaie demain.");
+  });
+
   it("rend l'analyse quand elle échoue", async () => {
     const release = await takeGuestScan(device(20), ip(3), now);
     expect(await guestScanLeft(device(20), now)).toBe(false);

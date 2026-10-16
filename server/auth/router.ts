@@ -3,12 +3,13 @@ import { z } from "zod";
 
 import { COOKIE_NAME } from "../../shared/const";
 import { getSessionCookieOptions } from "../_core/cookies";
+import { ENV } from "../_core/env";
 import type { TrpcContext } from "../_core/context";
 import { protectedProcedure, publicProcedure, router } from "../_core/trpc";
 import type { User } from "../../drizzle/schema";
 import { AuthError, availableProviders, deleteAccount, requestLoginCode, signInWithApple, signInWithGoogle, verifyLoginCode } from "./accounts";
 import { MailNotConfiguredError } from "./mailer";
-import { SESSION_TTL_SECONDS, signSession } from "./session";
+import { revokeSession, SESSION_TTL_SECONDS, sessionTokenFromRequest, signSession } from "./session";
 import { fingerprint, hitRateLimit, resetRateLimits } from "../rate-limit";
 
 const TRPC_CODES = {
@@ -29,18 +30,23 @@ async function mapErrors<T>(action: () => Promise<T>): Promise<T> {
   }
 }
 
-/** Limite par adresse IP, en plus de la limite par e-mail : freine l'envoi massif de codes. Comptée en base. */
+/**
+ * Limites par adresse IP, en plus de celles par e-mail : freinent l'envoi massif de codes et les essais au hasard
+ * sur plusieurs adresses. Comptées en base (server/_core/env.ts pour les réglages).
+ */
 const IP_WINDOW_MS = 60 * 60 * 1000;
-const MAX_CODE_REQUESTS_PER_IP = 20;
-const CODE_IP_BUCKET = "code-ip:";
+const CODE_BUCKETS = "code-";
+const REQUEST_IP_BUCKET = "code-ip:";
+const VERIFY_IP_BUCKET = "code-verify-ip:";
 
-async function checkIpRate(ip: string) {
-  const allowed = await hitRateLimit(`${CODE_IP_BUCKET}${fingerprint(ip)}`, MAX_CODE_REQUESTS_PER_IP, IP_WINDOW_MS);
+async function checkIpRate(bucket: string, limit: number, ip: string) {
+  const allowed = await hitRateLimit(`${bucket}${fingerprint(ip)}`, limit, IP_WINDOW_MS);
   if (!allowed) throw new TRPCError({ code: "TOO_MANY_REQUESTS", message: "Trop de demandes depuis ce réseau. Réessaie plus tard." });
 }
 
+/** Pour les tests : remet à zéro les limites des codes (par IP et par jour). */
 export function resetAuthRateLimits() {
-  return resetRateLimits(CODE_IP_BUCKET);
+  return resetRateLimits(CODE_BUCKETS);
 }
 
 function publicUser(user: User) {
@@ -61,14 +67,17 @@ export const authRouter = router({
   requestEmailCode: publicProcedure
     .input(z.object({ email: z.string().min(3).max(254) }))
     .mutation(({ ctx, input }) => mapErrors(async () => {
-      await checkIpRate(ctx.req.ip ?? "unknown");
+      await checkIpRate(REQUEST_IP_BUCKET, ENV.loginCodes.requestsPerIpPerHour, ctx.req.ip ?? "unknown");
       const { expiresInSeconds } = await requestLoginCode(input.email);
       return { sent: true, expiresInSeconds };
     })),
 
   verifyEmailCode: publicProcedure
     .input(z.object({ email: z.string().min(3).max(254), code: z.string().min(4).max(12) }))
-    .mutation(({ ctx, input }) => mapErrors(async () => startSession(ctx, await verifyLoginCode(input.email, input.code)))),
+    .mutation(({ ctx, input }) => mapErrors(async () => {
+      await checkIpRate(VERIFY_IP_BUCKET, ENV.loginCodes.attemptsPerIpPerHour, ctx.req.ip ?? "unknown");
+      return startSession(ctx, await verifyLoginCode(input.email, input.code));
+    })),
 
   signInWithApple: publicProcedure
     .input(z.object({ identityToken: z.string().min(10).max(5000), nonce: z.string().max(200).optional(), fullName: z.string().max(128).nullable().optional() }))
@@ -78,7 +87,8 @@ export const authRouter = router({
     .input(z.object({ idToken: z.string().min(10).max(5000) }))
     .mutation(({ ctx, input }) => mapErrors(async () => startSession(ctx, await signInWithGoogle(input.idToken)))),
 
-  logout: publicProcedure.mutation(({ ctx }) => {
+  logout: publicProcedure.mutation(async ({ ctx }) => {
+    await revokeSession(sessionTokenFromRequest(ctx.req));
     ctx.res.clearCookie(COOKIE_NAME, { ...getSessionCookieOptions(ctx.req), maxAge: -1 });
     return { success: true } as const;
   }),

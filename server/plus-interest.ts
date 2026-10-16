@@ -26,13 +26,6 @@ export async function addPlusInterest(who: { userId: number } | { email: string 
   await db.insert(plusInterest).values(values).onDuplicateKeyUpdate({ set: { id: sql`${plusInterest.id}` } });
 }
 
-/** Un compte supprimé quitte la liste. */
-export async function removePlusInterest(userId: number) {
-  const db = await getDb();
-  if (!db) return;
-  await db.delete(plusInterest).where(eq(plusInterest.userId, userId));
-}
-
 /** Après l'envoi qui annonce l'ouverture : la liste n'a plus de raison d'exister. */
 export async function clearPlusInterest() {
   const db = await getDb();

@@ -13,6 +13,8 @@ import { fingerprint, hitRateLimit } from "../rate-limit";
 import { runScheduledReminders } from "../reminders";
 import { forecastFor, isForecastCached, isValidCoordinate } from "../weather-cache";
 import { createContext } from "./context";
+import { describeError } from "./log";
+import { isUnexpectedError } from "./trpc";
 import { assertProductionConfig, ENV } from "./env";
 
 function isPortAvailable(port: number): Promise<boolean> {
@@ -34,6 +36,11 @@ async function findAvailablePort(startPort: number): Promise<number> {
 
 /** Prévisions demandées à Open-Meteo par heure et par adresse IP (zones pas encore en cache). */
 const MAX_WEATHER_MISSES_PER_IP = 60;
+
+/** Les analyses de photo (ai.diagnose, ai.diagnoseGuest), seules à envoyer une image. */
+export function isPhotoRequest(path: string) {
+  return /^\/api\/trpc\/[^?]*\bai\.diagnose/u.test(path);
+}
 
 /** Origines autorisées : celles listées dans CORS_ORIGINS, plus le serveur Expo local en développement. */
 export function isAllowedOrigin(origin: string) {
@@ -62,6 +69,10 @@ export function createApp() {
   app.use((req, res, next) => {
     res.header("X-Content-Type-Options", "nosniff");
     res.header("Referrer-Policy", "strict-origin-when-cross-origin");
+    // L'app web ne s'affiche pas dans le cadre d'un autre site, n'utilise ni micro ni paiement.
+    res.header("X-Frame-Options", "DENY");
+    res.header("Permissions-Policy", "microphone=(), payment=(), usb=()");
+    if (ENV.isProduction) res.header("Strict-Transport-Security", "max-age=15552000");
     const origin = req.headers.origin;
     if (origin && isAllowedOrigin(origin)) {
       res.header("Access-Control-Allow-Origin", origin);
@@ -77,8 +88,10 @@ export function createApp() {
     next();
   });
 
-  // Assez pour une photo de plante (le scanner) ; les autres requêtes restent minuscules.
-  app.use(express.json({ limit: "8mb" }));
+  // Assez pour une photo de plante (Observer) ; les autres requêtes (synchro comprise) restent sous 2 Mo.
+  const photoJson = express.json({ limit: "8mb" });
+  const smallJson = express.json({ limit: "2mb" });
+  app.use((req, res, next) => (isPhotoRequest(req.path) ? photoJson : smallJson)(req, res, next));
 
   app.get("/api/health", (_req, res) => {
     res.json({ ok: true, timestamp: Date.now() });
@@ -140,7 +153,14 @@ export function createApp() {
     res.type("text/plain; charset=utf-8").send(formatCostReport(await costReport(from)));
   });
 
-  app.use("/api/trpc", createExpressMiddleware({ router: appRouter, createContext }));
+  app.use("/api/trpc", createExpressMiddleware({
+    router: appRouter,
+    createContext,
+    // Le détail d'une erreur imprévue part dans les journaux (sans données personnelles) ; l'app reçoit un message neutre.
+    onError({ error, path }) {
+      if (isUnexpectedError(error)) console.error(`[trpc] ${path ?? "?"} a échoué : ${describeError(error.cause)}`);
+    },
+  }));
   app.use("/api", (_req, res) => res.status(404).json({ error: "not_found" }));
 
   const servesWeb = serveWebApp(app);

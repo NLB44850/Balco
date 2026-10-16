@@ -28,7 +28,7 @@ Supprimer ce qui reste du modèle de départ et ne sert plus : page de démonstr
 Fait : tout supprimé sauf `shared/const.ts` (encore lu par le serveur) ; notes de la racine déplacées en
 `docs/notes-meteo.md` et `docs/spec-rappels-contextuels.md`. 760 tests et 95 e2e verts.
 
-### Étape 2. Sécurité du serveur (le plus important)
+### Étape 2. Sécurité du serveur (le plus important) : faite le 16/10
 1. **Code de connexion devinable** en envoyant beaucoup d'essais en même temps : compteur d'essais en une seule
    écriture en base, et limite d'essais par adresse IP.
 2. **Envoi de codes en masse** qui épuiserait le quota d'e-mails Brevo (300 par jour en gratuit) : plafond par jour
@@ -42,6 +42,28 @@ Fait : tout supprimé sauf `shared/const.ts` (encore lu par le serveur) ; notes 
    le compte ; index pour les rappels à envoyer ; en-têtes de sécurité de l'app web ; taille des requêtes limitée à
    1 Mo hors analyse photo ; un jeton de notification ne peut plus passer d'un compte à un autre ; limites de taille
    et de fréquence pour la synchro.
+
+Fait (16/10) :
+- Code : l'essai est compté avant la comparaison, en une seule écriture (`verifyLoginCode`, test de 40 essais
+  simultanés) ; un code ne sert qu'une fois même envoyé deux fois en même temps ; 30 essais par heure et par IP.
+- Codes envoyés : 250 par jour pour tout le serveur (`LOGIN_CODES_PER_DAY`, compteur `code-day`), 10 demandes par
+  heure et par IP (`LOGIN_CODE_REQUESTS_PER_IP_PER_HOUR`, 20 avant).
+- Erreurs imprévues : « Un souci est survenu sur le serveur. Réessaie dans un instant. » pour l'app, sans pile ;
+  détail dans les journaux (`[trpc] <route> a échoué : …`, e-mails masqués, `server/_core/log.ts`). Les messages
+  écrits exprès pour la personne passent tels quels.
+- IA : budget de 30 $ par mois par défaut en production si `AI_MONTHLY_BUDGET_USD` est vide ; 30 analyses sans
+  compte par jour au plus, tous invités réunis (`AI_GUEST_SCANS_PER_DAY`).
+- Délai de 10 s sur Open-Meteo et les notifications Expo (serveur) ; une panne d'envoi ne coupe plus le passage.
+- « Se déconnecter » : le jeton de ce téléphone est refusé jusqu'à sa fin (table `revoked_sessions`, migration
+  0020, purgée chaque jour) ; chaque jeton a son identifiant (deux téléphones, deux jetons).
+- Suppression de compte en une transaction, avec l'inscription « Me prévenir » faite avec la même adresse.
+- Index `reminder_decisions_due_index` (status, scheduledFor) ; en-têtes `X-Frame-Options`, `Permissions-Policy`,
+  HSTS en production ; requêtes limitées à 2 Mo (8 Mo pour les photos d'Observer, 2 Mo plutôt que 1 pour laisser la
+  place à 1 000 gestes avec notes) ; 300 synchros par heure et par compte.
+- Pas fait, à dessein : empêcher un jeton de notification de passer d'un compte à l'autre. C'est le cas normal d'un
+  téléphone qui change de compte, et un jeton ne se lit que sur le téléphone lui-même ; le bloquer casserait les
+  notifications de ce cas sans vraie protection en échange.
+- À vérifier par le porteur dans Railway : la variable `EXPO_PUBLIC_WEATHER_SIMULATION` ne doit pas être posée.
 
 ### Étape 3. Solidité de l'app
 1. **Écran « Oups »** au lieu d'une fermeture sèche si un écran plante, avec « Réessayer ».

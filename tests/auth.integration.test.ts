@@ -102,6 +102,30 @@ describe.skipIf(!TEST_DATABASE_URL)("own authentication (MySQL)", () => {
       await expect(accounts.verifyLoginCode(address, good)).rejects.toMatchObject({ code: "invalid_code" });
     });
 
+    it("counts attempts sent all at once: never more than five checks, even the good code fails after", async () => {
+      const address = email("burst");
+      await accounts.requestLoginCode(address);
+      const good = sentCodes.get(address)!;
+      const wrongs = Array.from({ length: 40 }, (_, index) => String((Number(good) + index + 1) % 1_000_000).padStart(6, "0"));
+      const results = await Promise.allSettled(wrongs.map((code) => accounts.verifyLoginCode(address, code)));
+      const messages = results.map((result) => (result.status === "rejected" ? (result.reason as Error).message : "ok"));
+      expect(messages.filter((message) => message === "Ce code n'est pas le bon.").length).toBeLessThanOrEqual(4);
+      await expect(accounts.verifyLoginCode(address, good)).rejects.toMatchObject({ code: "invalid_code" });
+    });
+
+    it("caps the codes sent by the whole server each day", async () => {
+      const { ENV } = await import("../server/_core/env");
+      const before = ENV.loginCodes.perDay;
+      ENV.loginCodes.perDay = 2;
+      try {
+        await accounts.requestLoginCode(email("day1"));
+        await accounts.requestLoginCode(email("day2"));
+        await expect(accounts.requestLoginCode(email("day3"))).rejects.toMatchObject({ code: "too_many_requests", message: "Balco a envoyé beaucoup de codes aujourd’hui. Réessaie dans quelques heures." });
+      } finally {
+        ENV.loginCodes.perDay = before;
+      }
+    });
+
     it("accepts a code only once and only the latest one", async () => {
       const address = email("once");
       await accounts.requestLoginCode(address);
@@ -193,6 +217,17 @@ describe.skipIf(!TEST_DATABASE_URL)("own authentication (MySQL)", () => {
       expect(await session.authenticateRequest({ headers: {} })).toBeNull();
     });
 
+    it("« Se déconnecter » ferme la session de ce téléphone seulement", async () => {
+      const user = await loginWithCode(email("logout"));
+      const phone = await session.signSession(user);
+      const other = await session.signSession(user);
+      expect(other).not.toBe(phone);
+      const { ctx } = context({ authorization: `Bearer ${phone}` });
+      await appRouter.createCaller(ctx).auth.logout();
+      expect(await session.authenticateRequest({ headers: { authorization: `Bearer ${phone}` } })).toBeNull();
+      expect((await session.authenticateRequest({ headers: { authorization: `Bearer ${other}` } }))?.id).toBe(user.id);
+    });
+
     it("logs in through the API, returning a token and a Lax HttpOnly cookie", async () => {
       const address = email("api");
       const { ctx, cookies } = context();
@@ -207,8 +242,15 @@ describe.skipIf(!TEST_DATABASE_URL)("own authentication (MySQL)", () => {
     it("limits code requests per network", async () => {
       const { ctx } = context();
       const caller = appRouter.createCaller(ctx);
-      for (let request = 0; request < 20; request++) await caller.auth.requestEmailCode({ email: email(`net${request}`) });
+      for (let request = 0; request < 10; request++) await caller.auth.requestEmailCode({ email: email(`net${request}`) });
       await expect(caller.auth.requestEmailCode({ email: email("net-over") })).rejects.toMatchObject({ code: "TOO_MANY_REQUESTS" });
+    });
+
+    it("limits code attempts per network", async () => {
+      const { ctx } = context();
+      const caller = appRouter.createCaller(ctx);
+      for (let attempt = 0; attempt < 30; attempt++) await expect(caller.auth.verifyEmailCode({ email: email(`try${attempt}`), code: "123456" })).rejects.toMatchObject({ code: "BAD_REQUEST" });
+      await expect(caller.auth.verifyEmailCode({ email: email("try-over"), code: "123456" })).rejects.toMatchObject({ code: "TOO_MANY_REQUESTS" });
     });
 
     it("deletes the account and every piece of data attached to it", async () => {
@@ -218,6 +260,9 @@ describe.skipIf(!TEST_DATABASE_URL)("own authentication (MySQL)", () => {
       await syncGarden(user.id, { plants: [{ id: "p1", catalogId: "basil", addedAt: new Date().toISOString(), updatedAt: new Date().toISOString() }], events: [{ id: "e1", plantId: "p1", type: "watering", completedAt: new Date().toISOString(), source: "manual" }], deletedEventIds: [] });
       const caller = appRouter.createCaller({ ...(context().ctx as object), user } as never);
       await caller.plus.notifyMe({});
+      // Inscrite à « Me prévenir » avant d'avoir un compte, avec la même adresse.
+      const { addPlusInterest } = await import("../server/plus-interest");
+      await addPlusInterest({ email: address });
       await caller.auth.deleteAccount();
 
       const { getDb } = await import("../server/db");
@@ -229,6 +274,7 @@ describe.skipIf(!TEST_DATABASE_URL)("own authentication (MySQL)", () => {
       }
       expect(await db.select().from(schema.users).where(eq(schema.users.id, user.id))).toHaveLength(0);
       expect(await db.select().from(schema.loginCodes).where(eq(schema.loginCodes.email, address))).toHaveLength(0);
+      expect(await db.select().from(schema.plusInterest).where(eq(schema.plusInterest.email, address))).toHaveLength(0);
     });
   });
 });

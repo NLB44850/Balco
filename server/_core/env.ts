@@ -10,6 +10,9 @@ function usdEnv(name: string) {
   return Number.isFinite(value) && value > 0 ? value : null;
 }
 
+/** Budget IA du mois quand la variable n'est pas posée en production. */
+export const DEFAULT_PRODUCTION_AI_BUDGET_USD = 30;
+
 function intEnv(name: string, fallback: number) {
   const value = Number.parseInt(process.env[name] ?? "", 10);
   return Number.isFinite(value) && value >= 0 ? value : fallback;
@@ -48,14 +51,27 @@ export const ENV = {
     scan: process.env.BALCO_AI_MODEL_PHOTO || process.env.BALCO_AI_MODEL || "claude-opus-5",
     chat: process.env.BALCO_AI_MODEL_CHAT || process.env.BALCO_AI_MODEL || "claude-sonnet-5",
   },
-  /** Budget IA mensuel en dollars (AI_MONTHLY_BUDGET_USD) : 80 % coupe les gratuits, 100 % tout le monde. Vide = pas de limite. */
-  aiMonthlyBudgetUsd: usdEnv("AI_MONTHLY_BUDGET_USD"),
+  /**
+   * Budget IA mensuel en dollars (AI_MONTHLY_BUDGET_USD) : 80 % coupe les gratuits, 100 % tout le monde. Vide = pas de
+   * limite en développement ; en production, 30 $ par défaut (une facture ne doit jamais pouvoir s'emballer).
+   */
+  aiMonthlyBudgetUsd: usdEnv("AI_MONTHLY_BUDGET_USD") ?? (process.env.NODE_ENV === "production" ? DEFAULT_PRODUCTION_AI_BUDGET_USD : null),
   /** Plafond de jetons de sortie (réflexion comprise) : une réponse coupée n'est pas décomptée. */
   aiMaxTokens: { scan: intEnv("AI_MAX_TOKENS_PHOTO", 2000), chat: intEnv("AI_MAX_TOKENS_CHAT", 1500) },
   /** Quotas mensuels : ceux de l'offre (lib/plans.ts), sauf réglage contraire (tests, lancement). */
   aiQuotas: {
     free: { scan: intEnv("AI_FREE_SCANS_PER_MONTH", PLANS.free.aiQuota.scan), chat: intEnv("AI_FREE_QUESTIONS_PER_MONTH", PLANS.free.aiQuota.chat) },
     plus: { scan: intEnv("AI_PLUS_SCANS_PER_MONTH", PLANS.plus.aiQuota.scan), chat: intEnv("AI_PLUS_QUESTIONS_PER_MONTH", PLANS.plus.aiQuota.chat) },
+  },
+  /**
+   * Codes de connexion : envoyés au plus `perDay` par jour pour tout le serveur (Brevo gratuit : 300 e-mails par jour,
+   * un envoi massif ne doit pas bloquer toutes les connexions), demandés au plus `requestsPerIpPerHour` fois et
+   * essayés au plus `attemptsPerIpPerHour` fois par heure depuis un même réseau.
+   */
+  loginCodes: {
+    perDay: Math.max(1, intEnv("LOGIN_CODES_PER_DAY", 250)),
+    requestsPerIpPerHour: Math.max(1, intEnv("LOGIN_CODE_REQUESTS_PER_IP_PER_HOUR", 10)),
+    attemptsPerIpPerHour: Math.max(1, intEnv("LOGIN_CODE_ATTEMPTS_PER_IP_PER_HOUR", 30)),
   },
   /** Comptes recalculés en même temps par le cron des rappels (REMINDERS_CONCURRENCY). */
   remindersConcurrency: Math.max(1, intEnv("REMINDERS_CONCURRENCY", 20)),
