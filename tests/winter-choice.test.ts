@@ -101,7 +101,8 @@ describe("le choix pour l'hiver (chantier « Plante hors saison », étape 3)", 
 
   it("« Le rentrer » : plus de question ni de « récolte tout » le soir de gel", () => {
     const basil = plant("basil", { winter: winterPlanOf("indoors", OCT_15) });
-    expect(planDay({ plants: [basil], events: [], now: OCT_16, nights: [2] })[0].gestures.some((gesture) => gesture.source.type === "harvest-end")).toBe(false);
+    // Étape 4 : la nuit froide amène « Rentre ton basilic », pas « Ta saison … est finie ? ».
+    expect(planDay({ plants: [basil], events: [], now: OCT_16, nights: [2] })[0].gestures.map((gesture) => gesture.title)).toEqual(["Rentre ton basilic"]);
     expect(careProfileFor(basil).seasonFrost).toBeUndefined();
   });
 

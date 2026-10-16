@@ -117,3 +117,23 @@ Une étape = un commit testé, validée sur son téléphone avant la suivante. D
     libre » ne venait pas). Cause : le serveur en ligne n'a pas encore la colonne `winterJson` (il n'est mis à jour
     qu'à la fusion) et la synchro remplaçait la plante par sa copie sans `winter`. Corrigé dans `applySnapshot`
     (`lib/sync/sync-logic.ts`) : pour la même modification (même date des deux côtés), la copie du téléphone fait foi.
+- Étape 3 validée le 16/10 (« C'est bon, tu peux passer à l'étape 4 »).
+- Étape 4 codée le 16/10, à valider :
+  - « Rentre ton basilic » (`lib/garden/indoors.ts`) : choisie pour rentrer, pas encore rentrée, et une nuit sous son
+    seuil annoncée dans les 3 jours (ou sous le seuil d'alerte gel du catalogue ce soir) ; sinon rien, pas
+    d'aller-retour. Dès deux plantes : « Rentre 2 plantes » (groupe `indoors`). Cocher la ligne la rentre (« Annuler »
+    possible) ; la toucher ouvre le pas-à-pas.
+  - Pas-à-pas `task=indoors` (`lib/plants/guide.ts`) : 4 écrans (pucerons, soucoupe, fenêtre la plus lumineuse ou pièce
+    fraîche hors gel, loin du radiateur), dahlia en 3 (tiges à 15 cm, soucoupe, au sec hors gel), 3 nouveaux dessins
+    (`leaf-underside`, `empty-saucer`, `away-radiator`, 29 en tout), bouton « C'est rentré » ; documenté dans
+    `docs/pas-a-pas.md` § 12.
+  - « 🏠 À l'intérieur » (`winter.indoorsAt`, dans la sauvegarde) : ton gris ; profil `indoors` du moteur de rappels (ni
+    pluie, ni gel, ni vent, ni chaleur, donc pas d'eau économisée ; vaut aussi pour le serveur) ; arrosage tout l'hiver
+    à son rythme d'intérieur (`indoorWatering` : au frais tous les 14 jours, vérifié pour le citronnier ; près d'une
+    fenêtre deux fois moins souvent que dehors, estimation ; dahlia au sec), pas d'engrais ni de coach Balco+.
+  - Fiche : carte « 🏠 À l'intérieur depuis le 2 novembre » avec ses soins d'hiver, « À l'intérieur, il tiendra souvent
+    quelques semaines de plus. » pour basilic, shiso, tomates, et « Le remettre dehors » (annule la rentrée, le choix
+    reste : Balco redira quand la rentrer). Avant la rentrée : « Pour l'hiver : le rentrer à l'intérieur », le lien
+    « Comment le rentrer, pas à pas » et « Changer d'avis ».
+  - Choisie pour rentrer : plus d'alerte « Nuit fraîche : protège le basilic » (la ligne « Rentre » la remplace).
+  - Tests `tests/indoors.test.ts`, e2e `31-rentrer`. Sources de l'arrosage d'hiver : `docs/sources-froid.md`.

@@ -160,7 +160,10 @@ avant l'hiver », en gris, sur le Balcon, la fiche, Aujourd'hui et au catalogue.
 « Ton basilic n'aime pas le froid. Que veux-tu faire ? » sur la fiche (tout récolter avec une astuce de conservation
 vérifiée, le rentrer, le laisser dehors) ; sur Aujourd'hui « Décide pour ton basilic avant le froid » le premier jour,
 puis seulement quand une nuit froide est annoncée (« Prépare 3 plantes pour le froid » dès deux plantes) ; le choix
-est gardé dans la sauvegarde du compte.
+est gardé dans la sauvegarde du compte (validée le 16/10). Étape 4 codée le 16/10, à valider : « Rentre ton basilic »
+quand une nuit froide arrive (« Rentre 2 plantes » dès deux), pas-à-pas en 4 écrans dessinés (pucerons, soucoupe,
+fenêtre lumineuse, loin du radiateur), puis « 🏠 À l'intérieur » : la météo ne compte plus pour elle, arrosage plus
+espacé, pas d'engrais, « Le remettre dehors » sur la fiche.
 
 ## Ce qu'il reste à faire, dans l'ordre
 

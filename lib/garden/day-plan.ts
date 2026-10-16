@@ -8,7 +8,8 @@
  */
 import { followUpsFor } from "./follow-ups";
 import { offSeasonOf } from "./off-season";
-import { asksWinter, winterDecideSubtitle, winterDecideTitle, winterDecisionDue } from "./winter-choice";
+import { asksWinter, coldNightAhead, winterDecideSubtitle, winterDecideTitle, winterDecisionDue } from "./winter-choice";
+import { bringInSubtitle, bringInTitle, INDOORS_LABEL, isIndoors, waitsToComeIn } from "./indoors";
 import { conservationTip } from "../plants/conservation";
 import {
   FREE_POT_TITLE,
@@ -65,7 +66,7 @@ export type GestureSource =
    * Après la récolte d'une plante récoltée en une fois : la question « Tout récolté ? », puis le pot libre. `decide` :
    * une frileuse en fin de saison, « Décide pour ton basilic avant le froid » (lib/garden/winter-choice.ts).
    */
-  | { type: "harvest-end"; stage: "question" | "free" | "decide"; resolved: ResolvedPlant; quiet?: boolean };
+  | { type: "harvest-end"; stage: "question" | "free" | "decide" | "bring-in"; resolved: ResolvedPlant; quiet?: boolean };
 
 export type PlanGesture = {
   key: string;
@@ -197,6 +198,7 @@ const isWeatherAlert = (decision: ReminderDecision) => decision.cause !== undefi
 
 /** Hors saison, l'état le dit en neutre, à la place de « Nouvelle » ou « En forme » (chantier « Plante hors saison »). */
 function calmStatus(resolved: ResolvedPlant, events: MaintenanceEvent[], now: Date, climate?: ClimateInfo | null): PlantDayStatus {
+  if (isIndoors(resolved.plant)) return { tone: "rest", label: INDOORS_LABEL };
   const off = offSeasonOf(resolved.entry, now, climate);
   if (off) return { tone: "rest", label: off.label };
   if (!events.some((event) => event.plantId === resolved.plant.id)) return { tone: "new", label: STATUS_LABEL.new };
@@ -275,6 +277,15 @@ export function planDay({ plants, events, now, decisions = [], allDecisions = de
       }
       seasonQuestionWaits = !winter || winter.choice === "indoors" || (winter.choice === "outside" && !harvestEnd?.frostOn);
     }
+    // Choisie pour rentrer (étape 4) : « Rentre ton basilic » dès qu'une nuit sous son seuil est annoncée dans les
+    // 3 jours ; tant que les nuits restent douces, rien. Une fois rentrée, plus de question de fin de saison.
+    // Le seuil d'alerte gel du catalogue compte aussi : l'alerte « protège-le » ne s'affiche plus pour elle.
+    const frostTonight = (nights?.[0] ?? Number.POSITIVE_INFINITY) <= resolved.entry.care.frostThresholdC;
+    if (waitsToComeIn(resolved.plant) && (coldNightAhead(resolved.entry, nights) || frostTonight)) {
+      const first: PlanGesture = { key: `harvest-end:${plantId}:bring-in`, kind: "harvest", plantId, title: bringInTitle(resolved.entry), instruction: bringInSubtitle(resolved.entry), minutes: 5, done: false, source: { type: "harvest-end", stage: "bring-in", resolved } };
+      return { resolved, gestures: [first], first, status: calmStatus(resolved, events, now, climate) };
+    }
+    if (isIndoors(resolved.plant)) seasonQuestionWaits = true;
     if (!seasonQuestionWaits && seasonQuestionDue(resolved, events, now, harvestEnd, climate)) {
       const first: PlanGesture = { key: `harvest-end:${plantId}:question`, kind: "harvest", plantId, title: seasonQuestion(resolved.entry), instruction: seasonQuestionDetail(isSeasonRetry(harvestEnd, now)), minutes: 1, done: false, source: { type: "harvest-end", stage: "question", resolved } };
       return { resolved, gestures: [first], first, status: calmStatus(resolved, events, now, climate) };
@@ -286,7 +297,11 @@ export function planDay({ plants, events, now, decisions = [], allDecisions = de
     for (const decision of own.filter(isWeatherAlert)) gestures.push(decisionGesture("alert", decision));
 
     // 2. Arrosage : déjà fait aujourd'hui, demandé par la météo (soif), ou dû selon son rythme.
-    const tasks = tasksForMonth(resolved.entry, month).filter((task) => !task.everyDays || spacedTaskDue(resolved, task, events, today));
+    const indoors = isIndoors(resolved.plant);
+    // À l'intérieur : l'arrosage continue tout l'hiver, à son rythme (sauf une plante gardée au sec) ; pas d'engrais.
+    const indoorWater = indoors && wateringIntervalOf(resolved) < 365 * 24 ? resolved.entry.tasks.find((task) => task.type === "watering") : undefined;
+    const monthTasks = tasksForMonth(resolved.entry, month).filter((task) => !task.everyDays || spacedTaskDue(resolved, task, events, today));
+    const tasks = indoors ? [...(indoorWater ? [indoorWater] : []), ...monthTasks.filter((task) => task.type !== "watering" && task.type !== "fertilizing")] : monthTasks;
     // La consigne de la plante, puis la quantité selon son pot (étape 6a) : « Arrose environ 1 L, jusqu'à ce que ça coule. »
     // Balco+ : le coach dit si la terre a soif et combien verser ; sinon, le rythme et la quantité selon le pot.
     const advice = coach?.get(plantId);
@@ -310,7 +325,7 @@ export function planDay({ plants, events, now, decisions = [], allDecisions = de
       // Arrosée aujourd'hui : la ligne reste, cochée, même quand le conseil météo qui l'a demandée s'est tu.
       const task = wateringTask ?? { id: "check-soil", type: "watering" as const, title: `Arrose ${resolved.entry.label}`, instruction: "Enfonce un doigt sur 2 cm : arrose doucement au pied seulement si la terre est sèche.", minutes: 3, doneTitle: "Arrosage noté.", doneText: "" };
       gestures.push({ ...taskGesture("watering", resolved, task, now, eventIds), ...water, done: true, doneEventId: wateredToday.id });
-    } else if (!rainComing && !own.some((decision) => decision.cause === "heat")) {
+    } else if (indoors || (!rainComing && !own.some((decision) => decision.cause === "heat"))) {
       // Avec le coach, c'est lui qui décide (la soif du moteur ne suit que le rythme moyen).
       if (thirst && !advice) gestures.push({ ...decisionGesture("watering", thirst), ...water });
       else if (wateringTask && wateringDue && !thirstSnoozed) gestures.push({ ...taskGesture("watering", resolved, wateringTask, now, eventIds), ...water });

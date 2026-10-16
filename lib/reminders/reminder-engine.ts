@@ -45,6 +45,11 @@ export type PlantCareProfile = {
    * (« Récolte tout ton basilic avant cette nuit ») au lieu de protéger ; `{min}` reçoit la température.
    */
   seasonFrost?: { title: string; body: string };
+  /**
+   * Rentrée à l'intérieur pour l'hiver (chantier « Plante hors saison ») : ni pluie, ni gel, ni vent, ni chaleur ; seul
+   * l'arrosage compte, à son rythme d'intérieur.
+   */
+  indoors?: boolean;
 };
 
 export type WeatherSnapshot = {
@@ -316,6 +321,24 @@ function wateringDecision(
   return null;
 }
 
+/** À l'intérieur : la météo ne compte plus, l'arrosage suit son rythme. */
+function indoorWateringDecision(plant: PlantCareProfile, history: MaintenanceEvent[], now: Date): DraftDecision | null {
+  const lastWatering = lastEventOfType(history, plant.plantId, "watering");
+  if (!lastWatering) return null;
+  const elapsed = hoursBetween(lastWatering, now);
+  if (elapsed < plant.wateringIntervalHours) return null;
+  const name = plant.label ?? plant.displayName;
+  return {
+    taskType: "watering",
+    priority: "normal",
+    action: "observe",
+    cause: "thirst",
+    title: `Arrose ${name}`,
+    body: `À l’intérieur, dernier arrosage il y a ${formatElapsed(elapsed)}. Sèche sur ${plant.soilCheckCm ?? 2} cm ? Arrose.`,
+    reason: `À l’intérieur : délai de ${plant.wateringIntervalHours} h dépassé.`,
+  };
+}
+
 export function isWeatherFresh(weather: WeatherSnapshot, now = new Date()) {
   const fetchedAt = parseDate(weather.fetchedAt);
   if (!fetchedAt) return false;
@@ -326,7 +349,7 @@ export function isWeatherFresh(weather: WeatherSnapshot, now = new Date()) {
 export function decideReminder({ plant, history, weather, settings = {}, lastReminderAt, now = new Date() }: DecideReminderInput): ReminderDecision | null {
   if (!isWeatherFresh(weather, now)) return null;
 
-  const draft = safetyDecision(plant, weather) ?? wateringDecision(plant, history, weather, settings, now);
+  const draft = plant.indoors ? indoorWateringDecision(plant, history, now) : safetyDecision(plant, weather) ?? wateringDecision(plant, history, weather, settings, now);
   if (!draft) return null;
 
   // Les rappels non urgents sont soumis à la désactivation globale et au délai de 24 h.

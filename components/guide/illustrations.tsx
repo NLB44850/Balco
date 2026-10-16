@@ -364,6 +364,44 @@ const DRAWINGS: Record<IllustrationId, () => ReactNode> = {
       <Path d="M82 22 C 90 22 92 14 88 10 C 82 12 80 18 82 22 Z" fill={LEAF} {...thin} />
     </>
   ),
+  "leaf-underside": () => (
+    <>
+      {/* Une feuille retournée, quelques pucerons sur son revers, et une loupe. */}
+      <Path d="M14 70 C 30 32 74 26 100 44 C 84 78 40 92 14 70 Z" fill={LEAF} {...stroke} />
+      <Path d="M14 70 C 40 62 70 52 100 44" fill="none" {...thin} />
+      {[[42, 66], [50, 62], [58, 70], [66, 58]].map(([cx, cy]) => <Ellipse key={`${cx}-${cy}`} cx={cx} cy={cy} rx={2.6} ry={2} fill="#FFFFFF" {...thin} />)}
+      <Circle cx={56} cy={64} r={17} fill="none" {...stroke} />
+      <Line x1={68} y1={77} x2={84} y2={96} {...stroke} strokeWidth={5} />
+      <Arrow d="M24 34 C 26 26 32 22 40 22" head="M33 18 L 40 22 L 34 27" />
+    </>
+  ),
+  "empty-saucer": () => (
+    <>
+      {/* Le pot soulevé, la soucoupe penchée : l'eau part. */}
+      <G transform="translate(-14 -22)">
+        <Pot soilTop={72} />
+        <Sprout x={60} y={72} />
+      </G>
+      <G transform="rotate(18 70 104)">
+        <Path d="M40 100 L 100 100 L 96 108 L 44 108 Z" fill={LEAF} {...stroke} />
+      </G>
+      {[[100, 112], [104, 118], [96, 118]].map(([cx, cy]) => <Ellipse key={`${cx}-${cy}`} cx={cx} cy={cy} rx={2} ry={3} fill="#FFFFFF" {...thin} />)}
+      <Arrow d="M46 92 C 46 84 44 80 40 76" head="M37 82 L 40 76 L 46 79" />
+    </>
+  ),
+  "away-radiator": () => (
+    <>
+      {/* Un radiateur et sa chaleur à gauche ; le pot éloigné, à droite. */}
+      <Rect x={8} y={50} width={36} height={46} rx={4} fill="#FFFFFF" {...stroke} />
+      {[16, 24, 32].map((x) => <Line key={x} x1={x} y1={56} x2={x} y2={90} {...thin} />)}
+      <Path d="M14 44 C 10 38 18 34 14 28 M 26 44 C 22 38 30 34 26 28 M 38 44 C 34 38 42 34 38 28" fill="none" {...thin} />
+      <G transform="translate(30 0) scale(0.85) translate(24 18)">
+        <Pot soilTop={72} />
+        <Plant x={60} y={72} size={0.9} />
+      </G>
+      <Arrow d="M50 104 L 74 104" head="M68 99 L 74 104 L 68 109" />
+    </>
+  ),
 };
 
 export function GuideIllustration({ id, size = 120 }: { id: IllustrationId; size?: number }) {

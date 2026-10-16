@@ -383,3 +383,31 @@ Exemple : **Sortir tes plants de basilic**. Pour les plantes semées au chaud, q
 - Engrais tous les 30 jours, un mois après la plantation : engrais liquide organique (algues) à demi-dose.
 - Dans deux semaines, tu le pinceras pour qu’il soit plus touffu.
 
+
+## 12. Rentrer une plante pour l'hiver (nouveau, chantier « Plante hors saison »)
+
+Exemple : **Rentrer le basilic**. Pour une frileuse dont on a choisi « Le rentrer à l'intérieur », depuis la ligne
+« Rentre ton basilic » (quand une nuit froide est annoncée) ou la fiche. Rien à acheter : les étapes commencent tout de
+suite. Bouton final : « C'est rentré » (la plante passe « 🏠 À l'intérieur »).
+
+**Les étapes** (près d'une fenêtre : basilic, piment, poivron, tomates, shiso)
+
+1. **Vérifie les pucerons sous les feuilles.** Dedans, ils se multiplient vite : retire-les avant de rentrer.  
+   _Dessin : une loupe regarde sous une feuille._
+2. **Vide la soucoupe.** L'eau qui stagne fait pourrir les racines.  
+   _Dessin : on vide l'eau de la soucoupe._
+3. **Choisis la fenêtre la plus lumineuse.** En hiver, la lumière manque : près de la vitre, côté sud si tu peux.  
+   _Dessin : le pot près d'une fenêtre._
+4. **Éloigne-le du radiateur.** L'air chaud et sec dessèche les feuilles.  
+   _Dessin : le pot éloigné du radiateur._
+
+Au frais, hors gel (citronnier, citronnelle, verveine citronnelle, stévia, sauge ananas, physalis, concombre à la
+souris) : l'étape 3 devient **Choisis une pièce fraîche et lumineuse, hors gel.** (entre 5 et 12 °C environ), l'étape 4
+dit « Au chaud, il s'épuise au lieu de se reposer ».
+
+Dahlia (3 écrans) : **Coupe les tiges à 15 cm du sol** (quand le premier gel a noirci les feuilles), **Vide la
+soucoupe**, **Range le pot au sec, hors gel** (cave ou garage, 5 à 8 °C, plus d'arrosage jusqu'au printemps).
+
+**Et après ?** Comment l'arroser à l'intérieur (« Arrose environ tous les N jours, si la terre est sèche sur 2 cm
+(estimation Balco). Pas d'engrais jusqu'au printemps. »), « À l'intérieur, il tiendra souvent quelques semaines de
+plus. » pour le basilic, le shiso et les tomates, et « Au printemps, Balco te dira quand le ressortir. »

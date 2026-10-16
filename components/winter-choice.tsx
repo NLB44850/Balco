@@ -18,6 +18,11 @@ import { offSeasonOf } from "@/lib/garden/off-season";
 import { winterChoiceSummary, winterChoiceToast, winterOptions, winterPlanOf, winterQuestion, winterWhy } from "@/lib/garden/winter-choice";
 import type { WinterChoice } from "@/lib/garden/winter-plan";
 import type { ClimateInfo } from "@/lib/plants/climate";
+import { INDOORS_LABEL, indoorCareText, indoorWeeksNote } from "@/lib/garden/indoors";
+import { MONTH_LONG } from "@/lib/plants/catalog";
+import { capitalize, objectPronoun } from "@/lib/plants/grammar";
+import { guideLinkText } from "@/lib/plants/guide";
+import { wateringIntervalHours } from "@/lib/plants/watering";
 
 /** Enregistre le choix ; `onDone` affiche le message du bas avec « Annuler ». */
 export function useChooseWinter(onDone: (text: string, onUndo: () => void) => void) {
@@ -55,14 +60,39 @@ export function WinterChoiceCard({ resolved, climate, onChoose, framed = true }:
   );
 }
 
-/** Une fois choisi, sur la fiche : « Pour l'hiver : le rentrer à l'intérieur » et « Changer d'avis ». */
-export function WinterChoiceSummary({ resolved, onChange }: { resolved: ResolvedPlant; onChange: () => void }) {
+/**
+ * Une fois choisi, sur la fiche : « Pour l'hiver : le rentrer à l'intérieur » et « Changer d'avis » ; à rentrer, le lien
+ * vers le pas-à-pas et, pour une plante « quelques semaines de plus », ce qu'on peut en attendre.
+ */
+export function WinterChoiceSummary({ resolved, onChange, onGuide }: { resolved: ResolvedPlant; onChange: () => void; onGuide?: () => void }) {
   const colors = useColors();
   if (!resolved.plant.winter) return null;
+  const weeks = resolved.plant.winter.choice === "indoors" ? indoorWeeksNote(resolved.entry) : null;
   return (
-    <View style={[styles.summary, { borderColor: colors.border }]}>
-      <Text style={[styles.summaryText, { color: colors.foreground }]}>🍂  {winterChoiceSummary(resolved.entry, resolved.plant.winter)}</Text>
-      <Button small variant="secondary" label="Changer d’avis" onPress={onChange} />
+    <View style={[styles.summaryCard, { borderColor: colors.border }]}>
+      <View style={styles.summaryRow}>
+        <Text style={[styles.summaryText, { color: colors.foreground }]}>🍂  {winterChoiceSummary(resolved.entry, resolved.plant.winter)}</Text>
+        <Button small variant="secondary" label="Changer d’avis" onPress={onChange} />
+      </View>
+      {weeks && <Text style={[styles.detail, { color: colors.muted }]}>{weeks}</Text>}
+      {onGuide && resolved.plant.winter.choice === "indoors" && <Button variant="link" label={guideLinkText(resolved.entry, "indoors").replace(/ ›$/u, "")} onPress={onGuide} />}
+    </View>
+  );
+}
+
+/** Rentrée : « 🏠 À l'intérieur depuis le 20 octobre », ses soins d'hiver et « Le remettre dehors ». */
+export function IndoorCard({ resolved, onBackOutside }: { resolved: ResolvedPlant; onBackOutside: () => void }) {
+  const colors = useColors();
+  const since = resolved.plant.winter?.indoorsAt;
+  if (!since) return null;
+  const day = new Date(since);
+  const weeks = indoorWeeksNote(resolved.entry);
+  return (
+    <View style={[styles.summaryCard, { borderColor: colors.border }]}>
+      <Text style={[styles.summaryText, { color: colors.foreground }]}>{INDOORS_LABEL} depuis le {day.getDate() === 1 ? "1ᵉʳ" : day.getDate()} {MONTH_LONG[day.getMonth()]}</Text>
+      <Text style={[styles.detail, { color: colors.muted }]}>{indoorCareText(resolved.entry, wateringIntervalHours(resolved.entry, resolved.plant.potSize))}</Text>
+      {weeks && <Text style={[styles.detail, { color: colors.muted }]}>{weeks}</Text>}
+      <Button small variant="secondary" label={`${capitalize(objectPronoun(resolved.entry))} remettre dehors`} onPress={onBackOutside} />
     </View>
   );
 }
@@ -101,7 +131,8 @@ const styles = StyleSheet.create({
   option: { borderWidth: 1, borderRadius: 14, paddingVertical: 12, paddingHorizontal: 14, gap: 2 },
   optionLabel: { fontSize: 15, fontWeight: "700" },
   detail: { fontSize: 13, lineHeight: 18 },
-  summary: { borderWidth: 1, borderRadius: 16, padding: 14, marginTop: 16, gap: 10, flexDirection: "row", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap" },
+  summaryCard: { borderWidth: 1, borderRadius: 16, padding: 14, marginTop: 16, gap: 8, alignItems: "flex-start" },
+  summaryRow: { gap: 10, flexDirection: "row", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", alignSelf: "stretch" },
   summaryText: { fontSize: 15, fontWeight: "600", flexShrink: 1 },
   pressed: { opacity: 0.7 },
 });

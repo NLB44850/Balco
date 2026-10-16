@@ -27,6 +27,7 @@ import { useColors } from "@/hooks/use-colors";
 import { followUpsFor } from "@/lib/garden/follow-ups";
 import { useGarden } from "@/lib/garden/garden-context";
 import { potHistory, startEventId } from "@/lib/garden/garden-logic";
+import { broughtIn, waitsToComeIn } from "@/lib/garden/indoors";
 import { activityDone, eventForActivity, potCareActivity, startActivity } from "@/lib/plants/calendar";
 import { getCatalogPlant } from "@/lib/plants/catalog";
 import { now as clockNow } from "@/lib/clock";
@@ -63,7 +64,7 @@ export default function GuideScreen() {
   const { width } = useWindowDimensions();
   const params = useLocalSearchParams<{ catalogId: string; plantId?: string; mode?: string; task?: string; month?: string }>();
   const entry = getCatalogPlant(params.catalogId ?? "");
-  const { plants, events, logEvent } = useGarden();
+  const { plants, events, logEvent, setPlantWinter } = useGarden();
   const plant = plants.find((candidate) => candidate.id === params.plantId && !candidate.removedAt);
   const needOnly = params.mode === "need";
   // « À anticiper » ouvre le guide d'un geste à venir : son mois, pas celui d'aujourd'hui.
@@ -79,7 +80,8 @@ export default function GuideScreen() {
   const steps = useMemo(() => (entry ? guideSteps(entry, model, { repots, potSize }) : []), [entry, model, repots, potSize]);
 
   const [have, setHave] = useState<HaveState>(emptyHave);
-  const [phase, setPhase] = useState<Phase>("need");
+  // Rien à acheter (rentrer une plante) : le pas-à-pas commence tout de suite.
+  const [phase, setPhase] = useState<Phase>(() => (!needOnly && items.length === 0 ? "steps" : "need"));
   const [index, setIndex] = useState(0);
   const [planted, setPlanted] = useState(false);
   // Le geste lit toujours l'étape courante (le PanResponder est créé une seule fois).
@@ -119,7 +121,7 @@ export default function GuideScreen() {
 
   const goTo = (target: number) => setIndex(Math.max(0, Math.min(steps.length - 1, target)));
   const next = () => (index >= steps.length - 1 ? setPhase("after") : goTo(index + 1));
-  const previous = () => (index === 0 ? setPhase("need") : goTo(index - 1));
+  const previous = () => (index > 0 ? goTo(index - 1) : items.length > 0 ? setPhase("need") : router.back());
 
   // « C'est planté » : le même geste que sur Aujourd'hui ; la plante passe « installée ».
   // « C'est rempoté » / « C'est fait » : le geste du pot de ce mois, s'il n'est pas déjà noté.
@@ -128,11 +130,22 @@ export default function GuideScreen() {
   // Geste de suite (éclaircir, pincer, sortir les plants) : seulement quand Balco le propose, une seule fois.
   const followUpActivity = plant && followUp ? followUpsFor({ plant, entry }, events, clockNow()).find((activity) => activity.followUp === followUp) ?? null : null;
   const taskActivity = potActivity ?? followUpActivity;
-  const canPlant = task
+  const bringingIn = task === "indoors";
+  const canPlant = bringingIn
+    ? Boolean(plant && waitsToComeIn(plant))
+    : task
     ? taskActivity !== null && !activityDone(taskActivity, events, clockNow())
     : Boolean(plant?.toPlant) && !events.some((event) => event.id === startEventId(plant!.id));
   const markPlanted = async () => {
     if (!plant) return;
+    // « C'est rentré » : la plante passe « À l'intérieur » (chantier « Plante hors saison », étape 4).
+    if (bringingIn && plant.winter) {
+      await setPlantWinter(plant.id, broughtIn(plant.winter, clockNow()));
+      if (Platform.OS !== "web") void Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => undefined);
+      setPlanted(true);
+      setTimeout(() => router.back(), 1400);
+      return;
+    }
     const activity = taskActivity ?? startActivity({ id: plant.id, entry, displayName, addedAt: plant.addedAt, toPlant: true }, month);
     await logEvent(eventForActivity(activity, clockNow()));
     if (Platform.OS !== "web") void Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => undefined);
@@ -140,7 +153,7 @@ export default function GuideScreen() {
     setTimeout(() => router.back(), 1400);
   };
 
-  const DONE_LABELS = { repot: "C’est rempoté", topdress: "Terre changée", thin: "C’est éclairci", pinch: "C’est pincé", outdoors: "Plants installés" } as const;
+  const DONE_LABELS = { repot: "C’est rempoté", topdress: "Terre changée", thin: "C’est éclairci", pinch: "C’est pincé", outdoors: "Plants installés", indoors: "C’est rentré" } as const;
   const doneLabel = task ? DONE_LABELS[task] : isSowing(model) ? "C’est semé" : "C’est planté";
   const subtitle = needOnly ? "Ce qu’il te faut" : phase === "steps" ? `Étape ${index + 1} sur ${steps.length}` : phase === "after" ? "Et après ?" : `${steps.length} étapes · ce qu’il te faut d’abord`;
 
@@ -200,7 +213,7 @@ export default function GuideScreen() {
         {phase === "after" && (
           <>
             <View style={[glass.card, styles.after]}>
-              <GuideIllustration id={isSowing(model) || followUp === "thin" ? "sprouts" : followUp === "pinch" ? "two-shoots" : potTask === "repot" || followUp === "outdoors" ? "harden-off" : "water-well"} size={140} />
+              <GuideIllustration id={bringingIn ? "windowsill" : isSowing(model) || followUp === "thin" ? "sprouts" : followUp === "pinch" ? "two-shoots" : potTask === "repot" || followUp === "outdoors" ? "harden-off" : "water-well"} size={140} />
               {[...whatsNext(entry, model), ...nextGestures(entry, model)].map((line) => (
                 <Text key={line} style={[styles.afterLine, { color: colors.foreground }]}>{line}</Text>
               ))}

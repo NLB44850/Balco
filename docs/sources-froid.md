@@ -98,3 +98,15 @@ Exceptions : protégées par les alertes gel mais pas frileuses ici :
 - Zinnias : https://www.gerbeaud.com/jardin/fiches/zinnia.php ; https://www.jardiner-malin.fr/fiche/zinnia.html
 - Dahlias nains : https://www.gerbeaud.com/jardin/fiches/fp_dahlias_hivernage.php3 ; https://www.aujardin.info/fiches/dahlias-cannas-glaieuls-gestes-essentiels-avant-premieres-gelees.php ; https://www.promessedefleurs.com/conseil-plantes-jardin/ficheconseil/dahlia-en-pot/
 - Citronnier : https://www.jardiner-malin.fr/fiche/hivernage-citronnier.html ; https://www.truffaut.com/comment-planter-tailler-entretenir-citronnier.html ; https://www.jardiland.com/conseils-idees/hivernage-entretien-agrumes-hiver
+
+## À l'intérieur : l'arrosage d'hiver (étape 4, 16/10)
+
+Les sources donnent très rarement un rythme chiffré (recherche du 15/10, `lib/garden/indoors.ts`) :
+
+| Où | Rythme affiché | Vérifié ? |
+|---|---|---|
+| Au frais, hors gel (5 à 12 °C) | Environ tous les 14 jours, si la terre est sèche sur 2 cm | Oui pour le citronnier : Promesse de Fleurs (« toutes les 2 à 3 semaines, quand la terre est sèche sur plusieurs centimètres ») et Gamm vert (« toutes les 2 à 3 semaines ») ; Gerbeaud : « tous les quinze jours » en véranda non chauffée. Estimation Balco pour les autres (citronnelle, verveine citronnelle, stévia, sauge ananas, physalis, concombre à la souris : les sources disent « très réduit », « presque au sec ») |
+| Près d'une fenêtre, dans la maison | Deux fois moins souvent que dehors | Estimation Balco (piment : « très peu fréquent », Gamm vert ; poivron : « régulièrement », Gerbeaud ; tomate : « juste pour que la motte ne sèche pas ») |
+| Dahlia | Plus d'arrosage, au sec | Promesse de Fleurs (local sec, à l'abri du gel) et Gerbeaud (hivernage au sec) |
+
+Partout : pas d'engrais jusqu'au printemps (plante au repos), et toujours « Sèche sur 2 cm ? Arrose ».

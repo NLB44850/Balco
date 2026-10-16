@@ -8,6 +8,7 @@ import type { MaintenanceEvent, MaintenanceTaskType, PlantCareProfile } from "..
 import { alertCauseOf } from "../reminders/alert-cause";
 import type { PotSize } from "../plants/pot-size";
 import type { WinterPlan } from "./winter-plan";
+import { indoorWatering, isIndoors, waitsToComeIn } from "./indoors";
 import { wateringIntervalHours, wateringLiters } from "../plants/watering";
 
 export type GardenPlant = {
@@ -104,8 +105,15 @@ export function plantVariety({ plant, entry }: ResolvedPlant) {
 }
 
 /** Le rythme d'arrosage d'une plante dans son pot (étape 6a : petit pot plus souvent, grand pot moins souvent). */
+/** Une plante gardée au sec à l'intérieur (dahlia) : plus d'arrosage avant le printemps (un an, nombre fini pour la sauvegarde). */
+const NO_WATERING_HOURS = 365 * 24;
+
 export function wateringIntervalOf(resolved: ResolvedPlant) {
-  return wateringIntervalHours(resolved.entry, resolved.plant.potSize);
+  const outdoor = wateringIntervalHours(resolved.entry, resolved.plant.potSize);
+  // Rentrée à l'intérieur (chantier « Plante hors saison ») : son rythme d'intérieur, plus espacé.
+  if (!isIndoors(resolved.plant)) return outdoor;
+  const indoor = indoorWatering(resolved.entry, outdoor);
+  return indoor.kind === "dry" ? NO_WATERING_HOURS : indoor.hours;
 }
 
 /** Litres d'un arrosage selon son pot, arrondis au demi-litre. */
@@ -125,6 +133,9 @@ export function careProfileFor(resolved: ResolvedPlant, balcony?: { covered?: bo
     wateringIntervalHours: coach?.intervalHours ?? wateringIntervalOf(resolved),
     wateringLiters: coach?.liters ?? wateringLitersOf(resolved),
     ...(balcony?.covered ? { sheltered: true } : {}),
+    ...(isIndoors(plant) ? { indoors: true } : {}),
+    // Choisie pour rentrer, pas encore rentrée : « Rentre ton basilic » remplace l'alerte « protège-le ».
+    ...(waitsToComeIn(plant) ? { frostSensitive: false } : {}),
     allowedTaskTypes: Array.from(new Set<MaintenanceTaskType>([...entry.tasks.map((task) => task.type), "observation", "protection"])),
     soilCheckCm: soilCheckDepthCm(entry),
     // Choisie pour rentrer à l'intérieur (chantier « Plante hors saison ») : le gel ne finit pas sa saison.
