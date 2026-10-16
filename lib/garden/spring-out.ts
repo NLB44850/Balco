@@ -10,7 +10,7 @@
  */
 import type { CatalogPlant } from "../plants/catalog";
 import type { ClimateInfo } from "../plants/climate";
-import { capitalize, possessive } from "../plants/grammar";
+import { capitalize, objectPronoun, possessive } from "../plants/grammar";
 import type { ResolvedPlant } from "./garden-logic";
 import { isIndoors } from "./indoors";
 import { coldNightAhead } from "./winter-choice";
@@ -39,6 +39,11 @@ export const bringOutTitle = (entry: CatalogPlant) => `Ressors ${possessive(entr
 /** Sous la ligne : pourquoi maintenant. */
 export function bringOutSubtitle(climate: Pick<ClimateInfo, "zone"> | null | undefined) {
   return springOutDate(2000, climate).estimate ? "Les nuits se radoucissent · pas-à-pas" : "Feu vert des Saints de glace · pas-à-pas";
+}
+
+/** Sur la carte de l'hiver de la fiche : « Feu vert des Saints de glace : ressors-le. » */
+export function bringOutUrgent(entry: CatalogPlant, climate: Pick<ClimateInfo, "zone"> | null | undefined) {
+  return `${springOutDate(2000, climate).estimate ? "Les nuits se radoucissent" : "Feu vert des Saints de glace"} : ressors-${objectPronoun(entry)}.`;
 }
 
 /** Le message du bas une fois sortie. */

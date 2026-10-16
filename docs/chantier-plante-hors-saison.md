@@ -165,6 +165,13 @@ Une étape = un commit testé, validée sur son téléphone avant la suivante. D
     être facultatif ») : sur la fiche, la carte « Pour l'hiver : le rentrer à l'intérieur » a son bouton « C'est
     rentré », sans attendre la nuit froide ; elle s'affiche dès qu'un choix est fait (plus seulement en fin de saison).
     Sur Aujourd'hui, cocher la ligne suffisait déjà ; « Ressors » a son bouton « C'est ressorti » sur la fiche.
+  - Retour du 16/10 (citronnier et tomates : « le bouton C'est rentré ne s'affiche pas au même endroit car j'ai aussi
+    l'alerte météo ; garde cette cohérence pour toutes les plantes ») : sur la fiche, tout ce qui touche à l'hiver est
+    dans une seule carte, toujours juste sous les pastilles, avant le geste du jour, dans le même ordre pour toutes
+    les plantes : ce qui est choisi, ce qui presse (« Nuit sous 10 °C annoncée : rentre-les aujourd'hui. », ou au
+    printemps « Feu vert des Saints de glace : ressors-le. »), le bouton (« C'est rentré » / « C'est ressorti »), le
+    pas-à-pas facultatif, puis « Changer d'avis » (ou « Le remettre dehors »). La carte « Aujourd'hui » ne reprend plus
+    ces gestes (décider, rentrer, ressortir) et garde les alertes météo. E2e « même place pour toutes » (`31-rentrer`).
 
 ## En plus : la fiche plante condensée (16/10, à sa demande)
 

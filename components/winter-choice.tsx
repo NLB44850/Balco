@@ -61,29 +61,33 @@ export function WinterChoiceCard({ resolved, climate, onChoose, framed = true }:
 }
 
 /**
- * Une fois choisi, sur la fiche : « Pour l'hiver : le rentrer à l'intérieur » et « Changer d'avis » ; à rentrer, le lien
- * vers le pas-à-pas et, pour une plante « quelques semaines de plus », ce qu'on peut en attendre.
+ * La carte de l'hiver de la fiche, toujours à la même place (sous les pastilles) et dans le même ordre pour toutes les
+ * plantes (retour du 16/10 : le bouton changeait de place selon l'alerte du jour) : ce qui est choisi, ce qui presse
+ * (« Nuit sous 10 °C annoncée : rentre-les aujourd'hui »), le bouton, le pas-à-pas (facultatif), puis « Changer d'avis ».
  */
-export function WinterChoiceSummary({ resolved, onChange, onGuide, onBroughtIn }: { resolved: ResolvedPlant; onChange: () => void; onGuide?: () => void; onBroughtIn?: () => void }) {
+export function WinterChoiceSummary({ resolved, urgent, onChange, onGuide, onBroughtIn }: { resolved: ResolvedPlant; urgent?: string; onChange: () => void; onGuide?: () => void; onBroughtIn?: () => void }) {
   const colors = useColors();
   if (!resolved.plant.winter) return null;
-  const weeks = resolved.plant.winter.choice === "indoors" ? indoorWeeksNote(resolved.entry) : null;
+  const indoors = resolved.plant.winter.choice === "indoors";
+  const weeks = indoors ? indoorWeeksNote(resolved.entry) : null;
   return (
     <View style={[styles.summaryCard, { borderColor: colors.border }]}>
-      <View style={styles.summaryRow}>
-        <Text style={[styles.summaryText, { color: colors.foreground }]}>🍂  {winterChoiceSummary(resolved.entry, resolved.plant.winter)}</Text>
-        <Button small variant="secondary" label="Changer d’avis" onPress={onChange} />
-      </View>
+      <Text style={[styles.summaryText, { color: colors.foreground }]}>🍂  {winterChoiceSummary(resolved.entry, resolved.plant.winter)}</Text>
+      {urgent && <Text style={[styles.urgent, { color: colors.foreground }]}>{urgent}</Text>}
       {weeks && <Text style={[styles.detail, { color: colors.muted }]}>{weeks}</Text>}
-      {/* Le pas-à-pas reste facultatif (retour du 16/10) : « C'est rentré » directement, sans attendre la nuit froide. */}
-      {onBroughtIn && resolved.plant.winter.choice === "indoors" && <Button small label="C’est rentré" onPress={onBroughtIn} />}
-      {onGuide && resolved.plant.winter.choice === "indoors" && <Button variant="link" label={guideLinkText(resolved.entry, "indoors").replace(/ ›$/u, "")} onPress={onGuide} />}
+      {/* Le pas-à-pas reste facultatif (retour du 16/10) : « C'est rentré » directement, nuit froide annoncée ou non. */}
+      {indoors && onBroughtIn && <Button label="C’est rentré" onPress={onBroughtIn} style={styles.stretch} />}
+      {indoors && onGuide && <Button variant="link" label={guideLinkText(resolved.entry, "indoors").replace(/ ›$/u, "")} onPress={onGuide} />}
+      <Button small variant="secondary" label="Changer d’avis" onPress={onChange} />
     </View>
   );
 }
 
-/** Rentrée : « 🏠 À l'intérieur depuis le 20 octobre », ses soins d'hiver et « Le remettre dehors ». */
-export function IndoorCard({ resolved, onBackOutside }: { resolved: ResolvedPlant; onBackOutside: () => void }) {
+/**
+ * Rentrée : « 🏠 À l'intérieur depuis le 20 octobre », ses soins d'hiver et « Le remettre dehors » ; au printemps
+ * (`springOut`), le feu vert, « C'est ressorti » et son pas-à-pas, à la même place.
+ */
+export function IndoorCard({ resolved, springOut, onBackOutside, onBroughtOut, onSpringGuide }: { resolved: ResolvedPlant; springOut?: string; onBackOutside: () => void; onBroughtOut: () => void; onSpringGuide: () => void }) {
   const colors = useColors();
   const since = resolved.plant.winter?.indoorsAt;
   if (!since) return null;
@@ -92,9 +96,19 @@ export function IndoorCard({ resolved, onBackOutside }: { resolved: ResolvedPlan
   return (
     <View style={[styles.summaryCard, { borderColor: colors.border }]}>
       <Text style={[styles.summaryText, { color: colors.foreground }]}>{INDOORS_LABEL} depuis le {day.getDate() === 1 ? "1ᵉʳ" : day.getDate()} {MONTH_LONG[day.getMonth()]}</Text>
-      <Text style={[styles.detail, { color: colors.muted }]}>{indoorCareText(resolved.entry, wateringIntervalHours(resolved.entry, resolved.plant.potSize))}</Text>
-      {weeks && <Text style={[styles.detail, { color: colors.muted }]}>{weeks}</Text>}
-      <Button small variant="secondary" label={`${capitalize(objectPronoun(resolved.entry))} remettre dehors`} onPress={onBackOutside} />
+      {springOut ? (
+        <>
+          <Text style={[styles.urgent, { color: colors.foreground }]}>{springOut}</Text>
+          <Button label="C’est ressorti" onPress={onBroughtOut} style={styles.stretch} />
+          <Button variant="link" label={guideLinkText(resolved.entry, "spring").replace(/ ›$/u, "")} onPress={onSpringGuide} />
+        </>
+      ) : (
+        <>
+          <Text style={[styles.detail, { color: colors.muted }]}>{indoorCareText(resolved.entry, wateringIntervalHours(resolved.entry, resolved.plant.potSize))}</Text>
+          {weeks && <Text style={[styles.detail, { color: colors.muted }]}>{weeks}</Text>}
+          <Button small variant="secondary" label={`${capitalize(objectPronoun(resolved.entry))} remettre dehors`} onPress={onBackOutside} />
+        </>
+      )}
     </View>
   );
 }
@@ -126,15 +140,16 @@ export function useWinterChoiceSheet({ climate, onDone, overlay }: { climate?: C
 
 const styles = StyleSheet.create({
   card: { gap: 10 },
-  framed: { borderWidth: 1, borderRadius: 18, padding: 16, marginTop: 16 },
+  framed: { borderWidth: 1, borderRadius: 20, padding: 16, marginTop: 10 },
   kind: { fontSize: 13, fontWeight: "700" },
   title: { fontSize: 20, fontWeight: "800", letterSpacing: -0.3, lineHeight: 25 },
   body: { fontSize: 15, lineHeight: 21 },
   option: { borderWidth: 1, borderRadius: 14, paddingVertical: 12, paddingHorizontal: 14, gap: 2 },
   optionLabel: { fontSize: 15, fontWeight: "700" },
   detail: { fontSize: 13, lineHeight: 18 },
-  summaryCard: { borderWidth: 1, borderRadius: 16, padding: 14, marginTop: 16, gap: 8, alignItems: "flex-start" },
-  summaryRow: { gap: 10, flexDirection: "row", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", alignSelf: "stretch" },
+  summaryCard: { borderWidth: 1, borderRadius: 20, padding: 16, marginTop: 10, gap: 8, alignItems: "flex-start" },
+  urgent: { fontSize: 15, lineHeight: 21, fontWeight: "600" },
+  stretch: { alignSelf: "stretch" },
   summaryText: { fontSize: 15, fontWeight: "600", flexShrink: 1 },
   pressed: { opacity: 0.7 },
 });

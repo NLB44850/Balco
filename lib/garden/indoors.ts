@@ -55,6 +55,12 @@ export function bringInSubtitle(entry: CatalogPlant) {
   return data ? `Nuit sous ${data.nightC} °C annoncée · pas-à-pas` : "Une nuit froide arrive · pas-à-pas";
 }
 
+/** Sur la carte de l'hiver de la fiche, quand la ligne « Rentre » est due : « Nuit sous 10 °C annoncée : rentre-le aujourd'hui. » */
+export function bringInUrgent(entry: CatalogPlant) {
+  const data = coldTenderOf(entry);
+  return `${data ? `Nuit sous ${data.nightC} °C annoncée` : "Une nuit froide arrive"} : rentre-${objectPronoun(entry)} aujourd’hui.`;
+}
+
 /** Le message du bas une fois rentrée. */
 export const broughtInToast = (entry: CatalogPlant) => `${capitalize(possessive(entry))} : à l’intérieur, Balco adapte ses soins`;
 

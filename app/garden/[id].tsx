@@ -27,8 +27,8 @@ import { careWeeksLabel, celebrationFor, milestoneDate, plantProgress, sinceLabe
 import { endsWithSeason, harvestedToastText, isHarvestedOnce } from "@/lib/garden/harvest-end";
 import { asksWinter } from "@/lib/garden/winter-choice";
 import { IndoorCard, useChooseWinter, WinterChoiceCard, WinterChoiceSummary } from "@/components/winter-choice";
-import { backOutside, broughtIn, broughtInToast, isIndoors } from "@/lib/garden/indoors";
-import { broughtOutToast } from "@/lib/garden/spring-out";
+import { backOutside, bringInUrgent, broughtIn, broughtInToast, isIndoors } from "@/lib/garden/indoors";
+import { bringOutUrgent, broughtOutToast } from "@/lib/garden/spring-out";
 import { IconSymbol } from "@/components/ui/icon-symbol";
 import { Button } from "@/components/ui/button";
 import { BackButton } from "@/components/ui/nav-buttons";
@@ -126,7 +126,8 @@ export default function PlantScreen() {
   const gesture = day?.first ?? null;
   // « Décide pour ton basilic avant le froid » : la carte du choix pour l'hiver le dit déjà, pas deux fois.
   const winterAsked = asksWinter(resolved, now, climate);
-  const decideToday = gesture?.source.type === "harvest-end" && gesture.source.stage === "decide";
+  // Décider, rentrer, ressortir : la carte de l'hiver s'en charge, toujours à la même place (retour du 16/10).
+  const winterGesture = gesture?.source.type === "harvest-end" && (gesture.source.stage === "decide" || gesture.source.stage === "bring-in" || gesture.source.stage === "bring-out");
   // Le geste du pot de ce mois (rempoter ou terre du dessus) : le pas-à-pas de la fiche le suit.
   const potGesture = day?.gestures.find((candidate) => candidate.source.type === "season" && candidate.source.activity.kind === "repot");
   const potTask = potGesture?.source.type === "season" && potGesture.source.activity.topdress ? "topdress" : "repot";
@@ -154,8 +155,6 @@ export default function PlantScreen() {
   const bringInToday = gesture?.source.type === "harvest-end" && gesture.source.stage === "bring-in";
   const bringingOut = gesture?.source.type === "harvest-end" && gesture.source.stage === "bring-out";
   const guides = [
-    // Au printemps, la ressortir (étape 5) : son pas-à-pas d'abord.
-    ...(bringingOut ? [{ key: "spring", label: guideLinkText(entry, "spring"), task: "spring" as string | undefined }] : []),
     // Éclaircir, pincer ou sortir les plants aujourd'hui : son pas-à-pas d'abord.
     ...(followUpTask ? [{ key: followUpTask, label: guideLinkText(entry, followUpTask), task: followUpTask as string | undefined }] : []),
     // Pour la planter, ou pour revoir comment elle l'a été.
@@ -167,19 +166,6 @@ export default function PlantScreen() {
 
   const doGesture = async () => {
     if (!gesture || gesture.done) return;
-    // « Rentre ton basilic » : la plante passe « À l'intérieur » (le pas-à-pas est dans la carte de l'hiver).
-    if (gesture.source.type === "harvest-end" && gesture.source.stage === "bring-in") {
-      const previous = plant.winter;
-      if (!previous) return;
-      await setPlantWinter(plant.id, broughtIn(previous, clockNow()));
-      return showToast(broughtInToast(entry), () => void setPlantWinter(plant.id, previous));
-    }
-    // « Ressors ton basilic » (étape 5) : son choix pour l'hiver s'efface, ses rappels normaux reprennent.
-    if (gesture.source.type === "harvest-end" && gesture.source.stage === "bring-out") {
-      const previous = plant.winter;
-      await setPlantWinter(plant.id, undefined);
-      return showToast(broughtOutToast(entry), () => void setPlantWinter(plant.id, previous));
-    }
     if (gesture.source.type === "harvest-end") return gesture.source.stage === "question" ? freePot.answerYes(plant.id) : freePot.openFreePot(plant.id);
     const moment = clockNow();
     const event = eventForGesture(gesture, moment);
@@ -192,6 +178,23 @@ export default function PlantScreen() {
       return showToast(withCheer(cheer, harvestedToastText(entry)), () => void freePot.answerYes(plant.id), "Oui");
     }
     showToast(withCheer(cheer, `${gesture.source.type === "task" ? gesture.source.task.task.doneTitle : `${gesture.title} : noté.`} +${POINTS_PER_GESTURE} points`), () => void removeEvent(event.id));
+  };
+
+  /** « C'est rentré » : la plante passe « À l'intérieur » (le pas-à-pas reste facultatif). */
+  const bringIn = async () => {
+    const previous = plant.winter;
+    if (!previous) return;
+    await setPlantWinter(plant.id, broughtIn(previous, clockNow()));
+    void Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => undefined);
+    showToast(broughtInToast(entry), () => void setPlantWinter(plant.id, previous));
+  };
+
+  /** « C'est ressorti » (étape 5) : son choix pour l'hiver s'efface, ses rappels normaux reprennent. */
+  const bringOut = async () => {
+    const previous = plant.winter;
+    await setPlantWinter(plant.id, undefined);
+    void Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => undefined);
+    showToast(broughtOutToast(entry), () => void setPlantWinter(plant.id, previous));
   };
 
   /** « Elle a fleuri » : une carte dans l'herbier (fleurs, pendant leurs mois de floraison). */
@@ -303,14 +306,46 @@ export default function PlantScreen() {
             {entry.harvestMonths.length > 0 && <View style={[styles.fact, { backgroundColor: colors.surface }]}><Text style={[styles.factText, { color: colors.foreground }]}>🧺  Récolte {formatMonthRange(entry.harvestMonths)}</Text></View>}
           </View>
 
+          {/* L'hiver d'une frileuse, toujours ici, avant le geste du jour : le choix à faire, le choix fait (« C'est
+              rentré »), ou « À l'intérieur » (au printemps : « C'est ressorti »). */}
+          {ready && winterAsked && !plant.winter && <WinterChoiceCard resolved={resolved} climate={climate} onChoose={(choice) => void chooseWinter(resolved, choice)} />}
+          {ready && isIndoors(plant) && (
+            <IndoorCard
+              resolved={resolved}
+              springOut={bringingOut ? bringOutUrgent(entry, climate) : undefined}
+              onBroughtOut={() => void bringOut()}
+              onSpringGuide={() => openGuide("spring")}
+              onBackOutside={() => {
+                const previous = plant.winter;
+                if (!previous) return;
+                void setPlantWinter(plant.id, backOutside(previous));
+                showToast(`${bareName(entry)} ${agree(entry, "remis")} dehors : Balco te redira quand ${objectPronoun(entry)} rentrer`, () => void setPlantWinter(plant.id, previous));
+              }}
+            />
+          )}
+          {/* Le choix fait, tant qu'elle n'est pas rentrée (le choix d'un hiver passé s'efface le 1er mars). */}
+          {ready && plant.winter && !isIndoors(plant) && (
+            <WinterChoiceSummary
+              resolved={resolved}
+              urgent={bringInToday ? bringInUrgent(entry) : undefined}
+              onBroughtIn={() => void bringIn()}
+              onGuide={() => openGuide("indoors")}
+              onChange={() => {
+                const previous = plant.winter;
+                void setPlantWinter(plant.id, undefined);
+                showToast("Choisis à nouveau pour l’hiver", () => void setPlantWinter(plant.id, previous));
+              }}
+            />
+          )}
+
           {/* Le prochain geste, en un bouton. */}
           {ready && <FadeIn delay={40} style={[styles.next, { borderColor: colors.border }]}>
-            {gesture && !gesture.done && !decideToday && (
+            {gesture && !gesture.done && !winterGesture && (
               <>
                 <Text style={[styles.kicker, { color: colors.primary }]}>Aujourd’hui · {gesture.minutes} min</Text>
                 <Text style={[styles.nextTitle, { color: colors.foreground }]}>{gesture.title}</Text>
                 <Text style={[styles.text, { color: colors.muted }]}>{gesture.instruction}</Text>
-                <Button label={gesture.source.type === "harvest-end" && gesture.source.stage === "bring-in" ? "C’est rentré" : gesture.source.type === "harvest-end" && gesture.source.stage === "bring-out" ? "C’est ressorti" : gesture.source.type === "harvest-end" ? (gesture.source.stage === "question" ? (endsWithSeason(entry) && plant.winter?.choice !== "harvest" ? "Oui, la saison est finie" : "Oui, tout est récolté") : "Choisir quoi y mettre") : "C’est fait"} onPress={() => void doGesture()} style={styles.cta} />
+                <Button label={gesture.source.type === "harvest-end" ? (gesture.source.stage === "question" ? (endsWithSeason(entry) && plant.winter?.choice !== "harvest" ? "Oui, la saison est finie" : "Oui, tout est récolté") : "Choisir quoi y mettre") : "C’est fait"} onPress={() => void doGesture()} style={styles.cta} />
               </>
             )}
             {gesture?.done && (
@@ -332,44 +367,11 @@ export default function PlantScreen() {
             {canMarkBloom(resolved, events, now) && (
               <Button variant="link" label={`${byForm(entry, "Il a fleuri ?", "Elle a fleuri ?", "Ils ont fleuri ?", "Elles ont fleuri ?")} Le noter dans ton herbier`} onPress={() => void markBloom()} />
             )}
-            {(!gesture || decideToday) && !(winterAsked && !plant.winter) && (
+            {!gesture && (
               <>
                 <Text style={[styles.nextTitle, { color: colors.foreground }]}>Rien à faire aujourd’hui</Text>
                 <Text style={[styles.text, { color: colors.muted }]}>{name} se repose. Balco te dira quand revenir.</Text>
               </>
-            )}
-            {/* Frileuse en fin de saison : « Ton basilic n'aime pas le froid. Que veux-tu faire ? », puis le choix fait. */}
-            {winterAsked && !plant.winter && <WinterChoiceCard resolved={resolved} climate={climate} onChoose={(choice) => void chooseWinter(resolved, choice)} />}
-            {/* Rentrée à l'intérieur (étape 4) : son état, ses soins d'hiver et « Le remettre dehors ». */}
-            {/* Au printemps, « Ressors ton basilic » la remplace (étape 5). */}
-            {isIndoors(plant) && plant.winter && !bringingOut && (
-              <IndoorCard
-                resolved={resolved}
-                onBackOutside={() => {
-                  const previous = plant.winter;
-                  if (!previous) return;
-                  void setPlantWinter(plant.id, backOutside(previous));
-                  showToast(`${bareName(entry)} ${agree(entry, "remis")} dehors : Balco te redira quand ${objectPronoun(entry)} rentrer`, () => void setPlantWinter(plant.id, previous));
-                }}
-              />
-            )}
-            {/* Le choix fait, tant qu'elle n'est pas rentrée (le choix d'un hiver passé s'efface le 1er mars). */}
-            {plant.winter && !isIndoors(plant) && (
-              <WinterChoiceSummary
-                resolved={resolved}
-                onBroughtIn={bringInToday ? undefined : () => {
-                  const previous = plant.winter;
-                  if (!previous) return;
-                  void setPlantWinter(plant.id, broughtIn(previous, clockNow()));
-                  showToast(broughtInToast(entry), () => void setPlantWinter(plant.id, previous));
-                }}
-                onGuide={() => router.push({ pathname: "/guide/[catalogId]", params: { catalogId: entry.id, plantId: plant.id, task: "indoors" } })}
-                onChange={() => {
-                  const previous = plant.winter;
-                  void setPlantWinter(plant.id, undefined);
-                  showToast("Choisis à nouveau pour l’hiver", () => void setPlantWinter(plant.id, previous));
-                }}
-              />
             )}
           </FadeIn>}
 

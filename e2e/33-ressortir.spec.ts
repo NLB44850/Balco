@@ -42,7 +42,7 @@ test("nuit à 6 °C annoncée : la ligne attend ; deux plantes : « Ressors 2 pl
   await mockWeather(page, { min: 13 });
   await page.reload();
   await open(page, "/", "Ressors 2 plantes");
-  await open(page, "/garden/lemon-tree-e2e", "Ressors ton citronnier");
+  await open(page, "/garden/lemon-tree-e2e", "Feu vert des Saints de glace : ressors-le.");
   await page.getByRole("button", { name: "C’est ressorti" }).click();
   await expect(page.getByText("Ton citronnier : de retour dehors, Balco reprend ses rappels")).toBeVisible();
   await expect(page.getByText(/^🏠 À l’intérieur depuis le /u)).toHaveCount(0);

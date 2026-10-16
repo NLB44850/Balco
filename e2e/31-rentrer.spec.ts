@@ -62,3 +62,22 @@ test("le pas-à-pas est facultatif : « C'est rentré » directement sur la fich
   await expect(page.getByText("🏠 À l’intérieur depuis le 2 novembre")).toBeVisible();
   expect(errors).toEqual([]);
 });
+
+test("même place pour toutes : la carte de l'hiver et « C'est rentré » avant le geste du jour, avec ou sans alerte", async ({ page }) => {
+  const errors = trackErrors(page);
+  const now = await atDate(page, new Date(2026, 10, 2, 10));
+  // Nuit à 9 °C (sous le seuil des tomates, pas du citronnier) et coup de vent : une alerte pour le citronnier.
+  await mockWeather(page, { min: 9, gust: 75 });
+  await seedBalcony(page, { plants: ["cherry-tomato", "lemon-tree"], wateredDaysAgo: 1, winter: { "cherry-tomato": "indoors", "lemon-tree": "indoors" }, now });
+  for (const [id, urgent] of [["cherry-tomato", true], ["lemon-tree", false]] as const) {
+    await open(page, `/garden/${id}-e2e`, id === "lemon-tree" ? "Pour l’hiver : le rentrer à l’intérieur" : "Pour l’hiver : les rentrer à l’intérieur");
+    // L'écran précédent peut rester monté (caché) : on ne compte que ce qui se voit.
+    const done = page.getByRole("button", { name: "C’est rentré" }).filter({ visible: true });
+    await expect(done).toHaveCount(1);
+    const today = page.getByText(/^Aujourd’hui · /u).filter({ visible: true });
+    if ((await today.count()) > 0) expect((await done.boundingBox())!.y).toBeLessThan((await today.first().boundingBox())!.y);
+    await expect(page.getByText(/annoncée : rentre-les aujourd’hui\.$/u).filter({ visible: true })).toHaveCount(urgent ? 1 : 0);
+  }
+  await expect(page.getByText(/^Vent fort : mets le citronnier à l’abri/u)).toBeVisible();
+  expect(errors).toEqual([]);
+});
