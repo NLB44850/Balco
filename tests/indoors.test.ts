@@ -13,7 +13,7 @@ const entry = (id: string) => getCatalogPlant(id)!;
 const NOV_2 = new Date(2026, 10, 2, 9);
 const chosen = { choice: "indoors" as const, decidedAt: new Date(2026, 9, 15).toISOString() };
 const inside = { ...chosen, indoorsAt: new Date(2026, 9, 20).toISOString() };
-const plant = (catalogId: string, extra: Partial<GardenPlant> = {}) => resolvePlants([{ id: catalogId, catalogId, addedAt: new Date(2026, 4, 1).toISOString(), ...extra }])[0];
+const plant = (catalogId: string, extra: Partial<GardenPlant> = {}) => resolvePlants([{ id: catalogId, catalogId, addedAt: new Date(2026, 4, 1).toISOString(), ...extra }], NOV_2)[0];
 const watered = (id: string, daysAgo: number): MaintenanceEvent => ({ id: `w-${id}-${daysAgo}`, plantId: id, type: "watering", completedAt: new Date(NOV_2.getTime() - daysAgo * 86_400_000).toISOString(), source: "manual" });
 
 function weather(min: number, extra: Partial<WeatherSnapshot["today"]> = {}, rainMm = 0): WeatherSnapshot {

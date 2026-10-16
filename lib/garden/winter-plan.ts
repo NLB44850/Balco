@@ -25,3 +25,15 @@ export function parseWinterPlan(json: string | null | undefined): WinterPlan | u
     return undefined;
   }
 }
+
+/**
+ * Le choix de cet hiver (étape 5) : un choix sans rentrée (« tout récolter », « la laisser dehors », « la rentrer » pas
+ * encore fait) ne vaut que jusqu'au 1er mars qui le suit. Ainsi la question revient l'automne suivant, et une plante
+ * restée dehors n'attend plus d'être rentrée au printemps. Une plante rentrée garde son choix jusqu'à sa sortie.
+ */
+export function currentWinterPlan(plan: WinterPlan | undefined, now: Date): WinterPlan | undefined {
+  if (!plan || plan.indoorsAt) return plan;
+  const decided = new Date(plan.decidedAt);
+  const expires = new Date(decided.getFullYear() + (decided.getMonth() >= 2 ? 1 : 0), 2, 1);
+  return now < expires ? plan : undefined;
+}

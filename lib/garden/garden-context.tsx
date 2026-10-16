@@ -533,7 +533,9 @@ export function GardenProvider({ children }: { children: ReactNode }) {
   }, [deleteServerAccount, setOutbox]);
 
   const plants = useMemo(() => activePlants(allPlants), [allPlants]);
-  const resolvedPlants = useMemo(() => resolvePlants(plants), [plants]);
+  // Le jour compte : au printemps, le choix pour l'hiver passé ne vaut plus (`currentWinterPlan`).
+  const today = clockNow().toDateString();
+  const resolvedPlants = useMemo(() => resolvePlants(plants, new Date(today)), [plants, today]);
   const pastPlants = useMemo(() => resolvePlants(allPlants.filter((plant) => plant.removedAt)), [allPlants]);
 
   // Rien ne se perd : chaque badge débloqué est noté (avec sa date), d'où qu'il vienne (geste, notification, pluie).

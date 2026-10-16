@@ -24,6 +24,7 @@ import { WeatherBanner } from "@/components/today/weather-banner";
 import { useFreePot } from "@/components/free-pot-sheet";
 import { useWinterChoiceSheet } from "@/components/winter-choice";
 import { broughtIn, broughtInToast } from "@/lib/garden/indoors";
+import { broughtOutToast } from "@/lib/garden/spring-out";
 import { useDayPlan } from "@/hooks/use-day-plan";
 import { useBalcoPlus } from "@/hooks/use-balco-plus";
 import { useFirstFrostHint } from "@/hooks/use-first-frost-hint";
@@ -337,6 +338,14 @@ export default function HomeScreen() {
       haptic();
       return showToast(broughtInToast(entry), () => void setPlantWinter(plant.id, previous));
     }
+    // « Ressors ton basilic » cochée (étape 5) : son choix pour l'hiver s'efface, ses rappels normaux reprennent.
+    if (item.kind === "harvest-end" && item.stage === "bring-out") {
+      const { plant, entry } = item.resolved;
+      const previous = plant.winter;
+      await setPlantWinter(plant.id, undefined);
+      haptic();
+      return showToast(broughtOutToast(entry), () => void setPlantWinter(plant.id, previous));
+    }
     if (item.kind === "harvest-end") return item.stage === "question" ? freePot.answerYes(item.resolved.plant.id) : freePot.openFreePot(item.resolved.plant.id);
     if (item.kind === "alert") return completeAlert(item.group, item.feed);
     if (item.kind === "season") {
@@ -432,7 +441,7 @@ export default function HomeScreen() {
 
   const closeSheet = () => setSheetKey(null);
   // Le pas-à-pas pour rentrer une plante (facultatif) : « C'est rentré » la passe « À l'intérieur ».
-  const openBringIn = (resolved: ResolvedPlant) => router.push({ pathname: "/guide/[catalogId]", params: { catalogId: resolved.entry.id, plantId: resolved.plant.id, task: "indoors" } });
+  const openBringIn = (resolved: ResolvedPlant, task: "indoors" | "spring" = "indoors") => router.push({ pathname: "/guide/[catalogId]", params: { catalogId: resolved.entry.id, plantId: resolved.plant.id, task } });
   const itemRow = (item: TodayItem) => (
     <TodayRow
       key={item.key}
@@ -444,7 +453,7 @@ export default function HomeScreen() {
       done={item.done}
       picture={seasonPicture(item)}
       onToggle={() => void toggleItem(item)}
-      onOpen={() => (item.kind === "harvest-end" ? (item.stage === "bring-in" ? openBringIn(item.resolved) : item.stage === "decide" ? winterSheet.open(item.resolved.plant.id) : item.stage === "question" ? freePot.openQuestion(item.resolved.plant.id, item.subtitle) : freePot.openFreePot(item.resolved.plant.id)) : setSheetKey(item.key))}
+      onOpen={() => (item.kind === "harvest-end" ? (item.stage === "bring-in" ? openBringIn(item.resolved) : item.stage === "bring-out" ? openBringIn(item.resolved, "spring") : item.stage === "decide" ? winterSheet.open(item.resolved.plant.id) : item.stage === "question" ? freePot.openQuestion(item.resolved.plant.id, item.subtitle) : freePot.openFreePot(item.resolved.plant.id)) : setSheetKey(item.key))}
     />
   );
   const evening = now.getHours() >= 17;
@@ -770,6 +779,8 @@ export default function HomeScreen() {
                 ? groupSheet.items.some((item) => item.feed)
                   ? "Enfonce ton doigt dans la terre de chaque pot : si elle est sèche, arrose au pied la quantité indiquée. Puis donne l’engrais à celles qui en ont besoin, et coche. Touche une ligne pour le détail."
                   : "Enfonce ton doigt dans la terre de chaque pot : si elle est sèche, arrose au pied la quantité indiquée et coche. Touche une ligne pour le détail."
+                : groupSheet.gesture === "outdoors"
+                  ? "Les nuits se radoucissent. Coche une plante une fois dehors ; touche-la pour le pas-à-pas."
                 : groupSheet.gesture === "indoors"
                   ? "Une nuit froide arrive. Coche une plante une fois rentrée ; touche-la pour le pas-à-pas."
                 : groupSheet.gesture === "winter"
@@ -795,14 +806,14 @@ export default function HomeScreen() {
                   picture={seasonPicture(item)}
                   onToggle={() => {
                     // Fin de saison : la feuille du pot libre s'ouvre une fois celle du groupe repliée.
-                    if (item.kind !== "harvest-end" || item.stage === "bring-in") return void toggleItem(item);
+                    if (item.kind !== "harvest-end" || item.stage === "bring-in" || item.stage === "bring-out") return void toggleItem(item);
                     setOpenGroup(null);
                     setTimeout(() => void toggleItem(item), 320);
                   }}
                   onOpen={() => {
                     // Le détail s'ouvre une fois la feuille du groupe repliée.
                     setOpenGroup(null);
-                    setTimeout(() => (item.kind === "harvest-end" ? (item.stage === "bring-in" ? openBringIn(item.resolved) : item.stage === "decide" ? winterSheet.open(item.resolved.plant.id) : freePot.openQuestion(item.resolved.plant.id, item.subtitle)) : setSheetKey(item.key)), 320);
+                    setTimeout(() => (item.kind === "harvest-end" ? (item.stage === "bring-in" ? openBringIn(item.resolved) : item.stage === "bring-out" ? openBringIn(item.resolved, "spring") : item.stage === "decide" ? winterSheet.open(item.resolved.plant.id) : freePot.openQuestion(item.resolved.plant.id, item.subtitle)) : setSheetKey(item.key)), 320);
                   }}
                 />
               ))}

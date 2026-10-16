@@ -166,8 +166,10 @@ fenêtre lumineuse, loin du radiateur), puis « 🏠 À l'intérieur » : la mé
 espacé, pas d'engrais, « Le remettre dehors » sur la fiche. Puis, à ma demande (16/10, maquettes avant / après
 validées) : fiche plante condensée, rien de perdu (photo moins haute, légende des couleurs en touchant l'état,
 pas-à-pas regroupés dans une feuille du bas dès deux, coach en une ligne, variété en une ligne, « Récolte » dans les
-pastilles, progression repliée, historique des 5 derniers jours puis « Voir tout l'historique »). Prochaine : étape 5,
-la sortie au printemps.
+pastilles, progression repliée, historique des 5 derniers jours puis « Voir tout l'historique »). Étape 5 codée le
+16/10, à valider : « Ressors ton basilic » au feu vert des Saints de glace (15 avril dans le Midi, 15 juin en montagne,
+en estimation), quand les nuits restent au-dessus du seuil de la plante ; pas-à-pas en 3 écrans (à l'ombre quelques
+heures, un peu plus chaque jour, puis au soleil) ; « C'est ressorti » : elle reprend son état et ses rappels normaux.
 
 ## Ce qu'il reste à faire, dans l'ordre
 

@@ -411,3 +411,20 @@ soucoupe**, **Range le pot au sec, hors gel** (cave ou garage, 5 à 8 °C, plus 
 **Et après ?** Comment l'arroser à l'intérieur (« Arrose environ tous les N jours, si la terre est sèche sur 2 cm
 (estimation Balco). Pas d'engrais jusqu'au printemps. »), « À l'intérieur, il tiendra souvent quelques semaines de
 plus. » pour le basilic, le shiso et les tomates, et « Au printemps, Balco te dira quand le ressortir. »
+
+## 13. Ressortir une plante au printemps (nouveau, chantier « Plante hors saison », étape 5)
+
+Exemple : **Ressortir le basilic**. Pour une frileuse rentrée l'hiver, depuis la ligne « Ressors ton basilic » (au feu
+vert des Saints de glace, nuits douces) ou la fiche. Rien à acheter : les étapes commencent tout de suite.
+
+1. **Sors-le quelques heures, à l'ombre et à l'abri du vent.** Après l'hiver dedans, les feuilles ne supportent plus
+   le plein soleil. *Erreur à éviter : le mettre d'un coup en plein soleil. Les feuilles brûleraient.*
+2. **Laisse-le dehors un peu plus longtemps chaque jour.** Au bout de quelques jours, passe au soleil du matin.
+3. **Installe-le à sa place au soleil, puis arrose bien.** Après une semaine environ : dehors jour et nuit.
+
+Le dahlia, gardé au sec dans son pot, en 2 écrans : **Sors le pot dehors, à l'abri du vent**, puis **Arrose un peu,
+une seule fois** (*erreur à éviter : arroser souvent avant les feuilles, les tubercules pourriraient*).
+
+**Et après ?** « Balco reprend ses rappels d'arrosage et d'engrais. » et « Un coup de froid annoncé ? Rentre-le
+quelques nuits. » (dahlia : « Les premières pousses sortent en quelques semaines. »). Bouton **C'est ressorti** : la
+plante reprend son état et ses rappels normaux.

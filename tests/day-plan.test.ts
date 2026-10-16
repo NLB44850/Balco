@@ -131,8 +131,8 @@ describe("état d'une plante : une couleur, un sens", () => {
   });
 
   it("orange : un pot choisi trop petit pour la plante ; sans taille choisie, rien", () => {
-    const small = resolvePlants([{ id: "tomato-s", catalogId: "cherry-tomato", potSize: "small", winter: { choice: "outside" as const, decidedAt: "2026-08-01T00:00:00.000Z" }, addedAt: new Date(2026, 8, 5).toISOString() }]);
-    const unknown = resolvePlants([{ id: "tomato-u", catalogId: "cherry-tomato", winter: { choice: "outside" as const, decidedAt: "2026-08-01T00:00:00.000Z" }, addedAt: new Date(2026, 8, 5).toISOString() }]);
+    const small = resolvePlants([{ id: "tomato-s", catalogId: "cherry-tomato", potSize: "small", winter: { choice: "outside" as const, decidedAt: "2026-08-01T00:00:00.000Z" }, addedAt: new Date(2026, 8, 5).toISOString() }], NOW);
+    const unknown = resolvePlants([{ id: "tomato-u", catalogId: "cherry-tomato", winter: { choice: "outside" as const, decidedAt: "2026-08-01T00:00:00.000Z" }, addedAt: new Date(2026, 8, 5).toISOString() }], NOW);
     const events = [{ ...watered[0], plantId: "tomato-s" }, { ...watered[0], id: "w-u", plantId: "tomato-u" }];
     expect(planDay({ plants: small, events, now: NOW })[0].status).toMatchObject({ tone: "watch", label: expect.stringMatching(/^Pot trop (petit|peu profond)$/u), worry: true });
     expect(planDay({ plants: unknown, events, now: NOW })[0].status.label).toBe("Fin de saison");

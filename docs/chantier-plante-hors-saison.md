@@ -143,6 +143,22 @@ Une étape = un commit testé, validée sur son téléphone avant la suivante. D
     s'affichent plus, ni dans Saisons ni sur Aujourd'hui, dès qu'on a choisi de rentrer la plante (`bringsIndoors` du
     `CalendarSubject`) ; ils restent pour une plante laissée dehors ou sans choix.
 
+- Étape 5 codée le 16/10, à valider : « Ressors ton basilic » (`lib/garden/spring-out.ts`).
+  - Feu vert : le 14 mai (lendemain des Saints de glace) en climat océanique, tempéré ou continental, comme la carte du
+    temps fort ; 15 avril dans le Midi et 15 juin en montagne, en estimation Balco (pas de source par région).
+  - Et pas de nuit sous le seuil de la plante annoncée dans les 3 jours (10 °C pour le basilic, sources : nuits
+    au-dessus de 10 à 12 °C) : sinon la ligne attend. Dès deux plantes : « Ressors 2 plantes ».
+  - Pas-à-pas `task=spring` en 3 écrans (ombre et abri du vent quelques heures, un peu plus chaque jour, puis au
+    soleil après une semaine environ), dahlia en 2 ; bouton « C'est ressorti » ; `docs/pas-a-pas.md` § 13, sources
+    dans `docs/sources-froid.md` § « Au printemps ».
+  - Cochée (Aujourd'hui, fiche ou pas-à-pas) : le choix pour l'hiver s'efface, la plante reprend son état, ses
+    rappels, l'engrais et les alertes gel ; message « Ton basilic : de retour dehors, Balco reprend ses rappels ».
+  - Ajouté pour que l'hiver suivant marche : un choix sans rentrée (« tout récolter », « la laisser dehors », « la
+    rentrer » pas fait) ne vaut que jusqu'au 1er mars qui le suit (`currentWinterPlan`, appliqué par `resolvePlants`,
+    aussi côté serveur). La question revient donc l'automne suivant, et une plante jamais rentrée n'a plus de « Rentre
+    ton basilic » au printemps. Une plante rentrée garde son choix jusqu'à sa sortie.
+  - Tests `tests/spring-out.test.ts`, e2e `33-ressortir`.
+
 ## En plus : la fiche plante condensée (16/10, à sa demande)
 
 Question du porteur : « trop d'informations sur la fiche plante ? » Maquettes avant / après montrées, validées avec

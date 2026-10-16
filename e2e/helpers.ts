@@ -57,7 +57,7 @@ type Seed = {
   /** La date du balcon (par défaut maintenant) : la même que l'horloge de la page quand le test la fixe. */
   now?: Date;
   /** Choix pour l'hiver déjà fait, par plante (« basil »: "outside") : pour un test qui ne parle pas de l'hiver. */
-  winter?: Record<string, "harvest" | "indoors" | "outside" | "inside">;
+  winter?: Record<string, "harvest" | "indoors" | "outside" | "inside" | "wintered">;
   /** Laisser la grande carte d'arrivée des temps forts s'ouvrir (par défaut déjà vue, pour ne pas gêner les autres tests). */
   eventIntro?: boolean;
 };
@@ -86,8 +86,10 @@ export async function seedBalcony(page: Page, seed: Seed) {
     id: `${catalogId}-e2e`,
     catalogId,
     addedAt: new Date(now - (30 - index) * DAY_MS).toISOString(),
-    // « inside » : choisie pour rentrer et déjà rentrée la veille.
-    ...(seed.winter?.[catalogId]
+    // « inside » : choisie pour rentrer et déjà rentrée la veille ; « wintered » : rentrée il y a 7 mois (l'automne dernier).
+    ...(seed.winter?.[catalogId] === "wintered"
+      ? { winter: { choice: "indoors", decidedAt: new Date(now - 215 * DAY_MS).toISOString(), indoorsAt: new Date(now - 210 * DAY_MS).toISOString() } }
+      : seed.winter?.[catalogId]
       ? { winter: { choice: seed.winter[catalogId] === "inside" ? "indoors" : seed.winter[catalogId], decidedAt: new Date(now - 2 * DAY_MS).toISOString(), ...(seed.winter[catalogId] === "inside" ? { indoorsAt: new Date(now - DAY_MS).toISOString() } : {}) } }
       : {}),
   }));

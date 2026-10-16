@@ -10,6 +10,7 @@ import { followUpsFor } from "./follow-ups";
 import { offSeasonOf } from "./off-season";
 import { asksWinter, coldNightAhead, winterDecideSubtitle, winterDecideTitle, winterDecisionDue } from "./winter-choice";
 import { bringInSubtitle, bringInTitle, INDOORS_LABEL, isIndoors, waitsToComeIn } from "./indoors";
+import { bringOutDue, bringOutSubtitle, bringOutTitle } from "./spring-out";
 import { conservationTip } from "../plants/conservation";
 import {
   FREE_POT_TITLE,
@@ -66,7 +67,7 @@ export type GestureSource =
    * Après la récolte d'une plante récoltée en une fois : la question « Tout récolté ? », puis le pot libre. `decide` :
    * une frileuse en fin de saison, « Décide pour ton basilic avant le froid » (lib/garden/winter-choice.ts).
    */
-  | { type: "harvest-end"; stage: "question" | "free" | "decide" | "bring-in"; resolved: ResolvedPlant; quiet?: boolean };
+  | { type: "harvest-end"; stage: "question" | "free" | "decide" | "bring-in" | "bring-out"; resolved: ResolvedPlant; quiet?: boolean };
 
 export type PlanGesture = {
   key: string;
@@ -283,6 +284,11 @@ export function planDay({ plants, events, now, decisions = [], allDecisions = de
     const frostTonight = (nights?.[0] ?? Number.POSITIVE_INFINITY) <= resolved.entry.care.frostThresholdC;
     if (waitsToComeIn(resolved.plant) && (coldNightAhead(resolved.entry, nights) || frostTonight)) {
       const first: PlanGesture = { key: `harvest-end:${plantId}:bring-in`, kind: "harvest", plantId, title: bringInTitle(resolved.entry), instruction: bringInSubtitle(resolved.entry), minutes: 5, done: false, source: { type: "harvest-end", stage: "bring-in", resolved } };
+      return { resolved, gestures: [first], first, status: calmStatus(resolved, events, now, climate) };
+    }
+    // Rentrée pour l'hiver (étape 5) : « Ressors ton basilic » au feu vert du printemps, quand les nuits restent douces.
+    if (bringOutDue(resolved, now, climate, nights)) {
+      const first: PlanGesture = { key: `harvest-end:${plantId}:bring-out`, kind: "harvest", plantId, title: bringOutTitle(resolved.entry), instruction: bringOutSubtitle(climate), minutes: 5, done: false, source: { type: "harvest-end", stage: "bring-out", resolved } };
       return { resolved, gestures: [first], first, status: calmStatus(resolved, events, now, climate) };
     }
     if (isIndoors(resolved.plant)) seasonQuestionWaits = true;

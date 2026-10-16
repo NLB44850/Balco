@@ -110,3 +110,28 @@ Les sources donnent très rarement un rythme chiffré (recherche du 15/10, `lib/
 | Dahlia | Plus d'arrosage, au sec | Promesse de Fleurs (local sec, à l'abri du gel) et Gerbeaud (hivernage au sec) |
 
 Partout : pas d'engrais jusqu'au printemps (plante au repos), et toujours « Sèche sur 2 cm ? Arrose ».
+
+## Au printemps : la sortie (étape 5, 16/10)
+
+Ce que fait Balco : « Ressors ton basilic » au feu vert, quand aucune nuit sous le seuil de la plante n'est annoncée
+dans les 3 jours ; puis un pas-à-pas en 3 écrans (quelques heures à l'ombre et à l'abri du vent, un peu plus chaque
+jour, puis au soleil après une semaine environ).
+
+- **Nuits au-dessus de 10 à 12 °C avant de laisser dehors** : Espace pour la vie (« rentrée et sortie des plantes
+  d'intérieur », nuits au-dessus de 10-12 °C) et Scotts Miracle-Gro (« Comment sortir les plantes d'intérieur pour
+  l'été », nuits à 15 °C ou plus, gel écarté). Balco garde le seuil de nuit de chaque plante (10 °C pour le basilic).
+- **D'abord à l'ombre et à l'abri du vent, quelques heures, puis plus longtemps et au soleil, en 7 à 10 jours** :
+  Espace pour la vie (mi-ombre abritée du vent, plein soleil en 7 à 10 jours), Scotts (quelques heures par jour, puis
+  davantage), ootravaux.fr (d'abord à l'ombre quelques jours). Agrumes : Jardiner malin (« Hivernage du citronnier ») et
+  Hornbach (« Hiverner un citronnier ») : sortie vers la mi-mai, d'abord à la mi-ombre, puis au plein soleil.
+- **Un coup de froid tardif : rentrer la plante** : Espace pour la vie ; RTBF (« Plus qu'une semaine de patience pour
+  sortir les fleurs précieuses » : le gel nocturne peut revenir pendant les Saints de glace).
+- **Dahlia gardé dans son pot** : sortir le pot quand la température le permet, arroser légèrement, puis plus rien
+  jusqu'aux premières feuilles (Hornbach, « Hiverner facilement les dahlias » ; Longfield Gardens, « How to repot dahlia
+  tubers » : arrosage léger, puis attendre la pousse).
+- **Date du feu vert** : le lendemain des Saints de glace (14 mai), comme la carte du temps fort (docs/sources-evenements.md)
+  pour les climats océanique, tempéré et continental. **Midi (15 avril) et montagne (15 juin) : estimation Balco**, un
+  mois après les dernières gelées de la zone comme ailleurs ; aucune source trouvée ne donne de date par région. Le
+  seuil de nuit de la plante reste vérifié chaque jour, ce qui protège d'une date trop précoce.
+
+Pas de source pour « rentrer la plante chaque nuit les premiers jours » : Balco ne le dit pas.

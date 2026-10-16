@@ -22,7 +22,7 @@ import type { ReminderSnooze } from "../lib/reminders/reminder-actions";
 const entry = (id: string) => getCatalogPlant(id)!;
 const OCT_15 = new Date(2026, 9, 15, 9);
 const OCT_16 = new Date(2026, 9, 16, 9);
-const plant = (catalogId: string, extra: Partial<GardenPlant> = {}) => resolvePlants([{ id: catalogId, catalogId, addedAt: OCT_15.toISOString(), ...extra }])[0];
+const plant = (catalogId: string, extra: Partial<GardenPlant> = {}) => resolvePlants([{ id: catalogId, catalogId, addedAt: OCT_15.toISOString(), ...extra }], OCT_15)[0];
 const asked = (ids: string[], on: Date): ReminderSnooze[] => ids.reduce((snoozes, id) => markWinterAsked(snoozes, id, on), [] as ReminderSnooze[]);
 const titles = (days: ReturnType<typeof planDay>) => days.map((day) => day.first?.title ?? null);
 

@@ -27,7 +27,7 @@ import { useColors } from "@/hooks/use-colors";
 import { followUpsFor } from "@/lib/garden/follow-ups";
 import { useGarden } from "@/lib/garden/garden-context";
 import { potHistory, startEventId } from "@/lib/garden/garden-logic";
-import { broughtIn, waitsToComeIn } from "@/lib/garden/indoors";
+import { broughtIn, isIndoors, waitsToComeIn } from "@/lib/garden/indoors";
 import { activityDone, eventForActivity, potCareActivity, startActivity } from "@/lib/plants/calendar";
 import { getCatalogPlant } from "@/lib/plants/catalog";
 import { now as clockNow } from "@/lib/clock";
@@ -131,8 +131,11 @@ export default function GuideScreen() {
   const followUpActivity = plant && followUp ? followUpsFor({ plant, entry }, events, clockNow()).find((activity) => activity.followUp === followUp) ?? null : null;
   const taskActivity = potActivity ?? followUpActivity;
   const bringingIn = task === "indoors";
+  const bringingOut = task === "spring";
   const canPlant = bringingIn
     ? Boolean(plant && waitsToComeIn(plant))
+    : bringingOut
+    ? Boolean(plant && isIndoors(plant))
     : task
     ? taskActivity !== null && !activityDone(taskActivity, events, clockNow())
     : Boolean(plant?.toPlant) && !events.some((event) => event.id === startEventId(plant!.id));
@@ -146,6 +149,14 @@ export default function GuideScreen() {
       setTimeout(() => router.back(), 1400);
       return;
     }
+    // « C'est ressorti » (étape 5) : le choix pour l'hiver s'efface, la plante reprend ses rappels normaux.
+    if (bringingOut) {
+      await setPlantWinter(plant.id, undefined);
+      if (Platform.OS !== "web") void Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => undefined);
+      setPlanted(true);
+      setTimeout(() => router.back(), 1400);
+      return;
+    }
     const activity = taskActivity ?? startActivity({ id: plant.id, entry, displayName, addedAt: plant.addedAt, toPlant: true }, month);
     await logEvent(eventForActivity(activity, clockNow()));
     if (Platform.OS !== "web") void Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => undefined);
@@ -153,7 +164,7 @@ export default function GuideScreen() {
     setTimeout(() => router.back(), 1400);
   };
 
-  const DONE_LABELS = { repot: "C’est rempoté", topdress: "Terre changée", thin: "C’est éclairci", pinch: "C’est pincé", outdoors: "Plants installés", indoors: "C’est rentré" } as const;
+  const DONE_LABELS = { repot: "C’est rempoté", topdress: "Terre changée", thin: "C’est éclairci", pinch: "C’est pincé", outdoors: "Plants installés", indoors: "C’est rentré", spring: "C’est ressorti" } as const;
   const doneLabel = task ? DONE_LABELS[task] : isSowing(model) ? "C’est semé" : "C’est planté";
   const subtitle = needOnly ? "Ce qu’il te faut" : phase === "steps" ? `Étape ${index + 1} sur ${steps.length}` : phase === "after" ? "Et après ?" : `${steps.length} étapes · ce qu’il te faut d’abord`;
 

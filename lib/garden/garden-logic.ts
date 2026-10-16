@@ -7,7 +7,7 @@ import { endsWithSeason, seasonFrostText } from "../plants/season-end";
 import type { MaintenanceEvent, MaintenanceTaskType, PlantCareProfile } from "../reminders/reminder-engine";
 import { alertCauseOf } from "../reminders/alert-cause";
 import type { PotSize } from "../plants/pot-size";
-import type { WinterPlan } from "./winter-plan";
+import { currentWinterPlan, type WinterPlan } from "./winter-plan";
 import { indoorWatering, isIndoors, waitsToComeIn } from "./indoors";
 import { wateringIntervalHours, wateringLiters } from "../plants/watering";
 
@@ -88,10 +88,14 @@ export function activePlants(plants: GardenPlant[]) {
   return plants.filter((plant) => !plant.removedAt);
 }
 
-export function resolvePlants(plants: GardenPlant[]): ResolvedPlant[] {
+/** `now` : le choix pour l'hiver d'un hiver passé ne compte plus (`currentWinterPlan`). */
+export function resolvePlants(plants: GardenPlant[], now = new Date()): ResolvedPlant[] {
   return plants.flatMap((plant) => {
     const entry = getCatalogPlant(plant.catalogId);
-    return entry ? [{ plant, entry }] : [];
+    if (!entry) return [];
+    if (!plant.winter) return [{ plant, entry }];
+    const winter = currentWinterPlan(plant.winter, now);
+    return [{ plant: winter === plant.winter ? plant : { ...plant, winter }, entry }];
   });
 }
 
