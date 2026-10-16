@@ -151,6 +151,7 @@ export default function PlantScreen() {
   const heroHeight = Math.min(Math.round(width * 0.72), 320) + insets.top;
   // Les pas-à-pas de la plante : un seul s'affiche en lien, à partir de deux ils passent dans une feuille du bas.
   const openGuide = (task?: string) => router.push({ pathname: "/guide/[catalogId]", params: { catalogId: entry.id, plantId: plant.id, ...(task ? { task } : {}) } });
+  const bringInToday = gesture?.source.type === "harvest-end" && gesture.source.stage === "bring-in";
   const bringingOut = gesture?.source.type === "harvest-end" && gesture.source.stage === "bring-out";
   const guides = [
     // Au printemps, la ressortir (étape 5) : son pas-à-pas d'abord.
@@ -352,9 +353,16 @@ export default function PlantScreen() {
                 }}
               />
             )}
-            {winterAsked && plant.winter && !isIndoors(plant) && (
+            {/* Le choix fait, tant qu'elle n'est pas rentrée (le choix d'un hiver passé s'efface le 1er mars). */}
+            {plant.winter && !isIndoors(plant) && (
               <WinterChoiceSummary
                 resolved={resolved}
+                onBroughtIn={bringInToday ? undefined : () => {
+                  const previous = plant.winter;
+                  if (!previous) return;
+                  void setPlantWinter(plant.id, broughtIn(previous, clockNow()));
+                  showToast(broughtInToast(entry), () => void setPlantWinter(plant.id, previous));
+                }}
                 onGuide={() => router.push({ pathname: "/guide/[catalogId]", params: { catalogId: entry.id, plantId: plant.id, task: "indoors" } })}
                 onChange={() => {
                   const previous = plant.winter;

@@ -161,6 +161,10 @@ Une étape = un commit testé, validée sur son téléphone avant la suivante. D
   - Retour du 16/10 (« je ne peux pas tester, alerte coup de vent même quand je simule ») : les simulations modifient
     la vraie météo, qui en octobre garde son vent et ses nuits fraîches. Nouvelle simulation « Nuits douces » (14 °C
     la nuit, sans vent ni pluie, `lib/weather/simulation.ts`) pour tester la sortie avec une date simulée en mai.
+  - Retour du 16/10 (« il a fallu que je fasse le pas-à-pas pour que l'action soit prise en compte ; le pas-à-pas doit
+    être facultatif ») : sur la fiche, la carte « Pour l'hiver : le rentrer à l'intérieur » a son bouton « C'est
+    rentré », sans attendre la nuit froide ; elle s'affiche dès qu'un choix est fait (plus seulement en fin de saison).
+    Sur Aujourd'hui, cocher la ligne suffisait déjà ; « Ressors » a son bouton « C'est ressorti » sur la fiche.
 
 ## En plus : la fiche plante condensée (16/10, à sa demande)
 

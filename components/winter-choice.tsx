@@ -64,7 +64,7 @@ export function WinterChoiceCard({ resolved, climate, onChoose, framed = true }:
  * Une fois choisi, sur la fiche : « Pour l'hiver : le rentrer à l'intérieur » et « Changer d'avis » ; à rentrer, le lien
  * vers le pas-à-pas et, pour une plante « quelques semaines de plus », ce qu'on peut en attendre.
  */
-export function WinterChoiceSummary({ resolved, onChange, onGuide }: { resolved: ResolvedPlant; onChange: () => void; onGuide?: () => void }) {
+export function WinterChoiceSummary({ resolved, onChange, onGuide, onBroughtIn }: { resolved: ResolvedPlant; onChange: () => void; onGuide?: () => void; onBroughtIn?: () => void }) {
   const colors = useColors();
   if (!resolved.plant.winter) return null;
   const weeks = resolved.plant.winter.choice === "indoors" ? indoorWeeksNote(resolved.entry) : null;
@@ -75,6 +75,8 @@ export function WinterChoiceSummary({ resolved, onChange, onGuide }: { resolved:
         <Button small variant="secondary" label="Changer d’avis" onPress={onChange} />
       </View>
       {weeks && <Text style={[styles.detail, { color: colors.muted }]}>{weeks}</Text>}
+      {/* Le pas-à-pas reste facultatif (retour du 16/10) : « C'est rentré » directement, sans attendre la nuit froide. */}
+      {onBroughtIn && resolved.plant.winter.choice === "indoors" && <Button small label="C’est rentré" onPress={onBroughtIn} />}
       {onGuide && resolved.plant.winter.choice === "indoors" && <Button variant="link" label={guideLinkText(resolved.entry, "indoors").replace(/ ›$/u, "")} onPress={onGuide} />}
     </View>
   );

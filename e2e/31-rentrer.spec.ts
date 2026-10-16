@@ -50,3 +50,15 @@ test("nuits douces : la ligne attend ; une fois dedans, le gel ne compte plus po
   await expect(page.getByText(/protège le piment|Gel cette nuit/u)).toHaveCount(0);
   expect(errors).toEqual([]);
 });
+
+test("le pas-à-pas est facultatif : « C'est rentré » directement sur la fiche, sans nuit froide annoncée", async ({ page }) => {
+  const errors = trackErrors(page);
+  const now = await atDate(page, new Date(2026, 10, 2, 10));
+  await mockWeather(page, { min: 14 });
+  await seedBalcony(page, { plants: ["lemon-tree"], wateredDaysAgo: 1, winter: { "lemon-tree": "indoors" }, now });
+  await open(page, "/garden/lemon-tree-e2e", "Pour l’hiver : le rentrer à l’intérieur");
+  await page.getByRole("button", { name: "C’est rentré" }).click();
+  await expect(page.getByText("Ton citronnier : à l’intérieur, Balco adapte ses soins")).toBeVisible();
+  await expect(page.getByText("🏠 À l’intérieur depuis le 2 novembre")).toBeVisible();
+  expect(errors).toEqual([]);
+});
