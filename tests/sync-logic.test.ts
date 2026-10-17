@@ -171,3 +171,46 @@ describe("plant timestamps (retour du 14/10 : retrait ignoré après une date si
     expect(Date.parse(push.plants[0].updatedAt)).toBeGreaterThan(Date.parse(future.addedAt));
   });
 });
+
+describe("historique plafonné (Tour de l'appli, étape 3)", () => {
+  it("garde les 1 000 derniers gestes et tous les gestes marquants plus anciens", async () => {
+    const { capEvents, MAX_STORED_EVENTS } = await import("../lib/garden/garden-logic");
+    const at = (days: number) => new Date(Date.UTC(2027, 0, 1) - days * 86_400_000).toISOString();
+    const recent = Array.from({ length: MAX_STORED_EVENTS }, (_, index) => ({ id: `w${index}`, plantId: "p", type: "watering" as const, completedAt: at(index), source: "daily_task" as const }));
+    const old = [
+      { id: "p:start", plantId: "p", type: "harvest" as const, completedAt: at(2000), source: "manual" as const },
+      { id: "scan:1", plantId: "p", type: "observation" as const, completedAt: at(1900), source: "manual" as const },
+      { id: "w-old", plantId: "p", type: "watering" as const, completedAt: at(1800), source: "daily_task" as const },
+    ];
+    const kept = capEvents([...old, ...recent]).map((event) => event.id);
+    expect(kept).toHaveLength(MAX_STORED_EVENTS + 2);
+    expect(kept).toContain("p:start");
+    expect(kept).toContain("scan:1");
+    expect(kept).not.toContain("w-old");
+  });
+});
+
+describe("synchro en paquets et données abîmées (Tour de l'appli, étape 3)", () => {
+  it("découpe un envoi trop gros : le reste part au tour suivant", async () => {
+    const { emptyOutbox, PUSH_LIMITS, recordEvent, takeBatch } = await import("../lib/sync/sync-logic");
+    let outbox = { ...emptyOutbox(), profileDirty: true };
+    for (let index = 0; index < 2500; index++) outbox = recordEvent(outbox, { id: `e${index}`, plantId: "p", type: "watering", completedAt: new Date(Date.UTC(2027, 0, 1, 0, index)).toISOString(), source: "daily_task" });
+    const { batch, rest } = takeBatch(outbox);
+    expect(Object.keys(batch.events)).toHaveLength(PUSH_LIMITS.events);
+    expect(batch.profileDirty).toBe(true);
+    expect(Object.keys(rest!.events)).toHaveLength(1500);
+    expect(rest!.profileDirty).toBe(false);
+    expect(takeBatch(rest!).rest).not.toBeNull();
+    expect(takeBatch(emptyOutbox()).rest).toBeNull();
+  });
+
+  it("écarte les plantes, gestes et boîtes d'envoi abîmés au lieu de planter", async () => {
+    const { isStoredEvent, isStoredPlant, readOutbox } = await import("../lib/sync/sync-logic");
+    expect(isStoredPlant({ id: "a", catalogId: "basil", addedAt: "2027-01-01T00:00:00.000Z" })).toBe(true);
+    expect(isStoredPlant({ id: "a" })).toBe(false);
+    expect(isStoredPlant(null)).toBe(false);
+    expect(isStoredEvent({ id: "e", plantId: "a", type: "watering", completedAt: "pas une date" })).toBe(false);
+    expect(readOutbox("n'importe quoi")).toEqual({ plants: {}, events: {}, deletedEventIds: [], profileDirty: false, settingsDirty: false, awardsDirty: false });
+    expect(readOutbox({ plants: [], events: { x: 3 }, deletedEventIds: ["a", 2], profileDirty: "oui" })).toEqual({ plants: {}, events: {}, deletedEventIds: ["a"], profileDirty: false, settingsDirty: false, awardsDirty: false });
+  });
+});

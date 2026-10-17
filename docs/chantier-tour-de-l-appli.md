@@ -28,7 +28,7 @@ Supprimer ce qui reste du modèle de départ et ne sert plus : page de démonstr
 Fait : tout supprimé sauf `shared/const.ts` (encore lu par le serveur) ; notes de la racine déplacées en
 `docs/notes-meteo.md` et `docs/spec-rappels-contextuels.md`. 760 tests et 95 e2e verts.
 
-### Étape 2. Sécurité du serveur (le plus important) : faite le 16/10
+### Étape 2. Sécurité du serveur (le plus important) : faite le 16/10, validée le 17/10 (PR #55 fusionnée)
 1. **Code de connexion devinable** en envoyant beaucoup d'essais en même temps : compteur d'essais en une seule
    écriture en base, et limite d'essais par adresse IP.
 2. **Envoi de codes en masse** qui épuiserait le quota d'e-mails Brevo (300 par jour en gratuit) : plafond par jour
@@ -63,9 +63,11 @@ Fait (16/10) :
 - Pas fait, à dessein : empêcher un jeton de notification de passer d'un compte à l'autre. C'est le cas normal d'un
   téléphone qui change de compte, et un jeton ne se lit que sur le téléphone lui-même ; le bloquer casserait les
   notifications de ce cas sans vraie protection en échange.
-- À vérifier par le porteur dans Railway : la variable `EXPO_PUBLIC_WEATHER_SIMULATION` ne doit pas être posée.
+- `EXPO_PUBLIC_WEATHER_SIMULATION=1` est posée exprès sur Railway (`docs/deploiement-railway.md`) : elle garde la
+  simulation dans l'app web de test. Elle ne touche pas l'app du téléphone (eas.json, update.yml). À retirer à l'étape 6,
+  quand Railway servira la vraie version publique.
 
-### Étape 3. Solidité de l'app
+### Étape 3. Solidité de l'app : faite le 17/10
 1. **Écran « Oups »** au lieu d'une fermeture sèche si un écran plante, avec « Réessayer ».
 2. **Sans réseau, la météo était inventée** (22 °C, ni pluie ni vent) et les alertes calculées dessus : garder la
    dernière vraie prévision sur le téléphone et la dire ancienne ; sans elle, pas d'alerte inventée.
@@ -76,6 +78,26 @@ Fait (16/10) :
 5. Synchro avec un délai maximal (20 s) et un nouvel essai automatique quand le réseau revient.
 6. Autorisation des notifications demandée seulement après une action (accueil ou Réglages), jamais à l'improviste.
 7. File d'attente de synchro plafonnée ; petites corrections de la date simulée et de l'accessibilité.
+
+Fait (17/10, décisions du porteur : écran « Oups » sans Sentry pour l'instant, rappels des 7 jours à l'étape 5) :
+- « Oups, cet écran a eu un souci » + « Réessayer » (`components/oops-screen.tsx`, `ErrorBoundary` de
+  `app/_layout.tsx`, sans thème ni fournisseur : couleurs fixes). « Réessayer » ramène l'app sur Aujourd'hui.
+  Réglages → Version de test → « Voir l'écran « Oups » » pour le voir.
+- Météo : la dernière vraie prévision gardée sur le téléphone (`balco.weather.last-forecast.v1`, 48 h au plus, même
+  zone), relue à l'heure de maintenant (`lib/weather/snapshot.ts`) ; bandeau « 📡 Hors connexion · Balco utilise la météo
+  reçue à 8 h… » + « Réessayer », liseré orange (rendu plus visible à sa demande le 17/10). Sans elle : bandeau « Météo indisponible » + « Réessayer », et aucune alerte (`usable` de
+  `useLocalWeather` remplace `isFallback` pour décider des conseils ; `isFallback` reste « ville inconnue »).
+- Historique : `capEvents` garde les 1 000 derniers gestes et tous les gestes marquants plus anciens (seuls les
+  arrosages et vérifications anciens partent, 3 000 au plus) ; le serveur renvoie la même chose (`loadSnapshot`).
+- Données abîmées : plantes, gestes et boîte d'envoi relus ligne par ligne (`isStoredPlant`, `isStoredEvent`,
+  `readOutbox`).
+- Synchro : 20 s au plus, nouvel essai une minute après un échec ; envoi en paquets (`takeBatch`, `PUSH_LIMITS` =
+  limites du serveur). Trouvé en codant : un premier envoi ou un long hors-ligne de plus de 1 000 gestes était refusé
+  par le serveur à chaque fois.
+- Notifications : les rappels programmés en arrière-plan ne demandent plus l'autorisation
+  (`hasLocalNotificationPermission`) ; seuls l'accueil, Réglages, « Activer les rappels » et les tests la demandent.
+- Pas fait : « petites corrections de la date simulée et de l'accessibilité », trop vagues dans l'état des lieux pour
+  être reprises sans nouvelle relecture ; à revoir avec l'étape 4.
 
 ### Étape 4. Rapidité
 1. **Le plan du jour calculé une seule fois** pour toute l'app (il l'était 3 à 4 fois, une fois par onglet ouvert,
@@ -94,7 +116,8 @@ ouverture de l'app. Proposé : prévoir les rappels des 7 prochains jours.
 ### Étape 6. Version de production (avec la publication)
 Nom de paquet définitif (`com.app.balco` aujourd'hui, impossible à changer après le premier envoi au Play Store),
 adresse du serveur (« api.votre-domaine.fr » aujourd'hui), icône et couleurs du modèle à remplacer, polices
-intégrées (démarrage plus rapide), localisation approximative seulement, réduction de taille (R8). Ces changements
+intégrées (démarrage plus rapide), localisation approximative seulement, réduction de taille (R8). Retirer
+`EXPO_PUBLIC_WEATHER_SIMULATION` des variables Railway (app web publique), et du profil EAS de production s'il y est. Ces changements
 demandent un nouvel APK de test.
 
 ## Décisions à prendre avec le porteur

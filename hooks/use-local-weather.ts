@@ -11,7 +11,8 @@ import {
   type ReminderSettings,
   type WeatherSnapshot,
 } from "@/lib/reminders/reminder-engine";
-import { loadForecastPayload, type OpenMeteoPayload } from "@/lib/weather/forecast-client";
+import { forecastKey, loadForecastPayload, type OpenMeteoPayload } from "@/lib/weather/forecast-client";
+import { buildSnapshot, storedForecastUsable } from "@/lib/weather/snapshot";
 import { applyWeatherScenario, scenarioLabel } from "@/lib/weather/simulation";
 
 import { useWeatherSimulation } from "./use-weather-simulation";
@@ -25,7 +26,14 @@ export type LocalWeather = {
   weatherCode: number;
   isDay: boolean;
   summary: string;
+  /** Ville inconnue : météo de Paris par défaut. */
   isFallback: boolean;
+  /** Aucune prévision (pas de réseau, rien de gardé) : le relevé affiché n'est pas une vraie météo. */
+  offline: boolean;
+  /** Prévision gardée sur le téléphone, reçue à cette date (hors connexion). */
+  staleAt: string | null;
+  /** Une vraie prévision de la ville de la personne : les conseils et alertes météo peuvent s'en servir. */
+  usable: boolean;
   snapshot: WeatherSnapshot;
 };
 
@@ -51,6 +59,19 @@ type UseLocalWeatherOptions = {
 };
 
 const STORAGE_KEY = "balco.location.preference.v1";
+/** La dernière vraie prévision reçue, relue hors connexion (48 h au plus). */
+const LAST_FORECAST_KEY = "balco.weather.last-forecast.v1";
+type StoredForecast = { key: string; at: number; payload: OpenMeteoPayload };
+
+async function readStoredForecast(): Promise<StoredForecast | null> {
+  try {
+    const raw = await AsyncStorage.getItem(LAST_FORECAST_KEY);
+    const parsed = raw ? (JSON.parse(raw) as StoredForecast) : null;
+    return parsed && typeof parsed.key === "string" && typeof parsed.at === "number" && parsed.payload ? parsed : null;
+  } catch {
+    return null;
+  }
+}
 const PARIS_COORDINATES = { city: "Paris", latitude: 48.8566, longitude: 2.3522 };
 
 function describeWeather(code: number, isDay: boolean) {
@@ -62,56 +83,6 @@ function describeWeather(code: number, isDay: boolean) {
   if ([71, 73, 75, 77, 85, 86].includes(code)) return "Froid vif : protège tes pousses";
   if ([95, 96, 99].includes(code)) return "Orage : mets les plantes à l'abri";
   return "Regarde ton balcon, il te dira quoi faire";
-}
-
-function numberAt(values: number[] | undefined, index: number, fallback = 0) {
-  const value = values?.[index];
-  return typeof value === "number" && Number.isFinite(value) ? value : fallback;
-}
-
-function indexAtOrAfter(times: string[] | undefined, target: string | undefined) {
-  if (!times?.length || !target) return 0;
-  const index = times.findIndex((time) => time >= target);
-  return index === -1 ? 0 : index;
-}
-
-function buildSnapshot(payload: OpenMeteoPayload, city: string, latitude: number, longitude: number): WeatherSnapshot {
-  const current = payload.current ?? {};
-  const hourly = payload.hourly ?? {};
-  const daily = payload.daily ?? {};
-  const hourlyTimes = hourly.time ?? [];
-  const startIndex = indexAtOrAfter(hourlyTimes, current.time);
-  const nextHours = Array.from({ length: 12 }, (_, offset) => startIndex + offset);
-  const precipitationMm = nextHours.reduce((sum, index) => sum + numberAt(hourly.precipitation, index), 0);
-  const precipitationProbabilityMax = Math.max(...nextHours.map((index) => numberAt(hourly.precipitation_probability, index)), 0);
-  const windGustKmhMax = Math.max(...nextHours.map((index) => numberAt(hourly.wind_gusts_10m, index)), 0);
-  const fetchedAt = new Date().toISOString();
-
-  return {
-    fetchedAt,
-    timezone: "auto",
-    city,
-    latitude,
-    longitude,
-    elevationM: typeof payload.elevation === "number" ? payload.elevation : undefined,
-    current: {
-      temperatureC: Number(current.temperature_2m ?? 0),
-      apparentTemperatureC: Number(current.apparent_temperature ?? current.temperature_2m ?? 0),
-      weatherCode: Number(current.weather_code ?? 0),
-    },
-    next12h: {
-      precipitationMm,
-      precipitationProbabilityMax,
-      windGustKmhMax,
-    },
-    today: {
-      precipitationMm: numberAt(daily.precipitation_sum, 0),
-      temperatureMinC: numberAt(daily.temperature_2m_min, 0),
-      temperatureMaxC: numberAt(daily.temperature_2m_max, 0),
-      windGustKmhMax: numberAt(daily.wind_gusts_10m_max, 0),
-    },
-    nights: (daily.temperature_2m_min ?? []).filter((value): value is number => typeof value === "number" && Number.isFinite(value)),
-  };
 }
 
 function fallbackSnapshot(city: string, latitude: number, longitude: number): WeatherSnapshot {
@@ -161,6 +132,9 @@ export function useLocalWeather(options: UseLocalWeatherOptions = {}) {
       isDay: true,
       summary: "Soleil doux sur ton balcon",
       isFallback: true,
+      offline: false,
+      staleAt: null,
+      usable: false,
       snapshot,
     };
   });
@@ -178,7 +152,7 @@ export function useLocalWeather(options: UseLocalWeatherOptions = {}) {
       });
       const current = payload.current ?? {};
       const isDay = Boolean(current.is_day);
-      const snapshot = buildSnapshot(payload, city, latitude, longitude);
+      const snapshot = buildSnapshot(payload, { city, latitude, longitude });
       setWeather({
         city,
         latitude,
@@ -189,12 +163,30 @@ export function useLocalWeather(options: UseLocalWeatherOptions = {}) {
         isDay,
         summary: describeWeather(snapshot.current.weatherCode, isDay),
         isFallback,
+        offline: false,
+        staleAt: null,
+        usable: !isFallback,
         snapshot,
       });
       setError(null);
+      void AsyncStorage.setItem(LAST_FORECAST_KEY, JSON.stringify({ key: forecastKey(latitude, longitude), at: Date.now(), payload } satisfies StoredForecast)).catch(() => undefined);
     } catch (weatherError) {
       setError(weatherError instanceof Error ? weatherError.message : "Météo indisponible, affichage du dernier relevé.");
-      setWeather((current) => ({ ...current, city, latitude, longitude, isFallback }));
+      // Hors connexion : la dernière vraie prévision de cette ville (48 h au plus), relue à l'heure de maintenant.
+      // Sans elle, aucune alerte : mieux vaut se taire qu'annoncer un temps inventé.
+      const stored = await readStoredForecast();
+      if (stored && storedForecastUsable(stored, forecastKey(latitude, longitude))) {
+        const isDay = Boolean(stored.payload.current?.is_day);
+        const snapshot = buildSnapshot(stored.payload, { city, latitude, longitude }, new Date(), new Date(stored.at));
+        setWeather({ city, latitude, longitude, temperature: snapshot.current.temperatureC, apparentTemperature: snapshot.current.apparentTemperatureC, weatherCode: snapshot.current.weatherCode, isDay, summary: describeWeather(snapshot.current.weatherCode, isDay), isFallback, offline: false, staleAt: snapshot.fetchedAt, usable: !isFallback, snapshot });
+      } else {
+        setWeather((previous) => {
+          // Une prévision déjà reçue pour cette ville pendant que l'app était ouverte reste valable.
+          const sameZone = !previous.offline && previous.snapshot.fetchedAt !== new Date(0).toISOString() && forecastKey(previous.latitude, previous.longitude) === forecastKey(latitude, longitude);
+          if (sameZone) return { ...previous, city, isFallback, staleAt: previous.staleAt ?? previous.snapshot.fetchedAt, usable: !isFallback };
+          return { ...previous, city, latitude, longitude, isFallback, offline: true, staleAt: null, usable: false };
+        });
+      }
     } finally {
       setIsLoading(false);
     }
@@ -314,13 +306,13 @@ export function useLocalWeather(options: UseLocalWeatherOptions = {}) {
   const { scenario } = useWeatherSimulation();
   const realWeather = weather;
   const simulated = useMemo<LocalWeather>(() => {
-    if (scenario === "none" || realWeather.isFallback) return realWeather;
+    if (scenario === "none" || !realWeather.usable) return realWeather;
     const snapshot = applyWeatherScenario(realWeather.snapshot, scenario);
     return { ...realWeather, snapshot, weatherCode: snapshot.current.weatherCode, temperature: snapshot.current.temperatureC, apparentTemperature: snapshot.current.apparentTemperatureC, summary: `Simulation : ${scenarioLabel(scenario).toLowerCase()}` };
   }, [realWeather, scenario]);
 
   const reminderDecision = useMemo<ReminderDecision | null>(() => {
-    if (!options.plant || simulated.isFallback) return null;
+    if (!options.plant || !simulated.usable) return null;
     return decideReminder({
       plant: options.plant,
       history: options.history ?? [],
@@ -328,7 +320,7 @@ export function useLocalWeather(options: UseLocalWeatherOptions = {}) {
       settings: options.reminderSettings,
       lastReminderAt: options.lastReminderAt,
     });
-  }, [options.history, options.lastReminderAt, options.plant, options.reminderSettings, simulated.isFallback, simulated.snapshot]);
+  }, [options.history, options.lastReminderAt, options.plant, options.reminderSettings, simulated.usable, simulated.snapshot]);
 
   return {
     weather: simulated,

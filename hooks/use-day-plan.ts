@@ -77,19 +77,19 @@ export function useDayPlan() {
   // Balco+ (ou « Simuler Balco+ ») : le coach d'arrosage, plante par plante, avec la météo du jour (étape 6b).
   const { isPlus } = useBalcoPlus();
   const coach = useMemo(() => {
-    if (!isPlus || weather.isFallback) return undefined;
+    if (!isPlus || !weather.usable) return undefined;
     const balcony = onboarding?.skipped ? {} : { orientation: onboarding?.orientation, covered: onboarding?.covered, facing: onboarding?.facing };
     const coachWeather = { latitude: weather.latitude, today: weatherSnapshot.today };
     // Une plante rentrée à l'intérieur n'a plus la météo du balcon : son rythme d'intérieur suffit.
     return new Map(reminderPlants.filter((resolved) => !isIndoors(resolved.plant)).map((resolved) => [resolved.plant.id, coachAdvice({ entry: resolved.entry, potSize: resolved.plant.potSize, lastWatering: lastEventDate(events, resolved.plant.id, "watering"), weather: coachWeather, balcony, now })] as const));
-  }, [events, isPlus, now, onboarding, reminderPlants, weather.isFallback, weather.latitude, weatherSnapshot.today]);
+  }, [events, isPlus, now, onboarding, reminderPlants, weather.usable, weather.latitude, weatherSnapshot.today]);
   // Tous les conseils météo du moment (« rappels activés » ne décide que des notifications).
   const allDecisions = useMemo(() => {
-    if (!reminderSettingsLoaded || weather.isFallback) return [];
+    if (!reminderSettingsLoaded || !weather.usable) return [];
     const settings = { enabled: true, skipWateringWhenRainExpected: reminderSettings.skipWateringWhenRainExpected, maxNormalRemindersPerDay: reminderSettings.maxNormalRemindersPerDay };
     // Balcon couvert (accueil) : la pluie annoncée ne dispense pas d'arroser.
     return decideReminders(reminderPlants.map((resolved) => ({ plant: careProfileFor(resolved, onboarding, coach?.get(resolved.plant.id)), history: events, weather: weatherSnapshot, settings })));
-  }, [coach, events, onboarding, reminderPlants, reminderSettings, reminderSettingsLoaded, weather.isFallback, weatherSnapshot]);
+  }, [coach, events, onboarding, reminderPlants, reminderSettings, reminderSettingsLoaded, weather.usable, weatherSnapshot]);
   // Pour les notifications : toutes les alertes importantes, puis au plus N conseils ordinaires.
   // « Plantes suivies » (Réglages) ne coupe que les notifications : gestes et alertes restent à l'écran.
   const reminderDecisions = useMemo(
@@ -101,7 +101,7 @@ export function useDayPlan() {
   const postponed = useMemo(() => postponedStarts(snoozes, now), [now, snoozes]);
   const repotSkips = useMemo(() => skippedRepots(snoozes, now), [now, snoozes]);
   // Les minimales annoncées : une nuit sous le seuil d'une frileuse ramène « Décide pour ton basilic avant le froid ».
-  const nights = useMemo(() => (weather.isFallback ? undefined : weatherSnapshot.nights?.length ? weatherSnapshot.nights : [weatherSnapshot.today.temperatureMinC]), [weather.isFallback, weatherSnapshot.nights, weatherSnapshot.today.temperatureMinC]);
+  const nights = useMemo(() => (!weather.usable ? undefined : weatherSnapshot.nights?.length ? weatherSnapshot.nights : [weatherSnapshot.today.temperatureMinC]), [weather.usable, weatherSnapshot.nights, weatherSnapshot.today.temperatureMinC]);
   const plan = useMemo(() => planDay({ plants: resolvedPlants, events, now, decisions: visibleDecisions, allDecisions, climate, postponed, repotSkips, harvestEnds, coach, nights }), [allDecisions, climate, coach, events, harvestEnds, nights, now, postponed, repotSkips, resolvedPlants, visibleDecisions]);
 
   // « Tes radis sont-ils tous récoltés ? » ne se pose qu'un jour, « Ta saison de basilic est finie ? » un jour puis
