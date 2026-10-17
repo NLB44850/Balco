@@ -28,7 +28,7 @@ Supprimer ce qui reste du modèle de départ et ne sert plus : page de démonstr
 Fait : tout supprimé sauf `shared/const.ts` (encore lu par le serveur) ; notes de la racine déplacées en
 `docs/notes-meteo.md` et `docs/spec-rappels-contextuels.md`. 760 tests et 95 e2e verts.
 
-### Étape 2. Sécurité du serveur (le plus important) : faite le 16/10
+### Étape 2. Sécurité du serveur (le plus important) : faite le 16/10, validée le 17/10 (PR #55 fusionnée)
 1. **Code de connexion devinable** en envoyant beaucoup d'essais en même temps : compteur d'essais en une seule
    écriture en base, et limite d'essais par adresse IP.
 2. **Envoi de codes en masse** qui épuiserait le quota d'e-mails Brevo (300 par jour en gratuit) : plafond par jour
@@ -63,7 +63,9 @@ Fait (16/10) :
 - Pas fait, à dessein : empêcher un jeton de notification de passer d'un compte à l'autre. C'est le cas normal d'un
   téléphone qui change de compte, et un jeton ne se lit que sur le téléphone lui-même ; le bloquer casserait les
   notifications de ce cas sans vraie protection en échange.
-- À vérifier par le porteur dans Railway : la variable `EXPO_PUBLIC_WEATHER_SIMULATION` ne doit pas être posée.
+- `EXPO_PUBLIC_WEATHER_SIMULATION=1` est posée exprès sur Railway (`docs/deploiement-railway.md`) : elle garde la
+  simulation dans l'app web de test. Elle ne touche pas l'app du téléphone (eas.json, update.yml). À retirer à l'étape 6,
+  quand Railway servira la vraie version publique.
 
 ### Étape 3. Solidité de l'app
 1. **Écran « Oups »** au lieu d'une fermeture sèche si un écran plante, avec « Réessayer ».
@@ -94,7 +96,8 @@ ouverture de l'app. Proposé : prévoir les rappels des 7 prochains jours.
 ### Étape 6. Version de production (avec la publication)
 Nom de paquet définitif (`com.app.balco` aujourd'hui, impossible à changer après le premier envoi au Play Store),
 adresse du serveur (« api.votre-domaine.fr » aujourd'hui), icône et couleurs du modèle à remplacer, polices
-intégrées (démarrage plus rapide), localisation approximative seulement, réduction de taille (R8). Ces changements
+intégrées (démarrage plus rapide), localisation approximative seulement, réduction de taille (R8). Retirer
+`EXPO_PUBLIC_WEATHER_SIMULATION` des variables Railway (app web publique), et du profil EAS de production s'il y est. Ces changements
 demandent un nouvel APK de test.
 
 ## Décisions à prendre avec le porteur
