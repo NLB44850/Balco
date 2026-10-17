@@ -112,8 +112,8 @@ Fait (17/10, décisions du porteur : écran « Oups » sans Sentry pour l'instan
 Fait (17/10) :
 - Plan du jour partagé : `DayPlanProvider` (hooks/use-day-plan.ts, dans app/_layout.tsx sous le jardin) calcule une
   fois la météo, les réglages, les conseils et le plan ; `useDayPlan()` lit ce plan commun (Aujourd'hui, Balcon,
-  Saisons, fiche, courses, temps fort). L'heure se remet à jour au retour sur un écran (après une minute) et au retour
-  dans l'app ; la météo est relue au retour dans l'app si elle a plus de 30 minutes.
+  Saisons, fiche, courses, temps fort). L'heure se remet à jour au retour sur un écran (une plante ajoutée depuis le catalogue
+  serait sinon « pas encore là ») et au retour dans l'app ; la météo est relue au retour dans l'app si elle a plus de 30 minutes.
 - Synchro : plantes et gestes réécrits seulement s'ils ont changé (`sameEvents`, `samePlants`).
 - Notification du jour reprogrammée seulement si elle change (clé date + texte + réglages, index.tsx).
 - Catalogue et petits ronds : vignettes de 200 px (`assets/plants/thumbs/`, `STOCK_THUMBS`, faites par

@@ -37,8 +37,11 @@ import {
 
 /** La météo est relue au retour dans l'app si elle a plus de 30 minutes. */
 const WEATHER_REFRESH_MS = 30 * 60 * 1000;
-/** L'heure du plan est remise à jour au retour sur un écran si elle a plus d'une minute. */
-const NOW_REFRESH_MS = 60 * 1000;
+/**
+ * L'heure du plan est remise à jour au retour sur un écran (une plante ajoutée depuis le catalogue arrive après l'heure
+ * gardée : sans cela, elle serait tenue pour « pas encore là »). Un seul calcul, partagé, comme avant chaque écran.
+ */
+const NOW_REFRESH_MS = 1000;
 
 function useDayPlanState() {
   const { resolvedPlants, events, onboarding } = useGarden();
@@ -180,7 +183,7 @@ export function DayPlanProvider({ children }: { children: ReactNode }) {
   return createElement(DayPlanContext.Provider, { value }, children);
 }
 
-/** Le plan du jour partagé ; l'heure se remet à jour en revenant sur l'écran (après une minute). */
+/** Le plan du jour partagé ; l'heure se remet à jour en revenant sur l'écran. */
 export function useDayPlan() {
   const value = useContext(DayPlanContext);
   if (!value) throw new Error("useDayPlan doit être utilisé sous DayPlanProvider");
