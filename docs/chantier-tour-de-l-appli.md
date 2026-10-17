@@ -84,8 +84,8 @@ Fait (17/10, décisions du porteur : écran « Oups » sans Sentry pour l'instan
   `app/_layout.tsx`, sans thème ni fournisseur : couleurs fixes). « Réessayer » ramène l'app sur Aujourd'hui.
   Réglages → Version de test → « Voir l'écran « Oups » » pour le voir.
 - Météo : la dernière vraie prévision gardée sur le téléphone (`balco.weather.last-forecast.v1`, 48 h au plus, même
-  zone), relue à l'heure de maintenant (`lib/weather/snapshot.ts`) ; « Lyon · 2° au plus bas · météo de 8 h, hors
-  connexion ». Sans elle : bandeau « Météo indisponible » + « Réessayer », et aucune alerte (`usable` de
+  zone), relue à l'heure de maintenant (`lib/weather/snapshot.ts`) ; bandeau « 📡 Hors connexion · Balco utilise la météo
+  reçue à 8 h… » + « Réessayer », liseré orange (rendu plus visible à sa demande le 17/10). Sans elle : bandeau « Météo indisponible » + « Réessayer », et aucune alerte (`usable` de
   `useLocalWeather` remplace `isFallback` pour décider des conseils ; `isFallback` reste « ville inconnue »).
 - Historique : `capEvents` garde les 1 000 derniers gestes et tous les gestes marquants plus anciens (seuls les
   arrosages et vérifications anciens partent, 3 000 au plus) ; le serveur renvoie la même chose (`loadSnapshot`).

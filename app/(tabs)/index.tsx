@@ -4,7 +4,7 @@ import { useRouter } from "expo-router";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Alert, Animated, Platform, Pressable, ScrollView, StyleSheet, View } from "react-native";
 import { Button } from "@/components/ui/button";
-import { staleLabel } from "@/lib/weather/snapshot";
+import { staleBannerText } from "@/lib/weather/snapshot";
 import { Text } from "@/components/ui/typography";
 import * as Haptics from "expo-haptics";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -461,7 +461,7 @@ export default function HomeScreen() {
   const metaLine = !weather.usable
     ? weather.city
     : weather.staleAt
-      ? `${weather.city} · ${Math.round(weatherSnapshot.today.temperatureMinC)}° au plus bas · ${staleLabel(new Date(weather.staleAt), now)}`
+      ? `${weather.city} · ${Math.round(weatherSnapshot.today.temperatureMinC)}° au plus bas`
       : `${weather.city} · ${Math.round(weatherSnapshot.current.temperatureC)}° maintenant · ${Math.round(weatherSnapshot.today.temperatureMinC)}° au plus bas`;
   const hasPlants = resolvedPlants.length > 0;
   const arrival = loaded ? arrivalCard(onboarding, events, now) : null;
@@ -575,9 +575,22 @@ export default function HomeScreen() {
         )}
 
         {/* Ville inconnue (position refusée ou pas encore choisie) : pas d'alerte météo tant qu'elle manque. */}
+        {/* Hors connexion avec la dernière prévision gardée : bien visible, pour qu'on sache d'où viennent les conseils. */}
+        {!weatherLoading && weather.staleAt && (
+          <View style={[glass.card, styles.cityBanner, styles.offlineBanner]}>
+            <Text style={styles.offlineIcon}>📡</Text>
+            <View style={styles.flex}>
+              <Text style={[styles.cityBannerTitle, { color: colors.foreground }]}>Hors connexion</Text>
+              <Text style={[styles.small, { color: colors.muted }]}>{staleBannerText(new Date(weather.staleAt), now)}</Text>
+            </View>
+            <Button small variant="secondary" label="Réessayer" onPress={() => void refreshWeather()} />
+          </View>
+        )}
+
         {/* Hors connexion, sans prévision gardée : pas d'alerte inventée, et la personne le sait. */}
         {!weatherLoading && weather.offline && (
-          <View style={[glass.card, styles.cityBanner]}>
+          <View style={[glass.card, styles.cityBanner, styles.offlineBanner]}>
+            <Text style={styles.offlineIcon}>📡</Text>
             <View style={styles.flex}>
               <Text style={[styles.cityBannerTitle, { color: colors.foreground }]}>Météo indisponible</Text>
               <Text style={[styles.small, { color: colors.muted }]}>Sans connexion, Balco ne peut pas te prévenir du gel, de la pluie ou de la chaleur.</Text>
@@ -957,6 +970,9 @@ const styles = StyleSheet.create({
   arrival: { padding: 14, gap: 4 },
   cityBanner: { flexDirection: "row", alignItems: "center", gap: 12, padding: 14 },
   cityBannerTitle: { fontSize: 15, fontWeight: "700" },
+  // Hors connexion : liseré orange (« à surveiller »), pour qu'on le remarque.
+  offlineBanner: { borderLeftWidth: 4, borderLeftColor: "#D2642A" },
+  offlineIcon: { fontSize: 22 },
   remindersRow: { flexDirection: "row", alignItems: "center", gap: 12 },
   flex: { flex: 1 },
   shelf: { gap: 12 },

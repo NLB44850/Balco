@@ -74,11 +74,16 @@ export function storedForecastUsable(stored: { key: string; at: number } | null 
   return Boolean(stored && stored.key === key && now - stored.at >= 0 && now - stored.at < STORED_FORECAST_MAX_MS);
 }
 
-/** « Météo de 14 h » ou « météo d'hier, 18 h » : l'âge de la prévision affichée hors connexion. */
-export function staleLabel(fetchedAt: Date, now = new Date()) {
+/** Quand la prévision affichée hors connexion a été reçue : « à 14 h », « hier à 18 h », « avant-hier ». */
+export function staleSince(fetchedAt: Date, now = new Date()) {
   const hour = `${fetchedAt.getHours()} h`;
   const days = daysBetween(fetchedAt, now);
-  if (days === 0) return `météo de ${hour}, hors connexion`;
-  if (days === 1) return `météo d’hier ${hour}, hors connexion`;
-  return "météo d’avant-hier, hors connexion";
+  if (days === 0) return `à ${hour}`;
+  if (days === 1) return `hier à ${hour}`;
+  return "avant-hier";
+}
+
+/** Le bandeau « Hors connexion » d'Aujourd'hui. */
+export function staleBannerText(fetchedAt: Date, now = new Date()) {
+  return `Balco utilise la météo reçue ${staleSince(fetchedAt, now)}. Tes conseils restent valables, et se mettront à jour au retour du réseau.`;
 }

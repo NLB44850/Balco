@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { buildSnapshot, localHour, staleLabel, storedForecastUsable } from "../lib/weather/snapshot";
+import { buildSnapshot, localHour, staleBannerText, staleSince, storedForecastUsable } from "../lib/weather/snapshot";
 
 /** Tour de l'appli, étape 3 : hors connexion, la dernière vraie prévision, jamais une météo inventée. */
 const at = (day: number, hour: number) => new Date(2027, 0, day, hour);
@@ -45,7 +45,8 @@ describe("prévision gardée sur le téléphone", () => {
   });
 
   it("dit son âge", () => {
-    expect(staleLabel(at(10, 8), at(10, 18))).toBe("météo de 8 h, hors connexion");
-    expect(staleLabel(at(10, 18), at(11, 7))).toBe("météo d’hier 18 h, hors connexion");
+    expect(staleSince(at(10, 8), at(10, 18))).toBe("à 8 h");
+    expect(staleSince(at(10, 18), at(11, 7))).toBe("hier à 18 h");
+    expect(staleBannerText(at(10, 8), at(10, 18))).toBe("Balco utilise la météo reçue à 8 h. Tes conseils restent valables, et se mettront à jour au retour du réseau.");
   });
 });

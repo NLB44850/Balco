@@ -17,7 +17,8 @@ test("gel annoncé, puis plus de réseau : l'alerte reste, la météo dit son â
   await page.route("**/api/weather?**", (route) => route.abort());
   await page.reload();
   await expect(page.getByText("Gel cette nuit : protège le basilic")).toBeVisible({ timeout: 20_000 });
-  await expect(page.getByText(/· météo de \d+ h, hors connexion$/u)).toBeVisible();
+  await expect(page.getByText("Hors connexion", { exact: true })).toBeVisible();
+  await expect(page.getByText(/^Balco utilise la météo reçue à \d+ h\./u)).toBeVisible();
 
   // Sans prévision gardée : pas d'alerte, et un bandeau qui le dit.
   await page.evaluate(() => window.localStorage.removeItem("balco.weather.last-forecast.v1"));
