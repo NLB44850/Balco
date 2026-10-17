@@ -92,6 +92,20 @@ describe.skipIf(!TEST_DATABASE_URL)("garden sync and server reminders (MySQL)", 
     return db.select().from(schema.reminderDecisions).where(eq(schema.reminderDecisions.userId, forUser));
   }
 
+  it("au-delà de 1 000 gestes, la plantation et le rempotage anciens reviennent quand même", async () => {
+    const old = { id: "mint-z:start", plantId: "mint-z", type: "harvest" as const, completedAt: hoursAgo(24 * 400), source: "manual" as const };
+    const repot = { id: "mint-z:repot", plantId: "mint-z", type: "repotting" as const, completedAt: hoursAgo(24 * 390), source: "manual" as const };
+    const oldWatering = { id: "mint-z:w-old", plantId: "mint-z", type: "watering" as const, completedAt: hoursAgo(24 * 380), source: "daily_task" as const };
+    await reminders.syncGarden(otherUserId, { ...emptyPush(), events: [old, repot, oldWatering] });
+    const waterings = Array.from({ length: 1000 }, (_, index) => ({ id: `mint-z:w${index}`, plantId: "mint-z", type: "watering" as const, completedAt: hoursAgo(1 + index), source: "daily_task" as const }));
+    const snapshot = await reminders.syncGarden(otherUserId, { ...emptyPush(), events: waterings });
+    const ids = snapshot.events.map((event) => event.id);
+    expect(ids).toContain("mint-z:start");
+    expect(ids).toContain("mint-z:repot");
+    expect(ids).not.toContain("mint-z:w-old");
+    expect(snapshot.events).toHaveLength(1002);
+  });
+
   it("stores a device's garden and returns it to a second device", async () => {
     const pushed = await reminders.syncGarden(userId, {
       profile: { firstName: "Nicolas", balcony: { sunlight: "sunny", space: "balcony", goals: ["tomatoes"] } },

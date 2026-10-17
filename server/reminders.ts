@@ -1,6 +1,6 @@
-import { and, desc, eq, gt, inArray, lt, lte, notInArray, sql } from "drizzle-orm";
+import { and, desc, eq, gt, inArray, like, lt, lte, notInArray, or, sql } from "drizzle-orm";
 
-import { careProfileFor, resolvePlants, type GardenPlant } from "../lib/garden/garden-logic";
+import { careProfileFor, MAX_KEPT_EVENTS, resolvePlants, type GardenPlant } from "../lib/garden/garden-logic";
 import { awayOn, isValidVacation, type Vacation } from "../lib/garden/vacation";
 import type { OnboardingAnswers } from "../lib/plants/catalog";
 import { isPotSize } from "../lib/plants/pot-size";
@@ -298,7 +298,13 @@ export async function loadSnapshot(userId: number, now = new Date()): Promise<Sy
   const db = await requireDb();
   const [profile] = await db.select().from(reminderProfiles).where(eq(reminderProfiles.userId, userId)).limit(1);
   const plants = await db.select().from(reminderPlants).where(eq(reminderPlants.userId, userId));
-  const events = await db.select().from(maintenanceEvents).where(eq(maintenanceEvents.userId, userId)).orderBy(desc(maintenanceEvents.completedAt)).limit(MAX_SNAPSHOT_EVENTS);
+  const recent = await db.select().from(maintenanceEvents).where(eq(maintenanceEvents.userId, userId)).orderBy(desc(maintenanceEvents.completedAt)).limit(MAX_SNAPSHOT_EVENTS);
+  // Au-delà des 1 000 derniers, les gestes marquants restent (plantation, rempotage…) : comme sur le téléphone (capEvents).
+  const oldest = recent.at(-1)?.completedAt;
+  const milestones = recent.length < MAX_SNAPSHOT_EVENTS || !oldest ? [] : await db.select().from(maintenanceEvents)
+    .where(and(eq(maintenanceEvents.userId, userId), lt(maintenanceEvents.completedAt, oldest), or(notInArray(maintenanceEvents.type, ["watering", "observation"]), like(maintenanceEvents.eventId, "scan:%"))))
+    .orderBy(desc(maintenanceEvents.completedAt)).limit(MAX_KEPT_EVENTS - MAX_SNAPSHOT_EVENTS);
+  const events = [...recent, ...milestones];
   return {
     profile: { firstName: profile?.firstName ?? null, balcony: parseJson<OnboardingAnswers | null>(profile?.balconyJson, null) },
     settings: profile ? settingsFromProfile(profile) : null,

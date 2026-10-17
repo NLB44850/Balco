@@ -67,7 +67,7 @@ Fait (16/10) :
   simulation dans l'app web de test. Elle ne touche pas l'app du téléphone (eas.json, update.yml). À retirer à l'étape 6,
   quand Railway servira la vraie version publique.
 
-### Étape 3. Solidité de l'app
+### Étape 3. Solidité de l'app : faite le 17/10
 1. **Écran « Oups »** au lieu d'une fermeture sèche si un écran plante, avec « Réessayer ».
 2. **Sans réseau, la météo était inventée** (22 °C, ni pluie ni vent) et les alertes calculées dessus : garder la
    dernière vraie prévision sur le téléphone et la dire ancienne ; sans elle, pas d'alerte inventée.
@@ -78,6 +78,26 @@ Fait (16/10) :
 5. Synchro avec un délai maximal (20 s) et un nouvel essai automatique quand le réseau revient.
 6. Autorisation des notifications demandée seulement après une action (accueil ou Réglages), jamais à l'improviste.
 7. File d'attente de synchro plafonnée ; petites corrections de la date simulée et de l'accessibilité.
+
+Fait (17/10, décisions du porteur : écran « Oups » sans Sentry pour l'instant, rappels des 7 jours à l'étape 5) :
+- « Oups, cet écran a eu un souci » + « Réessayer » (`components/oops-screen.tsx`, `ErrorBoundary` de
+  `app/_layout.tsx`, sans thème ni fournisseur : couleurs fixes). « Réessayer » ramène l'app sur Aujourd'hui.
+  Réglages → Version de test → « Voir l'écran « Oups » » pour le voir.
+- Météo : la dernière vraie prévision gardée sur le téléphone (`balco.weather.last-forecast.v1`, 48 h au plus, même
+  zone), relue à l'heure de maintenant (`lib/weather/snapshot.ts`) ; « Lyon · 2° au plus bas · météo de 8 h, hors
+  connexion ». Sans elle : bandeau « Météo indisponible » + « Réessayer », et aucune alerte (`usable` de
+  `useLocalWeather` remplace `isFallback` pour décider des conseils ; `isFallback` reste « ville inconnue »).
+- Historique : `capEvents` garde les 1 000 derniers gestes et tous les gestes marquants plus anciens (seuls les
+  arrosages et vérifications anciens partent, 3 000 au plus) ; le serveur renvoie la même chose (`loadSnapshot`).
+- Données abîmées : plantes, gestes et boîte d'envoi relus ligne par ligne (`isStoredPlant`, `isStoredEvent`,
+  `readOutbox`).
+- Synchro : 20 s au plus, nouvel essai une minute après un échec ; envoi en paquets (`takeBatch`, `PUSH_LIMITS` =
+  limites du serveur). Trouvé en codant : un premier envoi ou un long hors-ligne de plus de 1 000 gestes était refusé
+  par le serveur à chaque fois.
+- Notifications : les rappels programmés en arrière-plan ne demandent plus l'autorisation
+  (`hasLocalNotificationPermission`) ; seuls l'accueil, Réglages, « Activer les rappels » et les tests la demandent.
+- Pas fait : « petites corrections de la date simulée et de l'accessibilité », trop vagues dans l'état des lieux pour
+  être reprises sans nouvelle relecture ; à revoir avec l'étape 4.
 
 ### Étape 4. Rapidité
 1. **Le plan du jour calculé une seule fois** pour toute l'app (il l'était 3 à 4 fois, une fois par onglet ouvert,
