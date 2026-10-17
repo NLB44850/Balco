@@ -7,7 +7,7 @@
  * historique des 5 derniers jours puis « Voir tout l'historique ».
  */
 import { useLocalSearchParams, useRouter } from "expo-router";
-import { useCallback, useState } from "react";
+import { useCallback, useRef, useState } from "react";
 import { Pressable, ScrollView, StyleSheet, View, useWindowDimensions } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import * as Haptics from "expo-haptics";
@@ -27,8 +27,9 @@ import { careWeeksLabel, celebrationFor, milestoneDate, plantProgress, sinceLabe
 import { endsWithSeason, harvestedToastText, isHarvestedOnce } from "@/lib/garden/harvest-end";
 import { asksWinter } from "@/lib/garden/winter-choice";
 import { IndoorCard, useChooseWinter, WinterChoiceCard, WinterChoiceSummary } from "@/components/winter-choice";
-import { backOutside, bringInUrgent, broughtIn, broughtInToast, isIndoors } from "@/lib/garden/indoors";
-import { bringOutUrgent, broughtOutToast } from "@/lib/garden/spring-out";
+import { backOutside, bringInUrgent, isIndoors } from "@/lib/garden/indoors";
+import { bringOutUrgent } from "@/lib/garden/spring-out";
+import { useWinterMoves } from "@/hooks/use-winter-moves";
 import { IconSymbol } from "@/components/ui/icon-symbol";
 import { Button } from "@/components/ui/button";
 import { BackButton } from "@/components/ui/nav-buttons";
@@ -76,7 +77,8 @@ export default function PlantScreen() {
   // Un geste de l'historique touché : sa feuille du bas (« Supprimer ce geste »).
   const [openEvent, setOpenEvent] = useState<MaintenanceEvent | null>(null);
   const [nameSheet, setNameSheet] = useState(false);
-  const [nameDraft, setNameDraft] = useState("");
+  // Le surnom tapé : gardé hors de l'état de l'écran, pour que chaque lettre ne recalcule pas toute la fiche.
+  const nameDraft = useRef("");
   const [potSheet, setPotSheet] = useState(pot === "1");
   // Les feuilles du bas de la fiche condensée : légende des couleurs, pas-à-pas, variété.
   const [legendSheet, setLegendSheet] = useState(false);
@@ -88,6 +90,7 @@ export default function PlantScreen() {
   const { celebrate, overlay: celebration } = useCelebration();
   const showToast = useCallback((text: string, onUndo?: () => void, actionLabel?: string) => show({ text, onUndo, actionLabel }), [show]);
   // Après la récolte d'une plante récoltée en une fois. Pot vidé ou donné à une autre plante : la fiche se ferme.
+  const winterMoves = useWinterMoves(showToast);
   const freePot = useFreePot({ climate, onDone: (text, kind) => (kind === "restart" ? showToast(text) : back()), overlay: <><UndoToast message={toast} onDone={hideToast} bottom={insets.bottom + 16} />{celebration}</> });
   const capture = usePlantPhotoCapture(showToast);
   // Frileuse en fin de saison : son choix pour l'hiver (chantier « Plante hors saison »).
@@ -182,22 +185,9 @@ export default function PlantScreen() {
     showToast(withCheer(cheer, `${gesture.source.type === "task" ? gesture.source.task.task.doneTitle : `${gesture.title} : noté.`} +${POINTS_PER_GESTURE} points`), () => void removeEvent(event.id));
   };
 
-  /** « C'est rentré » : la plante passe « À l'intérieur » (le pas-à-pas reste facultatif). */
-  const bringIn = async () => {
-    const previous = plant.winter;
-    if (!previous) return;
-    await setPlantWinter(plant.id, broughtIn(previous, clockNow()));
-    void Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => undefined);
-    showToast(broughtInToast(entry), () => void setPlantWinter(plant.id, previous));
-  };
-
-  /** « C'est ressorti » (étape 5) : son choix pour l'hiver s'efface, ses rappels normaux reprennent. */
-  const bringOut = async () => {
-    const previous = plant.winter;
-    await setPlantWinter(plant.id, undefined);
-    void Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => undefined);
-    showToast(broughtOutToast(entry), () => void setPlantWinter(plant.id, previous));
-  };
+  /** « C'est rentré » et « C'est ressorti » : les mêmes qu'Aujourd'hui (hooks/use-winter-moves.ts). */
+  const bringIn = () => winterMoves.bringIn(resolved);
+  const bringOut = () => winterMoves.bringOut(resolved);
 
   /** « Elle a fleuri » : une carte dans l'herbier (fleurs, pendant leurs mois de floraison). */
   const markBloom = async () => {
@@ -219,7 +209,7 @@ export default function PlantScreen() {
   };
 
   const saveName = async () => {
-    await renamePlant(plant.id, nameDraft);
+    await renamePlant(plant.id, nameDraft.current);
     setNameSheet(false);
   };
 
@@ -483,7 +473,7 @@ export default function PlantScreen() {
           {/* Son nom et la retirer du balcon : des lignes comme dans Réglages. */}
           <View style={styles.section}>
             <SettingsGroup title="Ta plante">
-              <SettingRow key="name" label="Son nom" value={plant.nickname?.trim() || "Pas de surnom"} onPress={() => { setNameDraft(plant.nickname ?? ""); setNameSheet(true); }} />
+              <SettingRow key="name" label="Son nom" value={plant.nickname?.trim() || "Pas de surnom"} onPress={() => { nameDraft.current = plant.nickname ?? ""; setNameSheet(true); }} />
               <SettingRow key="remove" label="Retirer du balcon" subtitle="Tu pourras annuler juste après. Son historique est gardé." danger onPress={() => void removeFromBalcony()} />
             </SettingsGroup>
           </View>
@@ -493,7 +483,7 @@ export default function PlantScreen() {
       {freePot.sheet}
       <BottomSheet visible={nameSheet} onClose={() => setNameSheet(false)}>
         <SheetHeading title="Son nom" intro={`Un surnom pour ${byForm(entry, "le", "la", "les", "les")} reconnaître (« ${entry.name} du salon »). Vide : ${entry.name}.`} />
-        <TextInput value={nameDraft} onChangeText={setNameDraft} onSubmitEditing={() => void saveName()} accessibilityLabel="Son nom" placeholder={entry.name} placeholderTextColor={colors.muted} maxLength={40} returnKeyType="done" autoFocus style={[styles.sheetInput, { borderColor: colors.border, color: colors.foreground }]} />
+        <TextInput key={nameSheet ? "open" : "closed"} defaultValue={plant.nickname ?? ""} onChangeText={(text) => { nameDraft.current = text; }} onSubmitEditing={() => void saveName()} accessibilityLabel="Son nom" placeholder={entry.name} placeholderTextColor={colors.muted} maxLength={40} returnKeyType="done" autoFocus style={[styles.sheetInput, { borderColor: colors.border, color: colors.foreground }]} />
         <Button label="Enregistrer" onPress={() => void saveName()} style={styles.sheetButton} />
       </BottomSheet>
       <BottomSheet visible={openEvent !== null} onClose={() => setOpenEvent(null)}>

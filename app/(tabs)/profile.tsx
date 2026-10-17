@@ -162,7 +162,7 @@ export default function ProfileScreen() {
                 const own = [...resolvedPlants, ...pastPlants].find(({ entry }) => entry.id === card.entry.id);
                 return (
                   <View key={card.entry.id} style={[glass.card, styles.herbCard]} accessibilityLabel={`${card.entry.name}, ${card.kind === "bloom" ? "fleuri" : "récolté"} le ${shortDay(card.at)}`}>
-                    {own ? <PlantPicture resolved={own} style={styles.herbPicture} /> : <CatalogPicture entry={card.entry} style={styles.herbPicture} />}
+                    {own ? <PlantPicture resolved={own} style={styles.herbPicture} /> : <CatalogPicture entry={card.entry} style={styles.herbPicture} full />}
                     <Text style={[styles.herbName, { color: colors.foreground }]} numberOfLines={1}>{card.entry.name}</Text>
                     <Text style={[styles.badgeDetail, { color: colors.muted }]}>{card.kind === "bloom" ? "Fleuri" : "Récolté"} le {shortDay(card.at)}</Text>
                   </View>

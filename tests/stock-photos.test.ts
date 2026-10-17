@@ -25,6 +25,11 @@ describe("photos d'exemple des plantes", () => {
       expect(fs.existsSync(file), entry.id).toBe(true);
       expect(fs.statSync(file).size, entry.id).toBeLessThan(400 * 1024);
       expect(index).toContain(`"${entry.id}": require("@/assets/plants/${entry.id}.jpg")`);
+      // Sa vignette pour les petits ronds (Tour de l'appli, étape 4) : node scripts/photos/generer-index.mjs.
+      const thumb = path.join(ROOT, "assets/plants/thumbs", `${entry.id}.jpg`);
+      expect(fs.existsSync(thumb), `${entry.id} : vignette manquante`).toBe(true);
+      expect(fs.statSync(thumb).size, entry.id).toBeLessThan(30 * 1024);
+      expect(index).toContain(`"${entry.id}": require("@/assets/plants/thumbs/${entry.id}.jpg")`);
       expect(credits[entry.id]?.author, entry.id).toBeTruthy();
       expect(credits[entry.id]?.page, entry.id).toMatch(/^https:\/\/commons\.wikimedia\.org\//);
     }

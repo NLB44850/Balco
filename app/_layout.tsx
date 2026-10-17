@@ -22,6 +22,7 @@ import { trpc, createTRPCClient } from "@/lib/trpc";
 import { ReminderNotificationResponder } from "@/components/reminder-notification-responder";
 import { AppUpdater } from "@/hooks/use-app-updates";
 import { GardenProvider } from "@/lib/garden/garden-context";
+import { DayPlanProvider } from "@/hooks/use-day-plan";
 import { PlantPhotosProvider } from "@/lib/garden/photos-context";
 import { DATE_SIMULATION_AVAILABLE, loadDateSimulation } from "@/hooks/use-date-simulation";
 
@@ -83,6 +84,7 @@ export default function RootLayout() {
       <trpc.Provider client={trpcClient} queryClient={queryClient}>
         <QueryClientProvider client={queryClient}>
           <GardenProvider>
+          <DayPlanProvider>
           <PlantPhotosProvider>
           {/* Default to hiding native headers so raw route segments don't appear (e.g. "(tabs)", "products/[id]"). */}
           {/* If a screen needs the native header, explicitly enable it and set a human title via Stack.Screen options. */}
@@ -111,6 +113,7 @@ export default function RootLayout() {
           <ReminderNotificationResponder />
           <AppUpdater />
           </PlantPhotosProvider>
+          </DayPlanProvider>
           </GardenProvider>
         </QueryClientProvider>
       </trpc.Provider>

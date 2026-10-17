@@ -23,7 +23,7 @@ fi
 node scripts/photos/generer-index.mjs >/dev/null || { echo "✘ L'index des photos n'a pas pu être refait : copie ce message à Claude."; exit 1; }
 
 echo "→ 4/4 Envoi sur GitHub…"
-git add "assets/plants/$id.jpg" assets/plants/credits.json components/plant-stock-photos.ts
+git add "assets/plants/$id.jpg" assets/plants/thumbs assets/plants/credits.json components/plant-stock-photos.ts
 git commit --quiet -m "Photo de la plante $id" || { echo "✘ Rien à enregistrer : copie ce message à Claude."; exit 1; }
 git push --quiet origin "$branch" || { echo "✘ git push a échoué : copie ce message à Claude."; exit 1; }
 echo "✔ Photo envoyée ($(du -k "assets/plants/$id.jpg" | cut -f1) Ko). Dis à Claude : « c'est poussé »."

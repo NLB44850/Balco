@@ -99,7 +99,7 @@ Fait (17/10, décisions du porteur : écran « Oups » sans Sentry pour l'instan
 - Pas fait : « petites corrections de la date simulée et de l'accessibilité », trop vagues dans l'état des lieux pour
   être reprises sans nouvelle relecture ; à revoir avec l'étape 4.
 
-### Étape 4. Rapidité
+### Étape 4. Rapidité : faite le 17/10
 1. **Le plan du jour calculé une seule fois** pour toute l'app (il l'était 3 à 4 fois, une fois par onglet ouvert,
    à chaque coche) : environ 100 à 250 ms de calcul en moins par coche sur un téléphone moyen (estimation).
 2. Synchro qui ne réécrit plus tout quand rien n'a changé ; fiche plante qui ne recalcule plus à chaque frappe ;
@@ -108,6 +108,21 @@ Fait (17/10, décisions du porteur : écran « Oups » sans Sentry pour l'instan
    rond de 46 px aujourd'hui).
 4. « C'est rentré », « Décocher », « Tout récolté ? » écrits une seule fois pour Aujourd'hui et la fiche (deux copies
    aujourd'hui, qui peuvent diverger).
+
+Fait (17/10) :
+- Plan du jour partagé : `DayPlanProvider` (hooks/use-day-plan.ts, dans app/_layout.tsx sous le jardin) calcule une
+  fois la météo, les réglages, les conseils et le plan ; `useDayPlan()` lit ce plan commun (Aujourd'hui, Balcon,
+  Saisons, fiche, courses, temps fort). L'heure se remet à jour au retour sur un écran (après une minute) et au retour
+  dans l'app ; la météo est relue au retour dans l'app si elle a plus de 30 minutes.
+- Synchro : plantes et gestes réécrits seulement s'ils ont changé (`sameEvents`, `samePlants`).
+- Notification du jour reprogrammée seulement si elle change (clé date + texte + réglages, index.tsx).
+- Catalogue et petits ronds : vignettes de 200 px (`assets/plants/thumbs/`, `STOCK_THUMBS`, faites par
+  `generer-index.mjs`), `CatalogPicture` les prend par défaut (`full` pour la grande photo de la feuille du catalogue
+  et de l'herbier). La liste reste une ScrollView : ses lignes étaient déjà mémorisées, le coût venait des photos.
+- Fiche plante : le surnom tapé ne recalcule plus toute la fiche à chaque lettre.
+- « C'est rentré » / « C'est ressorti » écrits une fois (`hooks/use-winter-moves.ts`).
+- Pas fait : badges calculés après l'animation (le message du bas en dépend, gain faible) ; « Décocher » et
+  « Tout récolté ? » laissés tels quels (logiques proches mais pas identiques entre les deux écrans).
 
 ### Étape 5. Notifications des comptes gratuits (à décider)
 Aujourd'hui, un compte gratuit reçoit au plus **une** notification : la suivante n'est prévue qu'à la prochaine

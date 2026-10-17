@@ -178,6 +178,20 @@ export function isStoredEvent(value: unknown): value is MaintenanceEvent {
   return Boolean(event) && typeof event === "object" && isString(event!.id) && isString(event!.plantId) && isString(event!.type) && isString(event!.completedAt) && !Number.isNaN(Date.parse(event!.completedAt!));
 }
 
+/** Mêmes gestes, dans le même ordre ? (Comparaison rapide : la synchro ne réécrit rien quand rien n'a changé.) */
+export function sameEvents(a: MaintenanceEvent[], b: MaintenanceEvent[]) {
+  if (a.length !== b.length) return false;
+  return a.every((event, index) => {
+    const other = b[index];
+    return event.id === other.id && event.completedAt === other.completedAt && event.type === other.type && event.plantId === other.plantId && event.note === other.note && event.source === other.source;
+  });
+}
+
+/** Mêmes plantes, dans le même ordre, avec les mêmes champs ? */
+export function samePlants(a: GardenPlant[], b: GardenPlant[]) {
+  return a.length === b.length && JSON.stringify(a) === JSON.stringify(b);
+}
+
 export function buildPush(outbox: Outbox, local: LocalGardenState, location?: SyncLocation): SyncPushPayload {
   return {
     ...(outbox.profileDirty ? { profile: { firstName: local.firstName?.trim() || null, balcony: local.onboarding } } : {}),

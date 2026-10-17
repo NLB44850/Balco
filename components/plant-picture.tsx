@@ -14,11 +14,11 @@ import type { CatalogPlant } from "@/lib/plants/catalog";
 import type { PlantPhoto } from "@/lib/garden/photos";
 import { usePlantPhotos } from "@/lib/garden/photos-context";
 
-import { STOCK_PHOTOS } from "./plant-stock-photos";
+import { STOCK_PHOTOS, STOCK_THUMBS } from "./plant-stock-photos";
 
-/** La photo d'exemple d'une plante du catalogue, s'il y en a une. */
-export function stockPhoto(catalogId: string): number | undefined {
-  return STOCK_PHOTOS[catalogId];
+/** La photo d'exemple d'une plante du catalogue, s'il y en a une ; `thumb` : sa vignette de 200 px. */
+export function stockPhoto(catalogId: string, thumb = false): number | undefined {
+  return (thumb ? STOCK_THUMBS[catalogId] : undefined) ?? STOCK_PHOTOS[catalogId];
 }
 
 type Props = {
@@ -42,11 +42,15 @@ export function PlantPicture({ resolved, photo, style, hideEmoji, children }: Pr
 }
 
 /** Une plante du catalogue (pas encore sur ton balcon) : sa photo d'exemple, ou son emoji. */
-export function CatalogPicture({ entry, style }: { entry: CatalogPlant; style?: StyleProp<ViewStyle> }) {
-  return <Picture entry={entry} style={style} />;
+/**
+ * La photo d'exemple d'une plante du catalogue. Par défaut sa vignette (les petits ronds : catalogue, accueil,
+ * suggestions), plus légère à charger ; `full` pour une grande image.
+ */
+export function CatalogPicture({ entry, style, full }: { entry: CatalogPlant; style?: StyleProp<ViewStyle>; full?: boolean }) {
+  return <Picture entry={entry} style={style} thumb={!full} />;
 }
 
-function Picture({ entry, uri, style, hideEmoji, children }: { entry: CatalogPlant; uri?: string; style?: StyleProp<ViewStyle>; hideEmoji?: boolean; children?: React.ReactNode }) {
+function Picture({ entry, uri, style, hideEmoji, thumb, children }: { entry: CatalogPlant; uri?: string; style?: StyleProp<ViewStyle>; hideEmoji?: boolean; thumb?: boolean; children?: React.ReactNode }) {
   const colors = useColors();
   const [side, setSide] = useState(0);
   const onLayout = (event: LayoutChangeEvent) => {
@@ -57,7 +61,7 @@ function Picture({ entry, uri, style, hideEmoji, children }: { entry: CatalogPla
   // Ta photo introuvable (fichier effacé par le téléphone) : la photo d'exemple plutôt qu'un rond vide (retour du 14/10).
   const [brokenUri, setBrokenUri] = useState<string | null>(null);
   const ownUri = uri && uri !== brokenUri ? uri : undefined;
-  const source = ownUri ? { uri: ownUri } : stockPhoto(entry.id);
+  const source = ownUri ? { uri: ownUri } : stockPhoto(entry.id, thumb);
   return (
     <View style={[styles.frame, { backgroundColor: colors.leaf }, style]} onLayout={source ? undefined : onLayout}>
       {source ? (

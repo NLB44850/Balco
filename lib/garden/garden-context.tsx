@@ -39,6 +39,8 @@ import {
   type SyncLocation,
   isStoredEvent,
   isStoredPlant,
+  sameEvents,
+  samePlants,
   readOutbox,
   takeBatch,
 } from "@/lib/sync/sync-logic";
@@ -359,8 +361,9 @@ export function GardenProvider({ children }: { children: ReactNode }) {
 
       const latestSettings = await loadLocalReminderSettings();
       const applied = applySnapshot(snapshot, outboxRef.current, localState(latestSettings));
-      await savePlants(applied.plants);
-      await saveEvents(applied.events);
+      // Rien de changé (le cas le plus courant) : ni réécriture du téléphone, ni nouveau calcul des écrans.
+      if (!samePlants(applied.plants, plantsRef.current)) await savePlants(applied.plants);
+      if (!sameEvents(applied.events, eventsRef.current)) await saveEvents(applied.events);
       if ((applied.firstName ?? undefined) !== profileRef.current.firstName) await saveProfile({ ...profileRef.current, firstName: applied.firstName });
       if (JSON.stringify(applied.onboarding) !== JSON.stringify(onboardingRef.current)) await saveOnboarding(applied.onboarding);
       // Un badge obtenu sur un autre téléphone arrive ici ; on ne le refête pas (il l'a été là-bas).

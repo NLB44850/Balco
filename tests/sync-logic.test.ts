@@ -214,3 +214,16 @@ describe("synchro en paquets et données abîmées (Tour de l'appli, étape 3)",
     expect(readOutbox({ plants: [], events: { x: 3 }, deletedEventIds: ["a", 2], profileDirty: "oui" })).toEqual({ plants: {}, events: {}, deletedEventIds: ["a"], profileDirty: false, settingsDirty: false, awardsDirty: false });
   });
 });
+
+describe("synchro sans réécriture inutile (Tour de l'appli, étape 4)", () => {
+  it("reconnaît des gestes et des plantes inchangés", async () => {
+    const { sameEvents, samePlants } = await import("../lib/sync/sync-logic");
+    const event = { id: "e", plantId: "p", type: "watering" as const, completedAt: "2027-01-01T00:00:00.000Z", source: "manual" as const };
+    expect(sameEvents([event], [{ ...event }])).toBe(true);
+    expect(sameEvents([event], [{ ...event, note: "x" }])).toBe(false);
+    expect(sameEvents([event], [])).toBe(false);
+    const plant = { id: "p", catalogId: "basil", addedAt: "2027-01-01T00:00:00.000Z" };
+    expect(samePlants([plant], [{ ...plant }])).toBe(true);
+    expect(samePlants([plant], [{ ...plant, potSize: "large" as const }])).toBe(false);
+  });
+});
