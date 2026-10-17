@@ -112,6 +112,8 @@ export default function SettingsScreen() {
   const realToday = dayKey(new Date());
   const shownDay = dateSimulation.day ?? realToday;
   const [testStatus, setTestStatus] = useState<"idle" | "sending" | "sent" | "denied">("idle");
+  // Version de test : « Voir l’écran Oups » fait planter cet écran exprès.
+  const [crash, setCrash] = useState(false);
 
   const sendTest = async () => {
     setTestStatus("sending");
@@ -512,11 +514,18 @@ export default function SettingsScreen() {
             )}
             <SettingRow label="Refaire l’accueil" subtitle="Repasse les questions du début, sans toucher à tes plantes." onPress={() => router.push({ pathname: "/welcome", params: { again: "1" } })} />
             <SettingRow label="Illustrations du pas-à-pas" onPress={() => router.push("/illustrations")} />
+            <SettingRow label="Voir l’écran « Oups »" subtitle="Fait planter cet écran exprès, pour voir ce qui s’affiche. « Réessayer » ramène l’app." onPress={() => setCrash(true)} />
+            {crash && <CrashOnPurpose />}
           </SettingsGroup>
         )}
       </ScrollView>
     </LightScreen>
   );
+}
+
+/** Version de test : plante exprès pour montrer l'écran « Oups » (components/oops-screen.tsx). */
+function CrashOnPurpose(): never {
+  throw new Error("Plantage volontaire (Réglages → Version de test)");
 }
 
 const styles = StyleSheet.create({

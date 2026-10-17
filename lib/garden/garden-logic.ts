@@ -39,6 +39,8 @@ export type ResolvedPlant = { plant: GardenPlant; entry: CatalogPlant };
 const HOUR_MS = 60 * 60 * 1000;
 const DAY_MS = 24 * HOUR_MS;
 export const MAX_STORED_EVENTS = 1000;
+/** Plafond absolu : les gestes marquants gardés au-delà des 1 000 derniers ne grossissent pas sans fin. */
+export const MAX_KEPT_EVENTS = 3000;
 
 export function createGardenPlant(catalogId: string, now = new Date(), options: { toPlant?: boolean } = {}): GardenPlant {
   const plant: GardenPlant = { id: `${catalogId}-${now.getTime().toString(36)}${Math.random().toString(36).slice(2, 6)}`, catalogId, addedAt: now.toISOString(), updatedAt: now.toISOString() };
@@ -249,8 +251,24 @@ export function isScannerEvent(event: MaintenanceEvent) {
   return event.id.startsWith("scan:");
 }
 
+/** Les gestes courants (arrosages, vérifications de la terre) : les seuls oubliés quand l'historique déborde. */
+export function isRoutineEvent(event: Pick<MaintenanceEvent, "id" | "type">) {
+  return (event.type === "watering" || event.type === "observation") && !isScannerEvent(event as MaintenanceEvent);
+}
+
+/**
+ * Les 1 000 derniers gestes, plus tous les gestes marquants plus anciens (plantation, rempotage, récolte, taille,
+ * engrais, photo analysée…) : sans eux, rempotage, fin de saison, série et progression se trompent après quelques mois.
+ * Seuls les arrosages et vérifications les plus anciens sont oubliés.
+ */
+export function capEvents<T extends Pick<MaintenanceEvent, "id" | "type" | "completedAt">>(events: T[], max = MAX_STORED_EVENTS): T[] {
+  if (events.length <= max) return events;
+  const newestFirst = [...events].sort((a, b) => b.completedAt.localeCompare(a.completedAt));
+  return newestFirst.filter((event, index) => index < max || !isRoutineEvent(event)).slice(0, MAX_KEPT_EVENTS);
+}
+
 export function appendEvent(events: MaintenanceEvent[], event: MaintenanceEvent) {
-  return [event, ...events.filter((existing) => existing.id !== event.id)].slice(0, MAX_STORED_EVENTS);
+  return capEvents([event, ...events.filter((existing) => existing.id !== event.id)]);
 }
 
 // --- État d'une plante --------------------------------------------------------

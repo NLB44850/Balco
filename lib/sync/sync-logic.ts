@@ -11,7 +11,7 @@
  * disparaît aussi des autres, au lieu de réapparaître à la fusion.
  */
 import { mergeAwards, type Awards } from "../garden/awards";
-import type { GardenPlant } from "../garden/garden-logic";
+import { capEvents, MAX_STORED_EVENTS, type GardenPlant } from "../garden/garden-logic";
 import type { Vacation } from "../garden/vacation";
 import type { OnboardingAnswers } from "../plants/catalog";
 import type { MaintenanceEvent } from "../reminders/reminder-engine";
@@ -132,6 +132,52 @@ export function resendPlants(plants: GardenPlant[], now = Date.now()): Outbox {
   return plants.reduce((outbox, plant) => recordPlant(outbox, { ...plant, updatedAt: nextUpdatedAt(plant, now) }), emptyOutbox());
 }
 
+/** Ce que le serveur accepte en une synchro (server/reminders-router.ts) : au-delà, le reste part au tour suivant. */
+export const PUSH_LIMITS = { plants: 200, events: 1000, deletedEventIds: 1000 } as const;
+
+/**
+ * Un paquet envoyable, et ce qui attendra le tour suivant. Sans ce découpage, un téléphone resté longtemps hors ligne
+ * (ou un premier envoi de tout l'historique) dépassait la limite du serveur et sa synchro était refusée à chaque fois.
+ */
+export function takeBatch(outbox: Outbox): { batch: Outbox; rest: Outbox | null } {
+  const plants = Object.entries(outbox.plants);
+  const events = Object.entries(outbox.events);
+  if (plants.length <= PUSH_LIMITS.plants && events.length <= PUSH_LIMITS.events && outbox.deletedEventIds.length <= PUSH_LIMITS.deletedEventIds) return { batch: outbox, rest: null };
+  return {
+    batch: { ...outbox, plants: Object.fromEntries(plants.slice(0, PUSH_LIMITS.plants)), events: Object.fromEntries(events.slice(0, PUSH_LIMITS.events)), deletedEventIds: outbox.deletedEventIds.slice(0, PUSH_LIMITS.deletedEventIds) },
+    rest: { ...emptyOutbox(), plants: Object.fromEntries(plants.slice(PUSH_LIMITS.plants)), events: Object.fromEntries(events.slice(PUSH_LIMITS.events)), deletedEventIds: outbox.deletedEventIds.slice(PUSH_LIMITS.deletedEventIds) },
+  };
+}
+
+/** Une boîte d'envoi relue du téléphone : une donnée abîmée devient une boîte vide plutôt qu'un plantage. */
+export function readOutbox(stored: unknown): Outbox {
+  if (!stored || typeof stored !== "object") return emptyOutbox();
+  const value = stored as Partial<Outbox>;
+  const isRecord = (item: unknown): item is Record<string, never> => Boolean(item) && typeof item === "object" && !Array.isArray(item);
+  return {
+    plants: isRecord(value.plants) ? Object.fromEntries(Object.entries(value.plants).filter(([, plant]) => isStoredPlant(plant))) : {},
+    events: isRecord(value.events) ? Object.fromEntries(Object.entries(value.events).filter(([, event]) => isStoredEvent(event))) : {},
+    deletedEventIds: Array.isArray(value.deletedEventIds) ? value.deletedEventIds.filter((id): id is string => typeof id === "string") : [],
+    profileDirty: value.profileDirty === true,
+    settingsDirty: value.settingsDirty === true,
+    awardsDirty: value.awardsDirty === true,
+  };
+}
+
+const isString = (value: unknown): value is string => typeof value === "string" && value.length > 0;
+
+/** Une plante relue du téléphone a au moins son identifiant, sa plante du catalogue et sa date d'arrivée. */
+export function isStoredPlant(value: unknown): value is GardenPlant {
+  const plant = value as Partial<GardenPlant> | null;
+  return Boolean(plant) && typeof plant === "object" && isString(plant!.id) && isString(plant!.catalogId) && isString(plant!.addedAt);
+}
+
+/** Un geste relu du téléphone a au moins son identifiant, sa plante, son type et sa date. */
+export function isStoredEvent(value: unknown): value is MaintenanceEvent {
+  const event = value as Partial<MaintenanceEvent> | null;
+  return Boolean(event) && typeof event === "object" && isString(event!.id) && isString(event!.plantId) && isString(event!.type) && isString(event!.completedAt) && !Number.isNaN(Date.parse(event!.completedAt!));
+}
+
 export function buildPush(outbox: Outbox, local: LocalGardenState, location?: SyncLocation): SyncPushPayload {
   return {
     ...(outbox.profileDirty ? { profile: { firstName: local.firstName?.trim() || null, balcony: local.onboarding } } : {}),
@@ -177,7 +223,7 @@ export type AppliedSnapshot = {
  * Remplace l'état local par l'état serveur, en réappliquant les changements faits
  * pendant l'appel réseau (`pending`), qui n'ont pas encore été envoyés.
  */
-export function applySnapshot(snapshot: SyncSnapshotPayload, pending: Outbox, local: LocalGardenState, maxEvents = 1000): AppliedSnapshot {
+export function applySnapshot(snapshot: SyncSnapshotPayload, pending: Outbox, local: LocalGardenState, maxEvents = MAX_STORED_EVENTS): AppliedSnapshot {
   // La même modification des deux côtés : la copie du téléphone fait foi. Un serveur pas encore à jour (une demande de
   // fusion testée avant d'être en ligne) ne renvoie pas les champs qu'il ignore, comme le choix pour l'hiver (16/10).
   const localPlants = new Map(local.plants.map((plant) => [plant.id, plant]));
@@ -201,7 +247,7 @@ export function applySnapshot(snapshot: SyncSnapshotPayload, pending: Outbox, lo
   return {
     // Ordre d'ajout conservé pour l'affichage.
     plants: [...plants.values()].sort((a, b) => a.addedAt.localeCompare(b.addedAt)),
-    events: [...events.values()].sort((a, b) => b.completedAt.localeCompare(a.completedAt)).slice(0, maxEvents),
+    events: capEvents([...events.values()].sort((a, b) => b.completedAt.localeCompare(a.completedAt)), maxEvents),
     firstName: pending.profileDirty ? local.firstName : snapshot.profile.firstName ?? undefined,
     // Le questionnaire d'un autre appareil remplace un questionnaire local ignoré ou absent.
     onboarding: pending.profileDirty ? local.onboarding : serverOnboarding ?? local.onboarding,

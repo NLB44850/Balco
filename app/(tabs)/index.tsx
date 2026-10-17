@@ -4,6 +4,7 @@ import { useRouter } from "expo-router";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Alert, Animated, Platform, Pressable, ScrollView, StyleSheet, View } from "react-native";
 import { Button } from "@/components/ui/button";
+import { staleBannerText } from "@/lib/weather/snapshot";
 import { Text } from "@/components/ui/typography";
 import * as Haptics from "expo-haptics";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -152,7 +153,7 @@ export default function HomeScreen() {
   }, [router]);
   const { covers } = usePlantPhotos();
   // Plan du jour, météo, réglages et reports : les mêmes que Balcon et la fiche plante.
-  const { weather, weatherSnapshot, isLoading: weatherLoading, searchCities, selectCity, requestDeviceLocation, now, climate, snoozes, snoozesLoaded, reminderSettings, setReminderSettings, reminderSettingsLoaded, reminderDecisions, visibleGroups, plan } = useDayPlan();
+  const { weather, weatherSnapshot, isLoading: weatherLoading, refresh: refreshWeather, searchCities, selectCity, requestDeviceLocation, now, climate, snoozes, snoozesLoaded, reminderSettings, setReminderSettings, reminderSettingsLoaded, reminderDecisions, visibleGroups, plan } = useDayPlan();
   const [sheetKey, setSheetKey] = useState<string | null>(null);
   const [toast, setToast] = useState<ToastMessage | null>(null);
   const toastId = useRef(0);
@@ -162,7 +163,7 @@ export default function HomeScreen() {
   const simulation = useWeatherSimulation();
   const dateSimulation = useDateSimulation();
   const insets = useSafeAreaInsets();
-  const sky = useMemo(() => skyScene(weatherSnapshot, now, weather.isFallback), [now, weather.isFallback, weatherSnapshot]);
+  const sky = useMemo(() => skyScene(weatherSnapshot, now, !weather.usable), [now, weather.usable, weatherSnapshot]);
   const pots = useMemo(() => potsFor(resolvedPlants.map((resolved) => resolved.entry.category)), [resolvedPlants]);
   const scrollY = useRef(new Animated.Value(0)).current;
   // Les autres onglets reprennent cette lumière pour leur fond.
@@ -190,12 +191,12 @@ export default function HomeScreen() {
 
   // Une seule notification programmée : le prochain conseil utile, à l'heure préférée ou au réveil d'un « Dans 3 h ».
   useEffect(() => {
-    if (!reminderSettingsLoaded || !snoozesLoaded || !reminderSettings.enabled || weather.isFallback) return;
+    if (!reminderSettingsLoaded || !snoozesLoaded || !reminderSettings.enabled || !weather.usable) return;
     const plan = planGroupedNotification(unseenDecisions, snoozes, reminderSettings, new Date());
     // Mode vacances : aucun rappel pendant l'absence (la notification « Bon retour » est à part).
     if (plan && !awayOn(vacation, dayKey(plan.date))) void scheduleLocalReminder(plan.group, reminderSettings, plan.date);
     else void cancelBalcoReminderNotifications();
-  }, [reminderSettings, reminderSettingsLoaded, snoozes, snoozesLoaded, unseenDecisions, vacation, weather.isFallback]);
+  }, [reminderSettings, reminderSettingsLoaded, snoozes, snoozesLoaded, unseenDecisions, vacation, weather.usable]);
 
   // La notification de lancement d'un événement : une seule, le premier jour à l'heure du conseil (heure réelle du
   // téléphone), si les rappels sont activés et hors vacances.
@@ -457,9 +458,11 @@ export default function HomeScreen() {
     />
   );
   const evening = now.getHours() >= 17;
-  const metaLine = weather.isFallback
+  const metaLine = !weather.usable
     ? weather.city
-    : `${weather.city} · ${Math.round(weatherSnapshot.current.temperatureC)}° maintenant · ${Math.round(weatherSnapshot.today.temperatureMinC)}° au plus bas`;
+    : weather.staleAt
+      ? `${weather.city} · ${Math.round(weatherSnapshot.today.temperatureMinC)}° au plus bas`
+      : `${weather.city} · ${Math.round(weatherSnapshot.current.temperatureC)}° maintenant · ${Math.round(weatherSnapshot.today.temperatureMinC)}° au plus bas`;
   const hasPlants = resolvedPlants.length > 0;
   const arrival = loaded ? arrivalCard(onboarding, events, now) : null;
   // Mars et avril : les envies du printemps choisies l'hiver, pas encore sur le balcon.
@@ -546,7 +549,7 @@ export default function HomeScreen() {
         {simulation.scenario !== "none" && (
           <View style={[styles.simulation, { backgroundColor: colors.surface }]}>
             <Text style={[styles.simulationTitle, { color: colors.foreground }]}>🧪 Simulation : {scenarioLabel(simulation.scenario).toLowerCase()}</Text>
-            <Text style={[styles.small, { color: colors.muted }]}>{weather.isFallback ? "La météo réelle n’a pas encore chargé : la simulation s’appliquera dès qu’elle sera là." : reminderDecisions.length === 0 ? "Aucune alerte pour ce scénario : vérifie tes plantes et leurs derniers arrosages." : visibleGroups.length === 0 ? "Alerte simulée déjà traitée aujourd’hui." : "Les alertes ci-dessous sont simulées."}</Text>
+            <Text style={[styles.small, { color: colors.muted }]}>{!weather.usable ? "La météo réelle n’a pas encore chargé : la simulation s’appliquera dès qu’elle sera là." : reminderDecisions.length === 0 ? "Aucune alerte pour ce scénario : vérifie tes plantes et leurs derniers arrosages." : visibleGroups.length === 0 ? "Alerte simulée déjà traitée aujourd’hui." : "Les alertes ci-dessous sont simulées."}</Text>
             <View style={styles.inlineActions}>
               {notificationsUnavailableReason === null && visibleGroups.length > 0 && (
                 <Button small label="Me notifier dans 5 s" onPress={() => void sendReminderPreview(visibleGroups[0]).then((result) => setPreviewStatus(result === "sent" ? "sent" : "denied"))} />
@@ -572,7 +575,31 @@ export default function HomeScreen() {
         )}
 
         {/* Ville inconnue (position refusée ou pas encore choisie) : pas d'alerte météo tant qu'elle manque. */}
-        {!weatherLoading && weather.isFallback && (
+        {/* Hors connexion avec la dernière prévision gardée : bien visible, pour qu'on sache d'où viennent les conseils. */}
+        {!weatherLoading && weather.staleAt && (
+          <View style={[glass.card, styles.cityBanner, styles.offlineBanner]}>
+            <Text style={styles.offlineIcon}>📡</Text>
+            <View style={styles.flex}>
+              <Text style={[styles.cityBannerTitle, { color: colors.foreground }]}>Hors connexion</Text>
+              <Text style={[styles.small, { color: colors.muted }]}>{staleBannerText(new Date(weather.staleAt), now)}</Text>
+            </View>
+            <Button small variant="secondary" label="Réessayer" onPress={() => void refreshWeather()} />
+          </View>
+        )}
+
+        {/* Hors connexion, sans prévision gardée : pas d'alerte inventée, et la personne le sait. */}
+        {!weatherLoading && weather.offline && (
+          <View style={[glass.card, styles.cityBanner, styles.offlineBanner]}>
+            <Text style={styles.offlineIcon}>📡</Text>
+            <View style={styles.flex}>
+              <Text style={[styles.cityBannerTitle, { color: colors.foreground }]}>Météo indisponible</Text>
+              <Text style={[styles.small, { color: colors.muted }]}>Sans connexion, Balco ne peut pas te prévenir du gel, de la pluie ou de la chaleur.</Text>
+            </View>
+            <Button small variant="secondary" label="Réessayer" onPress={() => void refreshWeather()} />
+          </View>
+        )}
+
+        {!weatherLoading && weather.isFallback && !weather.offline && (
           <View style={[glass.card, styles.cityBanner]}>
             <View style={styles.flex}>
               <Text style={[styles.cityBannerTitle, { color: colors.foreground }]}>Météo de Paris par défaut</Text>
@@ -943,6 +970,9 @@ const styles = StyleSheet.create({
   arrival: { padding: 14, gap: 4 },
   cityBanner: { flexDirection: "row", alignItems: "center", gap: 12, padding: 14 },
   cityBannerTitle: { fontSize: 15, fontWeight: "700" },
+  // Hors connexion : liseré orange (« à surveiller »), pour qu'on le remarque.
+  offlineBanner: { borderLeftWidth: 4, borderLeftColor: "#D2642A" },
+  offlineIcon: { fontSize: 22 },
   remindersRow: { flexDirection: "row", alignItems: "center", gap: 12 },
   flex: { flex: 1 },
   shelf: { gap: 12 },

@@ -36,8 +36,8 @@ export default function HelperNoteScreen() {
   const now = useMemo(() => clockNow(), []);
 
   const generated = useMemo(
-    () => (vacation ? helperNoteText({ plants: resolvedPlants, vacation, firstName: profile.firstName, covered: !onboarding?.skipped && onboarding?.covered, todayMaxC: weather.isFallback ? null : weather.snapshot.today.temperatureMaxC, now }) : ""),
-    [now, onboarding?.covered, onboarding?.skipped, profile.firstName, resolvedPlants, vacation, weather.isFallback, weather.snapshot.today.temperatureMaxC],
+    () => (vacation ? helperNoteText({ plants: resolvedPlants, vacation, firstName: profile.firstName, covered: !onboarding?.skipped && onboarding?.covered, todayMaxC: weather.usable ? weather.snapshot.today.temperatureMaxC : null, now }) : ""),
+    [now, onboarding?.covered, onboarding?.skipped, profile.firstName, resolvedPlants, vacation, weather.usable, weather.snapshot.today.temperatureMaxC],
   );
   const key = vacation ? helperNoteKey(vacation) : "";
 

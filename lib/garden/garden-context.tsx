@@ -37,10 +37,14 @@ import {
   type LocalGardenState,
   type Outbox,
   type SyncLocation,
+  isStoredEvent,
+  isStoredPlant,
+  readOutbox,
+  takeBatch,
 } from "@/lib/sync/sync-logic";
 import { trpc } from "@/lib/trpc";
 import { TRPCClientError } from "@trpc/client";
-import { activePlants, appendEvent, createGardenPlant, MAX_STORED_EVENTS, resolvePlants, startedPlantId, type GardenPlant, type ResolvedPlant } from "./garden-logic";
+import { activePlants, appendEvent, capEvents, createGardenPlant, resolvePlants, startedPlantId, type GardenPlant, type ResolvedPlant } from "./garden-logic";
 import { archiveSeason } from "./harvest-end";
 import { eventAwards } from "@/lib/events/events";
 import { herbariumAwards } from "./herbarium";
@@ -63,6 +67,9 @@ export const AWARDS_STORAGE_KEY = "balco.progress.awards.v1";
 type StoredAwards = { awards: Awards; seen: string[]; backfilled?: boolean | number };
 
 const SYNC_DEBOUNCE_MS = 2000;
+/** Une synchro qui ne répond pas est abandonnée au bout de 20 s, puis retentée une minute plus tard. */
+const SYNC_TIMEOUT_MS = 20_000;
+const SYNC_RETRY_MS = 60_000;
 
 export type UserProfile = { firstName?: string };
 
@@ -201,7 +208,7 @@ export function GardenProvider({ children }: { children: ReactNode }) {
       readJson<GardenPlant[]>(GARDEN_PLANTS_STORAGE_KEY, []),
       readJson<MaintenanceEvent[]>(GARDEN_EVENTS_STORAGE_KEY, []),
       readJson<UserProfile>(USER_PROFILE_STORAGE_KEY, {}),
-      readJson<OnboardingAnswers | null>(ONBOARDING_STORAGE_KEY, null).then(normalizeOnboarding),
+      readJson<OnboardingAnswers | null>(ONBOARDING_STORAGE_KEY, null).then((stored) => normalizeOnboarding(stored && typeof stored === "object" ? stored : null)),
       readJson<Outbox>(SYNC_OUTBOX_STORAGE_KEY, emptyOutbox()),
       readJson<SyncMeta>(SYNC_META_STORAGE_KEY, {}),
       readJson<PushRegistration | null>(SERVER_PUSH_STORAGE_KEY, null),
@@ -210,12 +217,13 @@ export function GardenProvider({ children }: { children: ReactNode }) {
       if (!active) return;
       awardsRef.current = { awards: storedAwards?.awards ?? {}, seen: Array.isArray(storedAwards?.seen) ? storedAwards.seen : [], backfilled: storedAwards?.backfilled };
       setAwards(awardsRef.current.awards);
-      plantsRef.current = Array.isArray(storedPlants) ? storedPlants : [];
-      eventsRef.current = Array.isArray(storedEvents) ? storedEvents : [];
-      profileRef.current = storedProfile ?? {};
+      // Une donnée abîmée sur le téléphone est écartée (ligne par ligne) au lieu de faire planter l'app au démarrage.
+      plantsRef.current = Array.isArray(storedPlants) ? storedPlants.filter(isStoredPlant) : [];
+      eventsRef.current = Array.isArray(storedEvents) ? storedEvents.filter(isStoredEvent) : [];
+      profileRef.current = storedProfile && typeof storedProfile === "object" ? storedProfile : {};
       onboardingRef.current = storedOnboarding;
-      outboxRef.current = { ...emptyOutbox(), ...storedOutbox };
-      metaRef.current = storedMeta ?? {};
+      outboxRef.current = readOutbox(storedOutbox);
+      metaRef.current = storedMeta && typeof storedMeta === "object" ? storedMeta : {};
       setAllPlants(plantsRef.current);
       setEvents(eventsRef.current);
       setProfile(profileRef.current);
@@ -335,11 +343,18 @@ export function GardenProvider({ children }: { children: ReactNode }) {
         await saveMeta({ openId });
       }
       if (!metaRef.current.plantsResent) sent = mergeOutbox(sent, resendPlants(plantsRef.current));
-      setOutbox(emptyOutbox());
+      // Au plus ce que le serveur accepte en une fois : le reste repart aussitôt après (PUSH_LIMITS).
+      const { batch, rest } = takeBatch(sent);
+      sent = batch;
+      setOutbox(rest ?? emptyOutbox());
+      if (rest) rerunRef.current = true;
       const location = locationChanged(metaRef.current.lastLocation, locationRef.current) ? locationRef.current ?? undefined : undefined;
 
       const claimDevice = claimDeviceRef.current;
-      const snapshot = await utils.client.reminders.sync.mutate({ ...buildPush(sent, localState(), location), deviceId: await deviceId(), claimDevice });
+      // 20 s au plus : un réseau qui ne répond pas ne laisse pas « Synchronisation… » affiché sans fin.
+      const abort = new AbortController();
+      const timeout = setTimeout(() => abort.abort(), SYNC_TIMEOUT_MS);
+      const snapshot = await utils.client.reminders.sync.mutate({ ...buildPush(sent, localState(), location), deviceId: await deviceId(), claimDevice }, { signal: abort.signal }).finally(() => clearTimeout(timeout));
       if (claimDevice) claimDeviceRef.current = false;
 
       const latestSettings = await loadLocalReminderSettings();
@@ -375,6 +390,9 @@ export function GardenProvider({ children }: { children: ReactNode }) {
       setSyncStatus("offline");
       setSyncError((error instanceof Error ? error.message : String(error)).slice(0, 200));
       console.warn("[sync] failed, will retry", error);
+      // Nouvel essai tout seul quand le réseau revient (en plus du retour de l'app au premier plan).
+      rerunRef.current = false;
+      scheduleSync(SYNC_RETRY_MS);
     } finally {
       syncingRef.current = false;
       if (rerunRef.current) {
@@ -429,7 +447,7 @@ export function GardenProvider({ children }: { children: ReactNode }) {
   // Les gestes « une fois par saison » sont rangés sous leur date : la nouvelle saison les redemandera.
   const restartPlant = useCallback(async (plantId: string) => {
     const { remove, add } = archiveSeason(eventsRef.current, plantId);
-    await saveEvents([...add, ...eventsRef.current.filter((event) => !remove.includes(event.id))].slice(0, MAX_STORED_EVENTS));
+    await saveEvents(capEvents([...add, ...eventsRef.current.filter((event) => !remove.includes(event.id))]));
     queue((outbox) => add.reduce(recordEvent, remove.reduce(recordEventDeletion, outbox)));
     // Une nouvelle saison : le choix pour l'hiver de la précédente ne vaut plus.
     await updatePlant(plantId, ({ winter: _winter, ...plant }) => ({ ...plant, toPlant: true }));

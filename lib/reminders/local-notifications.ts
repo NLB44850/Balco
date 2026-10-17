@@ -152,6 +152,15 @@ export async function configureLocalNotifications() {
   }
 }
 
+/**
+ * Autorisation déjà donnée ? Ne demande rien : les rappels programmés en arrière-plan ne font jamais surgir la
+ * question du téléphone. Elle n'est posée qu'après un geste de la personne (accueil, Réglages, « Activer les rappels »).
+ */
+export async function hasLocalNotificationPermission() {
+  if (!Notifications) return false;
+  return (await Notifications.getPermissionsAsync()).status === "granted";
+}
+
 export async function requestLocalNotificationPermission() {
   if (!Notifications) return false;
   const current = await Notifications.getPermissionsAsync();
@@ -197,7 +206,7 @@ export async function scheduleLocalReminder(decision: ReminderGroup, settings: L
     await cancelBalcoReminderNotifications();
     return null;
   }
-  const permissionGranted = await requestLocalNotificationPermission();
+  const permissionGranted = await hasLocalNotificationPermission();
   if (!permissionGranted) return null;
 
   await configureLocalNotifications();
@@ -245,7 +254,7 @@ export async function scheduleVacationReturn(vacation: Vacation | null, settings
   if (!vacation || !settings.enabled) return;
   const [year, month, day] = vacation.end.split("-").map(Number);
   const date = new Date(year, month - 1, day + 1, settings.preferredHour, settings.preferredMinute);
-  if (date.getTime() <= Date.now() || !(await requestLocalNotificationPermission())) return;
+  if (date.getTime() <= Date.now() || !(await hasLocalNotificationPermission())) return;
   await configureLocalNotifications();
   await notifications.scheduleNotificationAsync({
     content: { title: "Bon retour ! 🌿", body: "Fais le tour de ton balcon : Balco t’a préparé la liste.", data: { source: VACATION_RETURN_SOURCE, url: "/" } },
@@ -263,7 +272,7 @@ export async function scheduleDatedReminder(source: string, content: { title: st
   const scheduled = await notifications.getAllScheduledNotificationsAsync();
   await Promise.all(scheduled.filter((item) => (item.content.data as { source?: string } | undefined)?.source === source).map((item) => notifications.cancelScheduledNotificationAsync(item.identifier)));
   const settings = await loadLocalReminderSettings();
-  if (!date || !settings.enabled || date.getTime() <= Date.now() || !(await requestLocalNotificationPermission())) return;
+  if (!date || !settings.enabled || date.getTime() <= Date.now() || !(await hasLocalNotificationPermission())) return;
   await configureLocalNotifications();
   await notifications.scheduleNotificationAsync({
     content: { title: content.title, body: content.body, data: { source, url: content.url ?? "/" } },
