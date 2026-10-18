@@ -210,7 +210,6 @@ export default function ProfileScreen() {
           </View>
           <Text style={[styles.footerArrow, { color: colors.muted }]}>›</Text>
         </Pressable>
-        <View style={[glass.soft, styles.footerCard]}><Text style={[styles.footerIcon, { color: colors.primary }]}>♧</Text><View style={styles.footerCopy}><Text style={[styles.footerTitle, { color: colors.foreground }]}>Chaque geste compte.</Text><Text style={[styles.footerText, { color: colors.muted }]}>Invite un proche à faire pousser quelque chose.</Text></View><Text style={[styles.footerArrow, { color: colors.muted }]}>›</Text></View>
       </ScrollView>
     </LightScreen>
   );
@@ -285,9 +284,6 @@ const styles = StyleSheet.create({
   badgeProgress: { fontSize: 12, fontWeight: "700", marginTop: 6 },
   unlockedMark: { width: 19, height: 19, borderRadius: 10, position: "absolute", right: 11, top: 11, alignItems: "center", justifyContent: "center" },
   unlockedMarkText: { fontSize: 12, fontWeight: "800" },
-  footerCard: { borderRadius: 20, padding: 15, flexDirection: "row", alignItems: "center", marginTop: 8 },
-  footerIcon: { fontSize: 28 },
-  footerCopy: { flex: 1, marginLeft: 12 },
   footerTitle: { fontSize: 14, fontWeight: "700" },
   footerText: { fontSize: 13, marginTop: 3 },
   footerArrow: { fontSize: 28, fontWeight: "300" },

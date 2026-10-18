@@ -152,3 +152,9 @@ comme « Pas besoin cette année ». Avant de publier :
   `server/plus-interest.ts`). Un compte supprimé quitte la liste tout seul.
 - **Donner mon avis** : l'adresse `contact_balco@gmail.com` est dans `lib/feedback.ts` (une seule ligne à changer
   pour l'adresse sur le nom de domaine).
+
+## 6. Inviter un proche (décidé le 18/10)
+
+La carte « Chaque geste compte. Invite un proche à faire pousser quelque chose. » de Moi venait de la maquette et ne
+faisait rien : retirée le 18/10 (son choix). À remettre à la publication, quand il y aura un lien du Play Store :
+toucher la carte ouvre le partage du téléphone (`Share` de React Native) avec un message prêt et ce lien.
