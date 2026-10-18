@@ -150,7 +150,7 @@ qui pousse, le balcon au soleil) et d'un accueil animé ; son choix : **icône B
   vacances ; une raison d'y aller (série de jours, pluie qui arrose) ; bouton. S'efface après 6 s, d'une touche ou par
   le bouton.
 
-### Étape 5. Notifications des comptes gratuits : faite le 18/10
+### Étape 5. Notifications des comptes gratuits : faite, validée et fusionnée le 18/10 (PR #59)
 Avant : un compte gratuit recevait au plus **une** notification ; la suivante n'était prévue qu'à la prochaine
 ouverture de l'app. Accord du 17/10 : prévoir les rappels des 7 prochains jours.
 
