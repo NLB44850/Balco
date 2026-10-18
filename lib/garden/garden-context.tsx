@@ -11,6 +11,7 @@ import type { MaintenanceEvent } from "@/lib/reminders/reminder-engine";
 import {
   SERVER_PUSH_STORAGE_KEY,
   cancelBalcoReminderNotifications,
+  cancelDailyDigests,
   defaultLocalReminderSettings,
   loadLocalReminderSettings,
   saveLocalReminderSettings,
@@ -312,6 +313,7 @@ export function GardenProvider({ children }: { children: ReactNode }) {
     await writeJson(SERVER_PUSH_STORAGE_KEY, { token: result.token, openId } satisfies PushRegistration);
     // Le serveur prend le relais : on retire les notifications locales pour éviter les doublons.
     await cancelBalcoReminderNotifications();
+    await cancelDailyDigests();
     setServerPush(true);
   }, [utils]);
 

@@ -128,6 +128,13 @@ function useDayPlanState() {
   const nights = useMemo(() => (!weather.usable ? undefined : weatherSnapshot.nights?.length ? weatherSnapshot.nights : [weatherSnapshot.today.temperatureMinC]), [weather.usable, weatherSnapshot.nights, weatherSnapshot.today.temperatureMinC]);
   const plan = useMemo(() => planDay({ plants: resolvedPlants, events, now, decisions: visibleDecisions, allDecisions, climate, postponed, repotSkips, harvestEnds, coach, nights }), [allDecisions, climate, coach, events, harvestEnds, nights, now, postponed, repotSkips, resolvedPlants, visibleDecisions]);
 
+  // Le plan d'un jour à venir, sans météo (récapitulatifs des 7 prochains jours, Tour de l'appli étape 5) : les plantes
+  // suivies seulement (« Plantes suivies » de Réglages ne coupe que les notifications).
+  const planForDate = useCallback(
+    (date: Date) => planDay({ plants: resolvedPlants.filter((resolved) => isFollowed(reminderSettings.enabledPlantIds, resolved.plant.id)), events, now: date, climate, postponed, repotSkips, harvestEnds }),
+    [climate, events, harvestEnds, postponed, reminderSettings.enabledPlantIds, repotSkips, resolvedPlants],
+  );
+
   // « Tes radis sont-ils tous récoltés ? » ne se pose qu'un jour, « Ta saison de basilic est finie ? » un jour puis
   // une relance : on note le jour où elle s'affiche. Et le soir de gel qui finit la saison d'une annuelle frileuse.
   useEffect(() => {
@@ -169,6 +176,7 @@ function useDayPlanState() {
     reminderDecisions,
     visibleGroups,
     plan,
+    planForDate,
     coach,
     isPlus,
   };

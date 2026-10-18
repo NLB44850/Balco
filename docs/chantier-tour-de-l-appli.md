@@ -150,9 +150,22 @@ qui pousse, le balcon au soleil) et d'un accueil animé ; son choix : **icône B
   vacances ; une raison d'y aller (série de jours, pluie qui arrose) ; bouton. S'efface après 6 s, d'une touche ou par
   le bouton.
 
-### Étape 5. Notifications des comptes gratuits (à décider)
-Aujourd'hui, un compte gratuit reçoit au plus **une** notification : la suivante n'est prévue qu'à la prochaine
-ouverture de l'app. Proposé : prévoir les rappels des 7 prochains jours.
+### Étape 5. Notifications des comptes gratuits : faite le 18/10
+Avant : un compte gratuit recevait au plus **une** notification ; la suivante n'était prévue qu'à la prochaine
+ouverture de l'app. Accord du 17/10 : prévoir les rappels des 7 prochains jours.
+
+Fait :
+- `lib/reminders/daily-digest.ts` : un récapitulatif par jour à l'heure des rappels, jusqu'au 7ᵉ jour, tiré du plan de
+  ce jour-là sans météo (pas de prévision fiable plusieurs jours à l'avance) : « 🌱 3 gestes pour ton balcon
+  aujourd'hui » / « Arrose le basilic, récolte le thym et 1 autre geste. ». Pas le jour du conseil météo déjà prévu
+  (ni avant), ni pendant les vacances, ni pendant la plage calme, ni un jour sans geste ; aujourd'hui compte si
+  l'heure des rappels n'est pas passée et qu'aucun conseil n'est prévu.
+- `planForDate` (`hooks/use-day-plan.ts`) : le plan d'un jour à venir, plantes suivies seulement.
+- `scheduleDailyDigests` / `cancelDailyDigests` (`lib/reminders/local-notifications.ts`, sources `balco-daily:<jour>`) :
+  reprogrammés seulement quand ils changent ; rien en Balco+ (le serveur envoie déjà les rappels) ; retirés quand les
+  rappels sont coupés ou que le serveur prend le relais.
+- Version de test : Réglages → « Rappels prévus » liste les notifications en attente (`listScheduledReminders`).
+- Tests : `tests/daily-digest.test.ts`.
 
 ### Étape 6. Version de production (avec la publication)
 Nom de paquet définitif (`com.app.balco` aujourd'hui, impossible à changer après le premier envoi au Play Store),
