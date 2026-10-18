@@ -13,6 +13,8 @@ const jobs = [
   ["android-icon-background.png", 512, svg(1024, "", bg)],
   ["android-icon-monochrome.png", 432, svg(1024, centered(0.72, { mono: true }))],
   ["splash-icon.png", 1024, svg(1024, centered(1))],
+  // Petite icône des notifications d'Android : blanche sur fond transparent (le téléphone la teinte).
+  ["notification-icon.png", 96, svg(1024, centered(1.1, { mono: true }))],
   ["favicon.png", 48, svg(1024, centered(1.05), `<rect width="1024" height="1024" rx="220" fill="${GREEN}"/>`)],
 ];
 const browser = await chromium.launch({ executablePath: "/opt/pw-browsers/chromium" });

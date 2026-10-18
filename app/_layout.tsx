@@ -34,6 +34,9 @@ void SplashScreen.preventAutoHideAsync().catch(() => undefined);
 const DEFAULT_WEB_INSETS: EdgeInsets = { top: 0, right: 0, bottom: 0, left: 0 };
 const DEFAULT_WEB_FRAME: Rect = { x: 0, y: 0, width: 0, height: 0 };
 
+const ONEST = { Onest_300Light, Onest_400Regular, Onest_500Medium, Onest_600SemiBold, Onest_700Bold, Onest_800ExtraBold, Onest_900Black };
+const useOnestFonts: () => [boolean, Error | null] = Platform.OS === "web" ? () => useFonts(ONEST) : () => [true, null];
+
 // Un écran qui plante affiche « Oups, Réessayer » au lieu de fermer l'app (components/oops-screen.tsx).
 export { OopsScreen as ErrorBoundary } from "@/components/oops-screen";
 
@@ -63,8 +66,9 @@ export default function RootLayout() {
       }),
   );
   const [trpcClient] = useState(() => createTRPCClient());
-  // La police Onest (maquette « règles d'expérience ») ; en cas d'échec, l'app garde celle du téléphone.
-  const [fontsLoaded, fontError] = useFonts({ Onest_300Light, Onest_400Regular, Onest_500Medium, Onest_600SemiBold, Onest_700Bold, Onest_800ExtraBold, Onest_900Black });
+  // La police Onest (maquette « règles d'expérience ») : intégrée à l'app sur le téléphone (plugin expo-font,
+  // app.config.ts), chargée au démarrage sur le web. En cas d'échec, l'app garde celle du téléphone.
+  const [fontsLoaded, fontError] = useOnestFonts();
   // Version de test : le jour simulé (« Faire comme si on était le… ») est relu avant le premier écran.
   const [clockReady, setClockReady] = useState(!DATE_SIMULATION_AVAILABLE);
   useEffect(() => {

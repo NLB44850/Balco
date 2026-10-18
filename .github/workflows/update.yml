@@ -58,6 +58,8 @@ jobs:
           EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
           BALCO_API_URL: ${{ vars.BALCO_API_URL }}
           EXPO_PUBLIC_WEATHER_SIMULATION: "1"
+          # L'APK de test garde son nom technique (la version Play Store est fr.balco.app, app.config.ts).
+          APP_BUNDLE_ID: com.app.balco
           # Entre guillemets : sans eux, « #» et « : » couperaient la ligne en YAML.
           COMMIT_MESSAGE: "${{ github.event.pull_request && format('PR n°{0}, {1}', github.event.pull_request.number, github.event.pull_request.title) || github.event.head_commit.message || 'Publication manuelle' }}"
         run: |

@@ -167,7 +167,16 @@ Fait :
 - Version de test : Réglages → « Rappels prévus » liste les notifications en attente (`listScheduledReminders`).
 - Tests : `tests/daily-digest.test.ts`.
 
-### Étape 6. Version de production (avec la publication)
+### Étape 6. Version de production : faite le 18/10 (ses réponses : Android, gratuit, compte personnel, Brevo gratuit, fr.balco.app)
+Fait : nom technique `fr.balco.app` pour la version Play Store (les APK de test gardent `com.app.balco`,
+`APP_BUNDLE_ID` dans eas.json et update.yml) ; version 1.1.0 ; icône des notifications (`notification-icon.png`, blanche,
+teintée en vert) ; polices Onest intégrées (plugin expo-font ; le web les charge encore) ; position approximative
+seulement (`blockedPermissions`) ; R8 (`enableMinifyInReleaseBuilds`, `enableShrinkResourcesInReleaseBuilds`) ; profil
+`production` en `.aab` sans simulation ; bouton GitHub « Construire la version Play Store » (`.github/workflows/play-store.yml`) ;
+pas-à-pas de la publication : `docs/publication-play-store.md`. À faire par le porteur : retirer
+`EXPO_PUBLIC_WEATHER_SIMULATION` de Railway, construire un nouvel APK de test (1.1.0).
+
+Plan d'origine :
 Nom de paquet définitif (`com.app.balco` aujourd'hui, impossible à changer après le premier envoi au Play Store),
 adresse du serveur (« api.votre-domaine.fr » aujourd'hui), icône et couleurs du modèle à remplacer, polices
 intégrées (démarrage plus rapide), localisation approximative seulement, réduction de taille (R8). Retirer

@@ -124,7 +124,7 @@ test("À propos : avis, confidentialité bientôt, crédits et version", async (
   await open(page, "/settings", "À propos");
   await expect(page.getByRole("button", { name: "Donner mon avis" })).toBeVisible();
   await expect(page.getByText("Confidentialité")).toBeVisible();
-  await expect(page.getByText("Version 1.0.0 · test")).toBeVisible();
+  await expect(page.getByText("Version 1.1.0 · test")).toBeVisible();
   await expect(page.getByRole("button", { name: /^Simulation météo/ })).toBeVisible();
   await page.getByRole("button", { name: "Crédits photos" }).click();
   await expect(page).toHaveURL(/\/credits/);
