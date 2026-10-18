@@ -124,7 +124,7 @@ Fait (17/10) :
 - Pas fait : badges calculés après l'animation (le message du bas en dépend, gain faible) ; « Décocher » et
   « Tout récolté ? » laissés tels quels (logiques proches mais pas identiques entre les deux écrans).
 
-### En plus (18/10, à sa demande) : icône et accueil à l'ouverture
+### En plus (18/10, à sa demande) : icône et accueil à l'ouverture, validés et fusionnés le 18/10 (PR #57, avec l'étape 4)
 
 - Icône Balco : un pot en terre cuite et une pousse sur le vert de marque (icône, icône adaptative et monochrome d'Android,
   favicon). Dessin dans `scripts/art/icone-motif.mjs`, images refaites par `node scripts/art/icone.mjs`.
@@ -135,6 +135,20 @@ Fait (17/10) :
   questions. E2e `35-accueil`.
 - L'icône et l'écran de démarrage font partie de l'APK : ils ne changent qu'avec un nouvel APK. L'accueil arrive par la
   mise à jour habituelle.
+
+### Puis (18/10) : icône « b » et accueil vivant
+
+Retour du 18/10 : « pas assez moderne, je voyais un accueil plus vivant ». Maquettes de 3 icônes (la pousse, le « b »
+qui pousse, le balcon au soleil) et d'un accueil animé ; son choix : **icône B, accueil ok**.
+- Icône : un « b » blanc dont le haut devient une feuille vert clair, sur le vert de marque (`scripts/art/icone-motif.mjs`,
+  images refaites par `node scripts/art/icone.mjs`). Nouvel APK nécessaire pour la voir.
+- Accueil (`components/opening-screen.tsx`, textes testés dans `lib/garden/opening.ts`) : le vert de l'écran de démarrage
+  s'efface sur la lumière du balcon (heure, météo), halo du soleil, ombre de la rambarde, feuilles qui tombent (flocons quand
+  il gèle) ; pastille météo ; « Bonjour / Nicolas » et la date ; jusqu'à 5 photos de plantes, celles qui ont besoin de toi
+  d'abord, avec leur signe (💧 arroser, 🧺 récolter, ❄️ froid, ✓ rien à faire) ; carte « Aujourd'hui sur ton balcon » (gestes,
+  durée si 15 min au plus), « Gel cette nuit » en bleu avec les plantes à protéger, « Ton balcon est prêt pour la nuit »,
+  vacances ; une raison d'y aller (série de jours, pluie qui arrose) ; bouton. S'efface après 6 s, d'une touche ou par
+  le bouton.
 
 ### Étape 5. Notifications des comptes gratuits (à décider)
 Aujourd'hui, un compte gratuit reçoit au plus **une** notification : la suivante n'est prévue qu'à la prochaine
