@@ -99,7 +99,7 @@ Fait (17/10, décisions du porteur : écran « Oups » sans Sentry pour l'instan
 - Pas fait : « petites corrections de la date simulée et de l'accessibilité », trop vagues dans l'état des lieux pour
   être reprises sans nouvelle relecture ; à revoir avec l'étape 4.
 
-### Étape 4. Rapidité
+### Étape 4. Rapidité : faite le 17/10
 1. **Le plan du jour calculé une seule fois** pour toute l'app (il l'était 3 à 4 fois, une fois par onglet ouvert,
    à chaque coche) : environ 100 à 250 ms de calcul en moins par coche sur un téléphone moyen (estimation).
 2. Synchro qui ne réécrit plus tout quand rien n'a changé ; fiche plante qui ne recalcule plus à chaque frappe ;
@@ -108,6 +108,33 @@ Fait (17/10, décisions du porteur : écran « Oups » sans Sentry pour l'instan
    rond de 46 px aujourd'hui).
 4. « C'est rentré », « Décocher », « Tout récolté ? » écrits une seule fois pour Aujourd'hui et la fiche (deux copies
    aujourd'hui, qui peuvent diverger).
+
+Fait (17/10) :
+- Plan du jour partagé : `DayPlanProvider` (hooks/use-day-plan.ts, dans app/_layout.tsx sous le jardin) calcule une
+  fois la météo, les réglages, les conseils et le plan ; `useDayPlan()` lit ce plan commun (Aujourd'hui, Balcon,
+  Saisons, fiche, courses, temps fort). L'heure se remet à jour au retour sur un écran (une plante ajoutée depuis le catalogue
+  serait sinon « pas encore là ») et au retour dans l'app ; la météo est relue au retour dans l'app si elle a plus de 30 minutes.
+- Synchro : plantes et gestes réécrits seulement s'ils ont changé (`sameEvents`, `samePlants`).
+- Notification du jour reprogrammée seulement si elle change (clé date + texte + réglages, index.tsx).
+- Catalogue et petits ronds : vignettes de 200 px (`assets/plants/thumbs/`, `STOCK_THUMBS`, faites par
+  `generer-index.mjs`), `CatalogPicture` les prend par défaut (`full` pour la grande photo de la feuille du catalogue
+  et de l'herbier). La liste reste une ScrollView : ses lignes étaient déjà mémorisées, le coût venait des photos.
+- Fiche plante : le surnom tapé ne recalcule plus toute la fiche à chaque lettre.
+- « C'est rentré » / « C'est ressorti » écrits une fois (`hooks/use-winter-moves.ts`).
+- Pas fait : badges calculés après l'animation (le message du bas en dépend, gain faible) ; « Décocher » et
+  « Tout récolté ? » laissés tels quels (logiques proches mais pas identiques entre les deux écrans).
+
+### En plus (18/10, à sa demande) : icône et accueil à l'ouverture
+
+- Icône Balco : un pot en terre cuite et une pousse sur le vert de marque (icône, icône adaptative et monochrome d'Android,
+  favicon). Dessin dans `scripts/art/icone-motif.mjs`, images refaites par `node scripts/art/icone.mjs`.
+- Écran de démarrage vert avec le même pot (`expo-splash-screen`, gardé jusqu'au premier affichage).
+- Accueil : « Bonjour » (5 h-18 h) ou « Bonsoir », le prénom, la date, puis l'alerte météo du jour, sinon les gestes qui
+  restent, « Ton balcon est à jour », « Rien à faire aujourd'hui » ou les vacances (`lib/garden/opening.ts`,
+  `components/opening-screen.tsx`). Une fois par lancement, s'efface après 2 s ou d'une touche ; pas avant les premières
+  questions. E2e `35-accueil`.
+- L'icône et l'écran de démarrage font partie de l'APK : ils ne changent qu'avec un nouvel APK. L'accueil arrive par la
+  mise à jour habituelle.
 
 ### Étape 5. Notifications des comptes gratuits (à décider)
 Aujourd'hui, un compte gratuit reçoit au plus **une** notification : la suivante n'est prévue qu'à la prochaine

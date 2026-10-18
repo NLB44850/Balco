@@ -1,9 +1,12 @@
 /**
- * Le plan du jour partagé par Aujourd'hui, Balcon et la fiche plante : la même météo, les mêmes
+ * Le plan du jour partagé par Aujourd'hui, Balcon, Saisons et la fiche plante : la même météo, les mêmes
  * réglages de rappels et les mêmes « Pas aujourd'hui », donc le même geste et la même couleur partout.
+ * Calculé une seule fois pour toute l'app (`DayPlanProvider`, Tour de l'appli, étape 4) : avant, chaque onglet ouvert
+ * le recalculait, avec sa propre météo, à chaque coche.
  */
 import { useFocusEffect } from "expo-router";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { createContext, createElement, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
+import { AppState } from "react-native";
 
 import { useLocalWeather } from "@/hooks/use-local-weather";
 import { planDay } from "@/lib/garden/day-plan";
@@ -32,7 +35,15 @@ import {
   type LocalReminderSettings,
 } from "@/lib/reminders/local-notifications";
 
-export function useDayPlan() {
+/** La météo est relue au retour dans l'app si elle a plus de 30 minutes. */
+const WEATHER_REFRESH_MS = 30 * 60 * 1000;
+/**
+ * L'heure du plan est remise à jour au retour sur un écran (une plante ajoutée depuis le catalogue arrive après l'heure
+ * gardée : sans cela, elle serait tenue pour « pas encore là »). Un seul calcul, partagé, comme avant chaque écran.
+ */
+const NOW_REFRESH_MS = 1000;
+
+function useDayPlanState() {
   const { resolvedPlants, events, onboarding } = useGarden();
   const local = useLocalWeather();
   const { weather, weatherSnapshot } = local;
@@ -42,20 +53,33 @@ export function useDayPlan() {
   const [reminderSettings, setReminderSettings] = useState<LocalReminderSettings>(defaultLocalReminderSettings);
   const [reminderSettingsLoaded, setReminderSettingsLoaded] = useState(false);
 
-  // L'heure et les réglages se relisent à chaque retour sur l'écran.
-  useFocusEffect(useCallback(() => {
-    setNow(clockNow());
+  // Les réglages : lus une fois, puis suivis (Réglages prévient à chaque changement).
+  useEffect(() => {
     let active = true;
-    loadLocalReminderSettings().then((settings) => {
+    void loadLocalReminderSettings().then((settings) => {
       if (!active) return;
       setReminderSettings(settings);
       setReminderSettingsLoaded(true);
     });
+    const unsubscribe = subscribeReminderSettings((settings) => setReminderSettings(settings));
     return () => {
       active = false;
+      unsubscribe();
     };
-  }, []));
-  useEffect(() => subscribeReminderSettings((settings) => setReminderSettings(settings)), []);
+  }, []);
+  // Retour dans l'app : l'heure, et la météo si elle date.
+  const refreshWeatherRef = useRef(local.refresh);
+  refreshWeatherRef.current = local.refresh;
+  const fetchedAtRef = useRef(weatherSnapshot.fetchedAt);
+  fetchedAtRef.current = weatherSnapshot.fetchedAt;
+  useEffect(() => {
+    const subscription = AppState.addEventListener("change", (state) => {
+      if (state !== "active") return;
+      setNow(clockNow());
+      if (Date.now() - Date.parse(fetchedAtRef.current) > WEATHER_REFRESH_MS) void refreshWeatherRef.current();
+    });
+    return () => subscription.remove();
+  }, []);
   // Version de test : un autre jour simulé se voit tout de suite.
   useEffect(() => subscribeClock(() => setNow(clockNow())), []);
   useEffect(() => {
@@ -148,4 +172,27 @@ export function useDayPlan() {
     coach,
     isPlus,
   };
+}
+
+type DayPlan = ReturnType<typeof useDayPlanState>;
+const DayPlanContext = createContext<DayPlan | null>(null);
+
+/** Calcule le plan du jour une fois pour toute l'app (dans app/_layout.tsx, sous le jardin). */
+export function DayPlanProvider({ children }: { children: ReactNode }) {
+  const value = useDayPlanState();
+  return createElement(DayPlanContext.Provider, { value }, children);
+}
+
+/** Le plan du jour partagé ; l'heure se remet à jour en revenant sur l'écran. */
+export function useDayPlan() {
+  const value = useContext(DayPlanContext);
+  if (!value) throw new Error("useDayPlan doit être utilisé sous DayPlanProvider");
+  const { now, setNow } = value;
+  const nowRef = useRef(now);
+  nowRef.current = now;
+  useFocusEffect(useCallback(() => {
+    const current = clockNow();
+    if (Math.abs(current.getTime() - nowRef.current.getTime()) > NOW_REFRESH_MS) setNow(current);
+  }, [setNow]));
+  return value;
 }

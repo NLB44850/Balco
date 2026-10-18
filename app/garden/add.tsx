@@ -209,7 +209,7 @@ export default function AddPlantScreen() {
       <BottomSheet visible={sheetEntry !== undefined} onClose={() => setSheetId(null)}>
         {sheetEntry && (
           <View style={styles.sheet}>
-            <CatalogPicture entry={sheetEntry} style={styles.sheetPhoto} />
+            <CatalogPicture entry={sheetEntry} style={styles.sheetPhoto} full />
             <View style={styles.sheetTop}>
               <View style={styles.flex}>
                 <Text style={[styles.sheetTitle, { color: colors.foreground }]}>{sheetEntry.name}</Text>

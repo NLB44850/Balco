@@ -60,6 +60,8 @@ type Seed = {
   winter?: Record<string, "harvest" | "indoors" | "outside" | "inside" | "wintered">;
   /** Laisser la grande carte d'arrivée des temps forts s'ouvrir (par défaut déjà vue, pour ne pas gêner les autres tests). */
   eventIntro?: boolean;
+  /** Laisser l'accueil de l'ouverture (« Bonjour, … ») s'afficher (par défaut sauté, pour ne pas gêner les autres tests). */
+  opening?: boolean;
 };
 
 const EVENT_IDS = ["prepare-ton-printemps", "saints-de-glace", "balcon-en-vacances", "sainte-catherine"];
@@ -105,6 +107,7 @@ export async function seedBalcony(page: Page, seed: Seed) {
     "balco.location.preference.v1": JSON.stringify({ mode: "manual", city: "Lyon", latitude: 45.76, longitude: 4.84 }),
     "balco.weather.simulation.v1": seed.scenario ?? "none",
     ...(seed.eventIntro ? {} : { "balco.events.dismissed.v1": JSON.stringify(EVENT_IDS.flatMap((id) => [-1, 0, 1].map((shift) => `${id}:${new Date(now).getFullYear() + shift}:intro`))) }),
+    ...(seed.opening ? {} : { "balco.test.no-opening.v1": "1" }),
     ...seed.extra,
   };
   await page.addInitScript((values) => {

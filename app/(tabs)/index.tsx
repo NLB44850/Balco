@@ -24,8 +24,7 @@ import { UndoToast, type ToastMessage } from "@/components/today/undo-toast";
 import { WeatherBanner } from "@/components/today/weather-banner";
 import { useFreePot } from "@/components/free-pot-sheet";
 import { useWinterChoiceSheet } from "@/components/winter-choice";
-import { broughtIn, broughtInToast } from "@/lib/garden/indoors";
-import { broughtOutToast } from "@/lib/garden/spring-out";
+import { useWinterMoves } from "@/hooks/use-winter-moves";
 import { useDayPlan } from "@/hooks/use-day-plan";
 import { useBalcoPlus } from "@/hooks/use-balco-plus";
 import { useFirstFrostHint } from "@/hooks/use-first-frost-hint";
@@ -113,7 +112,7 @@ const haptic = () => {
 export default function HomeScreen() {
   const colors = useColors();
   const router = useRouter();
-  const { loaded, resolvedPlants, pastPlants, events, awards, takeUnseenAwards, onboarding, account, addPlant, removePlant, logEvent, removeEvent, reportLocation, updateOnboarding, setPlantWinter } = useGarden();
+  const { loaded, resolvedPlants, pastPlants, events, awards, takeUnseenAwards, onboarding, account, addPlant, removePlant, logEvent, removeEvent, reportLocation, updateOnboarding } = useGarden();
   const aiStatus = trpc.ai.status.useQuery(undefined, { enabled: account.signedIn, retry: false });
   // Sans compte : l'analyse offerte de cet appareil (Observer sans compte).
   const [device, setDevice] = useState<string | null>(null);
@@ -189,12 +188,18 @@ export default function HomeScreen() {
     return reminderDecisions.filter((decision) => decision.cause !== "rain" || !known.has(eventForReminder(decision, now).id));
   }, [events, now, reminderDecisions]);
 
+  const scheduledKeyRef = useRef<string | null>(null);
   // Une seule notification programmée : le prochain conseil utile, à l'heure préférée ou au réveil d'un « Dans 3 h ».
   useEffect(() => {
     if (!reminderSettingsLoaded || !snoozesLoaded || !reminderSettings.enabled || !weather.usable) return;
     const plan = planGroupedNotification(unseenDecisions, snoozes, reminderSettings, new Date());
     // Mode vacances : aucun rappel pendant l'absence (la notification « Bon retour » est à part).
-    if (plan && !awayOn(vacation, dayKey(plan.date))) void scheduleLocalReminder(plan.group, reminderSettings, plan.date);
+    const next = plan && !awayOn(vacation, dayKey(plan.date)) ? plan : null;
+    // Reprogrammée seulement si elle change (avant : à chaque coche, même pour la même notification).
+    const key = next ? `${next.date.toISOString()}|${next.group.title}|${next.group.body}|${JSON.stringify(reminderSettings)}` : "none";
+    if (key === scheduledKeyRef.current) return;
+    scheduledKeyRef.current = key;
+    if (next) void scheduleLocalReminder(next.group, reminderSettings, next.date);
     else void cancelBalcoReminderNotifications();
   }, [reminderSettings, reminderSettingsLoaded, snoozes, snoozesLoaded, unseenDecisions, vacation, weather.usable]);
 
@@ -267,6 +272,7 @@ export default function HomeScreen() {
   };
   const hideToast = useCallback(() => setToast(null), []);
   // Après la récolte d'une plante récoltée en une fois : « Tout récolté ? », puis « Ton pot est libre ».
+  const winterMoves = useWinterMoves(showToast);
   const freePot = useFreePot({ climate, onDone: (text) => showToast(text), overlay: <><UndoToast message={toast} onDone={hideToast} bottom={insets.bottom + 16} />{celebration}</> });
   // « Décide pour ton basilic avant le froid » (chantier « Plante hors saison ») : la feuille du choix pour l'hiver.
   const winterSheet = useWinterChoiceSheet({ climate, onDone: (text, onUndo) => showToast(text, onUndo), overlay: <UndoToast message={toast} onDone={hideToast} bottom={insets.bottom + 16} /> });
@@ -331,22 +337,9 @@ export default function HomeScreen() {
     // « Tes radis sont-ils tous récoltés ? » cochée : oui ; « Ton pot est libre » : ses choix.
     if (item.kind === "harvest-end" && item.stage === "decide") return winterSheet.open(item.resolved.plant.id);
     // « Rentre ton basilic » cochée : la plante passe « À l'intérieur » (chantier « Plante hors saison », étape 4).
-    if (item.kind === "harvest-end" && item.stage === "bring-in") {
-      const { plant, entry } = item.resolved;
-      if (!plant.winter) return;
-      const previous = plant.winter;
-      await setPlantWinter(plant.id, broughtIn(previous, clockNow()));
-      haptic();
-      return showToast(broughtInToast(entry), () => void setPlantWinter(plant.id, previous));
-    }
+    if (item.kind === "harvest-end" && item.stage === "bring-in") return winterMoves.bringIn(item.resolved);
     // « Ressors ton basilic » cochée (étape 5) : son choix pour l'hiver s'efface, ses rappels normaux reprennent.
-    if (item.kind === "harvest-end" && item.stage === "bring-out") {
-      const { plant, entry } = item.resolved;
-      const previous = plant.winter;
-      await setPlantWinter(plant.id, undefined);
-      haptic();
-      return showToast(broughtOutToast(entry), () => void setPlantWinter(plant.id, previous));
-    }
+    if (item.kind === "harvest-end" && item.stage === "bring-out") return winterMoves.bringOut(item.resolved);
     if (item.kind === "harvest-end") return item.stage === "question" ? freePot.answerYes(item.resolved.plant.id) : freePot.openFreePot(item.resolved.plant.id);
     if (item.kind === "alert") return completeAlert(item.group, item.feed);
     if (item.kind === "season") {
