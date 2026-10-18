@@ -9,6 +9,8 @@ test("accueil en janvier : rebord intérieur et envies pour le printemps", async
   await page.clock.install({ time: new Date(2027, 0, 15, 10) });
   await page.clock.resume();
   await mockWeather(page);
+  // La grande carte « Prépare ton printemps » (12-31 janvier) s'ouvrait parfois avant le dernier geste du test.
+  await page.addInitScript(() => window.localStorage.setItem("balco.events.dismissed.v1", JSON.stringify(["prepare-ton-printemps:2027:intro"])));
   await open(page, "/", "Ton balcon, au bon moment.");
   await page.getByText("C’est parti").click();
   await page.getByText("Pas encore").click();
