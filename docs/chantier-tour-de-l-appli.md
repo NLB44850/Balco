@@ -124,7 +124,7 @@ Fait (17/10) :
 - Pas fait : badges calculés après l'animation (le message du bas en dépend, gain faible) ; « Décocher » et
   « Tout récolté ? » laissés tels quels (logiques proches mais pas identiques entre les deux écrans).
 
-### En plus (18/10, à sa demande) : icône et accueil à l'ouverture
+### En plus (18/10, à sa demande) : icône et accueil à l'ouverture, validés et fusionnés le 18/10 (PR #57, avec l'étape 4)
 
 - Icône Balco : un pot en terre cuite et une pousse sur le vert de marque (icône, icône adaptative et monochrome d'Android,
   favicon). Dessin dans `scripts/art/icone-motif.mjs`, images refaites par `node scripts/art/icone.mjs`.
