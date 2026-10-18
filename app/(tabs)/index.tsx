@@ -84,6 +84,7 @@ import { REPOTTING } from "@/lib/plants/repotting";
 import { guideTaskOf } from "@/lib/plants/guide";
 import { nextSaturdayMorning, postponeStart, saturdayReminder, saturdaySource } from "@/lib/garden/postpone";
 import { addSnooze, eventForReminder, planGroupedNotification, wakeSnoozeFor, type ReminderSnooze } from "@/lib/reminders/reminder-actions";
+import { planDailyDigests } from "@/lib/reminders/daily-digest";
 import type { MaintenanceEvent } from "@/lib/reminders/reminder-engine";
 import type { ReminderGroup } from "@/lib/reminders/reminder-groups";
 import {
@@ -93,6 +94,7 @@ import {
   saveReminderSnoozes,
   scheduleDatedReminder,
   scheduleLocalReminder,
+  scheduleDailyDigests,
   sendReminderPreview,
 } from "@/lib/reminders/local-notifications";
 import { scenarioLabel } from "@/lib/weather/simulation";
@@ -152,7 +154,7 @@ export default function HomeScreen() {
   }, [router]);
   const { covers } = usePlantPhotos();
   // Plan du jour, météo, réglages et reports : les mêmes que Balcon et la fiche plante.
-  const { weather, weatherSnapshot, isLoading: weatherLoading, refresh: refreshWeather, searchCities, selectCity, requestDeviceLocation, now, climate, snoozes, snoozesLoaded, reminderSettings, setReminderSettings, reminderSettingsLoaded, reminderDecisions, visibleGroups, plan } = useDayPlan();
+  const { weather, weatherSnapshot, isLoading: weatherLoading, refresh: refreshWeather, searchCities, selectCity, requestDeviceLocation, now, climate, snoozes, snoozesLoaded, reminderSettings, setReminderSettings, reminderSettingsLoaded, reminderDecisions, visibleGroups, plan, planForDate } = useDayPlan();
   const [sheetKey, setSheetKey] = useState<string | null>(null);
   const [toast, setToast] = useState<ToastMessage | null>(null);
   const toastId = useRef(0);
@@ -189,19 +191,35 @@ export default function HomeScreen() {
   }, [events, now, reminderDecisions]);
 
   const scheduledKeyRef = useRef<string | null>(null);
-  // Une seule notification programmée : le prochain conseil utile, à l'heure préférée ou au réveil d'un « Dans 3 h ».
-  useEffect(() => {
-    if (!reminderSettingsLoaded || !snoozesLoaded || !reminderSettings.enabled || !weather.usable) return;
+  // Le prochain conseil utile (météo, soif), à l'heure préférée ou au réveil d'un « Dans 3 h ». Mode vacances : aucun
+  // rappel pendant l'absence (la notification « Bon retour » est à part).
+  const nextReminder = useMemo(() => {
+    if (!reminderSettingsLoaded || !snoozesLoaded || !reminderSettings.enabled || !weather.usable) return undefined;
     const plan = planGroupedNotification(unseenDecisions, snoozes, reminderSettings, new Date());
-    // Mode vacances : aucun rappel pendant l'absence (la notification « Bon retour » est à part).
-    const next = plan && !awayOn(vacation, dayKey(plan.date)) ? plan : null;
+    return plan && !awayOn(vacation, dayKey(plan.date)) ? plan : null;
+  }, [reminderSettings, reminderSettingsLoaded, snoozes, snoozesLoaded, unseenDecisions, vacation, weather.usable]);
+  // Une seule notification de conseil programmée.
+  useEffect(() => {
+    if (nextReminder === undefined) return;
     // Reprogrammée seulement si elle change (avant : à chaque coche, même pour la même notification).
-    const key = next ? `${next.date.toISOString()}|${next.group.title}|${next.group.body}|${JSON.stringify(reminderSettings)}` : "none";
+    const key = nextReminder ? `${nextReminder.date.toISOString()}|${nextReminder.group.title}|${nextReminder.group.body}|${JSON.stringify(reminderSettings)}` : "none";
     if (key === scheduledKeyRef.current) return;
     scheduledKeyRef.current = key;
-    if (next) void scheduleLocalReminder(next.group, reminderSettings, next.date);
+    if (nextReminder) void scheduleLocalReminder(nextReminder.group, reminderSettings, nextReminder.date);
     else void cancelBalcoReminderNotifications();
-  }, [reminderSettings, reminderSettingsLoaded, snoozes, snoozesLoaded, unseenDecisions, vacation, weather.usable]);
+  }, [nextReminder, reminderSettings]);
+
+  // Puis un récapitulatif par jour jusqu'au 7ᵉ jour (Tour de l'appli, étape 5) : sans Balco+, rien ne part du serveur,
+  // et l'app fermée plusieurs jours ne prévenait plus de rien. Ouvrir l'app refait le calcul.
+  const digestKeyRef = useRef<string | null>(null);
+  useEffect(() => {
+    if (!reminderSettingsLoaded || !snoozesLoaded || !loaded) return;
+    const digests = reminderSettings.enabled ? planDailyDigests({ now: new Date(), timing: reminderSettings, nextReminder: nextReminder?.date, planFor: planForDate, isAway: (day) => awayOn(vacation, day) }) : [];
+    const key = `${JSON.stringify(digests)}|${JSON.stringify(reminderSettings)}`;
+    if (key === digestKeyRef.current) return;
+    digestKeyRef.current = key;
+    void scheduleDailyDigests(digests, reminderSettings).catch(() => undefined);
+  }, [loaded, nextReminder, planForDate, reminderSettings, reminderSettingsLoaded, snoozesLoaded, vacation]);
 
   // La notification de lancement d'un événement : une seule, le premier jour à l'heure du conseil (heure réelle du
   // téléphone), si les rappels sont activés et hors vacances.

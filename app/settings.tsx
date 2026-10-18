@@ -51,8 +51,10 @@ import {
   notificationPermission,
   requestLocalNotificationPermission,
   saveLocalReminderSettings,
+  listScheduledReminders,
   scheduleDatedReminder,
   sendTestNotification,
+  type ScheduledReminder,
   subscribeReminderSettings,
   subscribeReminderSnoozes,
   type LocalReminderSettings,
@@ -115,6 +117,13 @@ export default function SettingsScreen() {
   // Version de test : « Voir l’écran Oups » fait planter cet écran exprès.
   const [crash, setCrash] = useState(false);
 
+  // Version de test : les rappels que le téléphone garde en attente (récapitulatifs des 7 prochains jours compris).
+  const [scheduled, setScheduled] = useState<ScheduledReminder[] | null>(null);
+  const showScheduled = async () => {
+    setScheduled(await listScheduledReminders().catch(() => []));
+    setSheet("scheduled");
+  };
+
   const sendTest = async () => {
     setTestStatus("sending");
     const result = await sendTestNotification();
@@ -129,7 +138,7 @@ export default function SettingsScreen() {
 
   const location = useLocalWeather();
   const [cityPickerOpen, setCityPickerOpen] = useState(false);
-  const [sheet, setSheet] = useState<"sun" | "space" | "goals" | "spring" | "name" | "level" | "hour" | "quiet" | "plants" | "check" | "delete" | "simulation" | "date" | "weight" | null>(null);
+  const [sheet, setSheet] = useState<"sun" | "space" | "goals" | "spring" | "name" | "level" | "hour" | "quiet" | "plants" | "check" | "delete" | "simulation" | "date" | "weight" | "scheduled" | null>(null);
   const closeSheet = () => setSheet(null);
   // « Envies » : plusieurs choix, enregistrés d'un coup par « Enregistrer ».
   const [goalsDraft, setGoalsDraft] = useState<string[]>([]);
@@ -311,6 +320,17 @@ export default function SettingsScreen() {
         <Button variant="danger" label={deleting ? "Suppression…" : "Supprimer définitivement"} accessibilityLabel="Supprimer définitivement" disabled={deleting} onPress={() => void removeAccount()} style={styles.sheetButton} />
         <Button variant="secondary" label="Garder mon compte" disabled={deleting} onPress={closeSheet} style={styles.sheetButtonNext} />
         {deleteError && <Text style={[styles.accountHint, { color: colors.error }]}>{deleteError}</Text>}
+      </BottomSheet>
+      <BottomSheet visible={sheet === "scheduled"} onClose={closeSheet}>
+        <SheetHeading title="Rappels prévus" intro="Ce que ton téléphone t’enverra, même si tu n’ouvres pas Balco. Ouvrir l’app refait la liste. N’existe pas dans l’app publiée." />
+        {scheduled?.length === 0 && <Text style={[styles.sheetHint, { color: colors.muted }]}>Aucun rappel prévu : rien à faire ces prochains jours, rappels coupés ou notifications bloquées.</Text>}
+        {scheduled?.map((item, index) => (
+          <View key={`${item.date?.getTime() ?? "x"}-${index}`} style={[styles.scheduledRow, { borderTopColor: colors.border }]}>
+            <Text style={[styles.scheduledWhen, { color: colors.primary }]}>{item.date ? scheduledWhen(item.date) : "Bientôt"}</Text>
+            <Text style={[styles.scheduledTitle, { color: colors.foreground }]}>{item.title}</Text>
+            {!!item.body && <Text style={[styles.sheetHint, styles.scheduledBody, { color: colors.muted }]}>{item.body}</Text>}
+          </View>
+        ))}
       </BottomSheet>
       <BottomSheet visible={sheet === "simulation"} onClose={closeSheet}>
         <SheetHeading title="Simulation météo" intro="Fais comme si cette météo arrivait, pour voir les alertes sur l’accueil. N’existe pas dans l’app publiée." />
@@ -512,6 +532,7 @@ export default function SettingsScreen() {
             {notificationsSupported && (
               <SettingRow label="Envoyer une notification de test" subtitle={testStatus === "sent" ? "Elle arrive dans 5 secondes. Verrouille ton téléphone pour la voir comme un vrai rappel, puis essaie ses boutons." : testStatus === "denied" ? "Les notifications sont bloquées : autorise-les pour Balco dans les réglages du téléphone." : undefined} disabled={testStatus === "sending"} onPress={() => void sendTest()} />
             )}
+            {notificationsSupported && <SettingRow label="Rappels prévus" subtitle="Les notifications que ton téléphone garde en attente pour les 7 prochains jours." onPress={() => void showScheduled()} />}
             <SettingRow label="Refaire l’accueil" subtitle="Repasse les questions du début, sans toucher à tes plantes." onPress={() => router.push({ pathname: "/welcome", params: { again: "1" } })} />
             <SettingRow label="Illustrations du pas-à-pas" onPress={() => router.push("/illustrations")} />
             <SettingRow label="Voir l’écran « Oups »" subtitle="Fait planter cet écran exprès, pour voir ce qui s’affiche. « Réessayer » ramène l’app." onPress={() => setCrash(true)} />
@@ -546,6 +567,10 @@ const styles = StyleSheet.create({
   sheetInput: { borderWidth: 1, borderRadius: 14, paddingHorizontal: 14, paddingVertical: 13, fontSize: 16, marginTop: 8 },
   sheetLabel: { fontSize: 15, fontWeight: "700", marginTop: 12 },
   sheetHint: { fontSize: 13, lineHeight: 18, marginTop: 12 },
+  scheduledRow: { paddingVertical: 10, borderTopWidth: StyleSheet.hairlineWidth },
+  scheduledWhen: { fontSize: 13, fontWeight: "700" },
+  scheduledTitle: { fontSize: 15, fontWeight: "600", marginTop: 2 },
+  scheduledBody: { marginTop: 2 },
   hourChips: { flexDirection: "row", gap: 8, marginTop: 8 },
   hourChip: { flex: 1, borderWidth: 1, borderRadius: 14, paddingVertical: 12, alignItems: "center" },
   hourChipText: { fontSize: 15, fontWeight: "700" },
@@ -569,3 +594,9 @@ const styles = StyleSheet.create({
   weightKg: { fontSize: 15, fontWeight: "700" },
   pressed: { opacity: 0.78, transform: [{ scale: 0.98 }] },
 });
+
+/** « Dimanche 19 octobre · 9 h 00 ». */
+function scheduledWhen(date: Date) {
+  const day = date.toLocaleDateString("fr-FR", { weekday: "long", day: "numeric", month: "long" });
+  return `${day.charAt(0).toUpperCase()}${day.slice(1)} · ${date.getHours()} h ${String(date.getMinutes()).padStart(2, "0")}`;
+}

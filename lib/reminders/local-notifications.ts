@@ -6,6 +6,7 @@ import type { ReminderSnooze } from "@/lib/reminders/reminder-actions";
 import type { ReminderDecision } from "@/lib/reminders/reminder-engine";
 import type { ReminderGroup } from "@/lib/reminders/reminder-groups";
 import type { Vacation } from "@/lib/garden/vacation";
+import { DIGEST_SOURCE, type DailyDigest } from "@/lib/reminders/daily-digest";
 
 export const REMINDER_SETTINGS_STORAGE_KEY = "balco.reminder.settings.v1";
 export const REMINDER_DECISIONS_STORAGE_KEY = "balco.reminder.decisions.v1";
@@ -280,8 +281,53 @@ export async function scheduleDatedReminder(source: string, content: { title: st
   });
 }
 
+/** Retire les récapitulatifs des jours à venir (lib/reminders/daily-digest.ts). */
+export async function cancelDailyDigests() {
+  const notifications = Notifications;
+  if (!notifications) return;
+  const scheduled = await notifications.getAllScheduledNotificationsAsync();
+  await Promise.all(scheduled.filter((item) => String((item.content.data as { source?: string } | undefined)?.source ?? "").startsWith(`${DIGEST_SOURCE}:`)).map((item) => notifications.cancelScheduledNotificationAsync(item.identifier)));
+}
+
+/**
+ * Les récapitulatifs des 7 prochains jours (Tour de l'appli, étape 5) : ils remplacent les précédents. Pas en Balco+,
+ * où le serveur envoie déjà les rappels chaque jour.
+ */
+export async function scheduleDailyDigests(digests: DailyDigest[], settings: LocalReminderSettings) {
+  const notifications = Notifications;
+  if (!notifications) return;
+  await cancelDailyDigests();
+  if (!settings.enabled || (await isServerPushActive()) || !(await hasLocalNotificationPermission())) return;
+  await configureLocalNotifications();
+  for (const digest of digests) {
+    if (digest.date.getTime() <= Date.now()) continue;
+    await notifications.scheduleNotificationAsync({
+      content: { title: digest.title, body: digest.body, data: { source: `${DIGEST_SOURCE}:${digest.day}`, url: "/" } },
+      trigger: { type: notifications.SchedulableTriggerInputTypes.DATE, date: digest.date, channelId: BALCO_NOTIFICATION_CHANNEL_ID },
+    });
+  }
+}
+
+export type ScheduledReminder = { date: Date | null; title: string; body: string };
+
+/** Version de test : les notifications que le téléphone garde en attente, dans l'ordre (Réglages → « Rappels prévus »). */
+export async function listScheduledReminders(): Promise<ScheduledReminder[]> {
+  const notifications = Notifications;
+  if (!notifications) return [];
+  const scheduled = await notifications.getAllScheduledNotificationsAsync();
+  return scheduled
+    .map((item) => {
+      // Android et iOS rendent la date sous « value » (millisecondes) ; selon la version, sous « date ».
+      const trigger = item.trigger as { value?: number; date?: number | string } | null;
+      const raw = trigger?.value ?? trigger?.date;
+      return { date: raw === undefined ? null : new Date(raw), title: item.content.title ?? "", body: item.content.body ?? "" };
+    })
+    .sort((a, b) => (a.date?.getTime() ?? Infinity) - (b.date?.getTime() ?? Infinity));
+}
+
 export async function clearAndDisableLocalReminders() {
   await cancelBalcoReminderNotifications();
+  await cancelDailyDigests();
   const settings = await loadLocalReminderSettings();
   await saveLocalReminderSettings({ ...settings, enabled: false });
   await AsyncStorage.removeItem(REMINDER_DECISIONS_STORAGE_KEY);
