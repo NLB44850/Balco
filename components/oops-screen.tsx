@@ -4,6 +4,7 @@
  * fournisseurs de l'app : rien ici ne dépend du jardin, du compte ou du réseau.
  */
 import type { ErrorBoundaryProps } from "expo-router";
+import * as SplashScreen from "expo-splash-screen";
 import { useEffect } from "react";
 import { Pressable, StyleSheet, View } from "react-native";
 
@@ -18,6 +19,8 @@ const BRAND_GREEN = "#1F7A4D";
 export function OopsScreen({ error, retry }: ErrorBoundaryProps) {
   useEffect(() => {
     console.error("[app] écran planté", error);
+    // Si l'app plante avant son premier affichage, l'écran de démarrage ne doit pas rester devant.
+    void SplashScreen.hideAsync().catch(() => undefined);
   }, [error]);
   return (
     <View style={[styles.screen, { backgroundColor: colors.background }]} accessibilityRole="alert">

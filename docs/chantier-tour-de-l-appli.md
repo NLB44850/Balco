@@ -124,6 +124,18 @@ Fait (17/10) :
 - Pas fait : badges calculés après l'animation (le message du bas en dépend, gain faible) ; « Décocher » et
   « Tout récolté ? » laissés tels quels (logiques proches mais pas identiques entre les deux écrans).
 
+### En plus (18/10, à sa demande) : icône et accueil à l'ouverture
+
+- Icône Balco : un pot en terre cuite et une pousse sur le vert de marque (icône, icône adaptative et monochrome d'Android,
+  favicon). Dessin dans `scripts/art/icone-motif.mjs`, images refaites par `node scripts/art/icone.mjs`.
+- Écran de démarrage vert avec le même pot (`expo-splash-screen`, gardé jusqu'au premier affichage).
+- Accueil : « Bonjour » (5 h-18 h) ou « Bonsoir », le prénom, la date, puis l'alerte météo du jour, sinon les gestes qui
+  restent, « Ton balcon est à jour », « Rien à faire aujourd'hui » ou les vacances (`lib/garden/opening.ts`,
+  `components/opening-screen.tsx`). Une fois par lancement, s'efface après 2 s ou d'une touche ; pas avant les premières
+  questions. E2e `35-accueil`.
+- L'icône et l'écran de démarrage font partie de l'APK : ils ne changent qu'avec un nouvel APK. L'accueil arrive par la
+  mise à jour habituelle.
+
 ### Étape 5. Notifications des comptes gratuits (à décider)
 Aujourd'hui, un compte gratuit reçoit au plus **une** notification : la suivante n'est prévue qu'à la prochaine
 ouverture de l'app. Proposé : prévoir les rappels des 7 prochains jours.
