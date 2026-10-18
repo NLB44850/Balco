@@ -3,10 +3,13 @@ import "./scripts/load-env.js";
 import type { ExpoConfig } from "expo/config";
 
 /**
- * Identifiant de l'app sur l'App Store et le Play Store, au format « domaine inversé »
- * (ex. fr.monentreprise.balco). Il ne pourra plus changer après la première publication.
+ * Identifiant de l'app sur le Play Store, au format « domaine inversé ». Choisi le 18/10 : fr.balco.app. Il ne pourra
+ * plus changer après le premier envoi au Play Store. Les APK de test gardent l'ancien (com.app.balco, profils
+ * « test » et « codespace » d'eas.json) : ils restent une app à part, à côté de la version du Play Store.
  */
-const bundleId = process.env.APP_BUNDLE_ID || "com.app.balco";
+const bundleId = process.env.APP_BUNDLE_ID || "fr.balco.app";
+/** Les polices Onest, intégrées à l'app (pas de chargement au démarrage) ; le web les charge encore (app/_layout.tsx). */
+const ONEST_WEIGHTS = ["300Light", "400Regular", "500Medium", "600SemiBold", "700Bold", "800ExtraBold", "900Black"];
 // Schéma des liens profonds (balco://…) : retour de connexion Google, ouverture depuis une notification.
 const scheme = "balco";
 // Projet EAS (expo.dev) : nécessaire pour construire l'app, pour les notifications push serveur et les mises à jour.
@@ -17,7 +20,8 @@ const config: ExpoConfig = {
   // Nom sous l'icône : court, sinon iOS le tronque. Le nom long reste celui de la fiche des stores.
   name: "Balco",
   slug: "balco",
-  version: "1.0.0",
+  // 1.1.0 (18/10) : icône des notifications, polices intégrées, position approximative, appli allégée (R8).
+  version: "1.1.0",
   orientation: "portrait",
   icon: "./assets/images/icon.png",
   scheme,
@@ -42,6 +46,8 @@ const config: ExpoConfig = {
     predictiveBackGestureEnabled: false,
     package: bundleId,
     permissions: ["POST_NOTIFICATIONS"],
+    // La météo n'a besoin que de la ville : position approximative seulement (Play Store : moins de données demandées).
+    blockedPermissions: ["android.permission.ACCESS_FINE_LOCATION"],
   },
   web: {
     bundler: "metro",
@@ -50,7 +56,9 @@ const config: ExpoConfig = {
   },
   plugins: [
     "expo-router",
-    "expo-notifications",
+    // Petite icône blanche dans la barre du téléphone (sans elle, Android montre un carré blanc), teintée en vert.
+    ["expo-notifications", { icon: "./assets/images/notification-icon.png", color: "#1F7A4D" }],
+    ["expo-font", { fonts: ONEST_WEIGHTS.map((weight) => `./node_modules/@expo-google-fonts/onest/${weight}/Onest_${weight}.ttf`) }],
     "expo-apple-authentication",
     "expo-secure-store",
     [
@@ -86,6 +94,9 @@ const config: ExpoConfig = {
         android: {
           buildArchs: ["armeabi-v7a", "arm64-v8a"],
           minSdkVersion: 24,
+          // Appli plus légère : code et ressources inutilisés retirés (R8) dans les versions construites par EAS.
+          enableMinifyInReleaseBuilds: true,
+          enableShrinkResourcesInReleaseBuilds: true,
         },
       },
     ],
