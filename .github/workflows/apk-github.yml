@@ -11,7 +11,7 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
-    timeout-minutes: 90
+    timeout-minutes: 150
     steps:
       - name: Vérifier la configuration
         env:
@@ -47,6 +47,10 @@ jobs:
           EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
           EAS_NO_VCS: "1"
           EAS_SKIP_AUTO_FINGERPRINT: "1"
+          # Les téléphones récents seulement (le sien) : construction deux fois plus courte.
+          BALCO_ANDROID_ARCHS: arm64-v8a
+          # Une tâche Gradle à la fois de moins : moins de mémoire prise en même temps.
+          GRADLE_OPTS: -Dorg.gradle.workers.max=3
         run: npx --yes eas-cli@latest build --platform android --profile test --local --non-interactive --output "$GITHUB_WORKSPACE/balco-test.apk"
       - uses: actions/upload-artifact@v7
         with:

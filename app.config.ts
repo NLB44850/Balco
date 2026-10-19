@@ -92,7 +92,9 @@ const config: ExpoConfig = {
       "expo-build-properties",
       {
         android: {
-          buildArchs: ["armeabi-v7a", "arm64-v8a"],
+          // BALCO_ANDROID_ARCHS : l'APK de test construit sur GitHub ne vise que les téléphones récents (arm64-v8a),
+          // deux fois moins long à construire (apk-github.yml).
+          buildArchs: process.env.BALCO_ANDROID_ARCHS ? process.env.BALCO_ANDROID_ARCHS.split(",") : ["armeabi-v7a", "arm64-v8a"],
           minSdkVersion: 24,
           // Appli plus légère : code et ressources inutilisés retirés (R8) dans les versions construites par EAS.
           enableMinifyInReleaseBuilds: true,
@@ -103,6 +105,7 @@ const config: ExpoConfig = {
         },
       },
     ],
+    "./plugins/with-android-build-memory",
   ],
   extra: { eas: { projectId } },
   // Mises à jour sans réinstaller (EAS Update) : l'app télécharge le nouveau code publié sur son canal (eas.json).
