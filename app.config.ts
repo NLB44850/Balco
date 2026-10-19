@@ -97,6 +97,9 @@ const config: ExpoConfig = {
           // Appli plus légère : code et ressources inutilisés retirés (R8) dans les versions construites par EAS.
           enableMinifyInReleaseBuilds: true,
           enableShrinkResourcesInReleaseBuilds: true,
+          // expo-notifications fournit cette règle sans l'appliquer lui-même : sans elle, R8 retire son code et plus
+          // aucune notification ne part (vu le 19/10 sur l'APK 1.1.0 : « notification de test » sans effet).
+          extraProguardRules: "-keep class expo.modules.notifications.** { *; }",
         },
       },
     ],
