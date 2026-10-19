@@ -167,7 +167,7 @@ Fait :
 - Version de test : Réglages → « Rappels prévus » liste les notifications en attente (`listScheduledReminders`).
 - Tests : `tests/daily-digest.test.ts`.
 
-### Étape 6. Version de production : faite le 18/10 (ses réponses : Android, gratuit, compte personnel, Brevo gratuit, fr.balco.app)
+### Étape 6. Version de production : faite le 18/10, validée sur l'APK 1.1.0 le 19/10 (après les correctifs R8 et mémoire, PR #62 et #63) (ses réponses : Android, gratuit, compte personnel, Brevo gratuit, fr.balco.app)
 Fait : nom technique `fr.balco.app` pour la version Play Store (les APK de test gardent `com.app.balco`,
 `APP_BUNDLE_ID` dans eas.json et update.yml) ; version 1.1.0 ; icône des notifications (`notification-icon.png`, blanche,
 teintée en vert) ; polices Onest intégrées (plugin expo-font ; le web les charge encore) ; position approximative

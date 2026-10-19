@@ -520,7 +520,7 @@ export default function SettingsScreen() {
 
         <SettingsGroup title="À propos">
           <SettingRow label="Donner mon avis" onPress={() => void Linking.openURL(feedbackMailto(appVersion, Platform.OS)).catch(() => Alert.alert("Donner mon avis", `Écris-nous à ${FEEDBACK_EMAIL}`))} />
-          <SettingRow label="Confidentialité" value="Bientôt" />
+          <SettingRow label="Confidentialité" onPress={() => router.push("/privacy")} />
           <SettingRow label="Crédits photos" onPress={() => router.push("/credits")} />
         </SettingsGroup>
         <Text style={[styles.version, { color: colors.muted }]}>{versionText(appVersion, simulation.available, currentUpdateDate())}</Text>

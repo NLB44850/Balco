@@ -16,7 +16,7 @@ choix que l'accueil. Les phrases longues restent dans les feuilles.
    repasse sans compte, sans revenir à l'accueil. « Ton compte, ta sauvegarde et tes échanges avec Nora seront
    effacés. Ton balcon reste sur ce téléphone. »
 6. Plantes suivies : décocher coupe seulement les notifications ; gestes et alertes restent sur Aujourd'hui et Saisons.
-7. Donner mon avis : e-mail vers contact_balco@gmail.com, dans un seul réglage (changera avant la publication).
+7. Donner mon avis : e-mail vers contact.balco44@gmail.com, dans un seul réglage (changera avant la publication).
 8. Économie de batterie : « À vérifier » + « Ouvrir les réglages », Android seulement.
 9. Page Confidentialité (à venir) : mentionner l'e-mail gardé pour « Me prévenir à l'ouverture ».
 

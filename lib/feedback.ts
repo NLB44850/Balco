@@ -2,7 +2,8 @@
  * « Donner mon avis » (Réglages → À propos) : un e-mail prérempli. L'adresse est ici seulement : elle changera
  * pour une adresse sur le nom de domaine avant la publication (docs/avant-publication.md § 5).
  */
-export const FEEDBACK_EMAIL = "contact_balco@gmail.com";
+// Adresse donnée par le porteur le 19/10 (« Donner mon avis » et politique de confidentialité).
+export const FEEDBACK_EMAIL = "contact.balco44@gmail.com";
 
 /**
  * « Version 1.0.0 · test » dans Réglages ; sans « · test » dans l'app publiée. Avec la date de la mise à jour reçue
