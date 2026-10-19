@@ -132,3 +132,11 @@ secondes, « Nouvelle version de Balco » → **Redémarrer**.
   la fusion ; une PR fermée sans fusion reste sur le téléphone jusqu'à la publication suivante : relancer alors le
   workflow sur `main`), avec `EXPO_PUBLIC_API_BASE_URL` = `BALCO_API_URL` et la simulation météo.
   Ne fait rien tant que `EXPO_TOKEN` ou `BALCO_API_URL` manquent.
+
+
+## Quota Expo épuisé : construire l'APK sur GitHub (19/10)
+
+L'offre gratuite d'Expo limite le nombre de constructions Android par mois (épuisé le 19/10, retour le 1er novembre).
+Le bouton **« Construire l'APK de test sur GitHub »** (`.github/workflows/apk-github.yml`) fait la même construction
+sur les machines de GitHub (`eas build --local`, 20 à 40 minutes) avec la même clé de signature, gardée chez Expo :
+l'APK s'installe par-dessus l'ancien. Il se télécharge dans la rubrique « Artifacts » de l'exécution (un .zip à ouvrir).

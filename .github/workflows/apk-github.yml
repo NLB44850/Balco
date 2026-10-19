@@ -1,0 +1,59 @@
+# Construit l'APK de test sur les machines de GitHub (« eas build --local ») au lieu des serveurs d'Expo : ne compte
+# pas dans le quota gratuit d'Expo (épuisé le 19/10 jusqu'au 1er du mois). Compter 20 à 40 minutes. Mêmes réglages que
+# « Construire l'APK de test » : secret EXPO_TOKEN (il sert à récupérer la clé de signature gardée chez Expo, pour que
+# l'APK s'installe par-dessus l'ancien) et variable BALCO_API_URL.
+# L'APK se télécharge en bas de la page de l'exécution (rubrique « Artifacts »), dans un fichier .zip à ouvrir.
+name: Construire l'APK de test sur GitHub
+
+on:
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    steps:
+      - name: Vérifier la configuration
+        env:
+          EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
+          BALCO_API_URL: ${{ vars.BALCO_API_URL }}
+        run: |
+          if [ -z "$EXPO_TOKEN" ]; then echo "::error::Ajoute le secret EXPO_TOKEN (Settings → Secrets and variables → Actions)."; exit 1; fi
+          if [ -z "$BALCO_API_URL" ]; then echo "::error::Ajoute la variable BALCO_API_URL (l'adresse Railway)."; exit 1; fi
+      - name: Faire de la place sur la machine
+        # Une app React Native demande plus de 10 Go pendant la construction : on retire des outils inutiles ici.
+        run: |
+          sudo rm -rf /usr/share/dotnet /opt/ghc /usr/local/.ghcup /usr/local/share/boost /opt/hostedtoolcache/CodeQL
+          df -h /
+      - uses: actions/checkout@v7
+      - uses: pnpm/action-setup@v6
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
+          cache: pnpm
+      - uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: 17
+      - run: pnpm install --frozen-lockfile
+      - name: Adresse du serveur dans le profil « test »
+        env:
+          BALCO_API_URL: ${{ vars.BALCO_API_URL }}
+        run: |
+          jq --arg url "${BALCO_API_URL%/}" '.build.test.env.EXPO_PUBLIC_API_BASE_URL = $url' eas.json > eas.tmp && mv eas.tmp eas.json
+          jq '.build.test.env' eas.json
+      - name: Construire l'APK
+        env:
+          EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
+          EAS_NO_VCS: "1"
+          EAS_SKIP_AUTO_FINGERPRINT: "1"
+        run: npx --yes eas-cli@latest build --platform android --profile test --local --non-interactive --output "$GITHUB_WORKSPACE/balco-test.apk"
+      - uses: actions/upload-artifact@v7
+        with:
+          name: balco-test-apk
+          path: balco-test.apk
+          retention-days: 14
+      - name: Où trouver l'APK
+        run: |
+          echo "### APK de test prêt" >> "$GITHUB_STEP_SUMMARY"
+          echo "Télécharge « balco-test-apk » dans la rubrique Artifacts de cette page, ouvre le .zip sur le téléphone, puis installe balco-test.apk." >> "$GITHUB_STEP_SUMMARY"

@@ -113,7 +113,7 @@ export default function SettingsScreen() {
   const [introsReset, setIntrosReset] = useState(false);
   const realToday = dayKey(new Date());
   const shownDay = dateSimulation.day ?? realToday;
-  const [testStatus, setTestStatus] = useState<"idle" | "sending" | "sent" | "denied">("idle");
+  const [testStatus, setTestStatus] = useState<"idle" | "sending" | "sent" | "denied" | "failed">("idle");
   // Version de test : « Voir l’écran Oups » fait planter cet écran exprès.
   const [crash, setCrash] = useState(false);
 
@@ -126,8 +126,9 @@ export default function SettingsScreen() {
 
   const sendTest = async () => {
     setTestStatus("sending");
-    const result = await sendTestNotification();
-    setTestStatus(result === "sent" ? "sent" : "denied");
+    // Un échec du téléphone ne doit pas laisser le bouton grisé pour toujours : on le dit, et on peut réessayer.
+    const result = await sendTestNotification().catch(() => "failed" as const);
+    setTestStatus(result === "sent" ? "sent" : result === "failed" ? "failed" : "denied");
   };
 
   const updateReminderSettings = async (patch: Partial<LocalReminderSettings>) => {
@@ -530,7 +531,7 @@ export default function SettingsScreen() {
             <SettingRow label="Simuler Balco+" value={balcoPlus.simulated ? "Oui" : "Non"} subtitle="Pour tester, sur ce téléphone : le coach d’arrosage et les avantages à venir. Ton compte ne change pas." onPress={() => void balcoPlus.setSimulated(!balcoPlus.simulated)} />
             <SettingRow label="Date simulée" value={dateSimulation.day ? longDayText(dateSimulation.day) : "Aujourd’hui"} onPress={() => setSheet("date")} />
             {notificationsSupported && (
-              <SettingRow label="Envoyer une notification de test" subtitle={testStatus === "sent" ? "Elle arrive dans 5 secondes. Verrouille ton téléphone pour la voir comme un vrai rappel, puis essaie ses boutons." : testStatus === "denied" ? "Les notifications sont bloquées : autorise-les pour Balco dans les réglages du téléphone." : undefined} disabled={testStatus === "sending"} onPress={() => void sendTest()} />
+              <SettingRow label="Envoyer une notification de test" subtitle={testStatus === "sent" ? "Elle arrive dans 5 secondes. Verrouille ton téléphone pour la voir comme un vrai rappel, puis essaie ses boutons." : testStatus === "denied" ? "Les notifications sont bloquées : autorise-les pour Balco dans les réglages du téléphone." : testStatus === "failed" ? "Le téléphone n’a pas pu programmer la notification. Réessaie, ou redémarre Balco." : undefined} disabled={testStatus === "sending"} onPress={() => void sendTest()} />
             )}
             {notificationsSupported && <SettingRow label="Rappels prévus" subtitle="Les notifications que ton téléphone garde en attente pour les 7 prochains jours." onPress={() => void showScheduled()} />}
             <SettingRow label="Refaire l’accueil" subtitle="Repasse les questions du début, sans toucher à tes plantes." onPress={() => router.push({ pathname: "/welcome", params: { again: "1" } })} />

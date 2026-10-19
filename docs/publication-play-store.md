@@ -15,7 +15,10 @@ Les deux parlent pour l'instant au même serveur Railway (`BALCO_API_URL`).
 ## Version 1.1.0 (18/10)
 
 Icône des notifications, polices intégrées, position approximative seulement, appli allégée (R8). Ce sont des
-changements natifs : les mises à jour ne vont plus qu'aux APK 1.1.0. **Construire un nouvel APK de test après la
+changements natifs : les mises à jour ne vont plus qu'aux APK 1.1.0. Corrigé le 19/10 : R8 retirait le code
+d'`expo-notifications` (sa règle de protection n'est pas appliquée par le paquet lui-même), plus aucune notification ne
+partait ; règle ajoutée dans `extraProguardRules` (app.config.ts). Après tout nouveau paquet natif, vérifier qu'il
+applique ses règles (`consumerProguardFiles` dans son `android/build.gradle`) et tester les notifications sur l'APK. **Construire un nouvel APK de test après la
 fusion.**
 
 ## Ce que fait le porteur (une seule fois)
