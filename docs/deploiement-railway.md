@@ -140,3 +140,8 @@ L'offre gratuite d'Expo limite le nombre de constructions Android par mois (épu
 Le bouton **« Construire l'APK de test sur GitHub »** (`.github/workflows/apk-github.yml`) fait la même construction
 sur les machines de GitHub (`eas build --local`, 20 à 40 minutes) avec la même clé de signature, gardée chez Expo :
 l'APK s'installe par-dessus l'ancien. Il se télécharge dans la rubrique « Artifacts » de l'exécution (un .zip à ouvrir).
+
+Premier essai (19/10) : manque de mémoire de Gradle (« OutOfMemoryError: Metaspace ») après 1 h 15. Corrigé :
+`plugins/with-android-build-memory.js` (6 Go pour Gradle, pas de « lint » des versions publiées), APK de GitHub limité
+aux téléphones récents (`BALCO_ANDROID_ARCHS=arm64-v8a`), délai porté à 2 h 30. Ce plugin ne change rien dans l'app :
+la version reste 1.1.0.
