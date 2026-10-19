@@ -184,7 +184,7 @@ heures, un peu plus chaque jour, puis au soleil) ; « C'est ressorti » : elle r
    - paiement Balco+ (RevenueCat), puis un seul e-mail aux inscrits de « Me prévenir à l'ouverture », et effacer la liste ;
    - mise à jour d'Expo (SDK 54 → 57) ;
    - page Confidentialité (compte, position, photos, questions à Nora, e-mail laissé pour Balco+) ;
-   - un nom de domaine : adresse de contact (aujourd'hui contact_balco@gmail.com) et expéditeur des e-mails reconnu par
+   - un nom de domaine : adresse de contact (aujourd'hui contact.balco44@gmail.com) et expéditeur des e-mails reconnu par
      Brevo (avec une adresse Outlook ou Gmail, les codes peuvent arriver dans les indésirables) ;
    - compte développeur Google et fiche Play Store ; offre payante d'Open-Meteo dès que Balco+ sera payant.
    - afficher le montant du prix fondateur sur l'écran Balco+ (montant à décider avec le porteur).

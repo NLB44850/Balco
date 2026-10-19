@@ -150,7 +150,7 @@ comme « Pas besoin cette année ». Avant de publier :
 - **« Me prévenir à l'ouverture »** : table `plus_interest` (le compte, ou l'adresse e-mail et la date). À
   l'ouverture de Balco+, écrire une fois à cette liste, puis l'effacer (`clearPlusInterest` dans
   `server/plus-interest.ts`). Un compte supprimé quitte la liste tout seul.
-- **Donner mon avis** : l'adresse `contact_balco@gmail.com` est dans `lib/feedback.ts` (une seule ligne à changer
+- **Donner mon avis** : l'adresse `contact.balco44@gmail.com` est dans `lib/feedback.ts` (une seule ligne à changer
   pour l'adresse sur le nom de domaine).
 
 ## 6. Inviter un proche (décidé le 18/10)
