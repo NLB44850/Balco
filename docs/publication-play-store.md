@@ -37,6 +37,13 @@ fusion.**
    présentation 1024 × 500, catégorie, **politique de confidentialité** (adresse web), sécurité des données (compte,
    position approximative, photos, questions envoyées à l'IA), classification du contenu.
 
+## Politique de confidentialité (19/10)
+
+Texte unique dans `shared/privacy.ts` (à mettre à jour avec le code : nouvelle donnée, nouveau prestataire), affiché
+dans l'app (Réglages → À propos → Confidentialité, `app/privacy.tsx`) et en page web publique **`/confidentialite`**
+sur le serveur (`server/privacy-page.ts`) : c'est l'adresse à donner dans la Play Console
+(`<adresse Railway>/confidentialite`). Reste à y ajouter le nom de l'éditeur (identité du responsable de traitement).
+
 ## Encore à faire avant la publication pour tous (docs/avant-publication.md)
 
 Politique de confidentialité en ligne, notifications du serveur pour Balco+ (FCM), paiement Balco+ (plus tard),

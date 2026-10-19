@@ -16,6 +16,8 @@ import { createContext } from "./context";
 import { describeError } from "./log";
 import { isUnexpectedError } from "./trpc";
 import { assertProductionConfig, ENV } from "./env";
+import { PRIVACY_PATH } from "../../shared/privacy";
+import { privacyPageHtml } from "../privacy-page";
 
 function isPortAvailable(port: number): Promise<boolean> {
   return new Promise((resolve) => {
@@ -92,6 +94,11 @@ export function createApp() {
   const photoJson = express.json({ limit: "8mb" });
   const smallJson = express.json({ limit: "2mb" });
   app.use((req, res, next) => (isPhotoRequest(req.path) ? photoJson : smallJson)(req, res, next));
+
+  // La politique de confidentialité, page publique (adresse donnée au Play Store), avant l'app web.
+  app.get(PRIVACY_PATH, (_req, res) => {
+    res.set("Cache-Control", "public, max-age=3600").type("html").send(privacyPageHtml());
+  });
 
   app.get("/api/health", (_req, res) => {
     res.json({ ok: true, timestamp: Date.now() });

@@ -117,15 +117,18 @@ test("Balco+ sans compte : « Me prévenir à l'ouverture » avec une adresse e-
   expect(errors).toEqual([]);
 });
 
-test("À propos : avis, confidentialité bientôt, crédits et version", async ({ page }) => {
+test("À propos : avis, confidentialité, crédits et version", async ({ page }) => {
   const errors = trackErrors(page);
   await mockWeather(page);
   await seedBalcony(page, { plants: ["basil"] });
   await open(page, "/settings", "À propos");
   await expect(page.getByRole("button", { name: "Donner mon avis" })).toBeVisible();
-  await expect(page.getByText("Confidentialité")).toBeVisible();
   await expect(page.getByText("Version 1.1.0 · test")).toBeVisible();
   await expect(page.getByRole("button", { name: /^Simulation météo/ })).toBeVisible();
+  await page.getByRole("button", { name: "Confidentialité" }).click();
+  await expect(page.getByText("Pas de publicité, pas de revente de données, pas de traceur publicitaire.")).toBeVisible();
+  await expect(page.getByText("Supprimer tes données", { exact: true })).toBeVisible();
+  await page.goBack();
   await page.getByRole("button", { name: "Crédits photos" }).click();
   await expect(page).toHaveURL(/\/credits/);
   expect(errors).toEqual([]);
