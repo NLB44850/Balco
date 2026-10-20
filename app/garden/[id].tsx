@@ -146,7 +146,7 @@ export default function PlantScreen() {
   // Les photos sont dans « Tes photos » : l'historique ne garde que les jours avec un geste.
   const gestureDays = days.filter((day) => day.events.length > 0);
   const shownDays = historyOpen ? gestureDays : gestureDays.slice(0, HISTORY_DAYS_SHOWN);
-  const progress = plantProgress(resolved, events, photos, now);
+  const progress = plantProgress(resolved, events, photos, now, climate);
   const busiestWeek = Math.max(1, ...progress.weeks);
   const totals = [
     progress.gestures ? `${progress.gestures} geste${progress.gestures > 1 ? "s" : ""}` : null,
