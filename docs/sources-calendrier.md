@@ -736,3 +736,59 @@ place. Recherche web (2 ou 3 sources par plante, extraits de résultats). Choix 
   de la touffe. Plante huître : aucune source ne donne de fréquence, estimation à confirmer.
 - Les signes généraux (« racines qui sortent par les trous, terre qui sèche en un jour ») viennent parfois d'un
   guide de rempotage général plutôt que d'une page sur la plante.
+
+# Catalogue balcon et terrasse, livraison 1 (21/10)
+
+Vérification du 21 octobre 2026 (recherche web, 2 sources au moins par mois gardé, culture en pot, repère Paris) ;
+un mois cité par une seule source est écarté. Ces 8 plantes sont des plantes d'ornement qu'on ne cueille pas
+(`bloomOnly`) : leur « récolte » est leur floraison. Seuils de gel des bulbes en pot : estimations prudentes (aucune
+source ne donne de chiffre pour un pot). Plantation et pot : `lib/plants/planting.ts`, `pot-sheets-data.ts`,
+rempotage `repotting.ts` (bulbes : même pot, terre neuve ; tulipes : bulbes neufs chaque automne).
+
+## Tulipes
+
+- Plantation : sept.–déc. (idéal oct.–nov.) · Floraison : mars–mai · confiance moyenne
+- Note : février (une seule fiche) écarté ; en pot, les tulipes horticoles s'épuisent en 2-3 ans : bulbes neufs chaque automne (Que Choisir, Futura, Jardiner malin). Toxiques pour les chats et les chiens, surtout le bulbe.
+- Sources : [gammvert.fr](https://www.gammvert.fr/conseils-idees/planter-des-tulipes), [jardiner-malin.fr](https://www.jardiner-malin.fr/fiche/tulipe-bulbe.html), [truffaut.com](https://www.truffaut.com/comment-quand-planter-bulbes.html), [futura-sciences.com](https://www.futura-sciences.com/maison/questions-reponses/jardinage-planter-entretenir-bulbes-tulipes-16180/), [promessedefleurs.com](https://www.promessedefleurs.com/conseil-plantes-jardin/fichefamille/tulipes-planter-cultiver-et-entretenir/)
+
+## Narcisses
+
+- Plantation : sept.–nov. · Floraison : févr.–avr. · confiance haute
+- Note : décembre (une seule fiche) écarté ; Tête-à-tête en février-mars, grands narcisses en mars-avril. Toute la plante est toxique, le bulbe ressemble à un oignon.
+- Sources : [jardiner-malin.fr](https://www.jardiner-malin.fr/fiche/narcisse.html), [truffaut.com](https://www.truffaut.com/narcisse-tete-a-tete-50-bulbes.html), [promessedefleurs.com](https://www.promessedefleurs.com/bulbes-de-printemps/narcisses/narcisses-botaniques/narcisse-tete-a-tete-p-421.html), [truffaut.com](https://www.truffaut.com/narcisse-plantation-entretien.html)
+
+## Muscaris
+
+- Plantation : sept.–nov. · Floraison : mars–mai · confiance haute
+- Note : février (une seule source) écarté ; nouvelles feuilles dès l'automne, c'est normal.
+- Sources : [truffaut.com](https://www.truffaut.com/muscari-d-armenie-200-bulbes.html), [aujardin.info](https://www.aujardin.info/plantes/muscari-armeniacum.php), [promessedefleurs.com](https://www.promessedefleurs.com/conseil-plantes-jardin/fichefamille/muscari-plantation-conseil-de-culture-et-dentretien/)
+
+## Crocus
+
+- Plantation : sept.–nov. · Floraison : févr.–avr. · confiance haute
+- Note : décembre (une seule fiche) écarté ; à ne pas confondre avec le colchique (automne), très toxique.
+- Sources : [promessedefleurs.com](https://www.promessedefleurs.com/conseil-plantes-jardin/ficheconseil/cultiver-crocus-en-pot/), [jardiner-malin.fr](https://www.jardiner-malin.fr/fiche/crocus-chrysanthus-dore.html), [futura-sciences.com](https://www.futura-sciences.com/maison/questions-reponses/jardinage-planter-reussir-bulbes-crocus-17401/)
+
+## Bruyère d'hiver
+
+- Plantation : mars–juin, oct.–déc. · Floraison : nov.–avr. · confiance moyenne
+- Note : Erica carnea et x darleyensis tolèrent un peu de calcaire (contrairement à la callune) ; une fiche Nature & Découvertes dit l'inverse, d'où la terre de bruyère conseillée en pot.
+- Sources : [jardiner-malin.fr](https://www.jardiner-malin.fr/fiche/erica-carnea.html), [truffaut.com](https://www.truffaut.com/bruyeres-hiver-culture-entretien.html), [truffaut.com](https://www.truffaut.com/erica-darleyensis-kramer-s-rote-ctr-1l-531314.html), [natureetdecouvertes.com](https://www.natureetdecouvertes.com/jardin/decoration-jardin/plantes-exterieur/2-x-bruyere-des-neiges-blanc-erica-carnea-10-12-cm-pot-93350700)
+
+## Hellébore
+
+- Plantation : mars–mai, sept.–nov. · Floraison : déc.–avr. · confiance moyenne
+- Note : H. niger de décembre à mars, hybrides orientalis de février à avril. Toute la plante est toxique et sa sève irrite la peau (gants pour couper les feuilles).
+- Sources : [jardiner-malin.fr](https://www.jardiner-malin.fr/fiche/hellebore-noir.html), [jardiner-malin.fr](https://www.jardiner-malin.fr/fiche/hellebore-d-orient.html), [truffaut.com](https://truffaut.com/hellebore-varietes-plantation-entretien.html), [futura-sciences.com](https://www.futura-sciences.com/maison/questions-reponses/jardinage-cultiver-roses-noel-21804/)
+
+## Joubarbe
+
+- Plantation : mars–juin, sept.–oct. · Floraison : juin–août · confiance moyenne
+- Note : septembre-octobre sur une seule fiche Truffaut et l'usage (godet enraciné) ; novembre écarté (humidité). Seules les rosettes de 2 à 4 ans fleurissent, puis meurent.
+- Sources : [truffaut.com](https://www.truffaut.com/joubarbe-godet-9cm-202376.html), [truffaut.com](https://www.truffaut.com/joubarbe-collection-pot-1l-828861.html), [jardiner-malin.fr](https://www.jardiner-malin.fr/fiche/joubarbe.html)
+
+## Sédum d'automne
+
+- Plantation : mars–mai, sept.–oct. · Floraison : août–oct. · confiance moyenne
+- Note : Hylotelephium spectabile ; variété rampante conseillée Angelina (Sedum spurium, envahissant en Suisse, écarté).
+- Sources : [jardiner-malin.fr](https://www.jardiner-malin.fr/fiche/orpin-sedum-spectabile.html), [jardiner-malin.fr](https://www.jardiner-malin.fr/fiche/sedum.html), [truffaut.com](https://www.truffaut.com/orpin-herbstfreude-godet-5-20-cm.html), [natureetdecouvertes.com](https://www.natureetdecouvertes.com/jardin/decoration-jardin/plantes-exterieur/6-x-orpin-remarquable-sedum-spectabile-iceberg-godet-9x9-cm-93362530)

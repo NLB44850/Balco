@@ -12,6 +12,11 @@ export type Repotting = {
   months: number[];
   /** Les autres années : changer les 5 cm de terre du dessus. */
   topdress: boolean;
+  /**
+   * Bulbes : pas de pot plus grand, on les sort une fois les feuilles sèches, puis on replante dans le même pot avec
+   * une terre neuve ; `renew` : des bulbes neufs (tulipes, qui s'épuisent en pot), `divide` : les plus gros gardés.
+   */
+  bulbs?: "renew" | "divide";
   /** Le signe qu'elle manque de place, au tutoiement. */
   sign: string | null;
   sources: string[];
@@ -55,4 +60,12 @@ export const REPOTTING: Record<string, Repotting> = {
   "kiwiberry": { everyYears: [2, 5], months: [3, 4], topdress: true, sign: "Si des racines sortent par les trous du pot ou si la terre sèche en un jour, passe à un pot un peu plus grand.", sources: ["https://lagreentouch.fr/blogs/conseils-entretien-plantes/fiche-entretien-kiwi-actinidia-arguta-guide-pratique", "https://plantes-et-jardin-de-ville.com/culture-kiwi-pot/"] },
   "blackcurrant": { everyYears: [2, 3], months: [3, 4], topdress: true, sign: "Si des racines sortent par les trous du pot ou si la terre sèche en un jour, passe à un pot un peu plus grand.", sources: ["https://www.jardiner-malin.fr/fiche/cassissier-en-pot.html", "https://lagreentouch.fr/blogs/conseils-entretien-plantes/fiche-entretien-cassis-ribes-nigrum", "https://www.pretajardiner.com/852-cassissier"] },
   "thornless-blackberry": { everyYears: [2, 4], months: [3, 4], topdress: false, sign: "Si des racines sortent par les trous du pot ou si la terre sèche en un jour, passe à un pot un peu plus grand.", sources: ["https://www.lubera.fr/journal/cultiver-un-murier-en-pot-p5606", "https://lagreentouch.fr/blogs/conseils-entretien-plantes/fiche-entretien-murier-sans-epines-rubus-fruticosus-guide-pratique"] },
+  "tulip": { everyYears: [1, 1], months: [10, 11], topdress: false, bulbs: "renew", sign: "En pot, les tulipes fleurissent moins dès la 2ᵉ année : replante des bulbes neufs.", sources: ["https://www.quechoisir.org/guide-d-achat-bulbes-de-tulipes-n4853/", "https://www.futura-sciences.com/maison/questions-reponses/jardinage-tulipe-elle-difficile-cultiver-10115/", "https://www.jardiner-malin.fr/fiche/tulipe-botanique.html"] },
+  "daffodil": { everyYears: [2, 3], months: [9, 10], topdress: false, bulbs: "divide", sign: "Si les touffes sont serrées et fleurissent moins, sépare les bulbes et garde les plus gros.", sources: ["https://www.jardiner-malin.fr/fiche/narcisse-jonquille.html", "https://www.truffaut.com/narcisse-plantation-entretien.html"] },
+  "muscari": { everyYears: [3, 4], months: [9, 10], topdress: false, bulbs: "divide", sign: "Si les touffes sont serrées et fleurissent moins, sépare les bulbes et garde les plus gros.", sources: ["https://www.aujardin.info/fiches/planter-entretenir-muscari.php", "https://www.jardiner-malin.fr/fiche/muscari-jacinthe.html"] },
+  "crocus": { everyYears: [2, 3], months: [9, 10], topdress: false, bulbs: "divide", sign: "Si les fleurs se font rares, sépare les bulbes et garde les plus gros.", sources: ["https://www.gerbeaud.com/jardin/fiches/crocus.php", "https://www.promessedefleurs.com/conseil-plantes-jardin/ficheconseil/cultiver-crocus-en-pot/"] },
+  "winter-heath": { everyYears: [2, 3], months: [4, 5], topdress: true, sign: "Si des racines sortent par les trous du pot, rempote ta bruyère après sa floraison.", sources: ["https://www.natureetdecouvertes.com/jardin/decoration-jardin/plantes-exterieur/2-x-bruyere-des-neiges-rouge-erica-carnea-12-15-cm-pot-93350660", "https://www.truffaut.com/bruyeres-hiver-culture-entretien.html"] },
+  "hellebore": { everyYears: [4, 5], months: [3, 9], topdress: true, sign: "Si ta touffe remplit tout le pot et fleurit moins, rempote-la ou divise-la en septembre.", sources: ["https://www.jardiner-malin.fr/fiche/hellebore-en-pot.html", "https://truffaut.com/hellebore-varietes-plantation-entretien.html"] },
+  "houseleek": { everyYears: [2, 3], months: [3, 4, 5], topdress: false, sign: "Si les rosettes débordent du pot, détache des rejets et replante-les dans un autre pot.", sources: ["https://www.jardiner-malin.fr/fiche/joubarbe.html", "https://www.truffaut.com/sempervivum-pot-0-5l-1140776.html", "https://www.consoglobe.com/?p=10386896"] },
+  "sedum": { everyYears: [3, 4], months: [3, 4], topdress: true, sign: "Si le centre de la touffe se dégarnit, divise-la au printemps dans une terre neuve.", sources: ["https://www.jardiner-malin.fr/fiche/orpin-sedum-spectabile.html", "https://www.jardiner-malin.fr/fiche/sedum.html"] },
 };

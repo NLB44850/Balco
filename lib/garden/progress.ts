@@ -3,7 +3,7 @@
  * chaque plante depuis son arrivée, et les petites victoires à fêter juste après un geste.
  * Logique pure.
  */
-import { MONTH_LONG, type Month } from "../plants/catalog";
+import { hasHarvest, MONTH_LONG, type Month } from "../plants/catalog";
 import { afterColon, agree, capitalize, objectPronoun, stressedPronoun, subjectPronoun, verb } from "../plants/grammar";
 import type { MaintenanceEvent } from "../reminders/reminder-engine";
 import { badgeTierKey, computeBadges, computeProgress, computeStats, TIER_NAMES, type Badge, dayKey, daysBetween, followedDays, isAvoidedWatering, plantDisplayName, wateringLitersOf, type ResolvedPlant } from "./garden-logic";
@@ -55,9 +55,9 @@ export type UpcomingHarvest = { resolved: ResolvedPlant; now: boolean; label: st
 export function upcomingHarvests(plants: ResolvedPlant[], now = new Date()): UpcomingHarvest[] {
   const month = (now.getMonth() + 1) as Month;
   const next = ((month % 12) + 1) as Month;
-  const current = plants.filter(({ entry }) => entry.harvestMonths.includes(month)).map((resolved) => ({ resolved, now: true, label: "C’est le moment" }));
+  const current = plants.filter(({ entry }) => hasHarvest(entry) && entry.harvestMonths.includes(month)).map((resolved) => ({ resolved, now: true, label: "C’est le moment" }));
   const soon = plants
-    .filter(({ entry }) => !entry.harvestMonths.includes(month) && entry.harvestMonths.includes(next))
+    .filter(({ entry }) => hasHarvest(entry) && !entry.harvestMonths.includes(month) && entry.harvestMonths.includes(next))
     .map((resolved) => ({ resolved, now: false, label: `À partir de ${MONTH_LONG[next - 1]}` }));
   return [...current, ...soon];
 }

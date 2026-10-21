@@ -1,6 +1,6 @@
 import { dayKey, sessionEventId, startEventId } from "../garden/garden-logic";
 import type { MaintenanceEvent, MaintenanceTaskType } from "../reminders/reminder-engine";
-import { describeSowing, formatMonthRange, MONTH_LONG, sowsIndoors, type CareTask, type CatalogPlant, type Month } from "./catalog";
+import { describeSowing, formatMonthRange, hasHarvest, MONTH_LONG, sowsIndoors, type CareTask, type CatalogPlant, type Month } from "./catalog";
 import { adaptToClimate, type ClimateInfo } from "./climate";
 import { byForm, capitalize, objectPronoun, subjectPronoun, verb, type Agreeable } from "./grammar";
 import { sowsOnWindowsill } from "./indoor";
@@ -114,7 +114,7 @@ export function calendarActivities(subjects: CalendarSubject[], month: number, o
     // Rempotage selon le besoin : jamais la première saison, puis à son rythme ; les autres années, la terre du dessus.
     const potCare = potCareFor(subject, entry, m, options.now ?? new Date());
     if (potCare) activities.push(potCareActivity(subject, entry, potCare));
-    if (entry.harvestMonths.includes(m)) {
+    if (entry.harvestMonths.includes(m) && hasHarvest(entry)) {
       activities.push({ ...base, key: `${id}:harvest`, kind: "harvest", typeLabel: "RÉCOLTE", title: `Récolte ${entry.label}`, description: entry.harvestTip, tone: "green", eventType: "harvest" });
     }
     for (const task of entry.tasks) {
@@ -247,6 +247,8 @@ export function repotDescription(entry: CatalogPlant, repots: number, potSize?: 
   const when = `À faire en ${formatMonthRange(entry.repotMonths)}.`;
   if (next.tooSmall) return `Ton pot est trop petit pour ${byForm(entry, "lui", "elle", "eux", "elles")}. Prends un pot d’environ ${next.widthCm} cm de large, avec ${soilPhrase(entry)}. ${when}`;
   const sign = REPOTTING[entry.id]?.sign?.replace(/'/gu, "’") ?? genericRepotSign(entry);
+  // Bulbes : le même pot, une terre neuve.
+  if (REPOTTING[entry.id]?.bulbs) return `${sign} Replante-les dans le même pot, avec ${soilPhrase(entry)}. ${when}`;
   return `${sign} Prends un pot d’environ ${next.widthCm} cm de large, avec ${soilPhrase(entry)}. ${when}`;
 }
 

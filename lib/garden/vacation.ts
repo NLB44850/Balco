@@ -4,7 +4,7 @@
  * Pendant l'absence, Balco se tait ; les rappels reprennent seuls le lendemain du retour.
  * Logique pure.
  */
-import { MONTH_LONG, type Month } from "../plants/catalog";
+import { hasHarvest, MONTH_LONG, type Month } from "../plants/catalog";
 import { dayKey, plantDisplayName, type ResolvedPlant } from "./garden-logic";
 
 export type Vacation = {
@@ -95,7 +95,7 @@ export function preparationSteps(plants: ResolvedPlant[], vacation: Vacation, no
   const warm = month >= 5 && month <= 9;
   const steps: PreparationStep[] = [];
 
-  const ripe = plants.filter(({ entry }) => entry.harvestMonths.includes(month));
+  const ripe = plants.filter(({ entry }) => hasHarvest(entry) && entry.harvestMonths.includes(month));
   if (ripe.length > 0) {
     steps.push({ id: "harvest", when: "Quelques jours avant", title: "Récolte ce qui est prêt", detail: `${names(ripe)} : récolte avant de partir, sinon ce sera perdu ou trop mûr au retour.` });
   }

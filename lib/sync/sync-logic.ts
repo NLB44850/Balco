@@ -231,6 +231,8 @@ export type AppliedSnapshot = {
   settings: SyncSettings;
   /** Union du carnet local et de celui du serveur : un badge obtenu sur un téléphone se retrouve sur l'autre. */
   awards: Awards;
+  /** Les plantes du téléphone que le serveur n'a pas : gardées, et à renvoyer à la prochaine synchro. */
+  unsyncedPlants: GardenPlant[];
 };
 
 /**
@@ -251,6 +253,11 @@ export function applySnapshot(snapshot: SyncSnapshotPayload, pending: Outbox, lo
     const server = plants.get(plant.id);
     if (!server || plantTimestamp(plant) >= plantTimestamp(server)) plants.set(plant.id, plant);
   }
+  // Le serveur ne supprime jamais une plante (une plante retirée garde sa ligne, `removedAt`) : une plante du téléphone
+  // qu'il n'a pas, il l'a ignorée. Un serveur pas encore à jour ignore une plante du catalogue qu'il ne connaît pas
+  // (une demande de fusion testée avant d'être en ligne, 21/10 : les tulipes ajoutées puis aussitôt retirées).
+  const unsyncedPlants = local.plants.filter((plant) => !plants.has(plant.id));
+  for (const plant of unsyncedPlants) plants.set(plant.id, plant);
 
   const deleted = new Set(pending.deletedEventIds);
   const events = new Map<string, MaintenanceEvent>();
@@ -267,6 +274,7 @@ export function applySnapshot(snapshot: SyncSnapshotPayload, pending: Outbox, lo
     onboarding: pending.profileDirty ? local.onboarding : serverOnboarding ?? local.onboarding,
     settings: pending.settingsDirty || !snapshot.settings ? local.settings : snapshot.settings,
     awards: mergeAwards(local.awards ?? {}, snapshot.awards ?? {}),
+    unsyncedPlants,
   };
 }
 

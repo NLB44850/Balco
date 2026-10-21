@@ -84,6 +84,11 @@ export type CatalogPlant = {
   /** Mois de rempotage des vivaces (terreau neuf, pot un peu plus grand) ; vide pour les annuelles. */
   repotMonths: Month[];
   harvestTip: string;
+  /**
+   * Plante d'ornement qu'on ne cueille pas (crocus, hellébore, joubarbe…) : `harvestMonths` est sa floraison, sans
+   * geste « Récolte » chaque jour ni récolte à venir ; `harvestTip` dit quoi faire pendant la floraison.
+   */
+  bloomOnly?: true;
   care: CareThresholds;
   tasks: CareTask[];
   /** Variétés conseillées en pot, de la plus facile à la plus originale. */
@@ -91,6 +96,11 @@ export type CatalogPlant = {
   /** Pages consultées pour vérifier les mois de semis, de plantation et de récolte. */
   sources: string[];
 };
+
+/** Elle se cueille (légumes, fruits, fleurs à bouquet) : pas une plante d'ornement seulement (`bloomOnly`). */
+export function hasHarvest(entry: Pick<CatalogPlant, "bloomOnly">) {
+  return !entry.bloomOnly;
+}
 
 export const CATEGORY_LABELS: Record<PlantCategory, string> = {
   aromatic: "Aromatiques",
@@ -178,12 +188,15 @@ function plant({ extraTasks = [], wateringMonths, wateringInstruction, varieties
     tasks: [
       wateringTask(data.label, activeMonths, wateringInstruction),
       observeTask(data.label, activeMonths),
-      harvestTask(data.label, data.harvestMonths, data.harvestTip),
+      ...(data.bloomOnly ? [] : [harvestTask(data.label, data.harvestMonths, data.harvestTip)]),
       ...extraTasks,
       ...(feed ? [feed] : []),
     ],
   };
 }
+
+/** Les bulbes en pot : peu d'eau, et jamais d'eau qui stagne. */
+const BULB_WATERING = "Arrose seulement quand la terre est sèche sur 3 cm, et vide la soucoupe : un bulbe pourrit dans l’eau.";
 
 // Profils de soin types
 const THIRSTY: Pick<CareThresholds, "wateringIntervalHours" | "rainSkipMm" | "windThresholdKmh"> = { wateringIntervalHours: 36, rainSkipMm: 3, windThresholdKmh: 40 };
@@ -1395,6 +1408,136 @@ export const PLANT_CATALOG: CatalogPlant[] = [
       { id: "navaho", name: "Navaho", note: "Tiges dressées sans épines et mûres très sucrées : un tuteur et un grand bac suffisent." },
     ],
   }),
+
+  // --- Catalogue balcon et terrasse, livraison 1 (21/10) : bulbes, fleurs d’hiver, plantes grasses -------------
+  // Plantes d’ornement qu’on ne cueille pas (`bloomOnly`) : leurs mois de « récolte » sont leur floraison.
+  plant({
+    id: "tulip", name: "Tulipes", label: "les tulipes", gender: "f", plural: true, emoji: "🌷", category: "flower", bloomOnly: true,
+    sunlight: ["sunny", "partial"], minSpace: "planter", difficulty: "easy", perennial: true, melliferous: false, goals: [], potLiters: 18,
+    pitch: "Un pot qui explose de couleurs en avril, planté en dix minutes à l’automne.",
+    sowMonths: [], plantMonths: [9, 10, 11, 12], harvestMonths: [3, 4, 5],
+    harvestTip: "Coupe chaque fleur fanée juste sous la tête, et laisse les feuilles jaunir toutes seules : elles nourrissent le bulbe.",
+    care: { ...DROUGHT, rainSkipMm: 3, heatThresholdC: 25, frostThresholdC: -10, frostSensitive: false },
+    wateringMonths: [10, 11, 3, 4, 5],
+    wateringInstruction: BULB_WATERING,
+    extraTasks: [customTask({ id: "deadhead", type: "pruning", title: "Aujourd’hui, coupe les fleurs fanées des tulipes.", instruction: "Coupe chaque fleur fanée juste sous la tête, et garde tiges et feuilles jusqu’à ce qu’elles jaunissent : elles rechargent le bulbe.", minutes: 3, months: [4, 5] })],
+    varieties: [
+      { id: "red-riding-hood", name: "Red Riding Hood", note: "Tulipe courte (20 à 25 cm), rouge à cœur noir, aux feuilles striées : elle tient bien au vent du balcon." },
+      { id: "foxtrot", name: "Foxtrot", note: "Double hâtive rose tendre, aux fleurs pleines comme des pivoines en avril, assez courte pour un pot." },
+      { id: "little-beauty", name: "Little Beauty", note: "Tulipe botanique naine rose et bleu, qui peut refleurir plusieurs années dans le même pot." },
+    ],
+  }),
+  plant({
+    id: "daffodil", name: "Narcisses", label: "les narcisses", gender: "m", plural: true, emoji: "🌼", category: "flower", bloomOnly: true,
+    sunlight: ["sunny", "partial"], minSpace: "planter", difficulty: "easy", perennial: true, melliferous: false, goals: [], potLiters: 10,
+    pitch: "Les premières fleurs jaunes de l’année sur ton balcon, et elles reviennent chaque printemps.",
+    sowMonths: [], plantMonths: [9, 10, 11], harvestMonths: [2, 3, 4],
+    harvestTip: "Coupe les fleurs fanées sous la tête, mais laisse tiges et feuilles jaunir toutes seules jusqu’au bout.",
+    care: { ...DROUGHT, rainSkipMm: 3, heatThresholdC: 25, frostThresholdC: -10, frostSensitive: false },
+    wateringMonths: [10, 11, 2, 3, 4],
+    wateringInstruction: BULB_WATERING,
+    extraTasks: [customTask({ id: "deadhead", type: "pruning", title: "Aujourd’hui, coupe les fleurs fanées des narcisses.", instruction: "Coupe les fleurs fanées sous la tête, sans nouer ni couper les feuilles : laisse-les jaunir, elles rechargent le bulbe pour l’an prochain.", minutes: 3, months: [3, 4] })],
+    varieties: [
+      { id: "tete-a-tete", name: "Tête-à-tête", note: "Mini-narcisse de 15 à 20 cm, 2 ou 3 fleurs jaunes par tige dès février : le classique des pots." },
+      { id: "jetfire", name: "Jetfire", note: "Petit narcisse jaune à trompette orange, très précoce, parfait en pot." },
+      { id: "minnow", name: "Minnow", note: "Narcisse nain crème à cœur jaune, parfumé, en avril : il prend le relais de Tête-à-tête." },
+    ],
+  }),
+  plant({
+    id: "muscari", name: "Muscaris", label: "les muscaris", gender: "m", plural: true, emoji: "🌸", category: "flower", bloomOnly: true,
+    sunlight: ["sunny", "partial"], minSpace: "windowsill", difficulty: "easy", perennial: true, melliferous: true, goals: ["bees"], potLiters: 5,
+    pitch: "Des grappes bleues qui reviennent chaque printemps et régalent les premières abeilles.",
+    sowMonths: [], plantMonths: [9, 10, 11], harvestMonths: [3, 4, 5],
+    harvestTip: "Coupe les épis fanés et laisse les feuilles jaunir : les muscaris reviendront plus fournis l’an prochain.",
+    care: { ...DROUGHT, rainSkipMm: 3, heatThresholdC: 25, frostThresholdC: -12, frostSensitive: false },
+    wateringMonths: [10, 11, 3, 4, 5],
+    wateringInstruction: BULB_WATERING,
+    extraTasks: [customTask({ id: "deadhead", type: "pruning", title: "Aujourd’hui, coupe les épis fanés des muscaris.", instruction: "Coupe les épis fanés et garde les feuilles jusqu’à ce qu’elles jaunissent. Leurs nouvelles feuilles d’automne, c’est normal.", minutes: 2, months: [4, 5] })],
+    varieties: [
+      { id: "valerie-finnis", name: "Valerie Finnis", note: "Épis bleu ciel très pâle, légèrement parfumés, port compact : joli seul ou au pied des tulipes." },
+      { id: "peppermint", name: "Peppermint", note: "Bleu clair à pointe plus pâle, petit et compact, parfait au premier rang d’une jardinière." },
+      { id: "big-smile", name: "Big Smile", note: "Longs épis bleus ourlés de blanc, plus hauts que le muscari classique : ils se voient de loin." },
+    ],
+  }),
+  plant({
+    id: "crocus", name: "Crocus", label: "les crocus", gender: "m", plural: true, emoji: "🌸", category: "flower", bloomOnly: true,
+    sunlight: ["sunny", "partial"], minSpace: "windowsill", difficulty: "easy", perennial: true, melliferous: true, goals: ["bees"], potLiters: 4,
+    pitch: "Les premières fleurs de l’année, dès février, et un festin pour les abeilles qui se réveillent.",
+    sowMonths: [], plantMonths: [9, 10, 11], harvestMonths: [2, 3, 4],
+    harvestTip: "Profite des fleurs au soleil, elles s’ouvrent en grand à midi. Après, laisse les feuilles jaunir sans les couper.",
+    care: { ...DROUGHT, rainSkipMm: 3, heatThresholdC: 20, frostThresholdC: -12, frostSensitive: false },
+    wateringMonths: [10, 11, 2, 3],
+    wateringInstruction: BULB_WATERING,
+    varieties: [
+      { id: "cream-beauty", name: "Cream Beauty", note: "Crocus crème à gorge jaune, parfumé, parmi les plus précoces : il fleurit en pot dès février." },
+      { id: "pickwick", name: "Pickwick", note: "Grosses fleurs blanches striées de violet, très visibles dans une petite jardinière." },
+      { id: "lilac-beauty", name: "Lilac Beauty", note: "Crocus mauve qui supporte un peu d’ombre et revient bien d’une année sur l’autre en pot." },
+    ],
+  }),
+  plant({
+    id: "winter-heath", name: "Bruyère d’hiver", label: "la bruyère d’hiver", gender: "f", emoji: "🌸", category: "flower", bloomOnly: true,
+    sunlight: ["sunny", "partial"], minSpace: "windowsill", difficulty: "easy", perennial: true, melliferous: true, goals: ["bees"], potLiters: 4,
+    pitch: "Des fleurs roses ou blanches tout l’hiver, même sous la neige, et du nectar pour les abeilles.",
+    sowMonths: [], plantMonths: [3, 4, 5, 6, 10, 11, 12], harvestMonths: [11, 12, 1, 2, 3, 4],
+    harvestTip: "Pendant la floraison, laisse-la dehors et garde sa terre fraîche : ses fleurs tiennent des semaines, même sous la neige.",
+    care: { ...REGULAR, wateringIntervalHours: 72, heatThresholdC: 30, frostThresholdC: -10, frostSensitive: false },
+    wateringMonths: WHOLE_YEAR,
+    wateringInstruction: "Sa terre ne doit jamais sécher complètement : arrose quand le dessus est sec, jamais quand il gèle.",
+    extraTasks: [customTask({ id: "trim", type: "pruning", title: "Aujourd’hui, taille la bruyère.", instruction: "Quand les fleurs ont fané, coupe le bout des tiges juste sous les fleurs sèches, sans descendre dans le vieux bois : il ne repousse pas.", minutes: 5, months: [4, 5] })],
+    varieties: [
+      { id: "kramers-rote", name: "Kramer’s Rote", note: "Fleurs rouge magenta et feuillage sombre, en touffe compacte : parfaite dans un pot de 20 cm." },
+      { id: "silberschmelze", name: "Silberschmelze", note: "Fleurs blanches parfumées de novembre à avril : elle éclaire un balcon à l’ombre légère." },
+      { id: "springwood-white", name: "Springwood White", note: "Tapis bas de fleurs blanches de janvier à avril, qui retombe joliment d’une jardinière." },
+    ],
+  }),
+  plant({
+    id: "hellebore", name: "Hellébore", label: "l’hellébore", gender: "m", emoji: "🌼", category: "flower", bloomOnly: true,
+    sunlight: ["partial", "shade"], minSpace: "planter", difficulty: "easy", perennial: true, melliferous: true, goals: ["bees"], potLiters: 15,
+    pitch: "La rose de Noël : des fleurs en plein cœur de l’hiver, sur un balcon à l’ombre.",
+    sowMonths: [], plantMonths: [3, 4, 5, 9, 10, 11], harvestMonths: [12, 1, 2, 3, 4],
+    harvestTip: "Pendant la floraison, laisse-le dehors au frais : au chaud, à l’intérieur, ses fleurs fanent en quelques jours.",
+    care: { ...REGULAR, wateringIntervalHours: 72, heatThresholdC: 28, frostThresholdC: -15, frostSensitive: false },
+    wateringMonths: WHOLE_YEAR,
+    wateringInstruction: "Garde sa terre fraîche, jamais détrempée : arrose quand le dessus est sec, à l’ombre l’été, jamais quand il gèle.",
+    extraTasks: [customTask({ id: "old-leaves", type: "pruning", title: "Aujourd’hui, coupe les vieilles feuilles de l’hellébore.", instruction: "Avec des gants (toute la plante est toxique), coupe à la base les vieilles feuilles abîmées ou tachées de noir : les boutons sortent mieux.", minutes: 5, months: [12, 1] })],
+    varieties: [
+      { id: "christmas-carol", name: "Christmas Carol", note: "Rose de Noël aux grandes fleurs blanches dès décembre, en touffe compacte vendue en pot." },
+      { id: "ice-n-roses", name: "Ice N’ Roses", note: "Fleurs roses ou rouges bien droites, très nombreuses : faite pour les potées." },
+      { id: "jacob", name: "Jacob", note: "Fleurs blanches précoces et nombreuses sur une touffe basse : une valeur sûre en pot." },
+    ],
+  }),
+  plant({
+    id: "houseleek", name: "Joubarbe", label: "la joubarbe", gender: "f", emoji: "🌵", category: "flower", bloomOnly: true,
+    sunlight: ["sunny"], minSpace: "windowsill", difficulty: "easy", perennial: true, melliferous: true, goals: [], potLiters: 2,
+    pitch: "Increvable et presque sans eau : un tapis de rosettes qui vit des années dans un tout petit pot.",
+    sowMonths: [], plantMonths: [3, 4, 5, 6, 9, 10], harvestMonths: [6, 7, 8],
+    harvestTip: "Admire sa hampe étoilée sans arroser plus : la rosette qui fleurit vit sa dernière saison, ses rejets prendront sa place.",
+    care: { ...DROUGHT, wateringIntervalHours: 240, heatThresholdC: 40, frostThresholdC: -20, frostSensitive: false },
+    wateringMonths: [5, 6, 7, 8, 9],
+    wateringInstruction: "Presque jamais : arrose seulement quand la terre est sèche jusqu’au fond, et jamais l’hiver. C’est l’humidité qui la tue, pas le froid.",
+    extraTasks: [customTask({ id: "rosette", type: "pruning", title: "Aujourd’hui, retire la rosette fanée de la joubarbe.", instruction: "Une rosette qui a fleuri meurt ensuite : retire-la avec sa hampe sèche. Les petits rejets autour prennent sa place.", minutes: 2, months: [8, 9] })],
+    varieties: [
+      { id: "arachnoideum", name: "Joubarbe toile d’araignée", note: "Petites rosettes couvertes de fils blancs comme une toile : spectaculaire dans une coupe basse." },
+      { id: "tectorum", name: "Joubarbe des toits", note: "La classique, aux grosses rosettes vertes à pointes rouges : increvable, elle remplit vite un pot." },
+      { id: "rubin", name: "Rubin", note: "Rosettes rouge rubis tissées de blanc : une couleur vive toute l’année dans un petit pot." },
+    ],
+  }),
+  plant({
+    id: "sedum", name: "Sédum d’automne", label: "le sédum", gender: "m", emoji: "🌸", category: "flower", bloomOnly: true,
+    sunlight: ["sunny"], minSpace: "planter", difficulty: "easy", perennial: true, melliferous: true, goals: ["bees"], potLiters: 12,
+    pitch: "Des bouquets roses en fin d’été, couverts d’abeilles et de papillons, sur un balcon brûlant.",
+    sowMonths: [], plantMonths: [3, 4, 5, 9, 10], harvestMonths: [8, 9, 10],
+    harvestTip: "Ne coupe rien : les abeilles et les papillons s’y nourrissent, et les fleurs sèches resteront belles tout l’hiver.",
+    care: { ...DROUGHT, wateringIntervalHours: 168, heatThresholdC: 38, frostThresholdC: -20, frostSensitive: false },
+    wateringMonths: [4, 5, 6, 7, 8, 9],
+    wateringInstruction: "Arrose seulement quand la terre est bien sèche : il craint bien plus l’eau que la sécheresse.",
+    extraTasks: [customTask({ id: "cut-stems", type: "pruning", title: "Aujourd’hui, coupe les tiges sèches du sédum.", instruction: "Coupe toutes les tiges sèches au ras des nouvelles pousses. Tout l’hiver, elles ont protégé la souche du froid.", minutes: 3, months: [2, 3] })],
+    varieties: [
+      { id: "herbstfreude", name: "Herbstfreude", note: "La variété la plus courante : fleurs roses qui virent au rouge brique puis au cuivre." },
+      { id: "brillant", name: "Brillant", note: "Fleurs rose vif très visitées par les abeilles, port compact d’environ 40 cm." },
+      { id: "angelina", name: "Angelina", note: "Sédum rampant doré qui retombe du pot : pour les petits pots, presque sans arrosage." },
+    ],
+  }),
 ];
 
 const BY_ID = new Map(PLANT_CATALOG.map((entry) => [entry.id, entry]));
@@ -1565,6 +1708,14 @@ const SEARCH_ALIASES: Record<string, string[]> = {
   "dwarf-fig": ["figue", "figuier"],
   "wild-garlic": ["ail"],
   lemongrass: ["citronnelle"],
+  tulip: ["bulbe"],
+  daffodil: ["jonquille", "bulbe"],
+  muscari: ["bulbe"],
+  crocus: ["bulbe"],
+  "winter-heath": ["erica"],
+  hellebore: ["rose de noël"],
+  houseleek: ["sempervivum", "plante grasse", "succulente"],
+  sedum: ["orpin", "plante grasse", "succulente"],
 };
 
 export function searchCatalog(query: string, category?: PlantCategory): CatalogPlant[] {
