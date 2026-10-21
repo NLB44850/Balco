@@ -1539,6 +1539,122 @@ export const PLANT_CATALOG: CatalogPlant[] = [
       { id: "angelina", name: "Angelina", note: "Sédum rampant doré qui retombe du pot : pour les petits pots, presque sans arrosage." },
     ],
   }),
+
+  // --- Catalogue balcon et terrasse, livraison 2 (21/10) : arbres fruitiers en pot -----------------------------
+  plant({
+    id: "olive-tree", name: "Olivier", label: "l’olivier", gender: "m", emoji: "🫒", category: "fruit-tree",
+    sunlight: ["sunny"], minSpace: "balcony", difficulty: "medium", perennial: true, melliferous: false, goals: [], potLiters: 35,
+    pitch: "Un air de Méditerranée toute l’année : feuillage argenté, et quelques olives si l’été est chaud.",
+    sowMonths: [], plantMonths: [4, 5, 6], harvestMonths: [10, 11, 12],
+    harvestTip: "Cueille les olives à la main, vertes ou bien noires, puis fais-les tremper : crues, elles sont immangeables.",
+    care: { ...DROUGHT, heatThresholdC: 40, frostThresholdC: -5, frostSensitive: true },
+    wateringMonths: [3, 4, 5, 6, 7, 8, 9, 10],
+    wateringInstruction: "Arrose quand la terre est sèche sur 5 cm, et vide la soucoupe : il craint bien plus l’humidité que la sécheresse.",
+    extraTasks: [
+      customTask({ id: "prune", type: "pruning", title: "Aujourd’hui, taille l’olivier.", instruction: "Après les dernières gelées, taille légèrement pour aérer le centre et garder une jolie forme.", minutes: 10, months: [4, 5] }),
+      customTask({ id: "shelter", type: "protection", title: "Aujourd’hui, prépare l’abri de l’olivier.", instruction: "Sous -5 °C plusieurs nuits, rentre-le dans une pièce lumineuse non chauffée, ou isole le pot et couvre-le d’un voile d’hivernage contre un mur.", minutes: 10, months: [11, 12, 1, 2] }),
+    ],
+    varieties: [
+      { id: "arbequina", name: "Arbequina", note: "Petite olive catalane, port compact et olives dès les premières années : la plus conseillée en pot." },
+      { id: "leccino", name: "Leccino", note: "Variété italienne assez rustique, qui donne mieux qu’une autre quand elle est seule." },
+      { id: "aglandau", name: "Aglandau", note: "Variété provençale réputée rustique, olives d’automne." },
+    ],
+  }),
+  plant({
+    id: "columnar-apple", name: "Pommier colonnaire", label: "le pommier", gender: "m", emoji: "🍎", category: "fruit-tree",
+    sunlight: ["sunny"], minSpace: "balcony", difficulty: "easy", perennial: true, melliferous: true, goals: ["bees"], potLiters: 40,
+    pitch: "Des pommes sur un tronc unique de 40 cm de large : un vrai verger dans un coin de balcon.",
+    sowMonths: [], plantMonths: [3, 4, 10, 11], harvestMonths: [9, 10],
+    harvestTip: "Soulève la pomme et tourne-la doucement : si elle se détache seule, elle est prête.",
+    care: { ...REGULAR, wateringIntervalHours: 72, heatThresholdC: 32, frostThresholdC: -10, frostSensitive: false },
+    wateringMonths: [4, 5, 6, 7, 8, 9, 10],
+    extraTasks: [
+      customTask({ id: "prune", type: "pruning", title: "Aujourd’hui, taille le pommier.", instruction: "Taille peu : enlève le bois mort et les branches qui partent de travers, pour garder la colonne.", minutes: 10, months: [1, 2] }),
+      customTask({ id: "summer-prune", type: "pruning", title: "Aujourd’hui, raccourcis les pousses du pommier.", instruction: "Raccourcis à 10 ou 15 cm les pousses de côté qui dépassent 20 cm.", minutes: 5, months: [6] }),
+      customTask({ id: "thin-fruits", type: "pruning", title: "Aujourd’hui, éclaircis les pommes.", instruction: "Après la chute naturelle des petits fruits, garde une ou deux pommes par bouquet : elles grossiront mieux.", minutes: 5, months: [6, 7] }),
+    ],
+    varieties: [
+      { id: "polka", name: "Ballerina Polka", note: "Pommes rouges et vertes en septembre-octobre, très productif et peu encombrant." },
+      { id: "rondo", name: "Rondo", note: "Colonnaire compact à pommes rouges ; il lui faut un 2ᵉ pommier en fleur en même temps." },
+      { id: "maypole", name: "Ballerina Maypole", note: "Pommier d’ornement colonnaire à fleurs rose vif : le bon voisin pour polliniser un autre colonnaire." },
+    ],
+  }),
+  plant({
+    id: "dwarf-peach", name: "Pêcher nain", label: "le pêcher", gender: "m", emoji: "🍑", category: "fruit-tree",
+    sunlight: ["sunny"], minSpace: "balcony", difficulty: "medium", perennial: true, melliferous: true, goals: ["bees"], potLiters: 40,
+    pitch: "Des fleurs roses en mars et des pêches juteuses en août, sur un arbre plus petit que toi.",
+    sowMonths: [], plantMonths: [2, 3, 4, 10, 11], harvestMonths: [7, 8, 9],
+    harvestTip: "Cueille la pêche quand elle cède un peu sous le doigt et se détache d’une légère torsion, sans tirer.",
+    care: { ...REGULAR, wateringIntervalHours: 72, heatThresholdC: 35, frostThresholdC: -10, frostSensitive: false },
+    wateringMonths: [4, 5, 6, 7, 8, 9],
+    wateringInstruction: "Arrose en profondeur quand la terre est sèche sur 3 cm, et vide la soucoupe : il craint l’excès d’eau.",
+    extraTasks: [
+      customTask({ id: "leaf-curl", type: "protection", title: "Aujourd’hui, protège le pêcher de la cloque.", instruction: "Pulvérise de la bouillie bordelaise (utilisable en agriculture biologique) à la chute des feuilles, puis avant que les bourgeons gonflent : seule la prévention marche.", minutes: 10, months: [11, 2] }),
+      customTask({ id: "prune", type: "pruning", title: "Aujourd’hui, taille le pêcher.", instruction: "Il donne sur les rameaux de l’an dernier : raccourcis les vieux rameaux pour en faire pousser des neufs.", minutes: 10, months: [2, 3] }),
+      customTask({ id: "thin-fruits", type: "pruning", title: "Aujourd’hui, éclaircis les pêches.", instruction: "Garde une petite pêche tous les 15 cm de rameau et enlève les autres : elles seront plus grosses.", minutes: 5, months: [5, 6] }),
+    ],
+    varieties: [
+      { id: "bonanza", name: "Bonanza", note: "Le pêcher nain classique, 1,50 m au plus, autofertile, pêches jaunes dès août." },
+      { id: "crimson-bonfire", name: "Crimson Bonfire", note: "Feuillage pourpre décoratif, autofertile, pêches à chair jaune en août-septembre." },
+      { id: "peach-me-red", name: "Peach Me Red", note: "Pensé pour le pot : sans taille, pêches de taille normale dès la 1ʳᵉ année, très rustique." },
+    ],
+  }),
+  plant({
+    id: "dwarf-cherry", name: "Cerisier nain", label: "le cerisier", gender: "m", emoji: "🍒", category: "fruit-tree",
+    sunlight: ["sunny"], minSpace: "terrace", difficulty: "medium", perennial: true, melliferous: true, goals: ["bees"], potLiters: 70,
+    pitch: "Des cerises cueillies sur ta terrasse, et un nuage de fleurs blanches au printemps.",
+    sowMonths: [], plantMonths: [3, 4, 10, 11], harvestMonths: [6, 7],
+    harvestTip: "Cueille les cerises bien colorées avec leur queue, par temps sec, et mange-les vite.",
+    care: { ...REGULAR, wateringIntervalHours: 72, heatThresholdC: 32, frostThresholdC: -10, frostSensitive: false },
+    wateringMonths: [3, 4, 5, 6, 7, 8, 9, 10],
+    extraTasks: [
+      customTask({ id: "net", type: "protection", title: "Aujourd’hui, pose un filet sur le cerisier.", instruction: "Quand les cerises commencent à rougir, couvre l’arbre d’un filet contre les oiseaux ; retire-le après la récolte.", minutes: 10, months: [5, 6] }),
+      customTask({ id: "prune", type: "pruning", title: "Aujourd’hui, taille le cerisier.", instruction: "Après la récolte, raccourcis un peu les pousses trop longues, sans grosse coupe ni taille d’hiver.", minutes: 10, months: [7, 8] }),
+    ],
+    varieties: [
+      { id: "garden-bing", name: "Garden Bing", note: "Nain autofertile d’environ 1,50 m, grosses cerises rouge foncé en juin : fait pour un bac." },
+      { id: "cherry-me", name: "Cherry Me", note: "Burlat nain autofertile, cerises précoces dès la mi-juin." },
+      { id: "sylvia", name: "Sylvia", note: "Colonnaire autofertile, 50 cm de large seulement, cerises croquantes en juillet." },
+    ],
+  }),
+  plant({
+    id: "kumquat", name: "Kumquat", label: "le kumquat", gender: "m", emoji: "🍊", category: "fruit-tree",
+    sunlight: ["sunny"], minSpace: "balcony", difficulty: "medium", perennial: true, melliferous: true, goals: [], potLiters: 40,
+    pitch: "Un petit oranger couvert de fruits en plein hiver, qui se croquent avec la peau.",
+    sowMonths: [], plantMonths: [4, 5, 6, 7, 8], harvestMonths: [11, 12, 1, 2, 3],
+    harvestTip: "Cueille les kumquats bien orange avec un sécateur et croque-les entiers, peau comprise.",
+    care: { ...REGULAR, wateringIntervalHours: 72, heatThresholdC: 35, frostThresholdC: -2, frostSensitive: true },
+    wateringMonths: WHOLE_YEAR,
+    wateringInstruction: "Arrose quand la terre est sèche sur 3 cm, puis vide la soucoupe ; l’hiver à l’abri, bien moins souvent.",
+    extraTasks: [
+      customTask({ id: "shelter", type: "protection", title: "Aujourd’hui, abrite le kumquat.", instruction: "Avant les nuits froides, rentre-le dans une pièce lumineuse et fraîche (5 à 12 °C), loin des radiateurs.", minutes: 10, months: [10, 11, 12, 1, 2, 3, 4] }),
+      customTask({ id: "prune", type: "pruning", title: "Aujourd’hui, taille le kumquat.", instruction: "Après la récolte, coupe le bois mort et les branches mal placées.", minutes: 5, months: [3, 4] }),
+    ],
+    varieties: [
+      { id: "nagami", name: "Nagami", note: "Le plus vendu : petits fruits ovales acidulés, à croquer avec la peau." },
+      { id: "marumi", name: "Marumi", note: "Fruits ronds plus doux, port compact, un peu plus résistant au froid que Nagami." },
+      { id: "limequat", name: "Limequat", note: "Croisement de lime et de kumquat : petits fruits au goût de citron vert." },
+    ],
+  }),
+  plant({
+    id: "pomegranate", name: "Grenadier", label: "le grenadier", gender: "m", emoji: "🪴", category: "fruit-tree",
+    sunlight: ["sunny"], minSpace: "terrace", difficulty: "medium", perennial: true, melliferous: true, goals: [], potLiters: 60,
+    pitch: "Des fleurs rouge orangé tout l’été, puis des grenades si l’été est chaud.",
+    sowMonths: [], plantMonths: [3, 4, 5, 10], harvestMonths: [9, 10, 11],
+    harvestTip: "Cueille la grenade au sécateur quand elle sonne creux ou commence à se fendre, avant les gelées.",
+    care: { ...DROUGHT, heatThresholdC: 40, frostThresholdC: -5, frostSensitive: true },
+    wateringMonths: [4, 5, 6, 7, 8, 9],
+    wateringInstruction: "Arrose quand la surface est sèche, environ deux fois par semaine l’été : il supporte un peu de sécheresse.",
+    extraTasks: [
+      customTask({ id: "shelter", type: "protection", title: "Aujourd’hui, abrite le grenadier.", instruction: "Avant les gelées, rentre-le au frais et au clair, hors gel (véranda, garage éclairé). Il perd ses feuilles : arrose très peu.", minutes: 10, months: [10, 11, 12, 1, 2, 3, 4] }),
+      customTask({ id: "prune", type: "pruning", title: "Aujourd’hui, taille le grenadier.", instruction: "En fin d’hiver, enlève le bois mort et éclaircis le centre, sans raccourcir les rameaux qui porteront les fruits.", minutes: 10, months: [2, 3] }),
+    ],
+    varieties: [
+      { id: "provence", name: "Provence", note: "Le grenadier fruitier le plus planté en France, le plus rustique ; pousse lentement et tient des années en bac." },
+      { id: "mollar-de-elche", name: "Mollar de Elche", note: "Grenades douces à pépins tendres, en octobre-novembre ; à abriter l’hiver." },
+      { id: "nana", name: "Nana", note: "Grenadier nain d’un mètre à fleurs orange tout l’été ; ses petits fruits sont décoratifs." },
+    ],
+  }),
 ];
 
 const BY_ID = new Map(PLANT_CATALOG.map((entry) => [entry.id, entry]));
@@ -1717,6 +1833,12 @@ const SEARCH_ALIASES: Record<string, string[]> = {
   hellebore: ["rose de noël"],
   houseleek: ["sempervivum", "plante grasse", "succulente"],
   sedum: ["orpin", "plante grasse", "succulente"],
+  "olive-tree": ["olive", "arbre"],
+  "columnar-apple": ["pomme", "colonnaire", "arbre"],
+  "dwarf-peach": ["pêche", "arbre"],
+  "dwarf-cherry": ["cerise", "arbre"],
+  kumquat: ["agrume", "orange"],
+  pomegranate: ["grenade", "arbre"],
 };
 
 export function searchCatalog(query: string, category?: PlantCategory): CatalogPlant[] {

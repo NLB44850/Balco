@@ -792,3 +792,46 @@ rempotage `repotting.ts` (bulbes : même pot, terre neuve ; tulipes : bulbes neu
 - Plantation : mars–mai, sept.–oct. · Floraison : août–oct. · confiance moyenne
 - Note : Hylotelephium spectabile ; variété rampante conseillée Angelina (Sedum spurium, envahissant en Suisse, écarté).
 - Sources : [jardiner-malin.fr](https://www.jardiner-malin.fr/fiche/orpin-sedum-spectabile.html), [jardiner-malin.fr](https://www.jardiner-malin.fr/fiche/sedum.html), [truffaut.com](https://www.truffaut.com/orpin-herbstfreude-godet-5-20-cm.html), [natureetdecouvertes.com](https://www.natureetdecouvertes.com/jardin/decoration-jardin/plantes-exterieur/6-x-orpin-remarquable-sedum-spectabile-iceberg-godet-9x9-cm-93362530)
+
+# Catalogue balcon et terrasse, livraison 2 (21/10) : arbres fruitiers
+
+Même méthode (recherche web, 2 sources au moins par mois gardé). Un arbre en conteneur se plante presque toute
+l'année hors gel et canicule : les mois retenus sont les meilleures périodes citées. Seuils de gel en pot, délais
+avant la première récolte et rythmes d'arrosage : estimations prudentes (aucune source ne les chiffre pour un pot).
+Nouvelle catégorie « Arbres fruitiers » (`fruit-tree`), où passent aussi le citronnier et le figuier nain.
+
+## Olivier
+
+- Plantation : avr.–juin · Récolte : oct.–déc. · Floraison : avr.–juin · confiance moyenne
+- Note : récolte sept.–déc. (Jardiner malin) ou nov.–févr. (Truffaut) ; à Paris l'arbre est à l'abri en janvier-février, d'où oct.–déc. ; production aléatoire au nord du Midi. Rustique en pot vers -5 °C (abri quand le froid dure). Autofertilité débattue : un seul arbre donne peu d'olives.
+- Sources : [jardiner-malin.fr](https://www.jardiner-malin.fr/fiche/olivier.html), [jardiner-malin.fr](https://www.jardiner-malin.fr/fiche/recolte-olives.html), [truffaut.com](https://www.truffaut.com/olivier-olea-europeae-style-sicile-pot-25l-1125383.html), [habitatpresto.com](https://www.habitatpresto.com/mag/jardin/quand-comment-planter-olivier)
+
+## Pommier colonnaire
+
+- Plantation : mars–avr., oct.–nov. · Récolte : sept.–oct. · Floraison : avr.–mai · confiance moyenne
+- Note : la plupart des colonnaires (Rondo) veulent un 2ᵉ pommier en fleur en même temps ; Red Spur écarté (pas colonnaire).
+- Sources : [jardiner-malin.fr](https://www.jardiner-malin.fr/fiche/pommier-varietes.html), [promessedefleurs.ie](https://promessedefleurs.ie/fruit-trees/fruit-trees-by-variety/apple-trees/columnar-apple-tree-ballerina-polka-malus-domestica.html), [bricomarche.com](https://www.bricomarche.com/p/pommier-red-sensation-7.5l/3505391109006), [truffaut.com](https://www.truffaut.com/comment-planter-arbre-fruitier.html)
+
+## Pêcher nain
+
+- Plantation : févr.–avr., oct.–nov. · Récolte : juil.–sept. · Floraison : mars–avr. · confiance moyenne
+- Note : surtout des fiches Truffaut (deux variétés) ; cloque : bouillie bordelaise à la chute des feuilles puis avant le gonflement des bourgeons (cuivre autorisé en agriculture biologique, en dose limitée) ; Diamond écarté (aucune source).
+- Sources : [truffaut.com](https://www.truffaut.com/pecher-nain-bonanza-georges-delbard-pot-de-7-5l-10l-1-4-de-tige-tronc-de-30-40cm.html), [truffaut.com](https://www.truffaut.com/pecher-nain-crimson-bonfire-pot-10l-1091541.html), [hornbach.ch](https://www.hornbach.ch/projets/pecher/), [seloger.com](https://edito.seloger.com/materiaux-equipements/autour-jardin/balcon-fruitiers-nains-adopter-cet-hiver-recoltes-genereuses_4), [jardiner-malin.fr](https://www.jardiner-malin.fr/fiche/cloque-du-pecher.html)
+
+## Cerisier nain
+
+- Plantation : mars–avr., oct.–nov. · Récolte : juin–juil. · Floraison : mars–avr. · confiance moyenne
+- Note : variétés autofertiles seulement (Garden Bing, Cherry Me, Sylvia) ; Spur Burlat et la plupart des bigarreaux veulent un 2ᵉ cerisier. Fleurs détruites vers -2 °C (voile si gel tardif). Taille après la récolte, jamais l'hiver.
+- Sources : [promessedefleurs.com](https://www.promessedefleurs.com/fruitiers/fruitiers-par-variete/cerisier/cerisier-nain-garden-bing.html), [promessedefleurs.com](https://www.promessedefleurs.com/fruitiers/fruitiers-par-variete/cerisier/cerisier-colonnaire-sylvia-cerisier-nain.html), [truffaut.com](https://www.truffaut.com/cerisier-nain-royale-pot-10l-542762.html), [jardiner-malin.fr](https://www.jardiner-malin.fr/fiche/cerisier-en-pot.html)
+
+## Kumquat
+
+- Plantation : avr.–août · Récolte : nov.–mars · Floraison : avr.–août · confiance moyenne
+- Note : -2 °C en pot (Truffaut), fruits abîmés dès -4 °C ; rentré vers octobre, hivernage entre 5 et 12 °C (les sources vont de 4 à 12 °C) ; seuil de nuit de 3 °C choisi par prudence (estimation).
+- Sources : [truffaut.com](https://www.truffaut.com/kumquat-plantation-entretien-recolte.html), [gammvert.fr](https://www.gammvert.fr/conseils-idees/quelle-est-la-saison-du-kumquat), [promessedefleurs.com](https://www.promessedefleurs.com/conseil-plantes-jardin/fichefamille/kumquat-plantation-culture-et-recolte/), [jardiner-malin.fr](https://www.jardiner-malin.fr/fiche/kumquat.html)
+
+## Grenadier
+
+- Plantation : mars–mai, oct. · Récolte : sept.–nov. · Floraison : mai–août · confiance moyenne
+- Note : à Paris, les grenades mûrissent mal les étés frais (Nana : fruits décoratifs) ; rentré aux premières nuits de gel (estimation), hivernage hors gel au frais et au clair.
+- Sources : [promessedefleurs.com](https://www.promessedefleurs.com/conseil-plantes-jardin/fichefamille/grenadier-a-fruits/), [jardiner-malin.fr](https://www.jardiner-malin.fr/fiche/grenadier.html), [gerbeaud.com](https://www.gerbeaud.com/jardin/fiches/grenadier.php), [aujardin.info](https://www.aujardin.info/plantes/grenadier.php)

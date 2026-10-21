@@ -64,5 +64,13 @@ de droits avec son crédit.
   planter, et toujours « 📅 Plantation » pour un bulbe (replanté à l'automne) ; `startPills` (lib/plants/guide.ts).
 - 21/10 : **livraison 1 validée sur son téléphone** (« c'est tout bon »). PR #66 à fusionner (le serveur ne connaît
   les nouvelles plantes qu'après la fusion).
+- 21/10 : PR #66 fusionnée dans `main`.
+- 21/10, **livraison 2 codée** (115 plantes) : olivier, pommier colonnaire, pêcher nain, cerisier nain, kumquat,
+  grenadier, dans la nouvelle catégorie « Arbres fruitiers » (`fruit-tree`) avec le citronnier et le figuier nain.
+  Kumquat et grenadier rangés parmi les frileuses (choix pour l'hiver « le rentrer », `cold-hardiness.ts`) ; olivier
+  rustique vers -5 °C (alertes gel, « Prépare l'abri » de novembre à février). Gestes : tailles, éclaircir les fruits
+  (pommier, pêcher), cloque du pêcher à la bouillie bordelaise (novembre et février), filet du cerisier. Pas de geste
+  « gel sur les fleurs » chaque jour en mars-avril (trop répétitif) : à faire plus tard par une alerte météo.
+  Sainte-Catherine propose aussi pommier, cerisier et pêcher. À valider sur son téléphone.
 - Idée notée : dire sur la fiche quand une plante est toxique (tulipes, narcisses, hellébore) pour les chats et les
   enfants ; pas de champ pour ça aujourd'hui.

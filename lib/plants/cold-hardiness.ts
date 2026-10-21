@@ -223,6 +223,15 @@ export const COLD_TENDER: Record<string, ColdTender> = {
     nightC: 5, indoor: "winters", place: "cool",
     note: "À rentrer dès 5 °C ; hiverne au clair, entre 5 et 12 °C, loin d'une pièce chauffée.",
     sources: ["https://www.jardiner-malin.fr/fiche/hivernage-citronnier.html", "https://www.truffaut.com/comment-planter-tailler-entretenir-citronnier.html", "https://www.jardiland.com/conseils-idees/hivernage-entretien-agrumes-hiver"],
+  },  kumquat: {
+    nightC: 3, nightEstimate: true, indoor: "winters", place: "cool",
+    note: "À rentrer avant les nuits froides (-2 °C en pot, fruits abîmés dès -4 °C) ; hiverne au clair, entre 5 et 12 °C.",
+    sources: ["https://www.truffaut.com/cultiver-kumquat.html", "https://www.promessedefleurs.com/conseil-plantes-jardin/ficheconseil/cultiver-le-kumquat/", "https://www.jardiner-malin.fr/fiche/resistance-au-gel-des-agrumes-en-hiver.html"],
+  },
+  pomegranate: {
+    nightC: 0, nightEstimate: true, indoor: "winters", place: "cool",
+    note: "À rentrer aux premières nuits de gel ; hiverne au frais et au clair, sans feuilles : un peu de froid l'aide à refleurir.",
+    sources: ["https://www.promessedefleurs.com/conseil-plantes-jardin/ficheconseil/grenadier-en-pot-plantation-taille-arrosage/", "https://www.gammvert.fr/conseils/conseils-de-jardinage/entretien-du-grenadier-en-bac"],
   },
 };
 
@@ -233,6 +242,7 @@ export const COLD_TENDER: Record<string, ColdTender> = {
 export const NOT_COLD_TENDER: Record<string, string> = {
   rosemary: "Rustique en pot jusque vers -10 °C, pot protégé (voile, pied paillé) : il reste dehors.",
   microgreens: "Semées toute l'année, à l'intérieur l'hiver : pas de fin de saison.",
+  "olive-tree": "Tient en pot jusque vers -5 °C : il reste dehors, pot isolé, et ne s'abrite que quand le froid dure.",
 };
 
 export const coldTenderOf = (entry: Pick<CatalogPlant, "id">): ColdTender | undefined => COLD_TENDER[entry.id];

@@ -1,6 +1,6 @@
 /**
  * L'herbier : une carte par plante du catalogue récoltée, ou fleurie, pour la première fois (« Ton herbier · 7 plantes
- * sur 109 »). Les récoltes déjà notées comptent dès son arrivée. Pour les fleurs, « Elle a fleuri » sur la fiche,
+ * sur 115 »). Les récoltes déjà notées comptent dès son arrivée. Pour les fleurs, « Elle a fleuri » sur la fiche,
  * seulement pendant ses mois de floraison. Les cartes vont dans le carnet des récompenses (`herbier:<id>`) : rien ne
  * se perd. Logique pure.
  */

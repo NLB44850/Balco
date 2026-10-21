@@ -685,4 +685,40 @@ export const PLANTING: Record<string, Planting> = {
     thinning: false, pinching: null,
     sources: ["https://www.jardiner-malin.fr/fiche/orpin-sedum-spectabile.html", "https://www.jardiner-malin.fr/fiche/sedum.html", "https://www.truffaut.com/orpin-herbstfreude-godet-5-20-cm.html"],
   },
+  "olive-tree": {
+    sowDepthCm: null, seedsPerHole: null, perPot: 1, spacingCm: 60,
+    germinationDays: null, harvestWeeksFromSowing: null, harvestWeeksFromPlanting: [26, 156],
+    thinning: false, pinching: null,
+    sources: ["https://www.jardiner-malin.fr/fiche/olivier.html", "https://www.jardiner-malin.fr/fiche/recolte-olives.html", "https://www.truffaut.com/olivier-olea-europeae-style-sicile-pot-25l-1125383.html"],
+  },
+  "columnar-apple": {
+    sowDepthCm: null, seedsPerHole: null, perPot: 1, spacingCm: 50,
+    germinationDays: null, harvestWeeksFromSowing: null, harvestWeeksFromPlanting: [20, 130],
+    thinning: false, pinching: null,
+    sources: ["https://www.jardiner-malin.fr/fiche/pommier-varietes.html", "https://promessedefleurs.ie/fruit-trees/fruit-trees-by-variety/apple-trees/columnar-apple-tree-ballerina-polka-malus-domestica.html", "https://www.bricomarche.com/p/pommier-red-sensation-7.5l/3505391109006"],
+  },
+  "dwarf-peach": {
+    sowDepthCm: null, seedsPerHole: null, perPot: 1, spacingCm: 60,
+    germinationDays: null, harvestWeeksFromSowing: null, harvestWeeksFromPlanting: [18, 80],
+    thinning: false, pinching: null,
+    sources: ["https://www.truffaut.com/pecher-nain-bonanza-georges-delbard-pot-de-7-5l-10l-1-4-de-tige-tronc-de-30-40cm.html", "https://www.truffaut.com/pecher-nain-crimson-bonfire-pot-10l-1091541.html", "https://www.hornbach.ch/projets/pecher/"],
+  },
+  "dwarf-cherry": {
+    sowDepthCm: null, seedsPerHole: null, perPot: 1, spacingCm: 60,
+    germinationDays: null, harvestWeeksFromSowing: null, harvestWeeksFromPlanting: [30, 90],
+    thinning: false, pinching: null,
+    sources: ["https://www.promessedefleurs.com/fruitiers/fruitiers-par-variete/cerisier/cerisier-nain-garden-bing.html", "https://www.promessedefleurs.com/fruitiers/fruitiers-par-variete/cerisier/cerisier-colonnaire-sylvia-cerisier-nain.html", "https://www.truffaut.com/cerisier-nain-royale-pot-10l-542762.html"],
+  },
+  "kumquat": {
+    sowDepthCm: null, seedsPerHole: null, perPot: 1, spacingCm: 60,
+    germinationDays: null, harvestWeeksFromSowing: null, harvestWeeksFromPlanting: [26, 40],
+    thinning: false, pinching: null,
+    sources: ["https://www.truffaut.com/kumquat-plantation-entretien-recolte.html", "https://www.gammvert.fr/conseils-idees/quelle-est-la-saison-du-kumquat", "https://www.promessedefleurs.com/conseil-plantes-jardin/fichefamille/kumquat-plantation-culture-et-recolte/"],
+  },
+  "pomegranate": {
+    sowDepthCm: null, seedsPerHole: null, perPot: 1, spacingCm: 60,
+    germinationDays: null, harvestWeeksFromSowing: null, harvestWeeksFromPlanting: [70, 130],
+    thinning: false, pinching: null,
+    sources: ["https://www.promessedefleurs.com/conseil-plantes-jardin/fichefamille/grenadier-a-fruits/", "https://www.jardiner-malin.fr/fiche/grenadier.html", "https://www.gerbeaud.com/jardin/fiches/grenadier.php"],
+  },
 };

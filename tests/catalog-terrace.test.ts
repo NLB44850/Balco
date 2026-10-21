@@ -3,8 +3,9 @@ import { upcomingHarvests } from "../lib/garden/progress";
 import { resolvePlants } from "../lib/garden/garden-logic";
 import { restUntil } from "../lib/garden/off-season";
 import { calendarActivities } from "../lib/plants/calendar";
-import { getCatalogPlant, hasHarvest, PLANT_CATALOG } from "../lib/plants/catalog";
+import { CATEGORY_LABELS, getCatalogPlant, hasHarvest, PLANT_CATALOG, searchCatalog } from "../lib/plants/catalog";
 import { bulbOf, guideModelFor, startPills } from "../lib/plants/guide";
+import { canComeIndoors, isColdTender } from "../lib/plants/cold-hardiness";
 
 /** Chantier « Catalogue balcon et terrasse », livraison 1 : bulbes, fleurs d'hiver, plantes grasses. */
 const DELIVERY_1 = ["tulip", "daffodil", "muscari", "crocus", "winter-heath", "hellebore", "houseleek", "sedum"];
@@ -62,5 +63,35 @@ describe("catalogue balcon et terrasse : livraison 1", () => {
     expect(startPills(getCatalogPlant("basil")!, true)[0]).toMatch(/^📅  Semis /u);
     expect(startPills(getCatalogPlant("basil")!, false)).toEqual([]);
     expect(startPills(getCatalogPlant("hellebore")!, false)).toEqual([]);
+  });
+});
+
+describe("catalogue balcon et terrasse : livraison 2, arbres fruitiers", () => {
+  const TREES = ["olive-tree", "columnar-apple", "dwarf-peach", "dwarf-cherry", "kumquat", "pomegranate"];
+
+  it("une catégorie « Arbres fruitiers », avec le citronnier et le figuier", () => {
+    expect(CATEGORY_LABELS["fruit-tree"]).toBe("Arbres fruitiers");
+    expect(searchCatalog("", "fruit-tree").map((entry) => entry.id).sort()).toEqual([...TREES, "lemon-tree", "dwarf-fig"].sort());
+    for (const id of TREES) {
+      const entry = getCatalogPlant(id)!;
+      expect(entry.perennial, id).toBe(true);
+      expect(hasHarvest(entry), id).toBe(true);
+      expect(guideModelFor(entry, entry.plantMonths[0]), id).toBe("perennial-pot");
+    }
+  });
+
+  it("kumquat et grenadier se rentrent l'hiver ; l'olivier reste dehors, abrité quand le froid dure", () => {
+    for (const id of ["kumquat", "pomegranate"]) {
+      expect(isColdTender(getCatalogPlant(id)!), id).toBe(true);
+      expect(canComeIndoors(getCatalogPlant(id)!), id).toBe(true);
+    }
+    expect(isColdTender(getCatalogPlant("olive-tree")!)).toBe(false);
+    expect(getCatalogPlant("olive-tree")!.tasks.some((task) => task.id === "shelter")).toBe(true);
+  });
+
+  it("se trouvent par le nom de leur fruit", () => {
+    expect(searchCatalog("cerise").map((entry) => entry.id)).toContain("dwarf-cherry");
+    expect(searchCatalog("grenade").map((entry) => entry.id)).toContain("pomegranate");
+    expect(searchCatalog("pomme").map((entry) => entry.id)).toContain("columnar-apple");
   });
 });

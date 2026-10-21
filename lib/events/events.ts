@@ -75,7 +75,7 @@ export const SAINTE_CATHERINE: SeasonalEvent = {
     mode: "plant",
     months: [11],
     listTitle: "Ce qui se plante maintenant",
-    preferred: ["dwarf-raspberry", "redcurrant", "blackcurrant", "blueberry", "thornless-blackberry", "kiwiberry", "garlic", "viola", "wild-garlic"],
+    preferred: ["dwarf-raspberry", "redcurrant", "blackcurrant", "blueberry", "columnar-apple", "dwarf-cherry", "dwarf-peach", "thornless-blackberry", "kiwiberry", "garlic", "viola", "wild-garlic"],
     max: 4,
   },
   protection: {

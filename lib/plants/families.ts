@@ -45,7 +45,7 @@ const BY_FAMILY: Record<Exclude<PlantFamily, "other">, string[]> = {
   amaranthaceae: ["spinach", "chard", "beetroot", "strawberry-spinach", "orach"],
   alliaceae: ["chives", "wild-garlic", "spring-onion", "garlic", "perpetual-leek"],
   lamiaceae: ["basil", "mint", "thyme", "rosemary", "sage", "oregano", "lemon-balm", "savory", "shiso", "hyssop", "agastache", "pineapple-sage", "lavender", "crosne"],
-  rosaceae: ["strawberry", "woodland-strawberry", "dwarf-raspberry", "thornless-blackberry"],
+  rosaceae: ["strawberry", "woodland-strawberry", "dwarf-raspberry", "thornless-blackberry", "columnar-apple", "dwarf-peach", "dwarf-cherry"],
   boraginaceae: ["borage", "phacelia", "oyster-plant"],
   verbenaceae: ["lemon-verbena", "tall-verbena"],
 };
