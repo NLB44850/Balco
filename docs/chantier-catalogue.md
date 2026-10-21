@@ -59,5 +59,8 @@ de droits avec son crédit.
   que le serveur n'a pas reste sur le téléphone et repart à la synchro suivante (le serveur ne supprime jamais de
   plante). La double vibration est celle de « succès » d'Android, la même partout dans l'app. Fiche du catalogue :
   « 🌸 Floraison » pour les fleurs.
+- 21/10, son retour : « les tulipes restent » (synchro OK). Puis « comment savoir quand les planter ? Il n'y a que
+  la floraison ». Ajouté : pastilles « 📅 Semis … » / « 📅 Plantation … » sur la fiche tant que la plante est à
+  planter, et toujours « 📅 Plantation » pour un bulbe (replanté à l'automne) ; `startPills` (lib/plants/guide.ts).
 - Idée notée : dire sur la fiche quand une plante est toxique (tulipes, narcisses, hellébore) pour les chats et les
   enfants ; pas de champ pour ça aujourd'hui.

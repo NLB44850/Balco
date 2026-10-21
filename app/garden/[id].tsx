@@ -45,7 +45,7 @@ import { addSnooze, wakeSnoozeFor } from "@/lib/reminders/reminder-actions";
 import { saveReminderSnoozes } from "@/lib/reminders/local-notifications";
 import { usePlantPhotos } from "@/lib/garden/photos-context";
 import { CATEGORY_LABELS, formatMonthRange } from "@/lib/plants/catalog";
-import { guideLinkText } from "@/lib/plants/guide";
+import { guideLinkText, startPills } from "@/lib/plants/guide";
 import { REPOTTING } from "@/lib/plants/repotting";
 import { now as clockNow } from "@/lib/clock";
 import { bloomEvent, canMarkBloom, herbariumKey, isFlower } from "@/lib/garden/herbarium";
@@ -295,6 +295,7 @@ export default function PlantScreen() {
               <Text style={[styles.factText, { color: potShown.chosen ? colors.foreground : colors.primary }]}>🪴  {potShown.text}</Text>
             </Pressable>
             <View style={[styles.fact, { backgroundColor: colors.surface }]}><Text style={[styles.factText, { color: colors.foreground }]}>🌱  {growingSince(plant.addedAt, now)}</Text></View>
+            {startPills(entry, Boolean(plant.toPlant)).map((pill) => <View key={pill} style={[styles.fact, { backgroundColor: colors.surface }]}><Text style={[styles.factText, { color: colors.foreground }]}>{pill}</Text></View>)}
             {entry.harvestMonths.length > 0 && <View style={[styles.fact, { backgroundColor: colors.surface }]}><Text style={[styles.factText, { color: colors.foreground }]}>{isFlower(entry) ? "🌸  Floraison" : "🧺  Récolte"} {formatMonthRange(entry.harvestMonths)}</Text></View>}
           </View>
 

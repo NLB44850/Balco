@@ -4,7 +4,7 @@ import { resolvePlants } from "../lib/garden/garden-logic";
 import { restUntil } from "../lib/garden/off-season";
 import { calendarActivities } from "../lib/plants/calendar";
 import { getCatalogPlant, hasHarvest, PLANT_CATALOG } from "../lib/plants/catalog";
-import { bulbOf, guideModelFor } from "../lib/plants/guide";
+import { bulbOf, guideModelFor, startPills } from "../lib/plants/guide";
 
 /** Chantier « Catalogue balcon et terrasse », livraison 1 : bulbes, fleurs d'hiver, plantes grasses. */
 const DELIVERY_1 = ["tulip", "daffodil", "muscari", "crocus", "winter-heath", "hellebore", "houseleek", "sedum"];
@@ -54,5 +54,13 @@ describe("catalogue balcon et terrasse : livraison 1", () => {
     expect(getCatalogPlant("hellebore")!.harvestMonths).toContain(1);
     expect(getCatalogPlant("winter-heath")!.harvestMonths).toContain(1);
     expect(restUntil(getCatalogPlant("hellebore")!, 1)).toBeNull();
+  });
+
+  it("la fiche dit quand la mettre en terre : à planter, ou bulbe à replanter (retour du 21/10)", () => {
+    expect(startPills(getCatalogPlant("tulip")!, false)).toEqual(["📅  Plantation septembre–décembre"]);
+    expect(startPills(getCatalogPlant("tulip")!, true)).toEqual(["📅  Plantation septembre–décembre"]);
+    expect(startPills(getCatalogPlant("basil")!, true)[0]).toMatch(/^📅  Semis /u);
+    expect(startPills(getCatalogPlant("basil")!, false)).toEqual([]);
+    expect(startPills(getCatalogPlant("hellebore")!, false)).toEqual([]);
   });
 });

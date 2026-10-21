@@ -5,7 +5,7 @@
  * (lib/plants/planting.ts). Logique pure.
  */
 import type { IllustrationId } from "./illustration-names";
-import { MONTH_LONG, type CatalogPlant } from "./catalog";
+import { formatMonthRange, MONTH_LONG, type CatalogPlant } from "./catalog";
 import { sowsOnWindowsill } from "./indoor";
 import { PLANTING, type Planting } from "./planting";
 import { ofLabel, startActivity } from "./calendar";
@@ -64,6 +64,19 @@ const BULBS: Record<string, { buy: string; depthCm: number; tip: string }> = {
 
 export function bulbOf(entry: CatalogPlant) {
   return BULBS[entry.id] ?? null;
+}
+
+/**
+ * Les pastilles « quand la mettre en terre » de la fiche (retour du 21/10 : « comment savoir quand planter les
+ * tulipes ? ») : semis et plantation tant qu'elle est à planter ; ensuite seulement pour un bulbe, qu'on replante à
+ * l'automne. Les autres, déjà en terre, n'en ont plus besoin.
+ */
+export function startPills(entry: CatalogPlant, toPlant: boolean): string[] {
+  if (!toPlant && !BULBS[entry.id]) return [];
+  return [
+    ...(toPlant && entry.sowMonths.length > 0 ? [`📅  Semis ${formatMonthRange(entry.sowMonths)}`] : []),
+    ...(entry.plantMonths.length > 0 ? [`📅  Plantation ${formatMonthRange(entry.plantMonths)}`] : []),
+  ];
 }
 
 export function plantingOf(entry: CatalogPlant): Planting {
