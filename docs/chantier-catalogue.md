@@ -62,5 +62,7 @@ de droits avec son crédit.
 - 21/10, son retour : « les tulipes restent » (synchro OK). Puis « comment savoir quand les planter ? Il n'y a que
   la floraison ». Ajouté : pastilles « 📅 Semis … » / « 📅 Plantation … » sur la fiche tant que la plante est à
   planter, et toujours « 📅 Plantation » pour un bulbe (replanté à l'automne) ; `startPills` (lib/plants/guide.ts).
+- 21/10 : **livraison 1 validée sur son téléphone** (« c'est tout bon »). PR #66 à fusionner (le serveur ne connaît
+  les nouvelles plantes qu'après la fusion).
 - Idée notée : dire sur la fiche quand une plante est toxique (tulipes, narcisses, hellébore) pour les chats et les
   enfants ; pas de champ pour ça aujourd'hui.
