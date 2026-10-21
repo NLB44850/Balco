@@ -761,5 +761,33 @@
     "license": "CC BY 4.0",
     "licenseUrl": "https://creativecommons.org/licenses/by/4.0",
     "page": "https://commons.wikimedia.org/wiki/File:Erica_carnea_RF.jpg"
+  },
+  "dwarf-peach": {
+    "title": "File:Peach tree branch with fruits (2).jpg",
+    "author": "Harry Van den Bulck",
+    "license": "CC BY-SA 4.0",
+    "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0",
+    "page": "https://commons.wikimedia.org/wiki/File:Peach_tree_branch_with_fruits_(2).jpg"
+  },
+  "kumquat": {
+    "title": "File:Kumquat from Spain.jpg",
+    "author": "Ivar Leidus",
+    "license": "CC BY-SA 4.0",
+    "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0",
+    "page": "https://commons.wikimedia.org/wiki/File:Kumquat_from_Spain.jpg"
+  },
+  "olive-tree": {
+    "title": "File:'Olea europaea' Olive at Capel Manor College Gardens Enfield London England.jpg",
+    "author": "Acabashi",
+    "license": "CC BY-SA 4.0",
+    "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0",
+    "page": "https://commons.wikimedia.org/wiki/File:%27Olea_europaea%27_Olive_at_Capel_Manor_College_Gardens_Enfield_London_England.jpg"
+  },
+  "pomegranate": {
+    "title": "File:Granado (Punica granatum), Mahdia, Túnez, 2016-09-03, DD 02.jpg",
+    "author": "Diego Delso",
+    "license": "CC BY-SA 4.0",
+    "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0",
+    "page": "https://commons.wikimedia.org/wiki/File:Granado_(Punica_granatum),_Mahdia,_T%C3%BAnez,_2016-09-03,_DD_02.jpg"
   }
 }

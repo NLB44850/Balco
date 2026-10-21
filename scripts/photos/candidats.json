@@ -4623,6 +4623,45 @@
       "license": "CC BY-SA 2.0",
       "licenseUrl": "https://creativecommons.org/licenses/by-sa/2.0",
       "file": "columnar-apple-1.jpg"
+    },
+    {
+      "title": "File:Red Apple.jpg",
+      "width": 2418,
+      "height": 2192,
+      "mime": "image/jpeg",
+      "thumb": "https://thumb.wikimedia.org/wikipedia/commons/thumb/1/15/Red_Apple.jpg/500px-Red_Apple.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
+      "page": "https://commons.wikimedia.org/wiki/File:Red_Apple.jpg",
+      "author": "Abhijit Tembhekar from Mumbai, India",
+      "license": "CC BY 2.0",
+      "licenseUrl": "https://creativecommons.org/licenses/by/2.0",
+      "file": "columnar-apple-2.jpg",
+      "query": "apples on apple tree Malus domestica fruit"
+    },
+    {
+      "title": "File:Tree with red apples in Barkedal 4.jpg",
+      "width": 3283,
+      "height": 3283,
+      "mime": "image/jpeg",
+      "thumb": "https://thumb.wikimedia.org/wikipedia/commons/thumb/1/19/Tree_with_red_apples_in_Barkedal_4.jpg/500px-Tree_with_red_apples_in_Barkedal_4.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
+      "page": "https://commons.wikimedia.org/wiki/File:Tree_with_red_apples_in_Barkedal_4.jpg",
+      "author": "W.carter",
+      "license": "CC0",
+      "licenseUrl": "http://creativecommons.org/publicdomain/zero/1.0/deed.en",
+      "file": "columnar-apple-3.jpg",
+      "query": "apples on apple tree Malus domestica fruit"
+    },
+    {
+      "title": "File:Apples on tree 2011 G1.jpg",
+      "width": 4700,
+      "height": 3400,
+      "mime": "image/jpeg",
+      "thumb": "https://thumb.wikimedia.org/wikipedia/commons/thumb/6/61/Apples_on_tree_2011_G1.jpg/500px-Apples_on_tree_2011_G1.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
+      "page": "https://commons.wikimedia.org/wiki/File:Apples_on_tree_2011_G1.jpg",
+      "author": "George Chernilevsky",
+      "license": "Public domain",
+      "licenseUrl": "",
+      "file": "columnar-apple-4.jpg",
+      "query": "apples on apple tree Malus domestica fruit"
     }
   ],
   "dwarf-peach": [
@@ -4699,6 +4738,45 @@
       "license": "CC BY-SA 3.0",
       "licenseUrl": "http://creativecommons.org/licenses/by-sa/3.0/",
       "file": "dwarf-cherry-3.jpg"
+    },
+    {
+      "title": "File:Bieberbach Kirschgarten Kirschen-20230709-RM-171017.jpg",
+      "width": 6893,
+      "height": 5594,
+      "mime": "image/jpeg",
+      "thumb": "https://thumb.wikimedia.org/wikipedia/commons/thumb/c/ca/Bieberbach_Kirschgarten_Kirschen-20230709-RM-171017.jpg/500px-Bieberbach_Kirschgarten_Kirschen-20230709-RM-171017.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
+      "page": "https://commons.wikimedia.org/wiki/File:Bieberbach_Kirschgarten_Kirschen-20230709-RM-171017.jpg",
+      "author": "Ermell",
+      "license": "CC BY-SA 4.0",
+      "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0",
+      "file": "dwarf-cherry-4.jpg",
+      "query": "ripe cherries on tree branch"
+    },
+    {
+      "title": "File:Calabura (318370528).jpg",
+      "width": 2816,
+      "height": 2112,
+      "mime": "image/jpeg",
+      "thumb": "https://thumb.wikimedia.org/wikipedia/commons/thumb/0/04/Calabura_%28318370528%29.jpg/500px-Calabura_%28318370528%29.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
+      "page": "https://commons.wikimedia.org/wiki/File:Calabura_(318370528).jpg",
+      "author": "Dinesh Valke from Thane, India",
+      "license": "CC BY-SA 2.0",
+      "licenseUrl": "https://creativecommons.org/licenses/by-sa/2.0",
+      "file": "dwarf-cherry-5.jpg",
+      "query": "ripe cherries on tree branch"
+    },
+    {
+      "title": "File:Black-African-Piglet.jpg",
+      "width": 3024,
+      "height": 4032,
+      "mime": "image/jpeg",
+      "thumb": "https://thumb.wikimedia.org/wikipedia/commons/thumb/2/29/Black-African-Piglet.jpg/500px-Black-African-Piglet.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
+      "page": "https://commons.wikimedia.org/wiki/File:Black-African-Piglet.jpg",
+      "author": "Otukei Moses",
+      "license": "CC BY-SA 4.0",
+      "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0",
+      "file": "dwarf-cherry-6.jpg",
+      "query": "ripe cherries on tree branch"
     }
   ],
   "kumquat": [
