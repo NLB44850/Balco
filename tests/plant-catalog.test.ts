@@ -26,7 +26,8 @@ describe("plant catalog integrity", () => {
     expect(new Set(taskIds).size).toBe(taskIds.length);
     expect(entry.tasks.some((task) => task.type === "watering")).toBe(true);
     const harvest = entry.tasks.find((task) => task.type === "harvest");
-    expect(harvest?.months).toEqual(entry.harvestMonths);
+    // Une plante d'ornement (`bloomOnly`) ne se cueille pas : ses mois de « récolte » sont sa floraison.
+    expect(harvest?.months).toEqual(entry.bloomOnly ? undefined : entry.harvestMonths);
 
     expect(entry.varieties.length).toBeGreaterThan(0);
     const varietyIds = entry.varieties.map((variety) => variety.id);
@@ -41,7 +42,7 @@ describe("plant catalog integrity", () => {
 
   it("shows the plant itself, or a plain plant or flower when no emoji exists (never an unrelated object)", () => {
     const generic = ["🌿", "🍃", "🌱", "🌾", "🥬", "🌸", "🌼", "🏵️", "🌺", "🌻", "🪴"];
-    const exact: Record<string, string> = { "cherry-tomato": "🍅", "dwarf-tomato": "🍅", chili: "🌶️", strawberry: "🍓", eggplant: "🍆", "sweet-pepper": "🫑", "mini-melon": "🍈", "round-carrot": "🥕", "spring-onion": "🧅", garlic: "🧄", potato: "🥔", blueberry: "🫐", zucchini: "🥒", "mini-cucumber": "🥒", cucamelon: "🥒", "dwarf-bean": "🫘", "pole-bean": "🫘", physalis: "🏮", "lemon-tree": "🍋", tomatillo: "🏮", "yardlong-bean": "🫘", "west-indian-gherkin": "🥒", "woodland-strawberry": "🍓", kiwiberry: "🥝", blackcurrant: "🫐" };
+    const exact: Record<string, string> = { "cherry-tomato": "🍅", "dwarf-tomato": "🍅", chili: "🌶️", strawberry: "🍓", eggplant: "🍆", "sweet-pepper": "🫑", "mini-melon": "🍈", "round-carrot": "🥕", "spring-onion": "🧅", garlic: "🧄", potato: "🥔", blueberry: "🫐", zucchini: "🥒", "mini-cucumber": "🥒", cucamelon: "🥒", "dwarf-bean": "🫘", "pole-bean": "🫘", physalis: "🏮", "lemon-tree": "🍋", tomatillo: "🏮", "yardlong-bean": "🫘", "west-indian-gherkin": "🥒", "woodland-strawberry": "🍓", kiwiberry: "🥝", blackcurrant: "🫐", tulip: "🌷", houseleek: "🌵" };
     for (const entry of PLANT_CATALOG) {
       expect(exact[entry.id] ?? generic, entry.id).toContain(entry.emoji);
     }

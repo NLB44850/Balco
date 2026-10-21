@@ -55,10 +55,10 @@ describe("Ce qui se plante maintenant", () => {
     expect(sunnyBalcony.some((entry) => entry.id === "strawberry")).toBe(false);
   });
 
-  it("sur un rebord de fenêtre ou en jardinière, ce qui y tient (violas, ail)", () => {
-    expect(eventPlantings(SAINTE_CATHERINE, { sunlight: "sunny", space: "windowsill" }).map((entry) => entry.id)).toEqual(["viola"]);
-    expect(eventPlantings(SAINTE_CATHERINE, { sunlight: "sunny", space: "planter" }).map((entry) => entry.id)).toEqual(["garlic", "viola"]);
-    expect(eventPlantings(SAINTE_CATHERINE, { sunlight: "shade", space: "planter" }).map((entry) => entry.id)).toEqual(["viola", "wild-garlic"]);
+  it("sur un rebord de fenêtre ou en jardinière, ce qui y tient (violas, ail, bruyère, bulbes)", () => {
+    expect(eventPlantings(SAINTE_CATHERINE, { sunlight: "sunny", space: "windowsill" }).map((entry) => entry.id)).toEqual(["viola", "winter-heath", "crocus", "muscari"]);
+    expect(eventPlantings(SAINTE_CATHERINE, { sunlight: "sunny", space: "planter" }).map((entry) => entry.id)).toEqual(["garlic", "viola", "winter-heath", "crocus"]);
+    expect(eventPlantings(SAINTE_CATHERINE, { sunlight: "shade", space: "planter" }).map((entry) => entry.id)).toEqual(["viola", "wild-garlic", "hellebore"]);
   });
 
   it("ne repropose pas une plante déjà en terre sur le balcon", () => {

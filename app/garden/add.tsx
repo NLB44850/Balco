@@ -148,7 +148,7 @@ export default function AddPlantScreen() {
     const created = await addPlant(catalogId, { toPlant: choice === "toPlant" });
     showToast({ text: plan ? toPlantText(entry, plan, pot) : installedText(entry, month, pot), onUndo: () => void removePlant(created.id) });
   };
-  // Des fonctions stables pour les lignes : seules les lignes qui changent se redessinent (101 lignes avec photo).
+  // Des fonctions stables pour les lignes : seules les lignes qui changent se redessinent (109 lignes avec photo).
   const addRef = useRef(add);
   addRef.current = add;
   const onAsk = useCallback((catalogId: string) => setAskId(catalogId), []);

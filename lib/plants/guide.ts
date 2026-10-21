@@ -55,6 +55,11 @@ const BULBS: Record<string, { buy: string; depthCm: number; tip: string }> = {
   oca: { buy: "Des tubercules d’oca", depthCm: 8, tip: "bourgeons vers le haut" },
   crosne: { buy: "Des tubercules de crosnes", depthCm: 5, tip: "couchés à plat" },
   dahlia: { buy: "Des tubercules de dahlia", depthCm: 8, tip: "vieilles tiges vers le haut" },
+  // Bulbes à fleurs (21/10) : profondeurs en pot de Gamm vert, Truffaut, Promesse de Fleurs (docs/sources-calendrier.md).
+  tulip: { buy: "Des bulbes de tulipes", depthCm: 12, tip: "pointe vers le haut" },
+  daffodil: { buy: "Des bulbes de narcisses", depthCm: 10, tip: "pointe vers le haut" },
+  muscari: { buy: "Des bulbes de muscaris", depthCm: 7, tip: "pointe vers le haut" },
+  crocus: { buy: "Des bulbes de crocus", depthCm: 7, tip: "pointe vers le haut" },
 };
 
 export function bulbOf(entry: CatalogPlant) {
@@ -288,6 +293,8 @@ function plantingSteps(entry: CatalogPlant, planting: Planting, model: GuideMode
 
 /** Rempoter : vérifier le signe, un pot à peine plus grand, démêler les racines, au même niveau qu'avant. */
 function repotSteps(entry: CatalogPlant, { repots = 0, potSize }: GuideOptions): GuideStep[] {
+  const bulbs = REPOTTING[entry.id]?.bulbs;
+  if (bulbs && BULBS[entry.id]) return bulbRepotSteps(entry, bulbs, BULBS[entry.id]);
   const next = nextPotFor(entry, potSize, repots);
   return [
     { illustration: "roots-out", text: "Regarde sous le pot si des racines sortent.", why: `Ou si l’eau ressort tout de suite : ${subjectPronoun(entry)} ${verb(entry, "manque", "manquent")} de place.` },
@@ -297,6 +304,20 @@ function repotSteps(entry: CatalogPlant, { repots = 0, potSize }: GuideOptions):
     { illustration: "place-plant", text: "Pose la motte au centre, au même niveau qu’avant.", why: "Mets un peu de terreau dessous pour la remonter." },
     { illustration: "firm-soil", text: "Ajoute du terreau autour, puis tasse avec les mains.", why: `Avec ${soilPhrase(entry)}.` },
     { illustration: "water-well", text: "Arrose bien, jusqu’à ce que l’eau coule dessous.", why: "La terre neuve se colle aux racines." },
+  ];
+}
+
+/** Bulbes : le même pot, une terre neuve, des bulbes neufs (tulipes) ou les plus gros gardés. */
+function bulbRepotSteps(entry: CatalogPlant, bulbs: "renew" | "divide", bulb: { depthCm: number; tip: string }): GuideStep[] {
+  return [
+    { illustration: "unpot", text: "Sors les bulbes du pot, feuilles bien sèches.", why: "Ils dorment : c’est le bon moment." },
+    bulbs === "renew"
+      ? { illustration: "bulb", text: "Prends des bulbes neufs pour ce pot.", why: "Les anciens fleurissent moins : plante-les en pleine terre si tu peux." }
+      : { illustration: "bulb", text: "Garde les plus gros bulbes, bien fermes.", why: "Jette les mous. Les petits peuvent aller dans un autre pot." },
+    { illustration: "fill-soil", text: "Remets du terreau neuf dans le même pot.", why: `Avec ${soilPhrase(entry)}.` },
+    { illustration: "bulb", text: `Enfonce-les à ${cm(bulb.depthCm)}, ${bulb.tip}.`, mistake: "Erreur à éviter : les planter à l’envers. Ils poussent mal." },
+    { illustration: "firm-soil", text: "Recouvre de terreau et tasse doucement." },
+    { illustration: "water-well", text: "Arrose une fois, puis peu jusqu’aux pousses.", why: "Trop d’eau les ferait pourrir." },
   ];
 }
 

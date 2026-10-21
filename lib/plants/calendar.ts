@@ -247,6 +247,8 @@ export function repotDescription(entry: CatalogPlant, repots: number, potSize?: 
   const when = `À faire en ${formatMonthRange(entry.repotMonths)}.`;
   if (next.tooSmall) return `Ton pot est trop petit pour ${byForm(entry, "lui", "elle", "eux", "elles")}. Prends un pot d’environ ${next.widthCm} cm de large, avec ${soilPhrase(entry)}. ${when}`;
   const sign = REPOTTING[entry.id]?.sign?.replace(/'/gu, "’") ?? genericRepotSign(entry);
+  // Bulbes : le même pot, une terre neuve.
+  if (REPOTTING[entry.id]?.bulbs) return `${sign} Replante-les dans le même pot, avec ${soilPhrase(entry)}. ${when}`;
   return `${sign} Prends un pot d’environ ${next.widthCm} cm de large, avec ${soilPhrase(entry)}. ${when}`;
 }
 

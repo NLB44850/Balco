@@ -637,4 +637,52 @@ export const PLANTING: Record<string, Planting> = {
     thinning: false, pinching: null,
     sources: ["https://www.promessedefleurs.com/conseil-plantes-jardin/fichefamille/murier-ronce-planter-tailler-et-entretenir/", "https://www.jardiner-malin.fr/fiche/mures-murier.html", "https://plantandstories.com/en/blogs/plantes-exterieur-jardin/murier-sans-epines-ronce-plantation-taille-recolte-guide", "https://lepotagerdupic.fr/cultiver-les-mures/"],
   },
+  "tulip": {
+    sowDepthCm: null, seedsPerHole: null, perPot: 12, spacingCm: 5,
+    germinationDays: null, harvestWeeksFromSowing: null, harvestWeeksFromPlanting: [18, 26],
+    thinning: false, pinching: null,
+    sources: ["https://www.gammvert.fr/conseils-idees/planter-des-tulipes", "https://www.jardiner-malin.fr/fiche/tulipe-bulbe.html", "https://www.truffaut.com/comment-quand-planter-bulbes.html"],
+  },
+  "daffodil": {
+    sowDepthCm: null, seedsPerHole: null, perPot: 10, spacingCm: 5,
+    germinationDays: null, harvestWeeksFromSowing: null, harvestWeeksFromPlanting: [16, 24],
+    thinning: false, pinching: null,
+    sources: ["https://www.jardiner-malin.fr/fiche/narcisse.html", "https://www.truffaut.com/narcisse-tete-a-tete-50-bulbes.html", "https://www.promessedefleurs.com/bulbes-de-printemps/narcisses/narcisses-botaniques/narcisse-tete-a-tete-p-421.html"],
+  },
+  "muscari": {
+    sowDepthCm: null, seedsPerHole: null, perPot: 15, spacingCm: 4,
+    germinationDays: null, harvestWeeksFromSowing: null, harvestWeeksFromPlanting: [20, 28],
+    thinning: false, pinching: null,
+    sources: ["https://www.truffaut.com/muscari-d-armenie-200-bulbes.html", "https://www.aujardin.info/plantes/muscari-armeniacum.php", "https://www.promessedefleurs.com/conseil-plantes-jardin/fichefamille/muscari-plantation-conseil-de-culture-et-dentretien/"],
+  },
+  "crocus": {
+    sowDepthCm: null, seedsPerHole: null, perPot: 15, spacingCm: 5,
+    germinationDays: null, harvestWeeksFromSowing: null, harvestWeeksFromPlanting: [16, 22],
+    thinning: false, pinching: null,
+    sources: ["https://www.promessedefleurs.com/conseil-plantes-jardin/ficheconseil/cultiver-crocus-en-pot/", "https://www.jardiner-malin.fr/fiche/crocus-chrysanthus-dore.html", "https://www.futura-sciences.com/maison/questions-reponses/jardinage-planter-reussir-bulbes-crocus-17401/"],
+  },
+  "winter-heath": {
+    sowDepthCm: null, seedsPerHole: null, perPot: 1, spacingCm: 30,
+    germinationDays: null, harvestWeeksFromSowing: null, harvestWeeksFromPlanting: [4, 12],
+    thinning: false, pinching: null,
+    sources: ["https://www.jardiner-malin.fr/fiche/erica-carnea.html", "https://www.truffaut.com/bruyeres-hiver-culture-entretien.html", "https://www.truffaut.com/erica-darleyensis-kramer-s-rote-ctr-1l-531314.html"],
+  },
+  "hellebore": {
+    sowDepthCm: null, seedsPerHole: null, perPot: 1, spacingCm: 40,
+    germinationDays: null, harvestWeeksFromSowing: null, harvestWeeksFromPlanting: [8, 16],
+    thinning: false, pinching: null,
+    sources: ["https://www.jardiner-malin.fr/fiche/hellebore-noir.html", "https://www.jardiner-malin.fr/fiche/hellebore-d-orient.html", "https://truffaut.com/hellebore-varietes-plantation-entretien.html"],
+  },
+  "houseleek": {
+    sowDepthCm: null, seedsPerHole: null, perPot: 3, spacingCm: 10,
+    germinationDays: null, harvestWeeksFromSowing: null, harvestWeeksFromPlanting: [52, 156],
+    thinning: false, pinching: null,
+    sources: ["https://www.truffaut.com/joubarbe-godet-9cm-202376.html", "https://www.truffaut.com/joubarbe-collection-pot-1l-828861.html", "https://www.jardiner-malin.fr/fiche/joubarbe.html"],
+  },
+  "sedum": {
+    sowDepthCm: null, seedsPerHole: null, perPot: 1, spacingCm: 30,
+    germinationDays: null, harvestWeeksFromSowing: null, harvestWeeksFromPlanting: [16, 24],
+    thinning: false, pinching: null,
+    sources: ["https://www.jardiner-malin.fr/fiche/orpin-sedum-spectabile.html", "https://www.jardiner-malin.fr/fiche/sedum.html", "https://www.truffaut.com/orpin-herbstfreude-godet-5-20-cm.html"],
+  },
 };
