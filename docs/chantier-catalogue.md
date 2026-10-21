@@ -52,6 +52,6 @@ de droits avec son crédit.
   plante : couper les fleurs fanées (bulbes), tailler la bruyère, vieilles feuilles de l'hellébore (avec des gants),
   rosette fanée de la joubarbe, tiges sèches du sédum. Photos par le bouton GitHub « Photos des plantes »
   (`.github/workflows/photos.yml`, se lance seul quand `scripts/photos/` change). Sainte-Catherine propose aussi
-  bruyère, crocus, muscaris, hellébore. À valider sur son téléphone.
+  bruyère, crocus, muscaris, hellébore. PR #66, à valider sur son téléphone.
 - Idée notée : dire sur la fiche quand une plante est toxique (tulipes, narcisses, hellébore) pour les chats et les
   enfants ; pas de champ pour ça aujourd'hui.
