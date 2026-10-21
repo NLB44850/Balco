@@ -23,8 +23,10 @@ de droits avec son crédit.
 
 1. **Trois nouvelles catégories** dans le catalogue : « Arbres fruitiers », « Grimpantes », « Arbustes et
    feuillages ». Bulbes et fleurs d'hiver vont dans « Fleurs », les légumes dans leurs catégories actuelles.
-2. **Plantes sans récolte ni floraison à suivre** (bambou, érable, graminée, joubarbe) : pas de geste « Récolte » ; la
-   pastille dit la belle saison (« Beau d'avril à novembre »).
+2. **Plantes qu'on ne cueille pas** (`bloomOnly` dans `lib/plants/catalog.ts`, `hasHarvest`) : pas de geste
+   « Récolte » chaque jour, ni dans Saisons, Ma semaine, les vacances, les consignes du voisin ou les questions de Nora ;
+   leurs mois de « récolte » sont la floraison (pastille « 🌸 Floraison » de la fiche, comme toutes les fleurs). Pour
+   le bambou, l'érable, la graminée (livraison 4) : la pastille dira la belle saison.
 3. **Bulbes** : plantés en automne, fleurs au printemps, puis « Laisse jaunir les feuilles » avant de couper. Tulipe :
    à replanter chaque automne en pot ; narcisse, muscari, crocus : reviennent chaque année.
 4. **Gros pots** (30 à 60 L) : la fiche rappelle le poids (calculateur « Poids de tes pots » déjà en place).
@@ -42,4 +44,14 @@ de droits avec son crédit.
 
 ## Avancement
 
-- 21/10 : plan proposé, en attente de sa validation.
+- 21/10 : plan validé (« OK, lance la livraison 1 »).
+- 21/10, **livraison 1 codée** (109 plantes) : tulipes, narcisses, muscaris, crocus, bruyère d'hiver, hellébore,
+  joubarbe, sédum d'automne. Sources dans `docs/sources-calendrier.md` (dernière partie). Bulbes : pas-à-pas « plante
+  un bulbe », arrosés seulement à la plantation et au printemps, au repos l'été ; tous les 2-3 ans (tulipes : chaque
+  automne, bulbes neufs) « Rempote… » ouvre un pas-à-pas propre aux bulbes (même pot, terre neuve). Un geste par
+  plante : couper les fleurs fanées (bulbes), tailler la bruyère, vieilles feuilles de l'hellébore (avec des gants),
+  rosette fanée de la joubarbe, tiges sèches du sédum. Photos par le bouton GitHub « Photos des plantes »
+  (`.github/workflows/photos.yml`, se lance seul quand `scripts/photos/` change). Sainte-Catherine propose aussi
+  bruyère, crocus, muscaris, hellébore. À valider sur son téléphone.
+- Idée notée : dire sur la fiche quand une plante est toxique (tulipes, narcisses, hellébore) pour les chats et les
+  enfants ; pas de champ pour ça aujourd'hui.
