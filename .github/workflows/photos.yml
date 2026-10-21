@@ -1,0 +1,55 @@
+# Photos d'exemple des plantes, depuis Wikimedia Commons (le réseau de la session Claude le bloque, le Codespace n'est
+# plus utilisé). Se lance tout seul quand une branche de travail modifie scripts/photos/ (nouvelle plante dans le
+# script, choix d'une photo dans choix.json) ; rien à faire à la main. Le script reprend là où il s'était arrêté :
+#   1. candidates des nouvelles plantes (petites photos dans scripts/photos/candidats/, que Claude regarde) ;
+#   2. photo choisie (choix.json) en bonne qualité dans assets/plants/, allégée, avec son crédit et sa vignette.
+# Le résultat est enregistré sur la même branche (un commit « Photos des plantes »).
+name: Photos des plantes
+
+on:
+  push:
+    branches-ignore: [main]
+    paths:
+      - scripts/photos/**
+      - .github/workflows/photos.yml
+
+permissions:
+  contents: write
+
+concurrency:
+  group: photos-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  photos:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
+      - name: Photos candidates des nouvelles plantes
+        run: node scripts/photos/telecharger-photos.mjs
+      - name: Autre recherche (recherches-bis.json)
+        run: node scripts/photos/telecharger-photos.mjs --encore
+      - name: Photos choisies
+        run: node scripts/photos/telecharger-photos.mjs --final
+      - name: Photos allégées, vignettes et index
+        run: |
+          for file in $(git ls-files --others --modified assets/plants/*.jpg); do
+            convert "$file" -resize '800x800>' -strip -quality 74 "$file"
+          done
+          node scripts/photos/generer-index.mjs
+      - name: Enregistrer sur la branche
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add scripts/photos assets/plants components/plant-stock-photos.ts
+          if git diff --cached --quiet; then echo "Rien de nouveau."; exit 0; fi
+          git commit -m "Photos des plantes"
+          for attempt in 1 2 3; do
+            git pull --rebase origin "$GITHUB_REF_NAME" && git push origin "HEAD:$GITHUB_REF_NAME" && exit 0
+            sleep 5
+          done
+          exit 1

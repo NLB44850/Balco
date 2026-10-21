@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 /**
  * Photos libres de droits des plantes du catalogue, depuis Wikimedia Commons.
- * À lancer dans le Codespace (qui a accès à Internet), depuis la racine du projet :
+ * Lancé par GitHub (.github/workflows/photos.yml) dès qu’une branche modifie scripts/photos/ ; à la main :
  *
  *   node scripts/photos/telecharger-photos.mjs          → 3 photos candidates par plante (petites),
  *                                                         dans scripts/photos/candidats/ + candidats.json
@@ -137,6 +137,15 @@ const PLANTS = {
   kiwiberry: "Actinidia arguta fruit",
   blackcurrant: "Ribes nigrum blackcurrant",
   "thornless-blackberry": "blackberries Rubus fruticosus fruit",
+  // Catalogue balcon et terrasse, livraison 1 (21/10) : bulbes, fleurs d'hiver, plantes grasses
+  tulip: "Tulipa gesneriana",
+  daffodil: "Narcissus Tete-a-tete",
+  muscari: "Muscari armeniacum",
+  crocus: "Crocus vernus flowers",
+  "winter-heath": "Erica carnea",
+  hellebore: "Helleborus niger",
+  houseleek: "Sempervivum tectorum",
+  sedum: "Hylotelephium spectabile",
 };
 
 // Planches botaniques, herbiers, cartes… : on veut une vraie photo de la plante.
