@@ -53,5 +53,11 @@ de droits avec son crédit.
   rosette fanée de la joubarbe, tiges sèches du sédum. Photos par le bouton GitHub « Photos des plantes »
   (`.github/workflows/photos.yml`, se lance seul quand `scripts/photos/` change). Sainte-Catherine propose aussi
   bruyère, crocus, muscaris, hellébore. PR #66, à valider sur son téléphone.
+- 21/10, son retour : « il ajoute la plante puis la retire, double vibration ». Cause : le serveur en ligne (pas
+  encore à jour avant la fusion) ignore une plante du catalogue qu'il ne connaît pas, et la synchro effaçait du
+  téléphone toute plante absente de la réponse du serveur. Corrigé (`applySnapshot`, `unsyncedPlants`) : une plante
+  que le serveur n'a pas reste sur le téléphone et repart à la synchro suivante (le serveur ne supprime jamais de
+  plante). La double vibration est celle de « succès » d'Android, la même partout dans l'app. Fiche du catalogue :
+  « 🌸 Floraison » pour les fleurs.
 - Idée notée : dire sur la fiche quand une plante est toxique (tulipes, narcisses, hellébore) pour les chats et les
   enfants ; pas de champ pour ça aujourd'hui.

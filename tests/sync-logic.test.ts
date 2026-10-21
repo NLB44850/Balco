@@ -110,6 +110,14 @@ describe("applying the server snapshot", () => {
     expect(newer.plants[0].winter).toBeUndefined();
   });
 
+  it("keeps a plant the server ignored (unknown catalog id on a server not yet updated, 21/10)", () => {
+    const mine = plant("tulip-1", "2026-10-21T10:00:00.000Z");
+    const applied = applySnapshot(snapshot({ plants: [plant("p1") as GardenPlant & { updatedAt: string }] }), emptyOutbox(), local({ plants: [mine] }));
+    expect(applied.plants.map((item) => item.id).sort()).toEqual(["p1", "tulip-1"]);
+    expect(applied.unsyncedPlants.map((item) => item.id)).toEqual(["tulip-1"]);
+    expect(applySnapshot(snapshot({ plants: [mine as GardenPlant & { updatedAt: string }] }), emptyOutbox(), local({ plants: [mine] })).unsyncedPlants).toEqual([]);
+  });
+
   it("drops what another device deleted", () => {
     const applied = applySnapshot(snapshot({ events: [event("kept")] }), emptyOutbox(), local({ events: [event("kept"), event("deleted-elsewhere")] }));
     expect(applied.events.map((item) => item.id)).toEqual(["kept"]);

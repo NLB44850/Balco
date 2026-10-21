@@ -367,6 +367,8 @@ export function GardenProvider({ children }: { children: ReactNode }) {
 
       const latestSettings = await loadLocalReminderSettings();
       const applied = applySnapshot(snapshot, outboxRef.current, localState(latestSettings));
+      // Gardées sur le téléphone, elles repartent avec la prochaine synchro (sans en lancer une : pas de boucle).
+      if (applied.unsyncedPlants.length > 0) setOutbox(applied.unsyncedPlants.reduce(recordPlant, outboxRef.current));
       // Rien de changé (le cas le plus courant) : ni réécriture du téléphone, ni nouveau calcul des écrans.
       if (!samePlants(applied.plants, plantsRef.current)) await savePlants(applied.plants);
       if (!sameEvents(applied.events, eventsRef.current)) await saveEvents(applied.events);
