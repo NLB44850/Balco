@@ -14,6 +14,8 @@ import {
   cancelDailyDigests,
   defaultLocalReminderSettings,
   loadLocalReminderSettings,
+  loadReminderSnoozes,
+  saveReminderSnoozes,
   saveLocalReminderSettings,
   subscribeReminderSettings,
 } from "@/lib/reminders/local-notifications";
@@ -53,7 +55,9 @@ import { eventAwards } from "@/lib/events/events";
 import { herbariumAwards } from "./herbarium";
 import { seasonAwards } from "./season-badges";
 import { BACKFILL_VERSION, backfillAwards, badgesEarnedNow, capAwards, mergeAwards, newAwards, unseenAwards, type Awards } from "./awards";
-import { now as clockNow } from "@/lib/clock";
+import { now as clockNow, simulatedClockDay, subscribeClock } from "@/lib/clock";
+import { loadDateSimulation } from "@/hooks/use-date-simulation";
+import { repairAwardDates, repairEventDate, repairPlantDates, repairSnoozeDates } from "./future-dates";
 import type { KnownPotSize, PotSize } from "@/lib/plants/pot-size";
 import type { WinterPlan } from "./winter-plan";
 import { getCatalogPlant } from "@/lib/plants/catalog";
@@ -424,6 +428,51 @@ export function GardenProvider({ children }: { children: ReactNode }) {
   useEffect(() => subscribeReminderSettings((_settings, source) => {
     if (source === "user") queue(markSettingsDirty);
   }), [queue]);
+
+  // Au vrai jour, les dates restées dans le futur (notées pendant une date simulée) reviennent au présent : au
+  // lancement et au retour de la simulation (lib/garden/future-dates.ts, retour du 20/10).
+  const repairFutureDates = useCallback(async () => {
+    if (simulatedClockDay() !== null) return;
+    const real = new Date();
+    const fixedEvents: MaintenanceEvent[] = [];
+    const nextEvents = eventsRef.current.map((event) => {
+      const fixed = repairEventDate(event, real);
+      if (fixed) fixedEvents.push(fixed);
+      return fixed ?? event;
+    });
+    if (fixedEvents.length > 0) {
+      await saveEvents(nextEvents);
+      queue((outbox) => fixedEvents.reduce(recordEvent, outbox));
+    }
+    const fixedPlants: GardenPlant[] = [];
+    const nextPlants = plantsRef.current.map((plant) => {
+      const fixed = repairPlantDates(plant, eventsRef.current, real);
+      if (!fixed) return plant;
+      // Daté après l'ancienne copie (même du futur) : la correction l'emporte aussi sur le serveur.
+      const stamped = { ...fixed, updatedAt: nextUpdatedAt(plant) };
+      fixedPlants.push(stamped);
+      return stamped;
+    });
+    if (fixedPlants.length > 0) {
+      await savePlants(nextPlants);
+      queue((outbox) => fixedPlants.reduce(recordPlant, outbox));
+    }
+    const fixedAwards = repairAwardDates(awardsRef.current.awards, real);
+    if (fixedAwards) {
+      await saveAwards({ ...awardsRef.current, awards: fixedAwards });
+      queue(markAwardsDirty);
+    }
+    const fixedSnoozes = repairSnoozeDates(await loadReminderSnoozes(), real);
+    if (fixedSnoozes) await saveReminderSnoozes(fixedSnoozes);
+  }, [queue, saveAwards, saveEvents, savePlants]);
+
+  useEffect(() => {
+    if (!loaded) return;
+    void loadDateSimulation().then(repairFutureDates);
+    return subscribeClock((day) => {
+      if (day === null) void repairFutureDates();
+    });
+  }, [loaded, repairFutureDates]);
 
   // --- Actions -----------------------------------------------------------------------
 

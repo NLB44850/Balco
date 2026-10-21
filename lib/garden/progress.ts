@@ -4,13 +4,17 @@
  * Logique pure.
  */
 import { MONTH_LONG, type Month } from "../plants/catalog";
-import { afterColon, capitalize, objectPronoun, stressedPronoun, subjectPronoun, verb } from "../plants/grammar";
+import { afterColon, agree, capitalize, objectPronoun, stressedPronoun, subjectPronoun, verb } from "../plants/grammar";
 import type { MaintenanceEvent } from "../reminders/reminder-engine";
 import { badgeTierKey, computeBadges, computeProgress, computeStats, TIER_NAMES, type Badge, dayKey, daysBetween, followedDays, isAvoidedWatering, plantDisplayName, wateringLitersOf, type ResolvedPlant } from "./garden-logic";
 import type { PlantPhoto } from "./photos";
 import { eventBadgeTitle, eventById } from "../events/events";
 import { getCatalogPlant } from "../plants/catalog";
 import { seasonBadgeTitle, seasonRuleById } from "./season-badges";
+import type { ClimateInfo } from "../plants/climate";
+import { isIndoors, waitsToComeIn } from "./indoors";
+import { offSeasonOf } from "./off-season";
+import { currentWinterPlan } from "./winter-plan";
 
 const DAY_MS = 86_400_000;
 
@@ -89,9 +93,29 @@ function monthsToHarvest(harvestMonths: Month[], month: Month) {
   return null;
 }
 
-export function plantStage(resolved: ResolvedPlant, daysOnBalcony: number, now = new Date()): PlantStage {
-  const { entry } = resolved;
+/**
+ * Où en est la plante, d'accord avec son état du jour (retour du 20/10 : citronnier rentré pour l'hiver donné « Il
+ * s'installe ») : à planter, à l'intérieur, bientôt rentrée, puis hors saison (fin de saison, à rentrer, au repos),
+ * enfin le fil de sa saison.
+ */
+export function plantStage(resolved: ResolvedPlant, daysOnBalcony: number, now = new Date(), climate?: ClimateInfo | null): PlantStage {
+  const { entry, plant } = resolved;
   const month = (now.getMonth() + 1) as Month;
+  const it = capitalize(subjectPronoun(entry));
+  if (plant.toPlant) return { label: "À planter", detail: `${it} ${verb(entry, "attend", "attendent")} d’être ${agree(entry, "planté")} : Balco te dira quand c’est le moment.` };
+  if (isIndoors(plant)) {
+    const harvest = entry.harvestMonths.includes(month) ? " Récolte ce qui est mûr au fur et à mesure." : "";
+    return { label: "À l’abri pour l’hiver", detail: `${it} ${verb(entry, "passe", "passent")} l’hiver à l’intérieur : peu d’eau, pas d’engrais, et ${subjectPronoun(entry)} ${verb(entry, "ressortira", "ressortiront")} au printemps.${harvest}` };
+  }
+  const winter = currentWinterPlan(plant.winter, now);
+  if (waitsToComeIn({ winter })) return { label: "Bientôt à l’abri", detail: `Tu as choisi de ${objectPronoun(entry)} rentrer : Balco te préviendra avant la première nuit froide.` };
+  const off = offSeasonOf(entry, now, climate);
+  if (off?.kind === "season-end") return { label: off.label, detail: `${verb(entry, "Sa", "Leur")} saison touche à sa fin : tu pourras ${objectPronoun(entry)} remplacer au printemps.` };
+  if (off?.kind === "before-winter") {
+    if (winter?.choice === "outside") return { label: "Dehors pour l’hiver", detail: `${it} ${verb(entry, "reste", "restent")} dehors cet hiver : protège-${objectPronoun(entry)} les nuits de gel.` };
+    return { label: off.label, detail: `${it} ${verb(entry, "craint", "craignent")} le froid : décide où ${subjectPronoun(entry)} ${verb(entry, "passera", "passeront")} l’hiver avant les premières nuits froides.` };
+  }
+  if (off?.kind === "resting") return { label: off.label, detail: `${it} ${verb(entry, "passe", "passent")} la saison froide au ralenti : peu d’eau, et ${subjectPronoun(entry)} ${verb(entry, "repartira", "repartiront")} au printemps.` };
   const toHarvest = monthsToHarvest(entry.harvestMonths, month);
   if (toHarvest === 0) return { label: "En récolte", detail: `C’est la saison : récolte au fur et à mesure, ${subjectPronoun(entry)} ${verb(entry, "produira", "produiront")} davantage.` };
   if (daysOnBalcony < 21) return { label: `${capitalize(subjectPronoun(entry))} ${verb(entry, "s’installe", "s’installent")}`, detail: `${verb(entry, "Ses", "Leurs")} racines prennent leurs marques : garde la terre juste humide.` };
@@ -104,7 +128,7 @@ export function plantStage(resolved: ResolvedPlant, daysOnBalcony: number, now =
   return { label: "En croissance", detail: `${capitalize(subjectPronoun(entry))} ${verb(entry, "pousse", "poussent")} : tes gestes réguliers font toute la différence.` };
 }
 
-export function plantProgress(resolved: ResolvedPlant, events: MaintenanceEvent[], photos: PlantPhoto[], now = new Date()): PlantProgress {
+export function plantProgress(resolved: ResolvedPlant, events: MaintenanceEvent[], photos: PlantPhoto[], now = new Date(), climate?: ClimateInfo | null): PlantProgress {
   const id = resolved.plant.id;
   const own = events.filter((event) => event.plantId === id).sort((a, b) => a.completedAt.localeCompare(b.completedAt));
   const addedAt = new Date(resolved.plant.addedAt);
@@ -129,6 +153,8 @@ export function plantProgress(resolved: ResolvedPlant, events: MaintenanceEvent[
   const firstRepot = firstOf("repotting");
   if (firstRepot) milestones.push({ key: "repot", icon: "🪴", label: "Premier rempotage", date: firstRepot.completedAt });
   if (own.length >= 10) milestones.push({ key: "ten", icon: "✨", label: `10 gestes pour ${stressedPronoun(resolved.entry)}`, date: own[9].completedAt });
+  const indoorsAt = resolved.plant.winter?.indoorsAt;
+  if (indoorsAt) milestones.push({ key: "indoors", icon: "🏠", label: `${capitalize(agree(resolved.entry, "rentré"))} pour l’hiver`, date: indoorsAt });
   const plantPhotos = photos.filter((photo) => photo.plantId === id);
   const firstPhoto = [...plantPhotos].sort((a, b) => a.takenAt.localeCompare(b.takenAt))[0];
   if (firstPhoto) milestones.push({ key: "photo", icon: "📷", label: "Première photo", date: firstPhoto.takenAt });
@@ -143,7 +169,7 @@ export function plantProgress(resolved: ResolvedPlant, events: MaintenanceEvent[
     weeks,
     trackedWeeks,
     activeWeeks: weeks.slice(WEEKS - trackedWeeks).filter((count) => count > 0).length,
-    stage: plantStage(resolved, daysOnBalcony, now),
+    stage: plantStage(resolved, daysOnBalcony, now, climate),
     milestones,
   };
 }

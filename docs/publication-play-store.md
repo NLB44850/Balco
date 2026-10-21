@@ -42,7 +42,7 @@ fusion.**
 Texte unique dans `shared/privacy.ts` (à mettre à jour avec le code : nouvelle donnée, nouveau prestataire), affiché
 dans l'app (Réglages → À propos → Confidentialité, `app/privacy.tsx`) et en page web publique **`/confidentialite`**
 sur le serveur (`server/privacy-page.ts`) : c'est l'adresse à donner dans la Play Console
-(`<adresse Railway>/confidentialite`). Reste à y ajouter le nom de l'éditeur (identité du responsable de traitement).
+(`<adresse Railway>/confidentialite`). Nom de l'éditeur laissé à « un particulier » pour le test fermé (son choix du 19/10) : à compléter avant l'ouverture à tous (identité du responsable de traitement). Contact : `contact.balco44@gmail.com`.
 
 ## Encore à faire avant la publication pour tous (docs/avant-publication.md)
 
