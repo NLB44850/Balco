@@ -17,7 +17,7 @@ import { PLANT_VARIETIES } from "./varieties";
 export type Sunlight = "shade" | "partial" | "sunny";
 export type SpaceSize = "windowsill" | "planter" | "balcony" | "terrace";
 export type GoalTag = "tomatoes" | "aromatics" | "bees" | "salads";
-export type PlantCategory = "aromatic" | "fruiting-vegetable" | "leafy-vegetable" | "root" | "flower" | "small-fruit";
+export type PlantCategory = "aromatic" | "fruiting-vegetable" | "leafy-vegetable" | "root" | "flower" | "small-fruit" | "fruit-tree";
 export type Month = 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10 | 11 | 12;
 
 export type CareTask = {
@@ -109,6 +109,7 @@ export const CATEGORY_LABELS: Record<PlantCategory, string> = {
   root: "Racines",
   flower: "Fleurs",
   "small-fruit": "Petits fruits",
+  "fruit-tree": "Arbres fruitiers",
 };
 
 export const SUNLIGHT_LABELS: Record<Sunlight, string> = { shade: "Ombre", partial: "Mi-ombre", sunny: "Soleil" };
@@ -1327,7 +1328,7 @@ export const PLANT_CATALOG: CatalogPlant[] = [
     ],
   }),
   plant({
-    id: "lemon-tree", name: "Citronnier", repotMonths: [4, 5], label: "le citronnier", gender: "m", emoji: "🍋", category: "small-fruit",
+    id: "lemon-tree", name: "Citronnier", repotMonths: [4, 5], label: "le citronnier", gender: "m", emoji: "🍋", category: "fruit-tree",
     sunlight: ["sunny"], minSpace: "balcony", difficulty: "medium", perennial: true, melliferous: true, goals: [], potLiters: 25,
     pitch: "Des fleurs au parfum enivrant et des citrons presque toute l’année, à condition de l’abriter l’hiver.",
     sowMonths: [], plantMonths: [4, 5], harvestMonths: [11, 12, 1, 2, 3],
@@ -1342,7 +1343,7 @@ export const PLANT_CATALOG: CatalogPlant[] = [
     ],
   }),
   plant({
-    id: "dwarf-fig", name: "Figuier nain", label: "le figuier", gender: "m", emoji: "🪴", category: "small-fruit",
+    id: "dwarf-fig", name: "Figuier nain", label: "le figuier", gender: "m", emoji: "🪴", category: "fruit-tree",
     sunlight: ["sunny"], minSpace: "balcony", difficulty: "easy", perennial: true, melliferous: false, goals: [], potLiters: 30,
     pitch: "Un parfum de vacances et deux récoltes par an sur un arbuste d’à peine un mètre cinquante.",
     sowMonths: [], plantMonths: [3, 4, 10], harvestMonths: [7, 8, 9],

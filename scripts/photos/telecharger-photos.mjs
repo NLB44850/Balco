@@ -146,6 +146,13 @@ const PLANTS = {
   hellebore: "Helleborus niger",
   houseleek: "Sempervivum tectorum",
   sedum: "Hylotelephium spectabile",
+  // Livraison 2 (21/10) : arbres fruitiers en pot
+  "olive-tree": "Olea europaea olive tree pot",
+  "columnar-apple": "columnar apple tree",
+  "dwarf-peach": "Prunus persica peach tree fruits",
+  "dwarf-cherry": "Prunus avium cherries tree",
+  kumquat: "Fortunella kumquat fruits",
+  pomegranate: "Punica granatum fruit tree",
 };
 
 // Planches botaniques, herbiers, cartes… : on veut une vraie photo de la plante.
