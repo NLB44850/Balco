@@ -789,5 +789,19 @@
     "license": "CC BY-SA 4.0",
     "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0",
     "page": "https://commons.wikimedia.org/wiki/File:Granado_(Punica_granatum),_Mahdia,_T%C3%BAnez,_2016-09-03,_DD_02.jpg"
+  },
+  "columnar-apple": {
+    "title": "File:Apples on tree 2011 G1.jpg",
+    "author": "George Chernilevsky",
+    "license": "Public domain",
+    "licenseUrl": "",
+    "page": "https://commons.wikimedia.org/wiki/File:Apples_on_tree_2011_G1.jpg"
+  },
+  "dwarf-cherry": {
+    "title": "File:Bieberbach Kirschgarten Kirschen-20230709-RM-171017.jpg",
+    "author": "Ermell",
+    "license": "CC BY-SA 4.0",
+    "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0",
+    "page": "https://commons.wikimedia.org/wiki/File:Bieberbach_Kirschgarten_Kirschen-20230709-RM-171017.jpg"
   }
 }
