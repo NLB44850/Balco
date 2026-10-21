@@ -3,7 +3,7 @@
  * avoir à écrire. Logique pure.
  */
 import { seasonName, type ResolvedPlant } from "../garden/garden-logic";
-import type { Month } from "../plants/catalog";
+import { hasHarvest, type Month } from "../plants/catalog";
 
 const GENERIC = ["Quoi planter ce mois-ci sur mon balcon ?", "Pourquoi les feuilles jaunissent ?", "Comment économiser l’eau ?"];
 
@@ -13,7 +13,7 @@ export function quickQuestions(plants: ResolvedPlant[], now = new Date(), max = 
   const questions: string[] = [];
   // Nora connaît tout l'historique : elle dit ce qui a été fait, et ce qui a pu être oublié.
   if (plants.length > 0) questions.push("Fais le point sur mes plantes");
-  const harvest = plants.find(({ entry }) => entry.harvestMonths.includes(month));
+  const harvest = plants.find(({ entry }) => hasHarvest(entry) && entry.harvestMonths.includes(month));
   if (harvest) questions.push(`Comment bien récolter ${harvest.entry.label} ?`);
   const frail = plants.find(({ entry }) => entry.care.frostSensitive);
   if (frail && (season === "automne" || season === "hiver")) questions.push(`Comment protéger ${frail.entry.label} du froid ?`);

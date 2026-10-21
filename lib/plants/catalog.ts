@@ -84,6 +84,11 @@ export type CatalogPlant = {
   /** Mois de rempotage des vivaces (terreau neuf, pot un peu plus grand) ; vide pour les annuelles. */
   repotMonths: Month[];
   harvestTip: string;
+  /**
+   * Plante d'ornement qu'on ne cueille pas (crocus, hellébore, joubarbe…) : `harvestMonths` est sa floraison, sans
+   * geste « Récolte » chaque jour ni récolte à venir ; `harvestTip` dit quoi faire pendant la floraison.
+   */
+  bloomOnly?: true;
   care: CareThresholds;
   tasks: CareTask[];
   /** Variétés conseillées en pot, de la plus facile à la plus originale. */
@@ -91,6 +96,11 @@ export type CatalogPlant = {
   /** Pages consultées pour vérifier les mois de semis, de plantation et de récolte. */
   sources: string[];
 };
+
+/** Elle se cueille (légumes, fruits, fleurs à bouquet) : pas une plante d'ornement seulement (`bloomOnly`). */
+export function hasHarvest(entry: Pick<CatalogPlant, "bloomOnly">) {
+  return !entry.bloomOnly;
+}
 
 export const CATEGORY_LABELS: Record<PlantCategory, string> = {
   aromatic: "Aromatiques",
@@ -178,7 +188,7 @@ function plant({ extraTasks = [], wateringMonths, wateringInstruction, varieties
     tasks: [
       wateringTask(data.label, activeMonths, wateringInstruction),
       observeTask(data.label, activeMonths),
-      harvestTask(data.label, data.harvestMonths, data.harvestTip),
+      ...(data.bloomOnly ? [] : [harvestTask(data.label, data.harvestMonths, data.harvestTip)]),
       ...extraTasks,
       ...(feed ? [feed] : []),
     ],

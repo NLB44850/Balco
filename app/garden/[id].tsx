@@ -48,7 +48,7 @@ import { CATEGORY_LABELS, formatMonthRange } from "@/lib/plants/catalog";
 import { guideLinkText } from "@/lib/plants/guide";
 import { REPOTTING } from "@/lib/plants/repotting";
 import { now as clockNow } from "@/lib/clock";
-import { bloomEvent, canMarkBloom, herbariumKey } from "@/lib/garden/herbarium";
+import { bloomEvent, canMarkBloom, herbariumKey, isFlower } from "@/lib/garden/herbarium";
 import { agree, bareName, byForm, objectPronoun } from "@/lib/plants/grammar";
 import { PotSizeSheet } from "@/components/pot-size-sheet";
 import { PotSheetCard } from "@/components/pot-sheet-card";
@@ -295,7 +295,7 @@ export default function PlantScreen() {
               <Text style={[styles.factText, { color: potShown.chosen ? colors.foreground : colors.primary }]}>🪴  {potShown.text}</Text>
             </Pressable>
             <View style={[styles.fact, { backgroundColor: colors.surface }]}><Text style={[styles.factText, { color: colors.foreground }]}>🌱  {growingSince(plant.addedAt, now)}</Text></View>
-            {entry.harvestMonths.length > 0 && <View style={[styles.fact, { backgroundColor: colors.surface }]}><Text style={[styles.factText, { color: colors.foreground }]}>🧺  Récolte {formatMonthRange(entry.harvestMonths)}</Text></View>}
+            {entry.harvestMonths.length > 0 && <View style={[styles.fact, { backgroundColor: colors.surface }]}><Text style={[styles.factText, { color: colors.foreground }]}>{isFlower(entry) ? "🌸  Floraison" : "🧺  Récolte"} {formatMonthRange(entry.harvestMonths)}</Text></View>}
           </View>
 
           {/* L'hiver d'une frileuse, toujours ici, avant le geste du jour : le choix à faire, le choix fait (« C'est

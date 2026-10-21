@@ -4,7 +4,7 @@
  * du moment, le balcon couvert et les dates des vacances. Le texte se modifie avant l'envoi (app/helper-note.tsx) ; la
  * ligne « Préparé avec Balco » est à part, pour pouvoir la retirer. Logique pure.
  */
-import { MONTH_LONG, type Month } from "../plants/catalog";
+import { hasHarvest, MONTH_LONG, type Month } from "../plants/catalog";
 import { afterColon } from "../plants/grammar";
 import { litersText } from "../plants/watering";
 import { potSizeOf, type PotSize } from "../plants/pot-size";
@@ -62,7 +62,7 @@ export function helperPlants(plants: ResolvedPlant[], vacation: Pick<Vacation, "
         liters: wateringLitersOf(resolved),
         everyDays,
         heatEveryDays: heat && heat < everyDays! ? heat : null,
-        harvest: resolved.entry.harvestMonths.includes(month) ? resolved.entry.harvestTip : null,
+        harvest: hasHarvest(resolved.entry) && resolved.entry.harvestMonths.includes(month) ? resolved.entry.harvestTip : null,
       };
     });
 }
