@@ -71,6 +71,6 @@ de droits avec son crédit.
   rustique vers -5 °C (alertes gel, « Prépare l'abri » de novembre à février). Gestes : tailles, éclaircir les fruits
   (pommier, pêcher), cloque du pêcher à la bouillie bordelaise (novembre et février), filet du cerisier. Pas de geste
   « gel sur les fleurs » chaque jour en mars-avril (trop répétitif) : à faire plus tard par une alerte météo.
-  Sainte-Catherine propose aussi pommier, cerisier et pêcher. À valider sur son téléphone.
+  Sainte-Catherine propose aussi pommier, cerisier et pêcher. PR #67, à valider sur son téléphone.
 - Idée notée : dire sur la fiche quand une plante est toxique (tulipes, narcisses, hellébore) pour les chats et les
   enfants ; pas de champ pour ça aujourd'hui.
