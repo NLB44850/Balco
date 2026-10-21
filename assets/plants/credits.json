@@ -705,5 +705,61 @@
     "license": "CC BY 2.0",
     "licenseUrl": "https://creativecommons.org/licenses/by/2.0",
     "page": "https://commons.wikimedia.org/wiki/File:Lettuce_(4988502260).jpg"
+  },
+  "crocus": {
+    "title": "File:Crocus vernus.jpg",
+    "author": "Smihael",
+    "license": "CC BY-SA 3.0",
+    "licenseUrl": "https://creativecommons.org/licenses/by-sa/3.0",
+    "page": "https://commons.wikimedia.org/wiki/File:Crocus_vernus.jpg"
+  },
+  "daffodil": {
+    "title": "File:Narcissus flowers.jpg",
+    "author": "Uberprutser",
+    "license": "CC BY-SA 3.0",
+    "licenseUrl": "https://creativecommons.org/licenses/by-sa/3.0",
+    "page": "https://commons.wikimedia.org/wiki/File:Narcissus_flowers.jpg"
+  },
+  "hellebore": {
+    "title": "File:Bloem van een kerstroos (Helleborus niger) 16-12-2021. (d.j.b) 02.jpg",
+    "author": "Dominicus Johannes Bergsma",
+    "license": "CC BY-SA 4.0",
+    "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0",
+    "page": "https://commons.wikimedia.org/wiki/File:Bloem_van_een_kerstroos_(Helleborus_niger)_16-12-2021._(d.j.b)_02.jpg"
+  },
+  "houseleek": {
+    "title": "File:Sempervivum tectorum in Cardaillac (1).jpg",
+    "author": "Krzysztof Golik",
+    "license": "CC BY-SA 4.0",
+    "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0",
+    "page": "https://commons.wikimedia.org/wiki/File:Sempervivum_tectorum_in_Cardaillac_(1).jpg"
+  },
+  "muscari": {
+    "title": "File:Muscari - Sümbül, Yeniköy 06.jpg",
+    "author": "Zeynel Cebeci",
+    "license": "CC BY-SA 4.0",
+    "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0",
+    "page": "https://commons.wikimedia.org/wiki/File:Muscari_-_S%C3%BCmb%C3%BCl,_Yenik%C3%B6y_06.jpg"
+  },
+  "sedum": {
+    "title": "File:(MHNT) 'Hylotelephium spectabile' inflorescence.jpg",
+    "author": "Didier Descouens",
+    "license": "CC BY-SA 4.0",
+    "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0",
+    "page": "https://commons.wikimedia.org/wiki/File:(MHNT)_%27Hylotelephium_spectabile%27_inflorescence.jpg"
+  },
+  "tulip": {
+    "title": "File:צבעונים.JPG",
+    "author": "Dina L",
+    "license": "CC0",
+    "licenseUrl": "http://creativecommons.org/publicdomain/zero/1.0/deed.en",
+    "page": "https://commons.wikimedia.org/wiki/File:%D7%A6%D7%91%D7%A2%D7%95%D7%A0%D7%99%D7%9D.JPG"
+  },
+  "winter-heath": {
+    "title": "File:Erica carnea RF.jpg",
+    "author": "Robert Flogaus-Faust",
+    "license": "CC BY 4.0",
+    "licenseUrl": "https://creativecommons.org/licenses/by/4.0",
+    "page": "https://commons.wikimedia.org/wiki/File:Erica_carnea_RF.jpg"
   }
 }
