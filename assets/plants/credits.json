@@ -803,5 +803,75 @@
     "license": "CC BY-SA 4.0",
     "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0",
     "page": "https://commons.wikimedia.org/wiki/File:Bieberbach_Kirschgarten_Kirschen-20230709-RM-171017.jpg"
+  },
+  "artichoke": {
+    "title": "File:Artichoke Cynara cardunculus Plants 2000px.jpg",
+    "author": "Photo by and (c)2008 Derek Ramsey (Ram-Man). Co-attribution must be given to the Chanticleer Garden.",
+    "license": "CC BY-SA 3.0",
+    "licenseUrl": "http://creativecommons.org/licenses/by-sa/3.0/",
+    "page": "https://commons.wikimedia.org/wiki/File:Artichoke_Cynara_cardunculus_Plants_2000px.jpg"
+  },
+  "clematis": {
+    "title": "File:Clematis cultivars in Sedovo 1.jpg",
+    "author": "Andrey Butko",
+    "license": "CC BY-SA 3.0",
+    "licenseUrl": "https://creativecommons.org/licenses/by-sa/3.0",
+    "page": "https://commons.wikimedia.org/wiki/File:Clematis_cultivars_in_Sedovo_1.jpg"
+  },
+  "fava-bean": {
+    "title": "File:Dicke Bohne (Vicia faba) erntereife Hülsen, Josef Schlaghecken.jpg",
+    "author": "Schlaghecken Josef",
+    "license": "CC BY-SA 4.0",
+    "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0",
+    "page": "https://commons.wikimedia.org/wiki/File:Dicke_Bohne_(Vicia_faba)_erntereife_H%C3%BClsen,_Josef_Schlaghecken.jpg"
+  },
+  "grapevine": {
+    "title": "File:Edle Weinrebe, 'Vitis vinifera' subsp. 'vinifera.jpg",
+    "author": "eflon (Alex from Ithaca, NY)",
+    "license": "CC BY 2.0",
+    "licenseUrl": "https://creativecommons.org/licenses/by/2.0",
+    "page": "https://commons.wikimedia.org/wiki/File:Edle_Weinrebe,_%27Vitis_vinifera%27_subsp._%27vinifera.jpg"
+  },
+  "honeysuckle": {
+    "title": "File:Lonicera japonica flowers and pink buds - Fukufukurou.jpg",
+    "author": "Fukufukurou",
+    "license": "CC BY-SA 4.0",
+    "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0",
+    "page": "https://commons.wikimedia.org/wiki/File:Lonicera_japonica_flowers_and_pink_buds_-_Fukufukurou.jpg"
+  },
+  "kuri-squash": {
+    "title": "File:Red kuri squash plant trichomes.jpg",
+    "author": "V.Boldychev",
+    "license": "CC BY-SA 4.0",
+    "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0",
+    "page": "https://commons.wikimedia.org/wiki/File:Red_kuri_squash_plant_trichomes.jpg"
+  },
+  "morning-glory": {
+    "title": "File:Ipomoea purpurea 2016 G1.jpg",
+    "author": "George Chernilevsky",
+    "license": "Public domain",
+    "licenseUrl": "",
+    "page": "https://commons.wikimedia.org/wiki/File:Ipomoea_purpurea_2016_G1.jpg"
+  },
+  "rhubarb": {
+    "title": "File:Rheum rhabarbarum.2006-04-27.uellue.jpg",
+    "author": "Dieter Weber (User:Uellue)",
+    "license": "CC BY-SA 3.0",
+    "licenseUrl": "http://creativecommons.org/licenses/by-sa/3.0/",
+    "page": "https://commons.wikimedia.org/wiki/File:Rheum_rhabarbarum.2006-04-27.uellue.jpg"
+  },
+  "star-jasmine": {
+    "title": "File:Confederate Jasmine -- Trachelospermum jasminoides.jpg",
+    "author": "Jim Evans",
+    "license": "CC BY-SA 4.0",
+    "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0",
+    "page": "https://commons.wikimedia.org/wiki/File:Confederate_Jasmine_--_Trachelospermum_jasminoides.jpg"
+  },
+  "sweet-potato": {
+    "title": "File:Ipomoea batatas - Tubers.jpg",
+    "author": "Filo gèn'",
+    "license": "CC BY-SA 4.0",
+    "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0",
+    "page": "https://commons.wikimedia.org/wiki/File:Ipomoea_batatas_-_Tubers.jpg"
   }
 }
