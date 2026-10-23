@@ -835,3 +835,79 @@ Nouvelle catégorie « Arbres fruitiers » (`fruit-tree`), où passent aussi le 
 - Plantation : mars–mai, oct. · Récolte : sept.–nov. · Floraison : mai–août · confiance moyenne
 - Note : à Paris, les grenades mûrissent mal les étés frais (Nana : fruits décoratifs) ; rentré aux premières nuits de gel (estimation), hivernage hors gel au frais et au clair.
 - Sources : [promessedefleurs.com](https://www.promessedefleurs.com/conseil-plantes-jardin/fichefamille/grenadier-a-fruits/), [jardiner-malin.fr](https://www.jardiner-malin.fr/fiche/grenadier.html), [gerbeaud.com](https://www.gerbeaud.com/jardin/fiches/grenadier.php), [aujardin.info](https://www.aujardin.info/plantes/grenadier.php)
+
+# Catalogue balcon et terrasse, livraison 3 (23/10) : grimpantes et légumes
+
+Recherche web du 23 octobre 2026 (extraits des résultats). Nouvelle catégorie « Grimpantes » ; les grimpantes à fleurs n'ont pas de geste « Récolte » (`bloomOnly`) et leurs mois de récolte sont la floraison.
+
+## Jasmin étoilé
+
+- Plantation : mars–juin · Floraison : juin–août · confiance moyenne
+- Note : floraison mai–juillet (Bricomarché) à juin–octobre (Jardiner malin) : juin–août retenu. Souche jusqu'à -10/-15 °C, feuillage abîmé dès -5 °C : reste dehors, pied paillé, pot isolé (alertes gel à -5 °C). En pot, il reste plus petit (Truffaut).
+- Sources : [truffaut.com](https://www.truffaut.com/jasmin-etoile-planter-entretenir.html), [jardiner-malin.fr](https://www.jardiner-malin.fr/fiche/jasmin-etoile.html), [bricomarche.com](https://www.bricomarche.com/p/trachelosp-winter-ruby-trared-c1.5l/3565421099691)
+
+## Clématite
+
+- Plantation : mars–mai, sept.–oct. · Floraison : mai–sept. · confiance moyenne
+- Note : floraison selon la variété (alpina mars–mai, grandes fleurs mai–septembre) : les variétés conseillées fleurissent l'été. Taille selon le groupe : à 30 cm pour celles qui fleurissent l'été, bois sec seulement pour les printanières. Pot de 35-40 cm, pied à l'ombre.
+- Sources : [truffaut.com](https://www.truffaut.com/clematite-varietes-plantation-entretien.html), [jardiner-malin.fr](https://www.jardiner-malin.fr/fiche/clematite.html), [bricomarche.com](https://www.bricomarche.com/p/clematite-integrifolia-blue-river-zoblueriver-v-c3l/3565421111768)
+
+## Passiflore
+
+- Plantation : mars–juin · Floraison : juin–oct. · confiance moyenne
+- Note : Passiflora caerulea, la plus rustique : souche jusqu'à -15 °C (Truffaut), courts gels de -5 °C pour une autre fiche ; à rentrer hors gel seulement si le froid passe souvent sous -8 °C (Jardiner malin). Le drainage compte plus que le froid.
+- Sources : [jardiner-malin.fr](https://www.jardiner-malin.fr/fiche/passiflora-caerulea-passiflore-bleu.html), [truffaut.com](https://www.truffaut.com/passiflore-plantation-entretien.html), [truffaut.com](https://www.truffaut.com/passiflora-caerulea-90-120-ctr-3-litres-423182.html)
+
+## Vigne en pot
+
+- Plantation : mars–avr., oct.–nov. · Récolte : août–oct. · confiance moyenne
+- Note : variétés de table autofertiles ; pot de 35 L au moins (Evous) ; taille à 2 bourgeons en fin d'hiver, 2 à 5 grappes par tige. Novembre ajouté (plantation hors gel, Evous), Truffaut dit mars–avril et septembre–octobre.
+- Sources : [truffaut.com](https://www.truffaut.com/comment-planter-tailler-entretenir-vigne.html), [evous.fr](https://www.evous.fr/terres-et-saveurs/Des-fruits-de-saison/Le-raisin-muscat/Une-vigne-sur-mon-balcon,1179015/), [truffaut.com](https://www.truffaut.com/vigne-centennial-seedless-pot-1-5l-1116091.html), [truffaut.com](https://www.truffaut.com/vigne-alvina-pot-1-5l-1116090.html)
+
+## Chèvrefeuille
+
+- Plantation : mars–mai · Floraison : juin–sept. · confiance moyenne
+- Note : floraison très variable selon l'espèce (le Goldflame fleurit l'hiver) : juin–septembre pour Sinensis et le chèvrefeuille des bois. Pot de 40 cm ou 30 L (Consoglobe), engrais de mai à août, rempotage tous les 3-4 ans (Truffaut). Baies non comestibles.
+- Sources : [consoglobe.com](https://www.consoglobe.com/?p=10385264), [truffaut.com](https://www.truffaut.com/lonicera-mint-crisp--conteneur-4-litres-492371.html), [manomano.fr](https://www.manomano.fr/p/chevrefeuille-japonica-sinensis-24061145), [consoglobe.com](https://www.consoglobe.com/?p=10373798)
+
+## Ipomées (volubilis)
+
+- Semis : mars–mai (au chaud en mars–avril) · Plantation : mai–juin · Floraison : juil.–oct. · confiance moyenne
+- Note : graines trempées avant le semis ; dehors après les Saints de glace ; semis pas après début juin. Graines toxiques (enfants, animaux) : écrit sur la fiche. Pas d'engrais.
+- Sources : [jardiner-malin.fr](https://www.jardiner-malin.fr/fiche/ipomea.html), [truffaut.com](https://www.truffaut.com/ipomee-plantation-entretien.html), [futura-sciences.com](https://www.futura-sciences.com/maison/questions-reponses/jardinage-annuelles-grimpantes-semer-printemps-22433/), [truffaut.com](https://www.truffaut.com/ipomee-volubilis-couleur-variee-en-sachet-726097.html)
+
+## Fèves
+
+- Semis : févr.–avr. · Récolte : mai–juil. · confiance moyenne
+- Note : semis d'automne seulement dans le Midi et l'Ouest (non retenu : repère Paris) ; récolte 3 à 4 mois après le semis (12 à 14 semaines pour Aguadulce). Pincer la tête contre les pucerons noirs. Les sources ne parlent pas du pot : pot profond (estimation).
+- Sources : [jardiner-malin.fr](https://www.jardiner-malin.fr/fiche/feve.html), [futura-sciences.com](https://www.futura-sciences.com/maison/questions-reponses/jardinage-semer-feves-16587/), [bricomarche.com](https://www.bricomarche.com/p/feve-d-aguadulce-a-tres-longue-cosse-gondian/3182670015007)
+
+## Patate douce
+
+- Plantation : mai–juin · Récolte : sept.–oct. · confiance moyenne
+- Note : plants au-dessus de 10 °C (Truffaut) ; récolte septembre–octobre (Truffaut) à octobre–novembre (Futura) : septembre–octobre retenu, avant le gel. Tubercules séchés au soleil, gardés au frais (sous 15 °C).
+- Sources : [futura-sciences.com](https://www.futura-sciences.com/maison/questions-reponses/jardinage-demarrer-culture-patates-douces-18577/), [truffaut.com](https://www.truffaut.com/patate-douce-bonita-pot-diametre-10-5-cm-546962.html), [grab.fr](https://grab.fr/1232)
+
+## Potimarron
+
+- Semis : avr.–mai (au chaud en avril) · Plantation : mai–juin · Récolte : sept.–oct. · confiance moyenne
+- Note : semis en godet 3 semaines avant la mise en place, dehors mi-mai (Truffaut) ; récolte septembre–novembre (Vilmorin) ou août–octobre (Truffaut). Plante coureuse (1,5 à 2 m entre pieds en pleine terre) : en pot, grand bac et treillage (estimation).
+- Sources : [jardiner-malin.fr](https://www.jardiner-malin.fr/fiche/potimarron.html), [truffaut.com](https://www.truffaut.com/planter-potimarron.html), [bricomarche.com](https://www.bricomarche.com/p/potiron-potimarron/3182670201707), [greenweez.com](https://www.greenweez.com/produit/graines-de-potimarron-uchiki-kuri/1LASE0030)
+
+## Artichaut
+
+- Plantation : mars–mai · Récolte : juin–sept. · confiance moyenne
+- Note : œilletons plantés de mars à mi-mai pour une récolte dès la 1ʳᵉ année (Chambre d'agriculture de Gironde) ; bac de 40-50 cm en tous sens (Jardiner malin) ; produit 3 à 5 ans. Protection d'hiver renforcée en pot.
+- Sources : [jardiner-malin.fr](https://www.jardiner-malin.fr/fiche/artichaut.html), [truffaut.com](https://www.truffaut.com/artichaut-plantation-culture-recolte.html), [futura-sciences.com](https://www.futura-sciences.com/maison/questions-reponses/jardinage-planter-artichaut-16858/), [gironde.chambre-agriculture.fr](https://gironde.chambre-agriculture.fr/fileadmin/user_upload/Nouvelle-Aquitaine/100_Inst-Gironde/Documents/pdf_diversifier_votre_activite/2024_fichediv_artichaut_vf_web.pdf)
+
+## Rhubarbe
+
+- Plantation : mars–avr., oct.–nov. · Récolte : avr.–juin · confiance moyenne
+- Note : récolte avril–juillet (Jours de marché), arrêter vers fin juin (Gardena : plus d'acide oxalique ensuite) : avril–juin retenu. Première récolte un an après la plantation (Truffaut) à deux ans (Gardena). Jamais plus d'un tiers des tiges. Feuilles toxiques : écrit sur la fiche. Bac de 40 L.
+- Sources : [futura-sciences.com](https://www.futura-sciences.com/maison/questions-reponses/jardinage-planter-pied-rhubarbe-18285/), [truffaut.com](https://www.truffaut.com/rhubarbe-ctr-3-litres-39864.html), [gardena.com](https://www.gardena.com/be-fr/actualites-jardin/magazine-jardin/rhubarbe---legume-ou-fruit/), [jours-de-marche.fr](https://www.jours-de-marche.fr/produits/rhubarbe.html)
+
+## Fenouil
+
+- Semis : mai–juil. · Récolte : août–nov. · confiance moyenne
+- Note : semé tard (après le 20 juin pour les variétés d'été) pour éviter la montée en graines (jours longs) ; récolte jusqu'à mi-novembre (Jardiner malin). Sol frais. Les sources ne parlent pas du pot : pot profond pour le pivot (estimation).
+- Sources : [jardiner-malin.fr](https://www.jardiner-malin.fr/fiche/culture-fenouil-semer-recolter.html), [bricomarche.com](https://www.bricomarche.com/p/fenouil-doux-de-florence/3211500007520), [greenweez.com](https://www.greenweez.com/produit/graines-de-fenouil/1LASE0014), [agrobio-bretagne.org](https://www.agrobio-bretagne.org/wp-content/uploads/2010/09/Fenouil.pdf)

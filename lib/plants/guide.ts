@@ -5,7 +5,7 @@
  * (lib/plants/planting.ts). Logique pure.
  */
 import type { IllustrationId } from "./illustration-names";
-import { formatMonthRange, MONTH_LONG, type CatalogPlant } from "./catalog";
+import { formatMonthRange, isFlower, MONTH_LONG, type CatalogPlant } from "./catalog";
 import { sowsOnWindowsill } from "./indoor";
 import { PLANTING, type Planting } from "./planting";
 import { ofLabel, startActivity } from "./calendar";
@@ -200,10 +200,10 @@ export function whatsNext(entry: CatalogPlant, model: GuideModel): string[] {
   }
   if (model === "outdoors") {
     const harvest = plantingOf(entry).harvestWeeksFromPlanting;
-    return ["Les premiers jours, garde-les à l’abri du plein soleil de midi.", ...(harvest ? [`${entry.category === "flower" ? "Premières fleurs" : "Première récolte"} dans ${delayText(harvest, "weeks")}.`] : []), ...(feeding ? [feeding] : [])];
+    return ["Les premiers jours, garde-les à l’abri du plein soleil de midi.", ...(harvest ? [`${isFlower(entry) ? "Premières fleurs" : "Première récolte"} dans ${delayText(harvest, "weeks")}.`] : []), ...(feeding ? [feeding] : [])];
   }
   const planting = plantingOf(entry);
-  const flower = entry.category === "flower";
+  const flower = isFlower(entry);
   const lines: string[] = [];
   if (isSowing(model) && planting.germinationDays) lines.push(`Les pousses sortent dans ${delayText(planting.germinationDays, "days")}. Garde la terre humide.`);
   if (model === "plant-bulb") lines.push("Les premières pousses sortent en quelques semaines. Arrose peu tant qu’elles ne sont pas sorties.");

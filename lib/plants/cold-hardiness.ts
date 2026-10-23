@@ -223,7 +223,8 @@ export const COLD_TENDER: Record<string, ColdTender> = {
     nightC: 5, indoor: "winters", place: "cool",
     note: "À rentrer dès 5 °C ; hiverne au clair, entre 5 et 12 °C, loin d'une pièce chauffée.",
     sources: ["https://www.jardiner-malin.fr/fiche/hivernage-citronnier.html", "https://www.truffaut.com/comment-planter-tailler-entretenir-citronnier.html", "https://www.jardiland.com/conseils-idees/hivernage-entretien-agrumes-hiver"],
-  },  kumquat: {
+  },
+  kumquat: {
     nightC: 3, nightEstimate: true, indoor: "winters", place: "cool",
     note: "À rentrer avant les nuits froides (-2 °C en pot, fruits abîmés dès -4 °C) ; hiverne au clair, entre 5 et 12 °C.",
     sources: ["https://www.truffaut.com/cultiver-kumquat.html", "https://www.promessedefleurs.com/conseil-plantes-jardin/ficheconseil/cultiver-le-kumquat/", "https://www.jardiner-malin.fr/fiche/resistance-au-gel-des-agrumes-en-hiver.html"],
@@ -232,6 +233,22 @@ export const COLD_TENDER: Record<string, ColdTender> = {
     nightC: 0, nightEstimate: true, indoor: "winters", place: "cool",
     note: "À rentrer aux premières nuits de gel ; hiverne au frais et au clair, sans feuilles : un peu de froid l'aide à refleurir.",
     sources: ["https://www.promessedefleurs.com/conseil-plantes-jardin/ficheconseil/grenadier-en-pot-plantation-taille-arrosage/", "https://www.gammvert.fr/conseils/conseils-de-jardinage/entretien-du-grenadier-en-bac"],
+  },
+  // --- Livraison 3 (23/10) : grimpantes et légumes ----------------------------------------------------------
+  "morning-glory": {
+    nightC: 5, nightEstimate: true, indoor: "no",
+    note: "Annuelle gélive : elle fleurit jusqu'aux premières gelées, puis on la ressème au printemps.",
+    sources: ["https://www.jardiner-malin.fr/fiche/ipomea.html", "https://www.futura-sciences.com/maison/questions-reponses/jardinage-annuelles-grimpantes-semer-printemps-22433/"],
+  },
+  "sweet-potato": {
+    nightC: 10, indoor: "no",
+    note: "Il lui faut au moins 10 °C ; on vide le pot quand les feuilles jaunissent, avant le gel.",
+    sources: ["https://www.futura-sciences.com/maison/questions-reponses/jardinage-demarrer-culture-patates-douces-18577/", "https://www.truffaut.com/patate-douce-bonita-pot-diametre-10-5-cm-546962.html"],
+  },
+  "kuri-squash": {
+    nightC: 10, nightEstimate: true, indoor: "no",
+    note: "Craint le gel comme toutes les courges : on récolte les fruits avant les premières gelées.",
+    sources: ["https://www.jardiner-malin.fr/fiche/potimarron.html", "https://www.truffaut.com/planter-potimarron.html"],
   },
 };
 
@@ -243,6 +260,9 @@ export const NOT_COLD_TENDER: Record<string, string> = {
   rosemary: "Rustique en pot jusque vers -10 °C, pot protégé (voile, pied paillé) : il reste dehors.",
   microgreens: "Semées toute l'année, à l'intérieur l'hiver : pas de fin de saison.",
   "olive-tree": "Tient en pot jusque vers -5 °C : il reste dehors, pot isolé, et ne s'abrite que quand le froid dure.",
+  "star-jasmine": "La souche tient vers -10 °C, le feuillage souffre dès -5 °C : il reste dehors, pied paillé et pot isolé.",
+  passionflower: "Repart de la souche après un hiver froid : dehors, pied paillé ; à rentrer hors gel seulement si le froid passe souvent sous -8 °C.",
+  artichoke: "Vivace qui reste dehors : feuilles coupées, pied paillé et pot isolé, voile quand il gèle fort.",
 };
 
 export const coldTenderOf = (entry: Pick<CatalogPlant, "id">): ColdTender | undefined => COLD_TENDER[entry.id];

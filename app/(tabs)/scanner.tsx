@@ -23,7 +23,7 @@ import { pickPlantPhoto, type PreparedPhoto } from "@/lib/ai/photo";
 import { quotaLabel } from "@/lib/ai/quota-text";
 import { useGarden } from "@/lib/garden/garden-context";
 import { usePlantPhotos } from "@/lib/garden/photos-context";
-import { getCatalogPlant } from "@/lib/plants/catalog";
+import { getCatalogPlant, isFlower } from "@/lib/plants/catalog";
 import { PLANS, plusQuotaHint } from "@/lib/plans";
 import { deviceId as loadDeviceId } from "@/lib/sync/device-id";
 import { aiErrorText, SCAN_CONNECTION_LOST } from "@/lib/ai/error-text";
@@ -287,7 +287,7 @@ export default function ScannerScreen() {
                     ))}
                   </View>
                 )}
-                {remedy && <NaturalRemedyCard remedy={remedy} edible={entry?.category !== "flower"} />}
+                {remedy && <NaturalRemedyCard remedy={remedy} edible={!entry || !isFlower(entry)} />}
                 {!remedy && !!diagnosis.naturalRemedy && (
                   <View style={[styles.remedy, { backgroundColor: colors.leaf }]}>
                     <Text style={[styles.actionTitle, { color: colors.primary }]}>🌿 Solution naturelle</Text>

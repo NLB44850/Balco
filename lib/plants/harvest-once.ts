@@ -75,4 +75,14 @@ export const HARVEST_ONCE: Record<string, HarvestOnce> = {
     note: "45 à 60 jours après le semis ; il monte vite en graine avec la chaleur.",
     sources: ["https://www.jardiner-malin.fr/fiche/pak-choi.html", "https://www.consoglobe.com/"],
   },
+  "sweet-potato": {
+    harvestDays: 14,
+    note: "On vide le pot en une fois quand les feuilles jaunissent, avant le premier gel.",
+    sources: ["https://www.futura-sciences.com/maison/questions-reponses/jardinage-demarrer-culture-patates-douces-18577/", "https://www.truffaut.com/patate-douce-bonita-pot-diametre-10-5-cm-546962.html"],
+  },
+  "florence-fennel": {
+    harvestDays: 21,
+    note: "Bulbe coupé quand il est gros comme une orange ; laissé trop longtemps, il durcit ou monte en graines.",
+    sources: ["https://www.jardiner-malin.fr/fiche/culture-fenouil-semer-recolter.html", "https://www.agrobio-bretagne.org/wp-content/uploads/2010/09/Fenouil.pdf"],
+  },
 };

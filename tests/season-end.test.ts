@@ -36,9 +36,9 @@ function frostNight(now: Date, min: number): WeatherSnapshot {
 }
 
 describe("quelles plantes ont une fin de saison", () => {
-  it("les 53 annuelles qui produisent au fil des cueillettes, sauf les micro-pousses", () => {
+  it("les 55 annuelles qui produisent au fil des cueillettes ou fleurissent, sauf les micro-pousses", () => {
     const seasonal = PLANT_CATALOG.filter(endsWithSeason).map((entry) => entry.id);
-    expect(seasonal).toHaveLength(52);
+    expect(seasonal).toHaveLength(55);
     expect(seasonal).toContain("basil");
     expect(seasonal).toContain("cosmos");
     expect(seasonal).not.toContain("microgreens");

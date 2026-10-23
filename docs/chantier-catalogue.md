@@ -74,3 +74,13 @@ de droits avec son crédit.
   Sainte-Catherine propose aussi pommier, cerisier et pêcher. PR #67, à valider sur son téléphone.
 - Idée notée : dire sur la fiche quand une plante est toxique (tulipes, narcisses, hellébore) pour les chats et les
   enfants ; pas de champ pour ça aujourd'hui.
+- 23/10, « on peut continuer avec la livraison 3 » : **livraison 3 codée** (127 plantes). Nouvelle catégorie
+  « Grimpantes » : jasmin étoilé, clématite, passiflore, chèvrefeuille, ipomées (fleurs, sans geste « Récolte »,
+  geste « guide les tiges » au printemps) et vigne en pot (récolte, taille à 2 bourgeons, éclaircir les grappes).
+  Légumes : fèves (pincer la tête contre les pucerons noirs), patate douce et fenouil (récoltés en une fois),
+  potimarron (sur treillage), artichaut et rhubarbe (vivaces ; feuilles de rhubarbe toxiques, écrit sur la fiche).
+  Les grimpantes à fleurs sont des fleurs partout (`isFlower` de catalog.ts : pastille « Floraison », « Elle a
+  fleuri », pas de remède « comestible » dans Observer) ; le soir de gel, « Dernière nuit pour tes ipomées » au lieu
+  de « Cueille ». Deux familles ajoutées pour la rotation : liseron (ipomées, patate douce), oseille (oseille,
+  rhubarbe). Photos : le filtre du script écartait « Passiflora » (contient « flora ») ; corrigé. Sources dans
+  `docs/sources-calendrier.md` (dernière partie). Ajoutée à la PR #67, à valider sur son téléphone.
