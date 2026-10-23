@@ -145,3 +145,13 @@ Premier essai (19/10) : manque de mémoire de Gradle (« OutOfMemoryError: Metas
 `plugins/with-android-build-memory.js` (6 Go pour Gradle, pas de « lint » des versions publiées), APK de GitHub limité
 aux téléphones récents (`BALCO_ANDROID_ARCHS=arm64-v8a`), délai porté à 2 h 30. Ce plugin ne change rien dans l'app :
 la version reste 1.1.0.
+
+## Incident de sécurité Railway (21/10/2026)
+
+Railway a été piraté le 21/10 : des variables d'environnement de clients ont pu être lues (les pirates visaient les
+clés d'IA). Railway a bloqué les constructions pendant l'incident. **Fait par le porteur le 22-23/10** : clé Anthropic
+supprimée et recréée (aucune consommation suspecte du 20 au 22/10), clé Brevo recréée, `JWT_SECRET` et `CRON_SECRET`
+changés (`CRON_SECRET` aussi dans les secrets GitHub), proxy TCP public de MySQL vérifié. Contrôlé le 23/10 : passage
+des « Rappels météo » réussi, connexion par code e-mail et Nora qui répond. `EXPO_TOKEN` (rangé sur GitHub) pas concerné.
+À refaire de la même façon si un hébergeur annonce une fuite : changer chaque secret là où il est rangé, puis tester
+connexion, Nora et le passage des rappels.
