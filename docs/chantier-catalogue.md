@@ -101,3 +101,8 @@ de droits avec son crédit.
   pas-à-pas d'entretien du mois et du mois suivant, et « Protéger du froid » dès qu'un gel est annoncé pour la plante
   (`careGuidesNow`) ; l'alerte gel d'Aujourd'hui ouvre « Protéger l'artichaut du froid, pas à pas » pour les plantes
   qui restent dehors (`frostGuideFor`) ; nouvelle simulation « Grand froid » (-8 °C). E2e `37-proteger-du-froid`.
+- 23/10, sa question : « cette règle a été appliquée uniquement à l'artichaut ? ». Vérifié plante par plante : « Protéger
+  du froid » valait pour l'olivier, le jasmin étoilé et l'artichaut ; il manquait le romarin et la passiflore, qui
+  restent dehors et reçoivent les alertes gel. Ajoutés (`frostGuideFor` : toute vivace sensible au gel qui n'est pas
+  une frileuse à rentrer). Les frileuses ont déjà leur pas-à-pas « Rentrer » (choix pour l'hiver). La règle « ce mois-ci
+  et le mois prochain » de la fiche vaut pour les 7 pas-à-pas d'entretien et toutes les plantes.

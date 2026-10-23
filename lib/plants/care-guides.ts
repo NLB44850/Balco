@@ -49,9 +49,14 @@ export function careGuidesNow(entry: CatalogPlant, month: number, frost = false)
   return [...new Set(guides)];
 }
 
-/** « Protéger du froid », pour une plante qui reste dehors et dont le catalogue prévoit l'abri. */
+/**
+ * « Protéger du froid », pour une plante qui reste dehors l'hiver : celles dont le catalogue prévoit l'abri (olivier,
+ * jasmin, artichaut), et les vivaces qui reçoivent les alertes gel sans être des frileuses à rentrer (romarin,
+ * passiflore ; vérifié le 23/10 à sa question « seulement l'artichaut ? »).
+ */
 export function frostGuideFor(entry: CatalogPlant): CareGuideTask | null {
-  return entry.tasks.some((task) => careGuideFor(entry, task.id) === "wrap") ? "wrap" : null;
+  if (entry.tasks.some((task) => careGuideFor(entry, task.id) === "wrap")) return "wrap";
+  return entry.perennial && entry.care.frostSensitive && !coldTenderOf(entry) ? "wrap" : null;
 }
 
 type Step = { illustration: IllustrationId; text: string; why?: string; mistake?: string };
