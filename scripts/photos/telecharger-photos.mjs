@@ -169,7 +169,7 @@ const PLANTS = {
 };
 
 // Planches botaniques, herbiers, cartes… : on veut une vraie photo de la plante.
-const EXCLUDED_WORDS = /herbarium|herbier|illustration|drawing|köhler|koehler|thomé|botanical|plate|flora|map|distribution|stamp|logo|seed packet|diagram|\.svg|\.gif|\.tif/i;
+const EXCLUDED_WORDS = /herbarium|herbier|illustration|drawing|köhler|koehler|thomé|botanical|plate|\bflora\b|map|distribution|stamp|logo|seed packet|diagram|\.svg|\.gif|\.tif/i;
 const ALLOWED_LICENSE = /^(cc0|public domain|pd|cc by(-sa)? [0-9.]+|cc by(-sa)?)$/i;
 
 /** « User:Dupont », « Dupont (Dupont) I'd appreciate… » → « Dupont » */
