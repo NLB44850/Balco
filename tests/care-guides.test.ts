@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import { getCatalogPlant, PLANT_CATALOG } from "../lib/plants/catalog";
-import { CARE_GUIDE_TASKS, careGuideFor, careGuidesNow, careTaskOf, frostGuideFor } from "../lib/plants/care-guides";
+import { CARE_GUIDE_TASKS, careGuideFor, careGuidesNow, careTaskOf, frostGuideFor, plantCareGuides } from "../lib/plants/care-guides";
 import { guideLinkText, guideSteps, guideTaskOf, guideTitle, isGuideTask, supplies, whatsNext } from "../lib/plants/guide";
 import { calendarActivities } from "../lib/plants/calendar";
 import { WARNINGS, warningOf } from "../lib/plants/warnings";
@@ -72,6 +72,14 @@ describe("pas-à-pas des gestes d'entretien", () => {
     expect(careGuidesNow(plant("rosemary"), 1, true)).toEqual(["wrap"]);
     expect(careGuidesNow(plant("rosemary"), 1)).toEqual([]);
     expect(careGuidesNow(plant("basil"), 10, true)).toEqual([]);
+  });
+});
+
+describe("la fiche montre tous les pas-à-pas d'entretien (retour du 23/10, potimarron en octobre)", () => {
+  it("ceux du moment d'abord, les autres avec leurs mois", () => {
+    expect(plantCareGuides(plant("kuri-squash"), 10)).toEqual([{ task: "train", months: [6, 7, 8] }]);
+    expect(plantCareGuides(plant("kuri-squash"), 6)).toEqual([{ task: "train", months: null }]);
+    expect(plantCareGuides(plant("grapevine"), 2)).toEqual([{ task: "prune-vine", months: null }, { task: "thin-bunches", months: [6, 7] }]);
   });
 });
 

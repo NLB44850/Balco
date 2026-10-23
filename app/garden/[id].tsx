@@ -45,9 +45,9 @@ import { useDayPlan } from "@/hooks/use-day-plan";
 import { addSnooze, wakeSnoozeFor } from "@/lib/reminders/reminder-actions";
 import { saveReminderSnoozes } from "@/lib/reminders/local-notifications";
 import { usePlantPhotos } from "@/lib/garden/photos-context";
-import { CATEGORY_LABELS, formatMonthRange } from "@/lib/plants/catalog";
+import { CATEGORY_LABELS, formatMonthRange, type Month } from "@/lib/plants/catalog";
 import { guideLinkText, startPills } from "@/lib/plants/guide";
-import { careGuidesNow } from "@/lib/plants/care-guides";
+import { plantCareGuides } from "@/lib/plants/care-guides";
 import { REPOTTING } from "@/lib/plants/repotting";
 import { now as clockNow } from "@/lib/clock";
 import { bloomEvent, canMarkBloom, herbariumKey, isFlower } from "@/lib/garden/herbarium";
@@ -169,9 +169,9 @@ export default function PlantScreen() {
     { key: "plant", label: plant.toPlant ? "Pas à pas, avec ce qu’il te faut" : "Revoir le pas-à-pas", task: undefined },
     // Une vivace installée : le pas-à-pas du pot (celui du geste du jour s'il y en a un).
     ...(!plant.toPlant && REPOTTING[entry.id] ? [{ key: potTask, label: guideLinkText(entry, potTask), task: potTask as string | undefined }] : []),
-    // Ses gestes d'entretien de ce mois-ci ou du suivant qui ont un pas-à-pas en images (guider, tailler, butter…),
-    // et « Protéger du froid » dès qu'un gel est annoncé pour elle.
-    ...(!plant.toPlant ? careGuidesNow(entry, now.getMonth() + 1, frostToday).map((task) => ({ key: task, label: guideLinkText(entry, task), task: task as string | undefined })) : []),
+    // Ses gestes d'entretien en images (guider, tailler, butter…) : ceux de ce mois-ci ou du suivant, et « Protéger du
+    // froid » dès qu'un gel est annoncé, d'abord ; les autres ensuite, avec leurs mois.
+    ...plantCareGuides(entry, now.getMonth() + 1, frostToday).map(({ task, months }) => ({ key: task, label: guideLinkText(entry, task), task: task as string | undefined, months })),
   ];
   const guideLabel = (label: string) => label.replace(/ ›$/u, "");
 
@@ -521,7 +521,7 @@ export default function PlantScreen() {
         <SheetHeading title="Ses pas-à-pas" intro="Chaque geste expliqué en images, avec ce qu’il te faut." />
         <SettingsGroup>
           {guides.map((guide) => (
-            <SettingRow key={guide.key} label={guideLabel(guide.label)} onPress={() => { setGuidesSheet(false); openGuide(guide.task); }} />
+            <SettingRow key={guide.key} label={guideLabel(guide.label)} subtitle={"months" in guide && guide.months ? `À faire en ${formatMonthRange(guide.months as Month[])}` : undefined} onPress={() => { setGuidesSheet(false); openGuide(guide.task); }} />
           ))}
         </SettingsGroup>
       </BottomSheet>

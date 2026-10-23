@@ -106,3 +106,9 @@ de droits avec son crédit.
   restent dehors et reçoivent les alertes gel. Ajoutés (`frostGuideFor` : toute vivace sensible au gel qui n'est pas
   une frileuse à rentrer). Les frileuses ont déjà leur pas-à-pas « Rentrer » (choix pour l'hiver). La règle « ce mois-ci
   et le mois prochain » de la fiche vaut pour les 7 pas-à-pas d'entretien et toutes les plantes.
+- 23/10 (22 h), son retour avec un potimarron ajouté : 1) « Vent fort : mets le potimarron à l'abri, rafales jusqu'à
+  92 km/h » alors que le vent était retombé : le moteur prenait le maximum des rafales de toute la journée, celles du
+  matin comprises ; il ne regarde plus que les 12 prochaines heures (`safetyDecision` de `reminder-engine.ts`, vaut
+  aussi pour le serveur). 2) « Guider les tiges » introuvable en octobre (geste de juin à août) : la fiche montre
+  maintenant tous les pas-à-pas d'entretien de la plante, ceux du moment d'abord, les autres avec « À faire en
+  juin–août » (`plantCareGuides`). E2e dans `37-proteger-du-froid`.

@@ -189,11 +189,22 @@ describe("decideReminder", () => {
     const result = decideReminder({
       plant,
       history: [],
-      weather: weather({ today: { precipitationMm: 0, temperatureMinC: 14, temperatureMaxC: 24, windGustKmhMax: 65 } }),
+      weather: weather({ next12h: { precipitationMm: 0, precipitationProbabilityMax: 10, windGustKmhMax: 65 } }),
       now,
     });
 
     expect(result).toMatchObject({ action: "protect", priority: "urgent" });
+  });
+
+  it("forgets this morning's gusts once the wind has dropped (feedback of 23/10, 10 pm)", () => {
+    const result = decideReminder({
+      plant,
+      history: [],
+      weather: weather({ today: { precipitationMm: 0, temperatureMinC: 10, temperatureMaxC: 16, windGustKmhMax: 92 }, next12h: { precipitationMm: 0, precipitationProbabilityMax: 10, windGustKmhMax: 25 } }),
+      now,
+    });
+
+    expect(result?.cause).not.toBe("wind");
   });
 
   it("tells the user to act from inside during a thunderstorm", () => {

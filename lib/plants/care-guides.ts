@@ -50,6 +50,21 @@ export function careGuidesNow(entry: CatalogPlant, month: number, frost = false)
 }
 
 /**
+ * Tous les pas-à-pas d'entretien de la plante, pour la fiche (retour du 23/10 : « Guider les tiges » du potimarron
+ * introuvable en octobre) : ceux du moment d'abord (`careGuidesNow`), puis les autres avec leurs mois.
+ */
+export function plantCareGuides(entry: CatalogPlant, month: number, frost = false): { task: CareGuideTask; months: number[] | null }[] {
+  const now = careGuidesNow(entry, month, frost);
+  const later = new Map<CareGuideTask, number[]>();
+  for (const task of entry.tasks) {
+    const guide = careGuideFor(entry, task.id);
+    if (!guide || now.includes(guide)) continue;
+    later.set(guide, [...new Set([...(later.get(guide) ?? []), ...(task.months ?? [])])]);
+  }
+  return [...now.map((task) => ({ task, months: null })), ...[...later].map(([task, months]) => ({ task, months }))];
+}
+
+/**
  * « Protéger du froid », pour une plante qui reste dehors l'hiver : celles dont le catalogue prévoit l'abri (olivier,
  * jasmin, artichaut), et les vivaces qui reçoivent les alertes gel sans être des frileuses à rentrer (romarin,
  * passiflore ; vérifié le 23/10 à sa question « seulement l'artichaut ? »).
