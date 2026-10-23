@@ -4931,7 +4931,83 @@
       "file": "clematis-3.jpg"
     }
   ],
-  "passionflower": [],
+  "passionflower": [
+    {
+      "title": "File:Passiflora caerulea (makro close-up).jpg",
+      "width": 4565,
+      "height": 3245,
+      "mime": "image/jpeg",
+      "thumb": "https://thumb.wikimedia.org/wikipedia/commons/thumb/3/30/Passiflora_caerulea_%28makro_close-up%29.jpg/500px-Passiflora_caerulea_%28makro_close-up%29.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
+      "page": "https://commons.wikimedia.org/wiki/File:Passiflora_caerulea_(makro_close-up).jpg",
+      "author": "Petar Milošević",
+      "license": "CC BY-SA 4.0",
+      "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0",
+      "file": "passionflower-1.jpg"
+    },
+    {
+      "title": "File:Passiflora caerulea - two flowers 2019-06-27.jpg",
+      "width": 7948,
+      "height": 5142,
+      "mime": "image/jpeg",
+      "thumb": "https://thumb.wikimedia.org/wikipedia/commons/thumb/8/82/Passiflora_caerulea_-_two_flowers_2019-06-27.jpg/500px-Passiflora_caerulea_-_two_flowers_2019-06-27.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
+      "page": "https://commons.wikimedia.org/wiki/File:Passiflora_caerulea_-_two_flowers_2019-06-27.jpg",
+      "author": "Franz van Duns",
+      "license": "CC BY-SA 4.0",
+      "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0",
+      "file": "passionflower-2.jpg"
+    },
+    {
+      "title": "File:Passiflora caerulea STEREO (R-L) side view of central petal arrangement 2019-06-29.jpg",
+      "width": 5036,
+      "height": 3566,
+      "mime": "image/jpeg",
+      "thumb": "https://thumb.wikimedia.org/wikipedia/commons/thumb/3/39/Passiflora_caerulea_STEREO_%28R-L%29_side_view_of_central_petal_arrangement_2019-06-29.jpg/500px-Passiflora_caerulea_STEREO_%28R-L%29_side_view_of_central_petal_arrangement_2019-06-29.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
+      "page": "https://commons.wikimedia.org/wiki/File:Passiflora_caerulea_STEREO_(R-L)_side_view_of_central_petal_arrangement_2019-06-29.jpg",
+      "author": "Franz van Duns",
+      "license": "CC BY-SA 4.0",
+      "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0",
+      "file": "passionflower-3.jpg"
+    },
+    {
+      "title": "File:Passiflora caerulea, Valparaíso, Chile.jpg",
+      "width": 3264,
+      "height": 2448,
+      "mime": "image/jpeg",
+      "thumb": "https://thumb.wikimedia.org/wikipedia/commons/thumb/b/b6/Passiflora_caerulea%2C_Valpara%C3%ADso%2C_Chile.jpg/500px-Passiflora_caerulea%2C_Valpara%C3%ADso%2C_Chile.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
+      "page": "https://commons.wikimedia.org/wiki/File:Passiflora_caerulea,_Valpara%C3%ADso,_Chile.jpg",
+      "author": "Diego Delso",
+      "license": "CC BY-SA 3.0",
+      "licenseUrl": "https://creativecommons.org/licenses/by-sa/3.0",
+      "file": "passionflower-4.jpg",
+      "query": "Passiflora caerulea"
+    },
+    {
+      "title": "File:Passiflora caerulea NBG LR.jpg",
+      "width": 3443,
+      "height": 3652,
+      "mime": "image/jpeg",
+      "thumb": "https://thumb.wikimedia.org/wikipedia/commons/thumb/0/09/Passiflora_caerulea_NBG_LR.jpg/500px-Passiflora_caerulea_NBG_LR.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
+      "page": "https://commons.wikimedia.org/wiki/File:Passiflora_caerulea_NBG_LR.jpg",
+      "author": "PumpkinSky",
+      "license": "CC BY-SA 4.0",
+      "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0",
+      "file": "passionflower-5.jpg",
+      "query": "Passiflora caerulea"
+    },
+    {
+      "title": "File:Passiflora caerulea NBG 2 LR.jpg",
+      "width": 5630,
+      "height": 3933,
+      "mime": "image/jpeg",
+      "thumb": "https://thumb.wikimedia.org/wikipedia/commons/thumb/f/f4/Passiflora_caerulea_NBG_2_LR.jpg/500px-Passiflora_caerulea_NBG_2_LR.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
+      "page": "https://commons.wikimedia.org/wiki/File:Passiflora_caerulea_NBG_2_LR.jpg",
+      "author": "PumpkinSky",
+      "license": "CC BY-SA 4.0",
+      "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0",
+      "file": "passionflower-6.jpg",
+      "query": "Passiflora caerulea"
+    }
+  ],
   "grapevine": [
     {
       "title": "File:Edle Weinrebe, 'Vitis vinifera' subsp. 'vinifera.jpg",
