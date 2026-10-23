@@ -402,6 +402,156 @@ const DRAWINGS: Record<IllustrationId, () => ReactNode> = {
       <Arrow d="M50 104 L 74 104" head="M68 99 L 74 104 L 68 109" />
     </>
   ),
+  // --- Gestes d'entretien du catalogue balcon et terrasse (23/10) ---------------------------------------
+  trellis: () => (
+    <>
+      <G transform="translate(0 6)">
+        <Pot soilTop={72} scale={0.8} />
+      </G>
+      {/* Le treillage au-dessus du pot, et la tige qui s'enroule autour. */}
+      {[40, 60, 80].map((x) => <Line key={x} x1={x} y1={10} x2={x} y2={70} {...thin} />)}
+      {[22, 40, 58].map((y) => <Line key={y} x1={34} y1={y} x2={86} y2={y} {...thin} />)}
+      <Path d="M60 76 C 46 70 74 62 60 54 C 46 46 74 38 60 30 C 50 24 54 16 64 12" fill="none" {...stroke} />
+      <Path d="M52 64 C 44 64 40 58 42 54 C 48 55 51 59 52 64 Z" fill={LEAF} {...thin} />
+      <Path d="M68 44 C 76 44 80 38 78 34 C 72 35 69 39 68 44 Z" fill={LEAF} {...thin} />
+      <Path d="M54 26 C 46 26 42 20 44 16 C 50 17 53 21 54 26 Z" fill={LEAF} {...thin} />
+      <Arrow d="M100 64 C 108 50 108 36 98 24" head="M97 31 L 98 24 L 105 26" />
+    </>
+  ),
+  "tie-stem": () => (
+    <>
+      {/* De près : le montant du support, la tige à côté, et le lien en huit, lâche, entre les deux. */}
+      <Rect x={38} y={8} width={12} height={104} rx={3} fill="#FFFFFF" {...stroke} />
+      <Path d="M76 112 C 70 90 74 70 70 50 C 67 34 72 20 78 8" fill="none" {...stroke} />
+      <Path d="M72 82 C 84 80 92 72 90 66 C 82 66 76 72 72 82 Z" fill={LEAF} {...thin} />
+      <Path d="M71 36 C 60 34 54 26 56 22 C 64 23 69 28 71 36 Z" fill={LEAF} {...thin} />
+      <Path d="M44 54 C 30 48 30 66 44 62 C 56 58 62 50 72 54 C 84 58 82 70 70 64 C 60 60 54 58 44 54 Z" fill="none" {...thin} />
+      <Path d="M30 58 L 18 58 M 22 54 L 18 58 L 22 62" fill="none" {...thin} />
+    </>
+  ),
+  "fruit-sling": () => (
+    <>
+      {/* Le fruit pend dans un filet noué au support : il ne tire plus sur la tige. */}
+      <Line x1={96} y1={10} x2={96} y2={112} {...stroke} />
+      <Line x1={14} y1={18} x2={96} y2={18} {...stroke} />
+      <Path d="M20 18 C 24 30 34 40 46 50" fill="none" {...stroke} />
+      <Path d="M30 32 C 20 34 14 28 16 22 C 24 22 28 26 30 32 Z" fill={LEAF} {...thin} />
+      <Circle cx={56} cy={70} r={20} fill={SOIL} {...stroke} />
+      <Path d="M36 72 C 38 94 74 94 76 72" fill={LEAF} fillOpacity={0.5} {...thin} />
+      <Path d="M44 74 L 50 90 M 56 76 L 56 92 M 68 74 L 62 90" fill="none" {...thin} />
+      <Path d="M36 72 L 70 18 M 76 72 L 96 40" fill="none" {...thin} />
+    </>
+  ),
+  secateurs: () => (
+    <>
+      {/* Une branche, le sécateur qui coupe net, le bout coupé qui tombe. */}
+      <Line x1={8} y1={50} x2={58} y2={50} {...stroke} />
+      <Ellipse cx={30} cy={45} rx={3} ry={2.2} fill={LEAF} {...thin} />
+      <G opacity={0.45}>
+        <Line x1={66} y1={56} x2={100} y2={68} {...stroke} />
+      </G>
+      <Path d="M62 38 C 54 42 52 52 58 60 L 70 62 Z" fill="#FFFFFF" {...stroke} />
+      <Path d="M58 62 C 54 54 56 46 64 40" fill="none" {...thin} />
+      <Circle cx={68} cy={62} r={3} fill="#FFFFFF" {...thin} />
+      <Path d="M70 64 C 82 74 90 88 94 106" fill="none" {...stroke} strokeWidth={6} />
+      <Path d="M66 66 C 70 80 72 94 70 110" fill="none" {...stroke} strokeWidth={6} />
+    </>
+  ),
+  "two-buds": () => (
+    <>
+      {/* Le vieux bois en bas, le rameau de l'an dernier, deux bourgeons gardés ; le haut coupé, en pâle. */}
+      <Rect x={50} y={96} width={20} height={18} rx={4} fill={SOIL} {...stroke} />
+      <Line x1={60} y1={96} x2={60} y2={58} {...stroke} />
+      <Ellipse cx={53} cy={84} rx={5} ry={4} fill={LEAF} {...stroke} />
+      <Ellipse cx={67} cy={68} rx={5} ry={4} fill={LEAF} {...stroke} />
+      <G opacity={0.35}>
+        <Line x1={60} y1={56} x2={60} y2={14} {...stroke} />
+        <Ellipse cx={53} cy={44} rx={5} ry={4} fill={LEAF} {...thin} />
+        <Ellipse cx={67} cy={26} rx={5} ry={4} fill={LEAF} {...thin} />
+      </G>
+      <Line x1={40} y1={60} x2={80} y2={56} {...thin} strokeDasharray="5 4" />
+      <Path d="M100 56 L 86 57 M 90 53 L 86 57 L 90 61" fill="none" {...thin} />
+    </>
+  ),
+  "grape-bunches": () => (
+    <>
+      {/* Trois grappes sur la tige : deux gardées, la troisième coupée (en pâle), les ciseaux à côté. */}
+      <Path d="M6 24 C 40 18 80 18 114 26" fill="none" {...stroke} />
+      {[24, 58].map((x) => (
+        <G key={x}>
+          <Line x1={x} y1={22} x2={x} y2={34} {...thin} />
+          {[[0, 38], [-7, 44], [7, 44], [-10, 52], [0, 51], [10, 52], [-6, 59], [6, 59], [0, 66]].map(([dx, y]) => <Circle key={`${dx}-${y}`} cx={x + dx} cy={y} r={4.2} fill={LEAF} {...thin} />)}
+        </G>
+      ))}
+      <G opacity={0.4}>
+        <Line x1={92} y1={24} x2={92} y2={34} {...thin} />
+        {[[0, 38], [-7, 44], [7, 44], [0, 51], [0, 58]].map(([dx, y]) => <Circle key={`${dx}-${y}`} cx={92 + dx} cy={y} r={4.2} fill={LEAF} {...thin} />)}
+      </G>
+      <Line x1={86} y1={30} x2={98} y2={30} {...thin} strokeDasharray="3 3" />
+      <G transform="translate(96 92) rotate(-60)">
+        <Path d="M-24 6 L 2 -2 M -24 6 L 2 12" fill="none" {...stroke} />
+        <Circle cx={8} cy={-4} r={6} fill="#FFFFFF" {...stroke} />
+        <Circle cx={8} cy={14} r={6} fill="#FFFFFF" {...stroke} />
+      </G>
+    </>
+  ),
+  "cut-stalk": () => (
+    <>
+      {/* La touffe de rhubarbe, la grande tige à fleurs au milieu, coupée tout en bas (la flèche). */}
+      <Pot soilTop={80} />
+      <Path d="M52 80 C 44 70 34 64 22 62 C 18 52 30 44 40 50 C 46 54 50 66 52 80 Z" fill={LEAF} {...thin} />
+      <Path d="M68 80 C 76 70 86 64 98 62 C 102 52 90 44 80 50 C 74 54 70 66 68 80 Z" fill={LEAF} {...thin} />
+      <Line x1={60} y1={78} x2={60} y2={20} {...stroke} />
+      {[[60, 14], [53, 20], [67, 20], [56, 27], [64, 27]].map(([cx, cy]) => <Circle key={`${cx}-${cy}`} cx={cx} cy={cy} r={3.6} fill="#FFFFFF" {...thin} />)}
+      <Line x1={50} y1={76} x2={70} y2={76} {...stroke} />
+      <Arrow d="M112 30 C 108 56 88 70 72 75" head="M78 70 L 72 75 L 79 79" />
+    </>
+  ),
+  "earth-up": () => (
+    <>
+      {/* Le terreau ramené en petite butte autour du pied, des deux côtés. */}
+      <Pot soilTop={80} />
+      <Path d="M38 80 C 46 66 74 66 82 80 Z" fill={SOIL} {...stroke} />
+      <Plant x={60} y={70} size={0.8} />
+      <Arrow d="M14 58 C 22 60 30 64 36 70" head="M29 69 L 36 70 L 34 63" />
+      <Arrow d="M106 58 C 98 60 90 64 84 70" head="M91 69 L 84 70 L 86 63" />
+    </>
+  ),
+  mulch: () => (
+    <>
+      {/* Une couche de paille sur la terre, au pied de la plante. */}
+      <Pot soilTop={80} />
+      <Path d="M37 82 C 44 70 76 70 83 82 Z" fill={SOIL} {...thin} />
+      {[[40, 78, 50, 74], [46, 82, 56, 77], [52, 75, 62, 79], [62, 77, 72, 73], [66, 82, 76, 78], [72, 75, 80, 80], [42, 74, 48, 80], [56, 72, 64, 74]].map(([x1, y1, x2, y2]) => <Line key={`${x1}-${y1}`} x1={x1} y1={y1} x2={x2} y2={y2} {...thin} />)}
+      <Plant x={60} y={72} size={0.85} />
+      <Path d="M102 30 L 102 56 M 97 51 L 102 56 L 107 51" fill="none" {...thin} />
+    </>
+  ),
+  "winter-wrap": () => (
+    <>
+      {/* Le mur à gauche, le pot collé contre lui, entouré d'une natte ; le vent de l'autre côté. */}
+      <Rect x={4} y={14} width={18} height={98} fill="#FFFFFF" {...stroke} />
+      {[30, 50, 70, 90].map((y) => <Line key={y} x1={4} y1={y} x2={22} y2={y} {...thin} />)}
+      <G transform="translate(-6 0)">
+        <Pot soilTop={72} />
+        <Plant x={60} y={72} size={0.9} />
+        <Path d="M30 70 L 90 70 L 85 106 L 35 106 Z" fill="none" {...thin} strokeDasharray="5 3" />
+        {[[42, 80], [54, 86], [66, 80], [78, 86], [48, 96], [72, 96]].map(([cx, cy]) => <Circle key={`${cx}-${cy}`} cx={cx} cy={cy} r={3} fill="none" {...thin} />)}
+      </G>
+      <Line x1={4} y1={112} x2={116} y2={112} {...stroke} />
+      <Path d="M114 40 C 104 38 100 46 92 44 M 114 54 C 106 52 102 60 96 58" fill="none" {...thin} />
+    </>
+  ),
+  fleece: () => (
+    <>
+      {/* La nuit : un voile léger posé sur la plante, qui laisse passer l'air. */}
+      <Pot soilTop={72} />
+      <Plant x={60} y={72} size={1} />
+      <Path d="M28 104 C 24 60 34 26 60 24 C 86 26 96 60 92 104" fill="none" {...thin} strokeDasharray="6 4" />
+      <Path d="M100 8 C 92 10 90 22 98 26 C 92 26 86 20 88 12 C 90 8 96 6 100 8 Z" fill={LEAF} {...thin} />
+      <Path d="M18 16 L 18 22 M 15 19 L 21 19 M 30 8 L 30 12 M 28 10 L 32 10" fill="none" {...thin} />
+    </>
+  ),
 };
 
 export function GuideIllustration({ id, size = 120 }: { id: IllustrationId; size?: number }) {

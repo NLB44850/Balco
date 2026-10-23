@@ -84,3 +84,14 @@ de droits avec son crédit.
   de « Cueille ». Deux familles ajoutées pour la rotation : liseron (ipomées, patate douce), oseille (oseille,
   rhubarbe). Photos : le filtre du script écartait « Passiflora » (contient « flora ») ; corrigé. Sources dans
   `docs/sources-calendrier.md` (dernière partie). Ajoutée à la PR #67, à valider sur son téléphone.
+- 23/10, son retour : « mets mieux en avant les avertissements et illustre les nouveaux gestes dans le pas-à-pas ».
+  **Avertissements** (`lib/plants/warnings.ts`, carte orange `components/plant-warning.tsx`) : rhubarbe, ipomées,
+  pois de senteur, tulipes, narcisses, hellébore, clématite, chèvrefeuille (sources vérifiées ; jasmin étoilé et
+  muscari écartés faute de sources sûres). Visibles dans la liste du catalogue (« ⚠️ Toxique »), sa fiche, la question
+  du « + », la fiche plante (sous les pastilles), le détail d'un geste qui touche la plante et les pas-à-pas ; plus
+  dans le texte de présentation. **7 pas-à-pas d'entretien en images** (`lib/plants/care-guides.ts`, 11 dessins) :
+  guider les tiges (grimpantes, potimarron avec son filet, pois de senteur), tailler une grimpante, tailler la vigne
+  (deux bourgeons), éclaircir les grappes, couper la tige à fleurs de la rhubarbe, butter (fenouil, pommes de terre),
+  protéger du froid (olivier, jasmin, artichaut). Ouverts par « Pas à pas, en images » dans le détail du geste sur
+  Aujourd'hui, ou par la fiche pendant les mois du geste ; le dernier bouton coche le geste. Détail dans
+  `docs/pas-a-pas.md` (§ 14).

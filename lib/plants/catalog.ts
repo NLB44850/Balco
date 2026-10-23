@@ -1199,7 +1199,7 @@ export const PLANT_CATALOG: CatalogPlant[] = [
   plant({
     id: "sweet-pea", name: "Pois de senteur", label: "les pois de senteur", gender: "m", plural: true, emoji: "🌸", category: "flower",
     sunlight: ["sunny", "partial"], minSpace: "planter", difficulty: "easy", perennial: false, melliferous: true, goals: ["bees"], potLiters: 15,
-    pitch: "Une liane parfumée qui fleurit la rambarde tout le printemps. Attention : ses graines ne se mangent pas.",
+    pitch: "Une liane parfumée qui fleurit la rambarde tout le printemps.",
     sowMonths: [2, 3, 4, 10], plantMonths: [4, 5], harvestMonths: [5, 6, 7, 8],
     harvestTip: "Coupe des bouquets tous les deux jours : si les gousses se forment, la floraison s’arrête.",
     care: { ...THIRSTY, heatThresholdC: 28, frostThresholdC: -5, frostSensitive: false },
@@ -1745,7 +1745,7 @@ export const PLANT_CATALOG: CatalogPlant[] = [
     sunlight: ["sunny", "partial"], minSpace: "balcony", difficulty: "easy", perennial: true, melliferous: true, goals: ["bees"], potLiters: 30, bloomOnly: true,
     pitch: "Un parfum de miel les soirs d’été, et des fleurs que papillons et abeilles adorent.",
     sowMonths: [], plantMonths: [3, 4, 5], harvestMonths: [6, 7, 8, 9],
-    harvestTip: "Respire-le le soir, quand son parfum est le plus fort. Ses petites baies ne se mangent pas.",
+    harvestTip: "Respire-le le soir, quand son parfum est le plus fort.",
     care: { ...REGULAR, heatThresholdC: 32, frostThresholdC: -15, frostSensitive: false },
     wateringMonths: [4, 5, 6, 7, 8, 9, 10],
     wateringInstruction: "Il aime une terre fraîche : arrose dès qu’elle sèche sur 2 cm, surtout les deux premières années.",
@@ -1762,7 +1762,7 @@ export const PLANT_CATALOG: CatalogPlant[] = [
   plant({
     id: "morning-glory", name: "Ipomées", label: "les ipomées", gender: "f", plural: true, emoji: "🌺", category: "climber",
     sunlight: ["sunny"], minSpace: "planter", difficulty: "easy", perennial: false, melliferous: true, goals: ["bees"], potLiters: 15, bloomOnly: true,
-    pitch: "Semées au printemps, elles couvrent un treillage de fleurs bleues ou pourpres jusqu’aux gelées. Attention : leurs graines sont toxiques.",
+    pitch: "Semées au printemps, elles couvrent un treillage de fleurs bleues ou pourpres jusqu’aux gelées.",
     sowMonths: [3, 4, 5], plantMonths: [5, 6], harvestMonths: [7, 8, 9, 10],
     harvestTip: "Chaque fleur s’ouvre le matin et fane le soir : d’autres suivent jusqu’aux gelées.",
     care: { ...REGULAR, heatThresholdC: 35, frostThresholdC: 5, frostSensitive: true },
@@ -1844,7 +1844,7 @@ export const PLANT_CATALOG: CatalogPlant[] = [
   plant({
     id: "rhubarb", name: "Rhubarbe", label: "la rhubarbe", gender: "f", emoji: "🌿", category: "leafy-vegetable",
     sunlight: ["sunny", "partial"], minSpace: "balcony", difficulty: "easy", perennial: true, melliferous: false, goals: [], potLiters: 40,
-    pitch: "Une vivace increvable : des tiges acidulées pour les tartes et les compotes, chaque printemps. Attention : ses feuilles sont toxiques.",
+    pitch: "Une vivace increvable : des tiges acidulées pour les tartes et les compotes, chaque printemps.",
     sowMonths: [], plantMonths: [3, 4, 10, 11], harvestMonths: [4, 5, 6],
     harvestTip: "Tire chaque tige en la tournant à la base, jamais plus d’un tiers de la touffe ; coupe la feuille, toxique, et mets-la au compost.",
     care: { ...REGULAR, heatThresholdC: 30, frostThresholdC: -20, frostSensitive: false },

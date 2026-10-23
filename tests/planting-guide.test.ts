@@ -3,6 +3,7 @@ import { describe, expect, it } from "vitest";
 import { getCatalogPlant, PLANT_CATALOG } from "../lib/plants/catalog";
 import { delayText, guideModelFor, guideSteps, ofName, supplies, whatsNext } from "../lib/plants/guide";
 import { PLANTING } from "../lib/plants/planting";
+import { careGuideFor } from "../lib/plants/care-guides";
 
 const plant = (id: string) => getCatalogPlant(id)!;
 
@@ -68,7 +69,7 @@ describe("modèles de guide et « Ce qu'il te faut »", () => {
 });
 
 describe("les étapes du pas-à-pas (P7) : règles d'écriture", () => {
-  const VERBS = ["Mets", "Remplis", "Fais", "Pose", "Sème", "Recouvre", "Rebouche", "Laisse", "Arrose", "Couvre", "Pose-les", "Sors", "Ajoute", "Enfonce-les", "Prends", "Garde", "Regarde", "Démêle", "Gratte", "Remets", "Tasse", "Repère", "Coupe", "Coupe-le", "Pince-le", "Sors-les", "Laisse-la", "Laisse-le", "Laisse-les", "Vérifie"];
+  const VERBS = ["Mets", "Remplis", "Fais", "Pose", "Sème", "Recouvre", "Rebouche", "Laisse", "Arrose", "Couvre", "Pose-les", "Sors", "Ajoute", "Enfonce-les", "Prends", "Garde", "Regarde", "Démêle", "Gratte", "Remets", "Tasse", "Repère", "Coupe", "Coupe-le", "Pince-le", "Sors-les", "Laisse-la", "Laisse-le", "Laisse-les", "Vérifie", "Enroule", "Attache-la", "Attache", "Recommence", "Raccourcis", "Compte", "Enlève", "Glisse", "Coupe-la", "Ramène-les", "Entoure", "Pousse", "Couvre-le", "Couvre-la", "Couvre-les"];
   const words = (text: string) => text.split(/\s+/u).filter(Boolean).length;
   const models = ["sow-pot", "sow-indoor", "plant-seedling", "plant-bulb", "perennial-pot", "repot", "topdress", "thin", "pinch", "outdoors"] as const;
 
@@ -84,6 +85,8 @@ describe("les étapes du pas-à-pas (P7) : règles d'écriture", () => {
         ...(PLANTING[entry.id].thinning ? (["thin"] as const) : []),
         ...(PLANTING[entry.id].pinching ? (["pinch"] as const) : []),
         ...(months.includes("sow-indoor") && entry.plantMonths.length > 0 ? (["outdoors"] as const) : []),
+        // Les gestes d'entretien illustrés (guider, tailler, butter…).
+        ...entry.tasks.map((task) => careGuideFor(entry, task.id)).filter((task) => task !== null),
       ];
       for (const model of [...months, ...tasks]) {
         const steps = guideSteps(entry, model, { repots: 1 });

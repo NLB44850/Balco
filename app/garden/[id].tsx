@@ -15,6 +15,7 @@ import * as Haptics from "expo-haptics";
 import { FadeIn } from "@/components/motion";
 import { usePlantPhotoCapture } from "@/components/photo-source-sheet";
 import { PlantPicture, stockPhoto } from "@/components/plant-picture";
+import { PlantWarningCard } from "@/components/plant-warning";
 import { ScreenContainer } from "@/components/screen-container";
 import { useCelebration } from "@/components/today/celebration";
 import { useFreePot } from "@/components/free-pot-sheet";
@@ -46,6 +47,7 @@ import { saveReminderSnoozes } from "@/lib/reminders/local-notifications";
 import { usePlantPhotos } from "@/lib/garden/photos-context";
 import { CATEGORY_LABELS, formatMonthRange } from "@/lib/plants/catalog";
 import { guideLinkText, startPills } from "@/lib/plants/guide";
+import { careGuidesThisMonth } from "@/lib/plants/care-guides";
 import { REPOTTING } from "@/lib/plants/repotting";
 import { now as clockNow } from "@/lib/clock";
 import { bloomEvent, canMarkBloom, herbariumKey, isFlower } from "@/lib/garden/herbarium";
@@ -166,6 +168,8 @@ export default function PlantScreen() {
     { key: "plant", label: plant.toPlant ? "Pas à pas, avec ce qu’il te faut" : "Revoir le pas-à-pas", task: undefined },
     // Une vivace installée : le pas-à-pas du pot (celui du geste du jour s'il y en a un).
     ...(!plant.toPlant && REPOTTING[entry.id] ? [{ key: potTask, label: guideLinkText(entry, potTask), task: potTask as string | undefined }] : []),
+    // Ses gestes d'entretien de ce mois-ci qui ont un pas-à-pas en images (guider, tailler, butter…).
+    ...(!plant.toPlant ? careGuidesThisMonth(entry, now.getMonth() + 1).map((task) => ({ key: task, label: guideLinkText(entry, task), task: task as string | undefined })) : []),
   ];
   const guideLabel = (label: string) => label.replace(/ ›$/u, "");
 
@@ -298,6 +302,9 @@ export default function PlantScreen() {
             {startPills(entry, Boolean(plant.toPlant)).map((pill) => <View key={pill} style={[styles.fact, { backgroundColor: colors.surface }]}><Text style={[styles.factText, { color: colors.foreground }]}>{pill}</Text></View>)}
             {entry.harvestMonths.length > 0 && <View style={[styles.fact, { backgroundColor: colors.surface }]}><Text style={[styles.factText, { color: colors.foreground }]}>{isFlower(entry) ? "🌸  Floraison" : "🧺  Récolte"} {formatMonthRange(entry.harvestMonths)}</Text></View>}
           </View>
+
+          {/* Plante toxique ou irritante : en orange, juste sous les pastilles (retour du 23/10). */}
+          <PlantWarningCard catalogId={entry.id} />
 
           {/* L'hiver d'une frileuse, toujours ici, avant le geste du jour : le choix à faire, le choix fait (« C'est
               rentré »), ou « À l'intérieur » (au printemps : « C'est ressorti »). */}

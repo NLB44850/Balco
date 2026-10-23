@@ -10,6 +10,7 @@ import * as Haptics from "expo-haptics";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { FadeIn } from "@/components/motion";
+import { PlantWarningCard } from "@/components/plant-warning";
 import { ScreenContainer } from "@/components/screen-container";
 import { CityPicker } from "@/components/city-picker";
 import { ScreenHeader } from "@/components/screen-header";
@@ -82,6 +83,7 @@ import { skippedRepots, skipRepotThisYear } from "@/lib/garden/repot-skip";
 import { harvestedToastText, isHarvestedOnce } from "@/lib/garden/harvest-end";
 import { REPOTTING } from "@/lib/plants/repotting";
 import { guideTaskOf } from "@/lib/plants/guide";
+import { careGuideFor } from "@/lib/plants/care-guides";
 import { nextSaturdayMorning, postponeStart, saturdayReminder, saturdaySource } from "@/lib/garden/postpone";
 import { addSnooze, eventForReminder, planGroupedNotification, wakeSnoozeFor, type ReminderSnooze } from "@/lib/reminders/reminder-actions";
 import { planDailyDigests } from "@/lib/reminders/daily-digest";
@@ -800,7 +802,12 @@ export default function HomeScreen() {
       </Animated.ScrollView>
 
       <BottomSheet visible={sheetItem !== null} onClose={closeSheet}>
-        {sheetItem && <SheetContent item={sheetItem} events={events} now={now} resolved={sheetItem.kind === "season" ? resolvedPlants.find(({ plant }) => plant.id === sheetItem.activity.subjectId) : undefined} onClose={closeSheet} onToggle={() => { closeSheet(); void toggleItem(sheetItem); }} onSnooze={(kind) => { closeSheet(); if (sheetItem.kind === "alert") void snoozeAlert(sheetItem.group, kind); }} onOpenPlant={(id) => { closeSheet(); router.push({ pathname: "/garden/[id]", params: { id } }); }} onOpenCalendar={() => { closeSheet(); router.push("/(tabs)/calendar"); }} onPostpone={() => { closeSheet(); if (sheetItem.kind === "season") void postponeToSaturday(sheetItem.activity); }} onSkipRepot={() => { closeSheet(); if (sheetItem.kind === "season") void skipRepot(sheetItem.activity); }} onGuide={() => { closeSheet(); if (sheetItem.kind === "season") router.push({ pathname: "/guide/[catalogId]", params: { catalogId: sheetItem.activity.entry.id, plantId: sheetItem.activity.subjectId, ...(guideTaskOf(sheetItem.activity) ? { task: guideTaskOf(sheetItem.activity) } : {}) } }); }} />}
+        {sheetItem && <SheetContent item={sheetItem} events={events} now={now} resolved={sheetItem.kind === "season" ? resolvedPlants.find(({ plant }) => plant.id === sheetItem.activity.subjectId) : undefined} onClose={closeSheet} onToggle={() => { closeSheet(); void toggleItem(sheetItem); }} onSnooze={(kind) => { closeSheet(); if (sheetItem.kind === "alert") void snoozeAlert(sheetItem.group, kind); }} onOpenPlant={(id) => { closeSheet(); router.push({ pathname: "/garden/[id]", params: { id } }); }} onOpenCalendar={() => { closeSheet(); router.push("/(tabs)/calendar"); }} onPostpone={() => { closeSheet(); if (sheetItem.kind === "season") void postponeToSaturday(sheetItem.activity); }} onSkipRepot={() => { closeSheet(); if (sheetItem.kind === "season") void skipRepot(sheetItem.activity); }} onGuide={() => {
+          closeSheet();
+          if (sheetItem.kind === "season") router.push({ pathname: "/guide/[catalogId]", params: { catalogId: sheetItem.activity.entry.id, plantId: sheetItem.activity.subjectId, ...(guideTaskOf(sheetItem.activity) ? { task: guideTaskOf(sheetItem.activity) } : {}) } });
+          const care = sheetItem.kind === "task" ? careGuideFor(sheetItem.task.resolved.entry, sheetItem.task.task.id) : null;
+          if (sheetItem.kind === "task" && care) router.push({ pathname: "/guide/[catalogId]", params: { catalogId: sheetItem.task.resolved.entry.id, plantId: sheetItem.task.resolved.plant.id, task: care } });
+        }} />}
       </BottomSheet>
 
       <BottomSheet
@@ -916,6 +923,7 @@ function SheetContent({ item, events, resolved, now, onToggle, onSnooze, onOpenP
   const info = item.kind === "alert" && item.group.action === "skip";
   // Le même format pour tous les gestes (13/10) : repère en grand, gestes courts avec icône (lib/garden/gesture-detail.ts).
   const watering = item.gesture === "watering" && item.liters !== undefined;
+  const warnedEntryId = item.gesture === "watering" ? null : item.kind === "task" ? item.task.resolved.entry.id : item.kind === "season" ? item.activity.entry.id : null;
   const detail = gestureDetail(item, { resolved, events, now, doneText: item.done ? doneSubtitle(item, events) : undefined });
 
   return (
@@ -923,6 +931,8 @@ function SheetContent({ item, events, resolved, now, onToggle, onSnooze, onOpenP
       <Text style={[styles.sheetKind, { color: alertTone }]}>{item.icon}  {gestureKindLabel(item)}</Text>
       <Text style={[styles.sheetTitle, { color: colors.foreground }]}>{item.title}</Text>
       <GestureDetailView detail={detail} />
+      {/* Toucher une plante toxique (récolter, tailler…) : l'avertissement, en orange. */}
+      {warnedEntryId && <PlantWarningCard catalogId={warnedEntryId} compact />}
       {item.kind === "alert" && (
         <>
           {item.group.decisions.length > 1 && (
@@ -941,8 +951,11 @@ function SheetContent({ item, events, resolved, now, onToggle, onSnooze, onOpenP
       {item.kind === "task" && (
         <Button variant="link" center label={`Voir la fiche de ${plantDisplayName(item.task.resolved)}`} onPress={() => onOpenPlant(item.task.resolved.plant.id)} />
       )}
-      {item.kind === "season" && (item.activity.start || item.activity.kind === "repot" || item.activity.followUp) && !item.done && (
+      {item.kind === "season" && (item.activity.start || item.activity.kind === "repot" || item.activity.followUp || guideTaskOf(item.activity)) && !item.done && (
         <Button variant="secondary" label="Pas à pas, avec ce qu’il te faut" onPress={onGuide} />
+      )}
+      {item.kind === "task" && careGuideFor(item.task.resolved.entry, item.task.task.id) && !item.done && (
+        <Button variant="secondary" label="Pas à pas, en images" onPress={onGuide} />
       )}
       {item.kind === "season" && item.activity.start && !item.done && (
         <Button variant="secondary" label="Pas encore acheté : me le rappeler samedi" onPress={onPostpone} />

@@ -17,6 +17,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { GuideIllustration } from "@/components/guide/illustrations";
 import { LightScreen } from "@/components/light-screen";
+import { PlantWarningCard } from "@/components/plant-warning";
 import { FadeIn, PopIn } from "@/components/motion";
 import { ScreenHeader } from "@/components/screen-header";
 import { glass } from "@/components/ui/glass";
@@ -28,7 +29,8 @@ import { followUpsFor } from "@/lib/garden/follow-ups";
 import { useGarden } from "@/lib/garden/garden-context";
 import { potHistory, startEventId } from "@/lib/garden/garden-logic";
 import { broughtIn, isIndoors, waitsToComeIn } from "@/lib/garden/indoors";
-import { activityDone, eventForActivity, potCareActivity, startActivity } from "@/lib/plants/calendar";
+import { activityDone, calendarActivities, eventForActivity, potCareActivity, startActivity } from "@/lib/plants/calendar";
+import { CARE_AFTER_ILLUSTRATIONS, CARE_DONE_LABELS, careTaskOf, isCareGuideTask } from "@/lib/plants/care-guides";
 import { getCatalogPlant } from "@/lib/plants/catalog";
 import { now as clockNow } from "@/lib/clock";
 import {
@@ -72,6 +74,7 @@ export default function GuideScreen() {
   const task = isGuideTask(params.task) ? params.task : null;
   const potTask = isPotTask(task) ? task : null;
   const followUp = isFollowUpTask(task) ? task : null;
+  const careTask = isCareGuideTask(task) ? task : null;
   const model = task ?? (entry ? guideModelFor(entry, month) : "sow-pot");
   // Rempotage : le pot suivant dépend des rempotages déjà notés.
   const repots = plant && potTask ? potHistory(plant, events).repots : 0;
@@ -129,7 +132,12 @@ export default function GuideScreen() {
   const potActivity = plant && potTask && !plant.toPlant ? potCareActivity({ id: plant.id, displayName, repots, potSize: plant.potSize }, entry, potTask) : null;
   // Geste de suite (éclaircir, pincer, sortir les plants) : seulement quand Balco le propose, une seule fois.
   const followUpActivity = plant && followUp ? followUpsFor({ plant, entry }, events, clockNow()).find((activity) => activity.followUp === followUp) ?? null : null;
-  const taskActivity = potActivity ?? followUpActivity;
+  // Geste d'entretien (guider, tailler, butter…) : celui du jour, pendant ses mois, comme sur Aujourd'hui.
+  const careTaskId = careTask ? careTaskOf(entry, careTask)?.id : undefined;
+  const careActivity = plant && careTaskId && !plant.toPlant
+    ? calendarActivities([{ id: plant.id, entry, displayName, addedAt: plant.addedAt }], clockNow().getMonth() + 1).find((activity) => activity.kind === "care" && activity.taskId === careTaskId) ?? null
+    : null;
+  const taskActivity = potActivity ?? followUpActivity ?? careActivity;
   const bringingIn = task === "indoors";
   const bringingOut = task === "spring";
   const canPlant = bringingIn
@@ -165,13 +173,15 @@ export default function GuideScreen() {
   };
 
   const DONE_LABELS = { repot: "C’est rempoté", topdress: "Terre changée", thin: "C’est éclairci", pinch: "C’est pincé", outdoors: "Plants installés", indoors: "C’est rentré", spring: "C’est ressorti" } as const;
-  const doneLabel = task ? DONE_LABELS[task] : isSowing(model) ? "C’est semé" : "C’est planté";
+  const doneLabel = careTask ? CARE_DONE_LABELS[careTask] : task ? DONE_LABELS[task as keyof typeof DONE_LABELS] : isSowing(model) ? "C’est semé" : "C’est planté";
   const subtitle = needOnly ? "Ce qu’il te faut" : phase === "steps" ? `Étape ${index + 1} sur ${steps.length}` : phase === "after" ? "Et après ?" : `${steps.length} étapes · ce qu’il te faut d’abord`;
 
   return (
     <LightScreen bottom>
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={[styles.content, { paddingTop: insets.top + 14, paddingBottom: insets.bottom + 32 }]}>
         <ScreenHeader back title={guideTitle(entry, model)} subtitle={subtitle} />
+        {/* Plante toxique ou irritante : rappelé avant de la toucher. */}
+        <PlantWarningCard catalogId={entry.id} compact />
 
         {phase === "need" && (
           <>
@@ -224,7 +234,7 @@ export default function GuideScreen() {
         {phase === "after" && (
           <>
             <View style={[glass.card, styles.after]}>
-              <GuideIllustration id={bringingIn ? "windowsill" : isSowing(model) || followUp === "thin" ? "sprouts" : followUp === "pinch" ? "two-shoots" : potTask === "repot" || followUp === "outdoors" ? "harden-off" : "water-well"} size={140} />
+              <GuideIllustration id={careTask ? CARE_AFTER_ILLUSTRATIONS[careTask] : bringingIn ? "windowsill" : isSowing(model) || followUp === "thin" ? "sprouts" : followUp === "pinch" ? "two-shoots" : potTask === "repot" || followUp === "outdoors" ? "harden-off" : "water-well"} size={140} />
               {[...whatsNext(entry, model), ...nextGestures(entry, model)].map((line) => (
                 <Text key={line} style={[styles.afterLine, { color: colors.foreground }]}>{line}</Text>
               ))}
