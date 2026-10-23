@@ -153,6 +153,19 @@ const PLANTS = {
   "dwarf-cherry": "Prunus avium cherries tree",
   kumquat: "Fortunella kumquat fruits",
   pomegranate: "Punica granatum fruit tree",
+  // Livraison 3 (23/10) : grimpantes et légumes
+  "star-jasmine": "Trachelospermum jasminoides flowers",
+  clematis: "Clematis flowers climbing",
+  passionflower: "Passiflora caerulea flower",
+  grapevine: "Vitis vinifera grapes vine",
+  honeysuckle: "Lonicera japonica flowers",
+  "morning-glory": "Ipomoea purpurea flowers",
+  "fava-bean": "Vicia faba pods plant",
+  "sweet-potato": "Ipomoea batatas tubers",
+  "kuri-squash": "Red kuri squash",
+  artichoke: "Cynara scolymus artichoke plant",
+  rhubarb: "Rheum rhabarbarum stalks",
+  "florence-fennel": "Florence fennel bulb Foeniculum",
 };
 
 // Planches botaniques, herbiers, cartes… : on veut une vraie photo de la plante.
