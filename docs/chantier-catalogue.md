@@ -95,3 +95,9 @@ de droits avec son crédit.
   protéger du froid (olivier, jasmin, artichaut). Ouverts par « Pas à pas, en images » dans le détail du geste sur
   Aujourd'hui, ou par la fiche pendant les mois du geste ; le dernier bouton coche le geste. Détail dans
   `docs/pas-a-pas.md` (§ 14).
+- 23/10, son retour : « je ne vois pas le pas-à-pas comment protéger du froid, j'ai pourtant mis la simulation gel »
+  (artichaut). Deux causes : la fiche ne proposait le pas-à-pas que pendant les mois du geste (novembre à février),
+  et la simulation « Gel » (-3 °C) ne concerne pas l'artichaut (alerte sous -5 °C). Corrigé : la fiche propose les
+  pas-à-pas d'entretien du mois et du mois suivant, et « Protéger du froid » dès qu'un gel est annoncé pour la plante
+  (`careGuidesNow`) ; l'alerte gel d'Aujourd'hui ouvre « Protéger l'artichaut du froid, pas à pas » pour les plantes
+  qui restent dehors (`frostGuideFor`) ; nouvelle simulation « Grand froid » (-8 °C). E2e `37-proteger-du-froid`.

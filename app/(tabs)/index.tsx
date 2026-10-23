@@ -82,8 +82,8 @@ import { eventCardText, eventDismissKey, eventIntroDue, eventIntroKey, eventMome
 import { skippedRepots, skipRepotThisYear } from "@/lib/garden/repot-skip";
 import { harvestedToastText, isHarvestedOnce } from "@/lib/garden/harvest-end";
 import { REPOTTING } from "@/lib/plants/repotting";
-import { guideTaskOf } from "@/lib/plants/guide";
-import { careGuideFor } from "@/lib/plants/care-guides";
+import { guideTaskOf, guideTitle } from "@/lib/plants/guide";
+import { careGuideFor, frostGuideFor } from "@/lib/plants/care-guides";
 import { nextSaturdayMorning, postponeStart, saturdayReminder, saturdaySource } from "@/lib/garden/postpone";
 import { addSnooze, eventForReminder, planGroupedNotification, wakeSnoozeFor, type ReminderSnooze } from "@/lib/reminders/reminder-actions";
 import { planDailyDigests } from "@/lib/reminders/daily-digest";
@@ -802,7 +802,14 @@ export default function HomeScreen() {
       </Animated.ScrollView>
 
       <BottomSheet visible={sheetItem !== null} onClose={closeSheet}>
-        {sheetItem && <SheetContent item={sheetItem} events={events} now={now} resolved={sheetItem.kind === "season" ? resolvedPlants.find(({ plant }) => plant.id === sheetItem.activity.subjectId) : undefined} onClose={closeSheet} onToggle={() => { closeSheet(); void toggleItem(sheetItem); }} onSnooze={(kind) => { closeSheet(); if (sheetItem.kind === "alert") void snoozeAlert(sheetItem.group, kind); }} onOpenPlant={(id) => { closeSheet(); router.push({ pathname: "/garden/[id]", params: { id } }); }} onOpenCalendar={() => { closeSheet(); router.push("/(tabs)/calendar"); }} onPostpone={() => { closeSheet(); if (sheetItem.kind === "season") void postponeToSaturday(sheetItem.activity); }} onSkipRepot={() => { closeSheet(); if (sheetItem.kind === "season") void skipRepot(sheetItem.activity); }} onGuide={() => {
+        {sheetItem && <SheetContent item={sheetItem} events={events} now={now}
+          frostGuides={sheetItem.kind === "alert" && sheetItem.group.cause === "frost"
+            ? sheetItem.group.decisions.flatMap((decision) => {
+                const found = resolvedPlants.find(({ plant }) => plant.id === decision.plantId);
+                return found && frostGuideFor(found.entry) ? [{ plantId: found.plant.id, catalogId: found.entry.id, label: guideTitle(found.entry, "wrap") }] : [];
+              })
+            : []}
+          onFrostGuide={(plantId, catalogId) => { closeSheet(); router.push({ pathname: "/guide/[catalogId]", params: { catalogId, plantId, task: "wrap" } }); }} resolved={sheetItem.kind === "season" ? resolvedPlants.find(({ plant }) => plant.id === sheetItem.activity.subjectId) : undefined} onClose={closeSheet} onToggle={() => { closeSheet(); void toggleItem(sheetItem); }} onSnooze={(kind) => { closeSheet(); if (sheetItem.kind === "alert") void snoozeAlert(sheetItem.group, kind); }} onOpenPlant={(id) => { closeSheet(); router.push({ pathname: "/garden/[id]", params: { id } }); }} onOpenCalendar={() => { closeSheet(); router.push("/(tabs)/calendar"); }} onPostpone={() => { closeSheet(); if (sheetItem.kind === "season") void postponeToSaturday(sheetItem.activity); }} onSkipRepot={() => { closeSheet(); if (sheetItem.kind === "season") void skipRepot(sheetItem.activity); }} onGuide={() => {
           closeSheet();
           if (sheetItem.kind === "season") router.push({ pathname: "/guide/[catalogId]", params: { catalogId: sheetItem.activity.entry.id, plantId: sheetItem.activity.subjectId, ...(guideTaskOf(sheetItem.activity) ? { task: guideTaskOf(sheetItem.activity) } : {}) } });
           const care = sheetItem.kind === "task" ? careGuideFor(sheetItem.task.resolved.entry, sheetItem.task.task.id) : null;
@@ -911,13 +918,16 @@ type SheetContentProps = {
   onGuide: () => void;
   /** Rempotage : « Pas besoin cette année ». */
   onSkipRepot: () => void;
+  /** Alerte gel : les plantes qui restent dehors ont leur pas-à-pas « Protéger du froid » (retour du 23/10). */
+  frostGuides: { plantId: string; catalogId: string; label: string }[];
+  onFrostGuide: (plantId: string, catalogId: string) => void;
   /** La plante du balcon concernée par un geste de saison (taille du pot, rempotages). */
   resolved?: ResolvedPlant;
   now: Date;
 };
 
 /** Le détail d'un geste : pourquoi, comment, et les choix possibles. */
-function SheetContent({ item, events, resolved, now, onToggle, onSnooze, onOpenPlant, onOpenCalendar, onPostpone, onGuide, onSkipRepot }: SheetContentProps) {
+function SheetContent({ item, events, resolved, now, onToggle, onSnooze, onOpenPlant, onOpenCalendar, onPostpone, onGuide, onSkipRepot, frostGuides, onFrostGuide }: SheetContentProps) {
   const colors = useColors();
   const alertTone = item.tone === "frost" || item.tone === "rain" || item.tone === "storm" || item.tone === "wind" ? colors.frost : item.tone === "heat" ? colors.terracotta : colors.primary;
   const info = item.kind === "alert" && item.group.action === "skip";
@@ -942,6 +952,9 @@ function SheetContent({ item, events, resolved, now, onToggle, onSnooze, onOpenP
         </>
       )}
       <Button variant={item.done ? "secondary" : "primary"} label={item.done ? "Annuler ce geste" : info ? "Compris" : "C’est fait"} onPress={onToggle} />
+      {item.kind === "alert" && frostGuides.map((guide) => (
+        <Button key={guide.plantId} variant="secondary" label={`${guide.label}, pas à pas`} onPress={() => onFrostGuide(guide.plantId, guide.catalogId)} />
+      ))}
       {item.kind === "alert" && !info && (
         <View style={styles.secondary}>
           <Button variant="secondary" label="Dans 3 h" onPress={() => onSnooze("later")} style={styles.flex} />

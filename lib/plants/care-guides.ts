@@ -35,9 +35,23 @@ export function careTaskOf(entry: CatalogPlant, task: CareGuideTask): CareTask |
   return entry.tasks.find((candidate) => careGuideFor(entry, candidate.id) === task) ?? null;
 }
 
-/** Les pas-à-pas d'entretien de la plante dont le geste a lieu ce mois-ci (liens de la fiche). */
-export function careGuidesThisMonth(entry: CatalogPlant, month: number): CareGuideTask[] {
-  return entry.tasks.filter((task) => task.months?.includes(month as never) && careGuideFor(entry, task.id) !== null).map((task) => careGuideFor(entry, task.id)!);
+/**
+ * Les pas-à-pas d'entretien proposés sur la fiche : ceux dont le geste a lieu ce mois-ci ou le mois prochain (pour s'y
+ * préparer : en octobre, « Protéger l'artichaut du froid » de novembre), et « Protéger du froid » dès qu'un gel est
+ * annoncé, quel que soit le mois (retour du 23/10 : rien sur la fiche de l'artichaut avec la simulation de gel).
+ */
+export function careGuidesNow(entry: CatalogPlant, month: number, frost = false): CareGuideTask[] {
+  const next = (month % 12) + 1;
+  const guides = entry.tasks
+    .filter((task) => task.months?.some((candidate) => candidate === month || candidate === next) && careGuideFor(entry, task.id) !== null)
+    .map((task) => careGuideFor(entry, task.id)!);
+  if (frost && frostGuideFor(entry)) guides.unshift("wrap");
+  return [...new Set(guides)];
+}
+
+/** « Protéger du froid », pour une plante qui reste dehors et dont le catalogue prévoit l'abri. */
+export function frostGuideFor(entry: CatalogPlant): CareGuideTask | null {
+  return entry.tasks.some((task) => careGuideFor(entry, task.id) === "wrap") ? "wrap" : null;
 }
 
 type Step = { illustration: IllustrationId; text: string; why?: string; mistake?: string };

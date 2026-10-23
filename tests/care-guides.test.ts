@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import { getCatalogPlant, PLANT_CATALOG } from "../lib/plants/catalog";
-import { CARE_GUIDE_TASKS, careGuideFor, careGuidesThisMonth, careTaskOf } from "../lib/plants/care-guides";
+import { CARE_GUIDE_TASKS, careGuideFor, careGuidesNow, careTaskOf, frostGuideFor } from "../lib/plants/care-guides";
 import { guideLinkText, guideSteps, guideTaskOf, guideTitle, isGuideTask, supplies, whatsNext } from "../lib/plants/guide";
 import { calendarActivities } from "../lib/plants/calendar";
 import { WARNINGS, warningOf } from "../lib/plants/warnings";
@@ -48,15 +48,25 @@ describe("pas-à-pas des gestes d'entretien", () => {
     expect(guideTitle(plant("olive-tree"), "wrap")).toBe("Protéger l’olivier du froid");
   });
 
-  it("le geste du calendrier ouvre son pas-à-pas ; la fiche le propose pendant ses mois seulement", () => {
+  it("le geste du calendrier ouvre son pas-à-pas ; la fiche le propose pendant ses mois et le mois d'avant", () => {
     const vine = plant("grapevine");
     const [activity] = calendarActivities([{ id: "p", entry: vine, displayName: vine.name }], 6).filter((candidate) => candidate.taskId === "thin-bunches");
     expect(guideTaskOf(activity)).toBe("thin-bunches");
-    expect(careGuidesThisMonth(vine, 6)).toEqual(["thin-bunches"]);
-    expect(careGuidesThisMonth(vine, 2)).toEqual(["prune-vine"]);
-    expect(careGuidesThisMonth(vine, 11)).toEqual([]);
-    expect(careGuidesThisMonth(plant("florence-fennel"), 8)).toEqual(["earth-up"]);
-    expect(careGuidesThisMonth(plant("potato"), 5)).toEqual(["earth-up"]);
+    expect(careGuidesNow(vine, 6)).toEqual(["thin-bunches"]);
+    expect(careGuidesNow(vine, 2)).toEqual(["prune-vine"]);
+    expect(careGuidesNow(vine, 1)).toEqual(["prune-vine"]);
+    expect(careGuidesNow(vine, 10)).toEqual([]);
+    expect(careGuidesNow(plant("florence-fennel"), 8)).toEqual(["earth-up"]);
+    expect(careGuidesNow(plant("potato"), 5)).toEqual(["earth-up"]);
+  });
+
+  it("protéger du froid : dès octobre (avant novembre), et toute l'année quand un gel est annoncé (retour du 23/10)", () => {
+    expect(careGuidesNow(plant("artichoke"), 10)).toEqual(["wrap"]);
+    expect(careGuidesNow(plant("artichoke"), 6)).toEqual([]);
+    expect(careGuidesNow(plant("artichoke"), 6, true)).toEqual(["wrap"]);
+    expect(careGuidesNow(plant("olive-tree"), 10, true)).toEqual(["wrap"]);
+    expect(frostGuideFor(plant("kumquat"))).toBeNull();
+    expect(careGuidesNow(plant("basil"), 10, true)).toEqual([]);
   });
 });
 

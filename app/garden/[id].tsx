@@ -47,7 +47,7 @@ import { saveReminderSnoozes } from "@/lib/reminders/local-notifications";
 import { usePlantPhotos } from "@/lib/garden/photos-context";
 import { CATEGORY_LABELS, formatMonthRange } from "@/lib/plants/catalog";
 import { guideLinkText, startPills } from "@/lib/plants/guide";
-import { careGuidesThisMonth } from "@/lib/plants/care-guides";
+import { careGuidesNow } from "@/lib/plants/care-guides";
 import { REPOTTING } from "@/lib/plants/repotting";
 import { now as clockNow } from "@/lib/clock";
 import { bloomEvent, canMarkBloom, herbariumKey, isFlower } from "@/lib/garden/herbarium";
@@ -129,6 +129,7 @@ export default function PlantScreen() {
   const statusColor = status.tone === "weather" ? colors.frost : status.tone === "watch" ? colors.warning : status.tone === "good" ? colors.primary : colors.muted;
   const variety = plantVariety(resolved);
   const gesture = day?.first ?? null;
+  const frostToday = Boolean(day?.gestures.some((candidate) => candidate.source.type === "decision" && candidate.source.decision.cause === "frost"));
   // « Décide pour ton basilic avant le froid » : la carte du choix pour l'hiver le dit déjà, pas deux fois.
   const winterAsked = asksWinter(resolved, now, climate);
   // Décider, rentrer, ressortir : la carte de l'hiver s'en charge, toujours à la même place (retour du 16/10).
@@ -168,8 +169,9 @@ export default function PlantScreen() {
     { key: "plant", label: plant.toPlant ? "Pas à pas, avec ce qu’il te faut" : "Revoir le pas-à-pas", task: undefined },
     // Une vivace installée : le pas-à-pas du pot (celui du geste du jour s'il y en a un).
     ...(!plant.toPlant && REPOTTING[entry.id] ? [{ key: potTask, label: guideLinkText(entry, potTask), task: potTask as string | undefined }] : []),
-    // Ses gestes d'entretien de ce mois-ci qui ont un pas-à-pas en images (guider, tailler, butter…).
-    ...(!plant.toPlant ? careGuidesThisMonth(entry, now.getMonth() + 1).map((task) => ({ key: task, label: guideLinkText(entry, task), task: task as string | undefined })) : []),
+    // Ses gestes d'entretien de ce mois-ci ou du suivant qui ont un pas-à-pas en images (guider, tailler, butter…),
+    // et « Protéger du froid » dès qu'un gel est annoncé pour elle.
+    ...(!plant.toPlant ? careGuidesNow(entry, now.getMonth() + 1, frostToday).map((task) => ({ key: task, label: guideLinkText(entry, task), task: task as string | undefined })) : []),
   ];
   const guideLabel = (label: string) => label.replace(/ ›$/u, "");
 
