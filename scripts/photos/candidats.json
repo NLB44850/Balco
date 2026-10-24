@@ -5772,7 +5772,47 @@
       "file": "calamondin-3.jpg"
     }
   ],
-  "mandarin": [],
+  "mandarin": [
+    {
+      "title": "File:Citrus unshiu 20101127 c.jpg",
+      "width": 3072,
+      "height": 2304,
+      "mime": "image/jpeg",
+      "thumb": "https://thumb.wikimedia.org/wikipedia/commons/thumb/3/31/Citrus_unshiu_20101127_c.jpg/500px-Citrus_unshiu_20101127_c.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
+      "page": "https://commons.wikimedia.org/wiki/File:Citrus_unshiu_20101127_c.jpg",
+      "author": "Batholith",
+      "license": "Public domain",
+      "licenseUrl": "",
+      "file": "mandarin-1.jpg",
+      "query": "Citrus unshiu"
+    },
+    {
+      "title": "File:Citrus unshiu 20101118 a.jpg",
+      "width": 2878,
+      "height": 2159,
+      "mime": "image/jpeg",
+      "thumb": "https://thumb.wikimedia.org/wikipedia/commons/thumb/1/1d/Citrus_unshiu_20101118_a.jpg/500px-Citrus_unshiu_20101118_a.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
+      "page": "https://commons.wikimedia.org/wiki/File:Citrus_unshiu_20101118_a.jpg",
+      "author": "Batholith (talk)",
+      "license": "Public domain",
+      "licenseUrl": "",
+      "file": "mandarin-2.jpg",
+      "query": "Citrus unshiu"
+    },
+    {
+      "title": "File:Citrus unshiu-unshu mikan-2.jpg",
+      "width": 960,
+      "height": 1280,
+      "mime": "image/jpeg",
+      "thumb": "https://thumb.wikimedia.org/wikipedia/commons/thumb/1/1e/Citrus_unshiu-unshu_mikan-2.jpg/500px-Citrus_unshiu-unshu_mikan-2.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
+      "page": "https://commons.wikimedia.org/wiki/File:Citrus_unshiu-unshu_mikan-2.jpg",
+      "author": "Tomomarusan",
+      "license": "CC BY 2.5",
+      "licenseUrl": "https://creativecommons.org/licenses/by/2.5",
+      "file": "mandarin-3.jpg",
+      "query": "Citrus unshiu"
+    }
+  ],
   "lime": [
     {
       "title": "File:Citrus aurantiifolia by Kadavoor.jpg",
