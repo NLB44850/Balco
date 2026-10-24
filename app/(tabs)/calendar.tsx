@@ -16,6 +16,8 @@ import { LightScreen } from "@/components/light-screen";
 import { PlantPicture } from "@/components/plant-picture";
 import { ScreenHeader } from "@/components/screen-header";
 import { SeasonalSuggestions } from "@/components/seasonal-suggestions";
+import { SeasonGlyph, SeasonScene } from "@/components/seasons/season-scene";
+import { YearStrip, type YearRow } from "@/components/seasons/year-strip";
 import { BottomSheet } from "@/components/today/bottom-sheet";
 import { TODAY_ROW_PICTURE, TodayRow } from "@/components/today/today-row";
 import { UndoToast, type ToastMessage } from "@/components/today/undo-toast";
@@ -48,6 +50,8 @@ import {
 import { describeSowing, formatMonthRange, MONTH_LONG, MONTH_SHORT, seasonFact } from "@/lib/plants/catalog";
 import { nextSuggestionMonth, seasonalStarters, seasonalSuggestions, seasonSuggestions, suggestionActionLabel, type SeasonalSuggestion } from "@/lib/plants/suggestions";
 import { climateSummary, climateZoneFor } from "@/lib/plants/climate";
+import { plantYear, SEASON_SCENES, seasonOfMonth, type SeasonId } from "@/lib/plants/plant-year";
+import { skyLabel } from "@/lib/weather/forecast-view";
 import type { ReminderSnooze } from "@/lib/reminders/reminder-actions";
 import { loadReminderSnoozes, subscribeReminderSnoozes } from "@/lib/reminders/local-notifications";
 import { useNow } from "@/hooks/use-date-simulation";
@@ -93,6 +97,7 @@ export default function CalendarScreen() {
   // Climat de la ville choisie : dates des plantes frileuses décalées (Midi plus tôt, montagne plus tard).
   const climate = useMemo(() => (weather.isFallback ? null : climateZoneFor(weather.latitude, weather.longitude, weatherSnapshot.elevationM)), [weather.isFallback, weather.latitude, weather.longitude, weatherSnapshot.elevationM]);
   const [cityModalVisible, setCityModalVisible] = useState(false);
+  const [sceneWidth, setSceneWidth] = useState(0);
   // Sans plante au balcon, le calendrier montre des idées adaptées plutôt qu'un écran vide.
   const showingIdeas = resolvedPlants.length === 0;
   // Les idées : seulement ce qui se sème ou se plante ce mois-ci, dans le climat de la ville.
@@ -116,6 +121,14 @@ export default function CalendarScreen() {
   const activeFilter = selectedPlant === "all" || subjects.some((subject) => subject.id === selectedPlant) ? selectedPlant : "all";
   const filteredSubjects = useMemo(() => (activeFilter === "all" ? subjects : subjects.filter((subject) => subject.id === activeFilter)), [activeFilter, subjects]);
   const season = seasons.find((item) => item.id === selectedSeason) ?? seasons[0];
+  // « L'année de tes plantes » : les plantes du filtre choisi, dates adaptées au climat (maquette B du 24/10).
+  const yearRows = useMemo<YearRow[]>(
+    () => (starters ? [] : filteredSubjects.flatMap((subject) => {
+      const resolved = resolvedById.get(subject.id);
+      return resolved ? [{ id: subject.id, name: subject.displayName, resolved, year: plantYear(resolved.entry, climate) }] : [];
+    })),
+    [climate, filteredSubjects, resolvedById, starters],
+  );
   // Vue par saison : ses mois, à partir de maintenant pour la saison en cours (septembre est passé).
   const seasonMonths = useMemo(() => {
     const start = season.id === seasons[0].id ? season.months.indexOf(currentMonth as (typeof season.months)[number]) : -1;
@@ -202,6 +215,8 @@ export default function CalendarScreen() {
       onOpen={() => setSheetKey(activity.key)}
     />
   );
+  // La scène suit la saison affichée : le mois choisi, ou la saison choisie.
+  const shownSeason: SeasonId = view === "season" ? season.id : seasonOfMonth(selectedMonth);
   const climateLine = weather.isFallback || !climate ? "Paris par défaut : choisis ta ville pour des dates justes." : climateSummary(climate);
 
   return (
@@ -212,18 +227,23 @@ export default function CalendarScreen() {
           subtitle={showingIdeas ? "Idées de saison pour ton balcon" : `${resolvedPlants.length} plante${resolvedPlants.length > 1 ? "s" : ""} suivie${resolvedPlants.length > 1 ? "s" : ""}`}
         />
 
-        {/* Ton climat en une carte : la météo, la ville (à toucher pour changer), ce que ça change. */}
-        <View style={[glass.card, styles.climate]}>
-          <View style={styles.climateTop}>
-            <View style={styles.flex}>
-              <Text style={[styles.small, { color: colors.muted }]}>{isLoading ? "Ton climat · chargement…" : "Ton climat, en direct"}</Text>
-              <Text style={[styles.climateTitle, { color: colors.foreground }]}>{Math.round(weather.temperature)}° · {weather.summary}</Text>
+        {/* La saison du mois affiché, dessinée (24/10, maquette A), avec ton climat : la météo, la ville (à toucher pour
+            changer), ce que ça change. Même repère qu'Aujourd'hui : une grande carte illustrée en haut. */}
+        <View style={[glass.card, styles.seasonCard]} onLayout={(event) => setSceneWidth(event.nativeEvent.layout.width)}>
+          <SeasonScene season={shownSeason} width={sceneWidth} />
+          <View style={styles.climate}>
+            <View style={styles.climateTop}>
+              <View style={styles.flex}>
+                <Text style={[styles.climateTitle, { color: colors.foreground }]}>{SEASON_SCENES[shownSeason].title}</Text>
+                <Text style={[styles.small, { color: colors.muted }]}>{isLoading ? "Ton climat · chargement…" : `${Math.round(weather.temperature)}° · ${skyLabel(weather.weatherCode, weather.isDay, weather.temperature).toLowerCase()}`}</Text>
+              </View>
+              <Pressable accessibilityRole="button" accessibilityLabel={`Changer de ville, actuellement ${weather.city}`} onPress={() => setCityModalVisible(true)} style={({ pressed }) => [styles.cityButton, { backgroundColor: colors.leaf }, pressed && styles.pressed]}><Text style={[styles.cityButtonText, { color: colors.primary }]}>⌖ {weather.city}</Text></Pressable>
             </View>
-            <Pressable accessibilityRole="button" accessibilityLabel={`Changer de ville, actuellement ${weather.city}`} onPress={() => setCityModalVisible(true)} style={({ pressed }) => [styles.cityButton, { backgroundColor: colors.leaf }, pressed && styles.pressed]}><Text style={[styles.cityButtonText, { color: colors.primary }]}>⌖ {weather.city}</Text></Pressable>
-          </View>
-          <View style={styles.climateBottom}>
-            <Text style={[styles.small, styles.flex, { color: colors.foreground }]}>{climateLine}</Text>
-            <Pressable accessibilityRole="button" accessibilityLabel="Actualiser la météo" hitSlop={8} onPress={() => void refresh()} style={({ pressed }) => [pressed && styles.pressed]}><Text style={[styles.refreshText, { color: colors.primary }]}>↻</Text></Pressable>
+            <Text style={[styles.small, { color: colors.foreground }]}>{SEASON_SCENES[shownSeason].text}</Text>
+            <View style={styles.climateBottom}>
+              <Text style={[styles.small, styles.flex, { color: colors.muted }]}>{climateLine}</Text>
+              <Pressable accessibilityRole="button" accessibilityLabel="Actualiser la météo" hitSlop={8} onPress={() => void refresh()} style={({ pressed }) => [pressed && styles.pressed]}><Text style={[styles.refreshText, { color: colors.primary }]}>↻</Text></Pressable>
+            </View>
           </View>
         </View>
 
@@ -246,11 +266,11 @@ export default function CalendarScreen() {
           {view === "season"
             ? seasons.map((item, index) => {
               const active = season.id === item.id;
-              return <Pressable key={item.id} accessibilityRole="button" accessibilityState={{ selected: active }} onPress={() => setSelectedSeason(item.id)} style={({ pressed }) => [styles.seasonItem, active ? { backgroundColor: colors.primary } : glass.soft, pressed && styles.pressed]}><Text style={[styles.monthText, { color: active ? "#FFFFFF" : colors.foreground }]}>{item.label}</Text>{index === 0 && <View style={[styles.monthDot, { backgroundColor: active ? "#FFFFFF" : colors.primary }]} />}</Pressable>;
+              return <Pressable key={item.id} accessibilityRole="button" accessibilityState={{ selected: active }} onPress={() => setSelectedSeason(item.id)} style={({ pressed }) => [styles.seasonItem, active ? { backgroundColor: colors.primary } : glass.soft, pressed && styles.pressed]}><SeasonGlyph season={item.id} color={active ? "#FFFFFF" : undefined} /><Text style={[styles.monthText, { color: active ? "#FFFFFF" : colors.foreground }]}>{item.label}</Text>{index === 0 && <View style={[styles.monthDot, { backgroundColor: active ? "#FFFFFF" : colors.primary }]} />}</Pressable>;
             })
             : months.map((month) => {
               const active = selectedMonth === month;
-              return <Pressable key={month} accessibilityRole="button" accessibilityState={{ selected: active }} onPress={() => setSelectedMonth(month)} style={({ pressed }) => [styles.monthItem, active ? { backgroundColor: colors.primary } : glass.soft, pressed && styles.pressed]}><Text style={[styles.monthText, { color: active ? "#FFFFFF" : colors.foreground }]}>{MONTH_SHORT[month - 1]}</Text>{month === currentMonth && <View style={[styles.monthDot, { backgroundColor: active ? "#FFFFFF" : colors.primary }]} />}</Pressable>;
+              return <Pressable key={month} accessibilityRole="button" accessibilityState={{ selected: active }} onPress={() => setSelectedMonth(month)} style={({ pressed }) => [styles.monthItem, active ? { backgroundColor: colors.primary } : glass.soft, pressed && styles.pressed]}><Text style={[styles.monthText, { color: active ? "#FFFFFF" : colors.foreground }]}>{MONTH_SHORT[month - 1]}</Text><SeasonGlyph season={seasonOfMonth(month)} color={active ? "#FFFFFF" : undefined} />{month === currentMonth && <View style={[styles.monthDot, { backgroundColor: active ? "#FFFFFF" : colors.primary }]} />}</Pressable>;
             })}
         </ScrollView>
 
@@ -285,6 +305,8 @@ export default function CalendarScreen() {
           </View>
         )}
         {ordered.length === 0 && <Text style={[styles.text, styles.empty, { color: colors.muted }]}>Rien de prévu {periodLabel} : tes plantes se reposent.{view === "month" ? " Regarde les mois suivants." : ""}</Text>}
+
+        {!showingIdeas && <YearStrip rows={yearRows} currentMonth={currentMonth} onOpen={(id) => router.push({ pathname: "/garden/[id]", params: { id } })} />}
 
         {view === "month" && !showingIdeas && (
           <SeasonalSuggestions month={selectedMonth} current={selectedMonth === currentMonth} suggestions={suggestions} nextMonth={nextMonth} allOwned={allOwned} onAdd={(suggestion) => void addSuggestion(suggestion)} onOpen={setSheetSuggestion} />
@@ -383,7 +405,8 @@ const styles = StyleSheet.create({
   flex: { flex: 1 },
   small: { fontSize: 13, lineHeight: 18 },
   text: { fontSize: 14, lineHeight: 20 },
-  climate: { padding: 16, gap: 10 },
+  seasonCard: { overflow: "hidden", padding: 0 },
+  climate: { padding: 16, gap: 8 },
   climateTop: { flexDirection: "row", justifyContent: "space-between", alignItems: "flex-start", gap: 10 },
   climateTitle: { fontSize: 20, fontWeight: "800", marginTop: 2, letterSpacing: -0.4 },
   climateBottom: { flexDirection: "row", alignItems: "center", gap: 10 },
@@ -396,8 +419,8 @@ const styles = StyleSheet.create({
   viewOptionActive: { backgroundColor: "#FFFFFF", shadowColor: "#000", shadowOpacity: 0.06, shadowRadius: 6, shadowOffset: { width: 0, height: 2 }, elevation: 1 },
   viewOptionText: { fontSize: 14, fontWeight: "700" },
   pillsRow: { gap: 7, paddingVertical: 2 },
-  monthItem: { minWidth: 46, height: 46, borderRadius: 23, alignItems: "center", justifyContent: "center" },
-  seasonItem: { borderRadius: 999, paddingHorizontal: 16, paddingVertical: 10, alignItems: "center", minWidth: 84 },
+  monthItem: { minWidth: 48, height: 62, borderRadius: 18, alignItems: "center", justifyContent: "center", gap: 3 },
+  seasonItem: { flexDirection: "row", gap: 6, borderRadius: 999, paddingHorizontal: 16, paddingVertical: 10, alignItems: "center", minWidth: 84 },
   monthText: { fontSize: 13, fontWeight: "700" },
   monthDot: { width: 4, height: 4, borderRadius: 2, marginTop: 4 },
   filterChip: { flexDirection: "row", alignItems: "center", gap: 7, borderRadius: 999, paddingLeft: 5, paddingRight: 13, paddingVertical: 5, minHeight: 36 },
