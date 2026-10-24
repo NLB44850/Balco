@@ -1999,6 +1999,175 @@ export const PLANT_CATALOG: CatalogPlant[] = [
       { id: "gigantea", name: "Stipa gigantea", note: "L’avoine géante : grands épis dorés à 1,50 m, pour un grand bac." },
     ],
   }),
+
+  // --- Catalogue balcon et terrasse, livraison 5 (24/10) : fruitiers et bananier du Japon ----------------------
+  plant({
+    id: "dwarf-apricot", name: "Abricotier nain", label: "l’abricotier", gender: "m", emoji: "🪴", category: "fruit-tree",
+    sunlight: ["sunny"], minSpace: "balcony", difficulty: "medium", perennial: true, melliferous: true, goals: ["bees"], potLiters: 40,
+    pitch: "Des abricots parfumés en juillet sur un arbre d’un mètre : il se suffit à lui-même pour donner des fruits.",
+    sowMonths: [], plantMonths: [11, 12, 2, 3], harvestMonths: [7],
+    harvestTip: "Cueille les abricots tachés de rouge et très parfumés : une fois cueillis, ils ne mûrissent plus.",
+    care: { ...REGULAR, wateringIntervalHours: 72, heatThresholdC: 35, frostThresholdC: -15, frostSensitive: false },
+    wateringMonths: [4, 5, 6, 7, 8, 9],
+    extraTasks: [
+      customTask({ id: "thin-fruits", type: "pruning", title: "Aujourd’hui, éclaircis les abricots.", instruction: "Garde un petit abricot tous les 10 cm de branche et enlève les autres : ils seront plus gros.", minutes: 5, months: [5, 6] }),
+      customTask({ id: "prune", type: "pruning", title: "Aujourd’hui, taille l’abricotier.", instruction: "Après la récolte, raccourcis les branches trop longues et enlève le bois mort, pour le garder petit.", minutes: 10, months: [8, 9] }),
+    ],
+    varieties: [
+      { id: "petit-abri", name: "Petit Abri", note: "Abricotier nain d’environ 1 m sur 60 cm, conçu pour les petits espaces." },
+      { id: "aurora", name: "Aurora", note: "Variété précoce vendue en pot, à garder petite par la taille." },
+    ],
+  }),
+  plant({
+    id: "dwarf-plum", name: "Prunier nain", label: "le prunier", gender: "m", emoji: "🪴", category: "fruit-tree",
+    sunlight: ["sunny"], minSpace: "balcony", difficulty: "easy", perennial: true, melliferous: true, goals: ["bees"], potLiters: 40,
+    pitch: "Mirabelles ou reines-claudes sur ton balcon, de juillet à septembre selon la variété.",
+    sowMonths: [], plantMonths: [10, 11, 12, 2, 3], harvestMonths: [7, 8, 9],
+    harvestTip: "Cueille les prunes quand elles cèdent un peu sous le doigt et se détachent seules.",
+    care: { ...REGULAR, wateringIntervalHours: 72, heatThresholdC: 35, frostThresholdC: -15, frostSensitive: false },
+    wateringMonths: [4, 5, 6, 7, 8, 9],
+    extraTasks: [
+      customTask({ id: "thin-fruits", type: "pruning", title: "Aujourd’hui, éclaircis les prunes.", instruction: "Si les fruits sont serrés, garde-en un tous les 5 cm : les branches ne cassent pas et les prunes grossissent.", minutes: 5, months: [6] }),
+      customTask({ id: "prune", type: "pruning", title: "Aujourd’hui, taille le prunier.", instruction: "Après la récolte, raccourcis les pousses trop longues et enlève le bois mort ; jamais de grosse taille en hiver.", minutes: 10, months: [8, 9] }),
+    ],
+    varieties: [
+      { id: "plum-me", name: "Plum Me", note: "Prunier nain pensé pour le pot." },
+      { id: "miraclaude", name: "Miraclaude", note: "Croisement mirabelle × reine-claude, autofertile et très productif, fruits en juillet." },
+      { id: "mirabelle-nancy", name: "Mirabelle de Nancy", note: "Autofertile, petites prunes dorées en août-septembre ; sur porte-greffe nanifiant pour le pot." },
+    ],
+  }),
+  plant({
+    id: "columnar-pear", name: "Poirier colonnaire", label: "le poirier", gender: "m", emoji: "🍐", category: "fruit-tree",
+    sunlight: ["sunny"], minSpace: "balcony", difficulty: "medium", perennial: true, melliferous: true, goals: ["bees"], potLiters: 50,
+    pitch: "Des poires d’automne sur une colonne étroite ; il lui faut presque toujours un 2ᵉ poirier en fleur à côté.",
+    sowMonths: [], plantMonths: [11, 12, 2, 3], harvestMonths: [8, 9, 10],
+    harvestTip: "Cueille les poires encore fermes, quand elles se détachent d’une légère torsion, et laisse-les mûrir quelques jours à la maison.",
+    care: { ...REGULAR, wateringIntervalHours: 72, heatThresholdC: 32, frostThresholdC: -15, frostSensitive: false },
+    wateringMonths: [4, 5, 6, 7, 8, 9, 10],
+    extraTasks: [
+      customTask({ id: "thin-fruits", type: "pruning", title: "Aujourd’hui, éclaircis les poires.", instruction: "Garde une ou deux petites poires par bouquet : elles grossiront mieux.", minutes: 5, months: [6] }),
+      customTask({ id: "prune", type: "pruning", title: "Aujourd’hui, taille le poirier.", instruction: "Taille peu : raccourcis les pousses de côté qui dépassent et enlève le bois mort, pour garder la colonne.", minutes: 10, months: [1, 2] }),
+    ],
+    varieties: [
+      { id: "conference", name: "Conférence", note: "Poires allongées d’automne ; se pollinise en partie seule, mais donne mieux avec un autre poirier." },
+      { id: "comice", name: "Doyenné du Comice", note: "Poires fondantes d’octobre ; il lui faut un autre poirier en fleur en même temps." },
+    ],
+  }),
+  plant({
+    id: "calamondin", name: "Calamondin", label: "le calamondin", gender: "m", emoji: "🍊", category: "fruit-tree",
+    sunlight: ["sunny"], minSpace: "planter", difficulty: "medium", perennial: true, melliferous: true, goals: [], potLiters: 20,
+    pitch: "Le petit oranger « cocktail » : des fruits acidulés en plein hiver, pour la confiture ou un verre d’eau.",
+    sowMonths: [], plantMonths: [4, 5, 6], harvestMonths: [11, 12, 1, 2],
+    harvestTip: "Cueille les fruits bien orange au sécateur : très acides, ils parfument confitures et boissons.",
+    care: { ...REGULAR, wateringIntervalHours: 72, heatThresholdC: 35, frostThresholdC: 3, frostSensitive: true },
+    wateringMonths: WHOLE_YEAR,
+    wateringInstruction: "Arrose quand la terre est sèche sur 2 cm ; l’hiver à l’abri, deux fois par mois environ.",
+    extraTasks: [
+      customTask({ id: "shelter", type: "protection", title: "Aujourd’hui, abrite le calamondin.", instruction: "Avant les nuits froides, rentre-le dans une pièce lumineuse vers 10 °C, loin des radiateurs.", minutes: 10, months: [10, 11, 12, 1, 2, 3, 4] }),
+      customTask({ id: "prune", type: "pruning", title: "Aujourd’hui, taille le calamondin.", instruction: "En fin d’hiver, après la récolte, raccourcis légèrement les branches pour le garder compact.", minutes: 5, months: [3] }),
+    ],
+    varieties: [
+      { id: "calamondin", name: "Calamondin commun", note: "Le plus vendu, très décoratif avec ses petits fruits." },
+      { id: "variegata", name: "Calamondin panaché", note: "Feuilles bordées de crème et fruits striés." },
+    ],
+  }),
+  plant({
+    id: "mandarin", name: "Mandarinier", label: "le mandarinier", gender: "m", emoji: "🍊", category: "fruit-tree",
+    sunlight: ["sunny"], minSpace: "balcony", difficulty: "medium", perennial: true, melliferous: true, goals: [], potLiters: 40,
+    pitch: "Des mandarines à l’automne : le Satsuma est l’agrume le plus résistant au froid, mais il passe l’hiver à l’abri en pot.",
+    sowMonths: [], plantMonths: [4, 5, 6], harvestMonths: [10, 11, 12],
+    harvestTip: "Cueille les mandarines quand elles sont bien colorées et se détachent facilement ; elles tiennent un moment sur l’arbre.",
+    care: { ...REGULAR, wateringIntervalHours: 72, heatThresholdC: 35, frostThresholdC: -2, frostSensitive: true },
+    wateringMonths: WHOLE_YEAR,
+    wateringInstruction: "Arrose quand la terre est sèche sur 3 cm, puis vide la soucoupe ; l’hiver à l’abri, bien moins souvent.",
+    extraTasks: [
+      customTask({ id: "shelter", type: "protection", title: "Aujourd’hui, abrite le mandarinier.", instruction: "Avant les gelées, rentre-le dans une pièce lumineuse et fraîche, hors gel (5 à 12 °C).", minutes: 10, months: [11, 12, 1, 2, 3] }),
+    ],
+    varieties: [
+      { id: "satsuma", name: "Satsuma", note: "Le mandarinier le plus résistant au froid, fruits sans pépins de septembre à novembre." },
+      { id: "okitsu", name: "Satsuma Okitsu", note: "Mûrit de mi-septembre à novembre selon le climat." },
+    ],
+  }),
+  plant({
+    id: "lime", name: "Citron vert", label: "le citronnier vert", gender: "m", emoji: "🍋", category: "fruit-tree",
+    sunlight: ["sunny"], minSpace: "balcony", difficulty: "medium", perennial: true, melliferous: true, goals: [], potLiters: 30,
+    pitch: "Des citrons verts pour les cocktails et les plats d’été ; plus frileux que le citronnier, il passe l’hiver à l’abri.",
+    sowMonths: [], plantMonths: [4, 5, 6], harvestMonths: [8, 9, 10, 11],
+    harvestTip: "Cueille les citrons verts quand ils sont brillants et cèdent un peu sous le doigt.",
+    care: { ...REGULAR, wateringIntervalHours: 72, heatThresholdC: 35, frostThresholdC: 3, frostSensitive: true },
+    wateringMonths: WHOLE_YEAR,
+    wateringInstruction: "Arrose quand la terre est sèche sur 3 cm, puis vide la soucoupe ; l’hiver à l’abri, bien moins souvent.",
+    extraTasks: [
+      customTask({ id: "shelter", type: "protection", title: "Aujourd’hui, abrite le citron vert.", instruction: "Dès que les nuits approchent 5 °C, rentre-le dans une pièce lumineuse, hors gel, loin des radiateurs.", minutes: 10, months: [10, 11, 12, 1, 2, 3, 4] }),
+    ],
+    varieties: [
+      { id: "tahiti", name: "Lime de Tahiti", note: "Le citron vert du commerce, sans pépins, un peu moins frileux." },
+      { id: "mexicain", name: "Citron vert mexicain", note: "Petits fruits très parfumés, encore plus frileux." },
+    ],
+  }),
+  plant({
+    id: "feijoa", name: "Feijoa", label: "le feijoa", gender: "m", emoji: "🪴", category: "fruit-tree",
+    sunlight: ["sunny"], minSpace: "balcony", difficulty: "medium", perennial: true, melliferous: true, goals: ["bees"], potLiters: 40,
+    pitch: "La « goyave ananas » : un arbuste persistant aux fleurs rouges, et des fruits parfumés à l’automne si l’été est chaud.",
+    sowMonths: [], plantMonths: [3, 4, 5, 9, 10], harvestMonths: [10, 11],
+    harvestTip: "Ramasse les feijoas quand ils tombent tout seuls : c’est qu’ils sont mûrs. Ses pétales se mangent aussi.",
+    care: { ...REGULAR, wateringIntervalHours: 72, heatThresholdC: 35, frostThresholdC: -8, frostSensitive: true },
+    wateringMonths: [4, 5, 6, 7, 8, 9, 10],
+    extraTasks: [
+      customTask({ id: "shelter", type: "protection", title: "Aujourd’hui, prépare l’abri du feijoa.", instruction: "Si le froid passe sous -8 °C, isole le pot, paille le pied et couvre-le d’un voile d’hivernage.", minutes: 10, months: [12, 1, 2] }),
+    ],
+    varieties: [
+      { id: "coolidge", name: "Coolidge", note: "Autofertile ; un 2ᵉ pied d’une autre variété donne quand même plus de fruits." },
+      { id: "andre", name: "André", note: "Autofertile, gros fruits parfumés." },
+    ],
+  }),
+  plant({
+    id: "loquat", name: "Néflier du Japon", label: "le néflier", gender: "m", emoji: "🪴", category: "fruit-tree",
+    sunlight: ["sunny"], minSpace: "balcony", difficulty: "medium", perennial: true, melliferous: true, goals: ["bees"], potLiters: 40,
+    pitch: "Un feuillage tropical toute l’année, des fleurs parfumées l’hiver et des nèfles au printemps… si l’hiver est doux.",
+    sowMonths: [], plantMonths: [4, 5, 9, 10], harvestMonths: [5, 6],
+    harvestTip: "Cueille les nèfles bien orange et un peu souples ; elles se mangent fraîches, sans attendre.",
+    care: { ...REGULAR, wateringIntervalHours: 72, heatThresholdC: 35, frostThresholdC: -5, frostSensitive: true },
+    wateringMonths: [3, 4, 5, 6, 7, 8, 9, 10],
+    extraTasks: [
+      customTask({ id: "shelter", type: "protection", title: "Aujourd’hui, prépare l’abri du néflier.", instruction: "Ses fleurs d’hiver gèlent vers -5 °C : par grand froid, voile sur la plante et pot isolé, ou rentre-le au frais et au clair.", minutes: 10, months: [11, 12, 1, 2, 3] }),
+    ],
+    varieties: [
+      { id: "tanaka", name: "Tanaka", note: "Gros fruits orangés, l’une des variétés les plus cultivées." },
+      { id: "golden-nugget", name: "Golden Nugget", note: "Fruits dorés, port assez compact." },
+    ],
+  }),
+  plant({
+    id: "dwarf-mulberry", name: "Mûrier nain", label: "le mûrier", gender: "m", emoji: "🪴", category: "fruit-tree",
+    sunlight: ["sunny"], minSpace: "balcony", difficulty: "easy", perennial: true, melliferous: false, goals: [], potLiters: 25,
+    pitch: "Un mûrier qui reste petit en pot et se couvre de mûres noires tout l’été, dès la première année.",
+    sowMonths: [], plantMonths: [3, 4, 10, 11], harvestMonths: [6, 7, 8, 9],
+    harvestTip: "Cueille les mûres quand elles sont bien noires et se détachent toutes seules ; elles tachent les doigts !",
+    care: { ...REGULAR, wateringIntervalHours: 72, heatThresholdC: 35, frostThresholdC: -15, frostSensitive: false },
+    wateringMonths: [4, 5, 6, 7, 8, 9],
+    extraTasks: [
+      customTask({ id: "prune", type: "pruning", title: "Aujourd’hui, nettoie le mûrier.", instruction: "Après la chute des feuilles, enlève seulement le bois mort ou abîmé.", minutes: 5, months: [11, 12] }),
+    ],
+    varieties: [
+      { id: "mojo-berry", name: "Mojo Berry", note: "Mûrier nain autofertile, 1,20 à 1,50 m en pot, fruits dès la première année." },
+    ],
+  }),
+  plant({
+    id: "musa-basjoo", name: "Bananier du Japon", label: "le bananier", gender: "m", emoji: "🍌", category: "shrub",
+    sunlight: ["sunny", "partial"], minSpace: "terrace", difficulty: "medium", perennial: true, melliferous: false, goals: [], potLiters: 50, bloomOnly: true, foliage: true,
+    pitch: "Des feuilles géantes et un air de jungle sur la terrasse. Ses petites bananes, elles, ne sont pas bonnes à manger.",
+    sowMonths: [], plantMonths: [4, 5, 6], harvestMonths: [6, 7, 8, 9, 10],
+    harvestTip: "Coupe les feuilles abîmées par le vent à leur base ; abrite-le du vent, qui déchire ses grandes feuilles.",
+    care: { ...THIRSTY, heatThresholdC: 35, frostThresholdC: -5, frostSensitive: true },
+    wateringMonths: [5, 6, 7, 8, 9, 10],
+    wateringInstruction: "L’été, il a très soif : arrose copieusement dès que la terre sèche en surface. L’hiver, presque plus.",
+    extraTasks: [
+      customTask({ id: "shelter", type: "protection", title: "Aujourd’hui, prépare l’abri du bananier.", instruction: "Le feuillage gèle vers -2 °C, la souche tient bien plus bas : paille épaisse au pied et pot isolé, ou pot rentré au frais l’hiver.", minutes: 15, months: [11, 12, 1, 2] }),
+    ],
+    varieties: [
+      { id: "basjoo", name: "Musa basjoo", note: "Le bananier le plus résistant au froid : il repart de la souche au printemps." },
+    ],
+  }),
 ];
 
 const BY_ID = new Map(PLANT_CATALOG.map((entry) => [entry.id, entry]));
@@ -2199,6 +2368,16 @@ const SEARCH_ALIASES: Record<string, string[]> = {
   "japanese-maple": ["acer", "arbre", "feuillage"],
   fargesia: ["brise-vue", "feuillage"],
   stipa: ["graminée", "herbe", "feuillage"],
+  "dwarf-apricot": ["abricot", "arbre"],
+  "dwarf-plum": ["prune", "mirabelle", "reine-claude", "arbre"],
+  "columnar-pear": ["poire", "colonnaire", "arbre"],
+  calamondin: ["agrume", "orange"],
+  mandarin: ["mandarine", "clémentine", "agrume"],
+  lime: ["citron", "lime", "agrume"],
+  feijoa: ["goyave", "goyavier", "arbre"],
+  loquat: ["nèfle", "bibacier", "arbre"],
+  "dwarf-mulberry": ["mûre", "arbre"],
+  "musa-basjoo": ["banane", "banana", "palmier", "exotique"],
 };
 
 export function searchCatalog(query: string, category?: PlantCategory): CatalogPlant[] {
