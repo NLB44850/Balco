@@ -929,5 +929,61 @@
     "license": "CC BY-SA 4.0",
     "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0",
     "page": "https://commons.wikimedia.org/wiki/File:Nassella_tenuissima_1zz.jpg"
+  },
+  "calamondin": {
+    "title": "File:Citrus × microcarpa Kalamondin 2018-10-06 02.jpg",
+    "author": "Agnieszka Kwiecień, Nova",
+    "license": "CC BY-SA 4.0",
+    "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0",
+    "page": "https://commons.wikimedia.org/wiki/File:Citrus_%C3%97_microcarpa_Kalamondin_2018-10-06_02.jpg"
+  },
+  "columnar-pear": {
+    "title": "File:Common pear (Pyrus communis) blooming.jpg",
+    "author": "Ввласенко",
+    "license": "CC BY-SA 3.0",
+    "licenseUrl": "https://creativecommons.org/licenses/by-sa/3.0",
+    "page": "https://commons.wikimedia.org/wiki/File:Common_pear_(Pyrus_communis)_blooming.jpg"
+  },
+  "dwarf-apricot": {
+    "title": "File:Apricots.jpg",
+    "author": "Fir0002",
+    "license": "CC BY-SA 3.0",
+    "licenseUrl": "http://creativecommons.org/licenses/by-sa/3.0/",
+    "page": "https://commons.wikimedia.org/wiki/File:Apricots.jpg"
+  },
+  "dwarf-mulberry": {
+    "title": "File:White Mulberry (Morus alba).jpg",
+    "author": "Mokkie",
+    "license": "CC BY-SA 3.0",
+    "licenseUrl": "https://creativecommons.org/licenses/by-sa/3.0",
+    "page": "https://commons.wikimedia.org/wiki/File:White_Mulberry_(Morus_alba).jpg"
+  },
+  "feijoa": {
+    "title": "File:Acca sellowiana (Mystry guava), AJT Johnsingh.jpg",
+    "author": "Ajtjohnsingh",
+    "license": "CC BY-SA 4.0",
+    "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0",
+    "page": "https://commons.wikimedia.org/wiki/File:Acca_sellowiana_(Mystry_guava),_AJT_Johnsingh.jpg"
+  },
+  "lime": {
+    "title": "File:Citrus aurantiifolia of Kadavoor.jpg",
+    "author": "Jeevan Jose, Kerala, India",
+    "license": "CC BY-SA 4.0",
+    "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0",
+    "page": "https://commons.wikimedia.org/wiki/File:Citrus_aurantiifolia_of_Kadavoor.jpg"
+  },
+  "loquat": {
+    "title": "File:Eriobotrya japonica - Yenidünya.JPG",
+    "author": "Zeynel Cebeci",
+    "license": "CC BY-SA 4.0",
+    "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0",
+    "page": "https://commons.wikimedia.org/wiki/File:Eriobotrya_japonica_-_Yenid%C3%BCnya.JPG"
+  },
+  "musa-basjoo": {
+    "title": "File:Musa basjoo OB Wrocław.jpg",
+    "author": "Crusier",
+    "license": "CC BY 4.0",
+    "licenseUrl": "https://creativecommons.org/licenses/by/4.0",
+    "page": "https://commons.wikimedia.org/wiki/File:Musa_basjoo_OB_Wroc%C5%82aw.jpg"
   }
 }
