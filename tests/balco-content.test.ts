@@ -104,7 +104,10 @@ describe("Balco MVP content", () => {
   it("includes a personalized cultivation calendar", () => {
     const calendar = readProjectFile("app/(tabs)/calendar.tsx");
 
-    expect(calendar).toContain("Ton climat, en direct");
+    // La carte du climat est devenue la scène de saison illustrée (24/10).
+    expect(calendar).toContain("<SeasonScene");
+    expect(calendar).toContain("<YearStrip");
+    expect(calendar).toContain("climateLine");
     expect(calendar).toContain("calendarActivities");
     expect(calendar).toContain("selectedMonth");
     expect(calendar).toContain("Le faire sur Aujourd’hui");
