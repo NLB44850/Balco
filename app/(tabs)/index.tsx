@@ -4,7 +4,8 @@ import { useRouter } from "expo-router";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Alert, Animated, Platform, Pressable, ScrollView, StyleSheet, View } from "react-native";
 import { Button } from "@/components/ui/button";
-import { staleBannerText } from "@/lib/weather/snapshot";
+import { staleBannerText, staleSince } from "@/lib/weather/snapshot";
+import { forecastView } from "@/lib/weather/forecast-view";
 import { Text } from "@/components/ui/typography";
 import * as Haptics from "expo-haptics";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -23,6 +24,7 @@ import { TODAY_ROW_PICTURE, TodayRow } from "@/components/today/today-row";
 import { useCelebration } from "@/components/today/celebration";
 import { UndoToast, type ToastMessage } from "@/components/today/undo-toast";
 import { WeatherBanner } from "@/components/today/weather-banner";
+import { WeatherCard, WeatherDetail } from "@/components/today/weather-card";
 import { useFreePot } from "@/components/free-pot-sheet";
 import { useWinterChoiceSheet } from "@/components/winter-choice";
 import { useWinterMoves } from "@/hooks/use-winter-moves";
@@ -365,6 +367,7 @@ export default function HomeScreen() {
 
   // L'autorisation du téléphone d'abord : rien n'est enregistré tant qu'elle n'est pas donnée.
   const [cityPickerOpen, setCityPickerOpen] = useState(false);
+  const [weatherOpen, setWeatherOpen] = useState(false);
 
   // « Pas encore acheté ? » : le geste revient samedi à 9 h (notification si les rappels sont activés).
   const postponeToSaturday = async (activity: CalendarActivity) => {
@@ -430,7 +433,12 @@ export default function HomeScreen() {
     />
   );
   const evening = now.getHours() >= 17;
-  const metaLine = !weather.usable
+  // La carte météo illustrée (24/10) remplace la ligne de température sous le titre dès qu'une vraie prévision est là.
+  const forecast = useMemo(
+    () => (weather.usable ? forecastView({ payload: weather.payload, snapshot: weatherSnapshot, isDay: weather.isDay, now: new Date(), stale: Boolean(weather.staleAt), simulated: simulation.scenario !== "none" }) : null),
+    [simulation.scenario, weather.isDay, weather.payload, weather.staleAt, weather.usable, weatherSnapshot],
+  );
+  const metaLine = forecast ? undefined : !weather.usable
     ? weather.city
     : weather.staleAt
       ? `${weather.city} · ${Math.round(weatherSnapshot.today.temperatureMinC)}° au plus bas`
@@ -528,6 +536,8 @@ export default function HomeScreen() {
             {previewStatus === "denied" && <Text style={[styles.small, { color: colors.error }]}>Les notifications sont bloquées : autorise-les pour Balco dans les réglages du téléphone.</Text>}
           </View>
         )}
+
+        {forecast && <WeatherCard view={forecast} city={weather.city} stale={weather.staleAt ? `Prévision reçue ${staleSince(new Date(weather.staleAt), new Date())}` : undefined} onOpen={() => setWeatherOpen(true)} />}
 
         {arrival === "welcome" && (
           <FadeIn style={[glass.card, styles.arrival]}>
@@ -825,6 +835,15 @@ export default function HomeScreen() {
                 />
               ))}
             </View>
+          </View>
+        )}
+      </BottomSheet>
+
+      <BottomSheet visible={weatherOpen && forecast !== null} onClose={() => setWeatherOpen(false)}>
+        {forecast && (
+          <View style={styles.sheet}>
+            <WeatherDetail view={forecast} city={weather.city} />
+            <Button variant="link" label="Changer de ville" onPress={() => { setWeatherOpen(false); setCityPickerOpen(true); }} />
           </View>
         )}
       </BottomSheet>

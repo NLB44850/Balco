@@ -28,13 +28,13 @@ export function isValidCoordinate(latitude: number, longitude: number) {
 
 async function fetchForecast(latitude: number, longitude: number) {
   const url = new URL(OPEN_METEO_URL);
-  // Mêmes champs que ceux que l'app demandait directement (hooks/use-local-weather.ts).
+  // Mêmes champs que ceux que l'app demande directement (QUERY de lib/weather/forecast-client.ts).
   url.search = new URLSearchParams({
     latitude: String(latitude),
     longitude: String(longitude),
     current: "temperature_2m,apparent_temperature,weather_code,is_day",
-    hourly: "precipitation,precipitation_probability,wind_gusts_10m",
-    daily: "precipitation_sum,temperature_2m_min,temperature_2m_max,wind_gusts_10m_max",
+    hourly: "temperature_2m,weather_code,is_day,precipitation,precipitation_probability,wind_gusts_10m",
+    daily: "weather_code,precipitation_sum,temperature_2m_min,temperature_2m_max,wind_gusts_10m_max",
     forecast_days: "4",
     timezone: "auto",
   }).toString();

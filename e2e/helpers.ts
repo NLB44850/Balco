@@ -27,11 +27,13 @@ export async function mockWeather(page: Page, weather: Weather = {}) {
         elevation: 170,
         current: { temperature_2m: w.temperature, apparent_temperature: w.temperature - 1, weather_code: w.code, is_day: 1 },
         hourly: {
+          temperature_2m: Array.from({ length: hours }, () => w.temperature),
+          weather_code: Array.from({ length: hours }, () => w.code),
           precipitation: Array.from({ length: hours }, () => w.rainMm / 12),
           precipitation_probability: Array.from({ length: hours }, () => (w.rainMm > 0 ? 90 : 5)),
           wind_gusts_10m: Array.from({ length: hours }, () => w.gust),
         },
-        daily: { precipitation_sum: [w.rainMm, 0], temperature_2m_min: [w.min, w.min], temperature_2m_max: [w.max, w.max], wind_gusts_10m_max: [w.gust, w.gust] },
+        daily: { weather_code: [w.code, w.code, w.code, w.code], precipitation_sum: [w.rainMm, 0, 0, 0], temperature_2m_min: [w.min, w.min, w.min, w.min], temperature_2m_max: [w.max, w.max, w.max, w.max], wind_gusts_10m_max: [w.gust, w.gust, w.gust, w.gust] },
       }),
     });
   };

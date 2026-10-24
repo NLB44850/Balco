@@ -35,6 +35,8 @@ export type LocalWeather = {
   /** Une vraie prévision de la ville de la personne : les conseils et alertes météo peuvent s'en servir. */
   usable: boolean;
   snapshot: WeatherSnapshot;
+  /** La prévision complète reçue (heures et jours suivants) : la carte météo illustrée d'Aujourd'hui. */
+  payload?: OpenMeteoPayload | null;
 };
 
 export type CityResult = {
@@ -167,6 +169,7 @@ export function useLocalWeather(options: UseLocalWeatherOptions = {}) {
         staleAt: null,
         usable: !isFallback,
         snapshot,
+        payload,
       });
       setError(null);
       void AsyncStorage.setItem(LAST_FORECAST_KEY, JSON.stringify({ key: forecastKey(latitude, longitude), at: Date.now(), payload } satisfies StoredForecast)).catch(() => undefined);
@@ -178,7 +181,7 @@ export function useLocalWeather(options: UseLocalWeatherOptions = {}) {
       if (stored && storedForecastUsable(stored, forecastKey(latitude, longitude))) {
         const isDay = Boolean(stored.payload.current?.is_day);
         const snapshot = buildSnapshot(stored.payload, { city, latitude, longitude }, new Date(), new Date(stored.at));
-        setWeather({ city, latitude, longitude, temperature: snapshot.current.temperatureC, apparentTemperature: snapshot.current.apparentTemperatureC, weatherCode: snapshot.current.weatherCode, isDay, summary: describeWeather(snapshot.current.weatherCode, isDay), isFallback, offline: false, staleAt: snapshot.fetchedAt, usable: !isFallback, snapshot });
+        setWeather({ city, latitude, longitude, temperature: snapshot.current.temperatureC, apparentTemperature: snapshot.current.apparentTemperatureC, weatherCode: snapshot.current.weatherCode, isDay, summary: describeWeather(snapshot.current.weatherCode, isDay), isFallback, offline: false, staleAt: snapshot.fetchedAt, usable: !isFallback, snapshot, payload: stored.payload });
       } else {
         setWeather((previous) => {
           // Une prévision déjà reçue pour cette ville pendant que l'app était ouverte reste valable.

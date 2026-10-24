@@ -46,8 +46,10 @@ test("nuits douces : la ligne attend ; une fois dedans, le gel ne compte plus po
   await page.reload();
   await expect(page.getByRole("button", { name: /^Piment, 🏠 À l’intérieur, voir la fiche$/u })).toBeVisible({ timeout: 20_000 });
   await open(page, "/", "Rentre ton basilic");
-  // Pas d'alerte gel pour le piment rentré, ni « protège » pour le basilic qui va rentrer.
-  await expect(page.getByText(/protège le piment|Gel cette nuit/u)).toHaveCount(0);
+  // Pas d'alerte gel pour le piment rentré, ni « protège » pour le basilic qui va rentrer (la carte météo, elle, dit
+  // bien « Gel cette nuit (-3°) » : c'est la météo, pas une alerte pour une plante).
+  await expect(page.getByText(/protège le piment|Gel cette nuit :/u)).toHaveCount(0);
+  await expect(page.getByText(/^❄️ {2}Gel cette nuit \(-3°\)/u)).toBeVisible();
   expect(errors).toEqual([]);
 });
 

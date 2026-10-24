@@ -7,7 +7,9 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 vi.mock("react-native", () => ({ Platform: { OS: "web" } }));
 vi.mock("@/constants/api", () => ({ getApiBaseUrl: () => "https://api.balco.test" }));
 
-const PAYLOAD = { current: { temperature_2m: 18, weather_code: 1, is_day: 1 }, daily: { precipitation_sum: [0, 0] } };
+const PAYLOAD = { current: { temperature_2m: 18, weather_code: 1, is_day: 1 }, hourly: { temperature_2m: [18, 17], weather_code: [1, 2] }, daily: { weather_code: [1, 2], precipitation_sum: [0, 0] } };
+/** La prévision d'un serveur pas encore à jour : sans le ciel heure par heure (avant la carte météo illustrée). */
+const OLD_PAYLOAD = { current: { temperature_2m: 18, weather_code: 1, is_day: 1 }, daily: { precipitation_sum: [0, 0] } };
 const json = (body: unknown, status = 200) => new Response(JSON.stringify(body), { status, headers: { "content-type": "application/json" } });
 const urlOf = (input: unknown) => String(input instanceof Request ? input.url : input);
 
@@ -90,6 +92,15 @@ describe("prévision partagée par les écrans de l'app", () => {
     fetchMock.mockImplementation((input: unknown) => (urlOf(input).includes("api.balco.test") ? Promise.reject(new Error("offline")) : Promise.resolve(json(PAYLOAD))));
     expect(await loadForecastPayload(45.76, 4.84)).toEqual(PAYLOAD);
     expect(urlOf(fetchMock.mock.calls[1][0])).toContain("https://api.open-meteo.com/v1/forecast?latitude=45.76&longitude=4.84");
+  });
+
+  it("serveur pas encore à jour : la prévision complète vient d'Open-Meteo, sinon celle du serveur", async () => {
+    const { loadForecastPayload } = await import("../lib/weather/forecast-client");
+    fetchMock.mockImplementation((input: unknown) => Promise.resolve(json(urlOf(input).includes("api.balco.test") ? OLD_PAYLOAD : PAYLOAD)));
+    expect(await loadForecastPayload(47.2, -1.55)).toEqual(PAYLOAD);
+    expect(urlOf(fetchMock.mock.calls[1][0])).toContain("hourly=temperature_2m%2Cweather_code%2Cis_day");
+    fetchMock.mockImplementation((input: unknown) => (urlOf(input).includes("api.balco.test") ? Promise.resolve(json(OLD_PAYLOAD)) : Promise.reject(new Error("offline"))));
+    expect(await loadForecastPayload(47.3, -1.56)).toEqual(OLD_PAYLOAD);
   });
 
   it("ne garde pas un échec : l'écran suivant réessaie", async () => {
