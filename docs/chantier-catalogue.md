@@ -9,3 +9,5 @@
   photo et nombre (Potager, Aromatiques, Fleurs, Fruits, Arbustes et feuillages, Grimpantes ;
   `lib/plants/catalog-families.ts`), puis « À semer ou planter en … » et « Toutes les plantes » ; une tuile ouvre sa
   liste (« ‹ Familles », pastilles des catégories quand il y en a plusieurs) ; la recherche cherche partout.
+  Retour du 24/10 : la flèche du haut (et le retour d'Android) ramène d'une famille aux tuiles, plus au balcon.
+  **Validée sur son téléphone le 24/10 (« c'est nickel »), fusionnée (PR #69).**
