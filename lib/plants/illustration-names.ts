@@ -27,7 +27,19 @@ export type IllustrationId =
   | "two-shoots"
   | "leaf-underside"
   | "empty-saucer"
-  | "away-radiator";
+  | "away-radiator"
+  // Gestes d'entretien du catalogue balcon et terrasse (23/10, lib/plants/care-guides.ts).
+  | "trellis"
+  | "tie-stem"
+  | "fruit-sling"
+  | "secateurs"
+  | "two-buds"
+  | "grape-bunches"
+  | "cut-stalk"
+  | "earth-up"
+  | "mulch"
+  | "winter-wrap"
+  | "fleece";
 
 /** Le nom de chaque dessin, pour l'écran de revue et l'accessibilité. */
 export const ILLUSTRATION_LABELS: Record<IllustrationId, string> = {
@@ -59,6 +71,17 @@ export const ILLUSTRATION_LABELS: Record<IllustrationId, string> = {
   "leaf-underside": "Une loupe regarde sous une feuille",
   "empty-saucer": "On vide l’eau de la soucoupe",
   "away-radiator": "Le pot éloigné du radiateur",
+  trellis: "Une tige enroulée autour d’un treillage",
+  "tie-stem": "Un lien noué en boucle autour de la tige",
+  "fruit-sling": "Un fruit soutenu par un filet noué au support",
+  secateurs: "Un sécateur coupe une branche",
+  "two-buds": "Un rameau coupé au-dessus de deux bourgeons",
+  "grape-bunches": "Des ciseaux coupent une grappe en trop",
+  "cut-stalk": "On coupe à la base la tige qui porte les fleurs",
+  "earth-up": "La terre ramenée en butte autour du pied",
+  mulch: "De la paille au pied de la plante",
+  "winter-wrap": "Le pot entouré, contre un mur",
+  fleece: "Un voile posé sur la plante, la nuit",
 };
 
 export const ILLUSTRATION_IDS = Object.keys(ILLUSTRATION_LABELS) as IllustrationId[];

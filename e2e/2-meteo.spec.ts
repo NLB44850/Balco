@@ -7,8 +7,8 @@ import { atDate, mockWeather, open, seedBalcony, type Scenario } from "./helpers
  * Balcon type : basilic (craint le froid), menthe et ciboulette (rustiques).
  */
 const PLANTS = ["basil", "mint", "chives"];
-const LABELS: Record<Scenario, string> = { none: "Météo réelle", rain: "Pluie", frost: "Gel", storm: "Orage", wind: "Vent fort", heat: "Canicule" };
-const HINTS: Record<Scenario, RegExp> = { none: /vraie météo de ta ville/, rain: /^8 mm dans les 12 h/, frost: /^-3 °C cette nuit/, storm: /^Orage en cours :/, wind: /^Rafales à 75 km\/h/, heat: /^35 °C\./ };
+const LABELS: Record<Scenario, string> = { none: "Météo réelle", rain: "Pluie", frost: "Gel", "hard-frost": "Grand froid", storm: "Orage", wind: "Vent fort", heat: "Canicule" };
+const HINTS: Record<Scenario, RegExp> = { none: /vraie météo de ta ville/, rain: /^8 mm dans les 12 h/, frost: /^-3 °C cette nuit/, "hard-frost": /^-8 °C cette nuit/, storm: /^Orage en cours :/, wind: /^Rafales à 75 km\/h/, heat: /^35 °C\./ };
 
 async function simulate(page: Page, scenario: Scenario) {
   await open(page, "/settings", "Simulation météo");

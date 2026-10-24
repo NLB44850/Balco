@@ -14,6 +14,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { LightScreen } from "@/components/light-screen";
 import { ScreenHeader } from "@/components/screen-header";
 import { CatalogPicture } from "@/components/plant-picture";
+import { PlantWarningCard, PlantWarningTag } from "@/components/plant-warning";
 import { BottomSheet } from "@/components/today/bottom-sheet";
 import { UndoToast, type ToastMessage } from "@/components/today/undo-toast";
 import { advisedPotPhrase, potNeedFor, potNeedText } from "@/lib/plants/pot-sheet";
@@ -32,6 +33,7 @@ import {
   describeSowing,
   formatMonthRange,
   getCatalogPlant,
+  isFlower,
   MONTH_LONG,
   recommendPlants,
   searchCatalog,
@@ -148,7 +150,7 @@ export default function AddPlantScreen() {
     const created = await addPlant(catalogId, { toPlant: choice === "toPlant" });
     showToast({ text: plan ? toPlantText(entry, plan, pot) : installedText(entry, month, pot), onUndo: () => void removePlant(created.id) });
   };
-  // Des fonctions stables pour les lignes : seules les lignes qui changent se redessinent (109 lignes avec photo).
+  // Des fonctions stables pour les lignes : seules les lignes qui changent se redessinent (127 lignes avec photo).
   const addRef = useRef(add);
   addRef.current = add;
   const onAsk = useCallback((catalogId: string) => setAskId(catalogId), []);
@@ -217,11 +219,12 @@ export default function AddPlantScreen() {
               </View>
             </View>
             <Text style={[styles.sheetBody, { color: colors.muted }]}>{sheetEntry.pitch}</Text>
+            <PlantWarningCard catalogId={sheetEntry.id} />
             <View style={styles.facts}>
               {[
                 sheetEntry.sowMonths.length > 0 ? `🌱  Semis : ${describeSowing(sheetEntry)}` : null,
                 sheetEntry.plantMonths.length > 0 ? `🪴  Plantation : ${formatMonthRange(sheetEntry.plantMonths)}` : null,
-                `${sheetEntry.category === "flower" ? "🌸  Floraison" : "🧺  Récolte"} : ${formatMonthRange(sheetEntry.harvestMonths)}`,
+                `${isFlower(sheetEntry) ? "🌸  Floraison" : "🧺  Récolte"} : ${formatMonthRange(sheetEntry.harvestMonths)}`,
                 `🪣  ${potNeedText(potNeedFor(sheetEntry)).replace("Il lui faut u", "U")}`,
                 sheetEntry.melliferous ? "🐝  Aimée des abeilles" : null,
               ].filter(Boolean).map((fact) => (
@@ -255,6 +258,7 @@ export default function AddPlantScreen() {
               <CatalogPicture entry={askEntry} style={styles.bubble} />
               <Text style={[styles.name, { color: colors.foreground }]}>{askEntry.name}</Text>
             </View>
+            <PlantWarningCard catalogId={askEntry.id} compact />
             {question(askEntry)}
           </View>
         )}
@@ -283,7 +287,10 @@ const CatalogRow = memo(function CatalogRow({ entry, owned, meta, metaLines, las
         <Pressable accessibilityRole="button" accessibilityLabel={`${entry.name}, voir le détail`} onPress={() => onOpen(entry.id)} style={({ pressed }) => [styles.rowMain, pressed && styles.pressed]}>
           <CatalogPicture entry={entry} style={styles.bubble} />
           <View style={styles.flex}>
-            <Text style={[styles.name, { color: colors.foreground }]} numberOfLines={1}>{entry.name}</Text>
+            <View style={styles.nameRow}>
+              <Text style={[styles.name, styles.shrink, { color: colors.foreground }]} numberOfLines={1}>{entry.name}</Text>
+              <PlantWarningTag catalogId={entry.id} />
+            </View>
             <Text style={[styles.meta, { color: owned ? colors.primary : colors.muted }]} numberOfLines={metaLines}>{meta}</Text>
           </View>
         </Pressable>
@@ -311,6 +318,8 @@ const styles = StyleSheet.create({
   rowMain: { flex: 1, flexDirection: "row", alignItems: "center", gap: 12 },
   bubble: { width: 46, height: 46, borderRadius: 23, alignItems: "center", justifyContent: "center" },
   name: { fontSize: 16, fontWeight: "700" },
+  nameRow: { flexDirection: "row", alignItems: "center", gap: 6 },
+  shrink: { flexShrink: 1 },
   meta: { fontSize: 13, marginTop: 1 },
   add: { width: 38, height: 38, borderRadius: 19, alignItems: "center", justifyContent: "center" },
   addText: { fontSize: 22, fontWeight: "700", marginTop: -2 },

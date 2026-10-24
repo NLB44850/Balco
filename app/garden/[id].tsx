@@ -15,6 +15,7 @@ import * as Haptics from "expo-haptics";
 import { FadeIn } from "@/components/motion";
 import { usePlantPhotoCapture } from "@/components/photo-source-sheet";
 import { PlantPicture, stockPhoto } from "@/components/plant-picture";
+import { PlantWarningCard } from "@/components/plant-warning";
 import { ScreenContainer } from "@/components/screen-container";
 import { useCelebration } from "@/components/today/celebration";
 import { useFreePot } from "@/components/free-pot-sheet";
@@ -44,8 +45,9 @@ import { useDayPlan } from "@/hooks/use-day-plan";
 import { addSnooze, wakeSnoozeFor } from "@/lib/reminders/reminder-actions";
 import { saveReminderSnoozes } from "@/lib/reminders/local-notifications";
 import { usePlantPhotos } from "@/lib/garden/photos-context";
-import { CATEGORY_LABELS, formatMonthRange } from "@/lib/plants/catalog";
+import { CATEGORY_LABELS, formatMonthRange, type Month } from "@/lib/plants/catalog";
 import { guideLinkText, startPills } from "@/lib/plants/guide";
+import { plantCareGuides } from "@/lib/plants/care-guides";
 import { REPOTTING } from "@/lib/plants/repotting";
 import { now as clockNow } from "@/lib/clock";
 import { bloomEvent, canMarkBloom, herbariumKey, isFlower } from "@/lib/garden/herbarium";
@@ -127,6 +129,7 @@ export default function PlantScreen() {
   const statusColor = status.tone === "weather" ? colors.frost : status.tone === "watch" ? colors.warning : status.tone === "good" ? colors.primary : colors.muted;
   const variety = plantVariety(resolved);
   const gesture = day?.first ?? null;
+  const frostToday = Boolean(day?.gestures.some((candidate) => candidate.source.type === "decision" && candidate.source.decision.cause === "frost"));
   // « Décide pour ton basilic avant le froid » : la carte du choix pour l'hiver le dit déjà, pas deux fois.
   const winterAsked = asksWinter(resolved, now, climate);
   // Décider, rentrer, ressortir : la carte de l'hiver s'en charge, toujours à la même place (retour du 16/10).
@@ -166,6 +169,9 @@ export default function PlantScreen() {
     { key: "plant", label: plant.toPlant ? "Pas à pas, avec ce qu’il te faut" : "Revoir le pas-à-pas", task: undefined },
     // Une vivace installée : le pas-à-pas du pot (celui du geste du jour s'il y en a un).
     ...(!plant.toPlant && REPOTTING[entry.id] ? [{ key: potTask, label: guideLinkText(entry, potTask), task: potTask as string | undefined }] : []),
+    // Ses gestes d'entretien en images (guider, tailler, butter…) : ceux de ce mois-ci ou du suivant, et « Protéger du
+    // froid » dès qu'un gel est annoncé, d'abord ; les autres ensuite, avec leurs mois.
+    ...plantCareGuides(entry, now.getMonth() + 1, frostToday).map(({ task, months }) => ({ key: task, label: guideLinkText(entry, task), task: task as string | undefined, months })),
   ];
   const guideLabel = (label: string) => label.replace(/ ›$/u, "");
 
@@ -298,6 +304,9 @@ export default function PlantScreen() {
             {startPills(entry, Boolean(plant.toPlant)).map((pill) => <View key={pill} style={[styles.fact, { backgroundColor: colors.surface }]}><Text style={[styles.factText, { color: colors.foreground }]}>{pill}</Text></View>)}
             {entry.harvestMonths.length > 0 && <View style={[styles.fact, { backgroundColor: colors.surface }]}><Text style={[styles.factText, { color: colors.foreground }]}>{isFlower(entry) ? "🌸  Floraison" : "🧺  Récolte"} {formatMonthRange(entry.harvestMonths)}</Text></View>}
           </View>
+
+          {/* Plante toxique ou irritante : en orange, juste sous les pastilles (retour du 23/10). */}
+          <PlantWarningCard catalogId={entry.id} />
 
           {/* L'hiver d'une frileuse, toujours ici, avant le geste du jour : le choix à faire, le choix fait (« C'est
               rentré »), ou « À l'intérieur » (au printemps : « C'est ressorti »). */}
@@ -512,7 +521,7 @@ export default function PlantScreen() {
         <SheetHeading title="Ses pas-à-pas" intro="Chaque geste expliqué en images, avec ce qu’il te faut." />
         <SettingsGroup>
           {guides.map((guide) => (
-            <SettingRow key={guide.key} label={guideLabel(guide.label)} onPress={() => { setGuidesSheet(false); openGuide(guide.task); }} />
+            <SettingRow key={guide.key} label={guideLabel(guide.label)} subtitle={"months" in guide && guide.months ? `À faire en ${formatMonthRange(guide.months as Month[])}` : undefined} onPress={() => { setGuidesSheet(false); openGuide(guide.task); }} />
           ))}
         </SettingsGroup>
       </BottomSheet>

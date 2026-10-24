@@ -5,7 +5,7 @@ import { expect, type Page, type Route } from "@playwright/test";
 
 /** Outils communs aux scénarios : faux service météo, balcon prêt à l'emploi, raccourcis. */
 
-export type Scenario = "none" | "rain" | "frost" | "storm" | "wind" | "heat";
+export type Scenario = "none" | "rain" | "frost" | "hard-frost" | "storm" | "wind" | "heat";
 
 type Weather = { temperature?: number; min?: number; max?: number; rainMm?: number; gust?: number; code?: number };
 

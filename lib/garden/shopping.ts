@@ -108,7 +108,7 @@ export function feedFamily(entry: Pick<CatalogPlant, "category">, kind: string):
   if (/agrumes/u.test(kind)) return "citrus";
   // Du compost seul (pas « compost et engrais pour petits fruits »).
   if (/^(un peu de |une poignée de )?(compost|terreau)/u.test(kind) && !/engrais/u.test(kind)) return "compost";
-  if (entry.category === "small-fruit" || /fraisier|petits fruits|fruitiers/u.test(kind)) return "berries";
+  if (entry.category === "small-fruit" || entry.category === "fruit-tree" || /fraisier|petits fruits|fruitiers/u.test(kind)) return "berries";
   if (/tomate|potasse/u.test(kind)) return "tomato";
   if (/fleur/u.test(kind)) return "flowers";
   // « pauvre en azote », « pas trop azoté » : un engrais ordinaire, pas un engrais pour feuilles.

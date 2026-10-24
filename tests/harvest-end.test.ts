@@ -28,7 +28,7 @@ const harvest = (at: Date, id = `p:harvest:${at.getTime()}`): MaintenanceEvent =
 describe("le catalogue : plantes récoltées en une fois", () => {
   it("marque les radis, carottes, betteraves, navets, ail, pommes de terre… avec leur durée de récolte", () => {
     const once = PLANT_CATALOG.filter((entry) => entry.harvestOnceDays !== undefined).map((entry) => entry.id).sort();
-    expect(once).toEqual(["beetroot", "garlic", "head-lettuce", "kohlrabi", "oca", "pak-choi", "potato", "radish", "round-carrot", "spring-onion", "turnip"]);
+    expect(once).toEqual(["beetroot", "florence-fennel", "garlic", "head-lettuce", "kohlrabi", "oca", "pak-choi", "potato", "radish", "round-carrot", "spring-onion", "sweet-potato", "turnip"]);
     expect(PLANT_CATALOG.find((entry) => entry.id === "radish")?.harvestOnceDays).toBe(7);
     expect(PLANT_CATALOG.find((entry) => entry.id === "round-carrot")?.harvestOnceDays).toBe(21);
     expect(PLANT_CATALOG.find((entry) => entry.id === "basil")?.harvestOnceDays).toBeUndefined();

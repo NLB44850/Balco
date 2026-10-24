@@ -17,7 +17,7 @@ import { PLANT_VARIETIES } from "./varieties";
 export type Sunlight = "shade" | "partial" | "sunny";
 export type SpaceSize = "windowsill" | "planter" | "balcony" | "terrace";
 export type GoalTag = "tomatoes" | "aromatics" | "bees" | "salads";
-export type PlantCategory = "aromatic" | "fruiting-vegetable" | "leafy-vegetable" | "root" | "flower" | "small-fruit";
+export type PlantCategory = "aromatic" | "fruiting-vegetable" | "leafy-vegetable" | "root" | "flower" | "small-fruit" | "fruit-tree" | "climber";
 export type Month = 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10 | 11 | 12;
 
 export type CareTask = {
@@ -102,6 +102,11 @@ export function hasHarvest(entry: Pick<CatalogPlant, "bloomOnly">) {
   return !entry.bloomOnly;
 }
 
+/** Une plante à fleurs (fleur, ou grimpante d'ornement comme la clématite) : ses mois de « récolte » sont sa floraison. */
+export function isFlower(entry: Pick<CatalogPlant, "category" | "bloomOnly">) {
+  return entry.category === "flower" || entry.bloomOnly === true;
+}
+
 export const CATEGORY_LABELS: Record<PlantCategory, string> = {
   aromatic: "Aromatiques",
   "fruiting-vegetable": "Légumes-fruits",
@@ -109,6 +114,8 @@ export const CATEGORY_LABELS: Record<PlantCategory, string> = {
   root: "Racines",
   flower: "Fleurs",
   "small-fruit": "Petits fruits",
+  "fruit-tree": "Arbres fruitiers",
+  climber: "Grimpantes",
 };
 
 export const SUNLIGHT_LABELS: Record<Sunlight, string> = { shade: "Ombre", partial: "Mi-ombre", sunny: "Soleil" };
@@ -1192,7 +1199,7 @@ export const PLANT_CATALOG: CatalogPlant[] = [
   plant({
     id: "sweet-pea", name: "Pois de senteur", label: "les pois de senteur", gender: "m", plural: true, emoji: "🌸", category: "flower",
     sunlight: ["sunny", "partial"], minSpace: "planter", difficulty: "easy", perennial: false, melliferous: true, goals: ["bees"], potLiters: 15,
-    pitch: "Une liane parfumée qui fleurit la rambarde tout le printemps. Attention : ses graines ne se mangent pas.",
+    pitch: "Une liane parfumée qui fleurit la rambarde tout le printemps.",
     sowMonths: [2, 3, 4, 10], plantMonths: [4, 5], harvestMonths: [5, 6, 7, 8],
     harvestTip: "Coupe des bouquets tous les deux jours : si les gousses se forment, la floraison s’arrête.",
     care: { ...THIRSTY, heatThresholdC: 28, frostThresholdC: -5, frostSensitive: false },
@@ -1327,7 +1334,7 @@ export const PLANT_CATALOG: CatalogPlant[] = [
     ],
   }),
   plant({
-    id: "lemon-tree", name: "Citronnier", repotMonths: [4, 5], label: "le citronnier", gender: "m", emoji: "🍋", category: "small-fruit",
+    id: "lemon-tree", name: "Citronnier", repotMonths: [4, 5], label: "le citronnier", gender: "m", emoji: "🍋", category: "fruit-tree",
     sunlight: ["sunny"], minSpace: "balcony", difficulty: "medium", perennial: true, melliferous: true, goals: [], potLiters: 25,
     pitch: "Des fleurs au parfum enivrant et des citrons presque toute l’année, à condition de l’abriter l’hiver.",
     sowMonths: [], plantMonths: [4, 5], harvestMonths: [11, 12, 1, 2, 3],
@@ -1342,7 +1349,7 @@ export const PLANT_CATALOG: CatalogPlant[] = [
     ],
   }),
   plant({
-    id: "dwarf-fig", name: "Figuier nain", label: "le figuier", gender: "m", emoji: "🪴", category: "small-fruit",
+    id: "dwarf-fig", name: "Figuier nain", label: "le figuier", gender: "m", emoji: "🪴", category: "fruit-tree",
     sunlight: ["sunny"], minSpace: "balcony", difficulty: "easy", perennial: true, melliferous: false, goals: [], potLiters: 30,
     pitch: "Un parfum de vacances et deux récoltes par an sur un arbuste d’à peine un mètre cinquante.",
     sowMonths: [], plantMonths: [3, 4, 10], harvestMonths: [7, 8, 9],
@@ -1538,6 +1545,338 @@ export const PLANT_CATALOG: CatalogPlant[] = [
       { id: "angelina", name: "Angelina", note: "Sédum rampant doré qui retombe du pot : pour les petits pots, presque sans arrosage." },
     ],
   }),
+
+  // --- Catalogue balcon et terrasse, livraison 2 (21/10) : arbres fruitiers en pot -----------------------------
+  plant({
+    id: "olive-tree", name: "Olivier", label: "l’olivier", gender: "m", emoji: "🫒", category: "fruit-tree",
+    sunlight: ["sunny"], minSpace: "balcony", difficulty: "medium", perennial: true, melliferous: false, goals: [], potLiters: 35,
+    pitch: "Un air de Méditerranée toute l’année : feuillage argenté, et quelques olives si l’été est chaud.",
+    sowMonths: [], plantMonths: [4, 5, 6], harvestMonths: [10, 11, 12],
+    harvestTip: "Cueille les olives à la main, vertes ou bien noires, puis fais-les tremper : crues, elles sont immangeables.",
+    care: { ...DROUGHT, heatThresholdC: 40, frostThresholdC: -5, frostSensitive: true },
+    wateringMonths: [3, 4, 5, 6, 7, 8, 9, 10],
+    wateringInstruction: "Arrose quand la terre est sèche sur 5 cm, et vide la soucoupe : il craint bien plus l’humidité que la sécheresse.",
+    extraTasks: [
+      customTask({ id: "prune", type: "pruning", title: "Aujourd’hui, taille l’olivier.", instruction: "Après les dernières gelées, taille légèrement pour aérer le centre et garder une jolie forme.", minutes: 10, months: [4, 5] }),
+      customTask({ id: "shelter", type: "protection", title: "Aujourd’hui, prépare l’abri de l’olivier.", instruction: "Sous -5 °C plusieurs nuits, rentre-le dans une pièce lumineuse non chauffée, ou isole le pot et couvre-le d’un voile d’hivernage contre un mur.", minutes: 10, months: [11, 12, 1, 2] }),
+    ],
+    varieties: [
+      { id: "arbequina", name: "Arbequina", note: "Petite olive catalane, port compact et olives dès les premières années : la plus conseillée en pot." },
+      { id: "leccino", name: "Leccino", note: "Variété italienne assez rustique, qui donne mieux qu’une autre quand elle est seule." },
+      { id: "aglandau", name: "Aglandau", note: "Variété provençale réputée rustique, olives d’automne." },
+    ],
+  }),
+  plant({
+    id: "columnar-apple", name: "Pommier colonnaire", label: "le pommier", gender: "m", emoji: "🍎", category: "fruit-tree",
+    sunlight: ["sunny"], minSpace: "balcony", difficulty: "easy", perennial: true, melliferous: true, goals: ["bees"], potLiters: 40,
+    pitch: "Des pommes sur un tronc unique de 40 cm de large : un vrai verger dans un coin de balcon.",
+    sowMonths: [], plantMonths: [3, 4, 10, 11], harvestMonths: [9, 10],
+    harvestTip: "Soulève la pomme et tourne-la doucement : si elle se détache seule, elle est prête.",
+    care: { ...REGULAR, wateringIntervalHours: 72, heatThresholdC: 32, frostThresholdC: -10, frostSensitive: false },
+    wateringMonths: [4, 5, 6, 7, 8, 9, 10],
+    extraTasks: [
+      customTask({ id: "prune", type: "pruning", title: "Aujourd’hui, taille le pommier.", instruction: "Taille peu : enlève le bois mort et les branches qui partent de travers, pour garder la colonne.", minutes: 10, months: [1, 2] }),
+      customTask({ id: "summer-prune", type: "pruning", title: "Aujourd’hui, raccourcis les pousses du pommier.", instruction: "Raccourcis à 10 ou 15 cm les pousses de côté qui dépassent 20 cm.", minutes: 5, months: [6] }),
+      customTask({ id: "thin-fruits", type: "pruning", title: "Aujourd’hui, éclaircis les pommes.", instruction: "Après la chute naturelle des petits fruits, garde une ou deux pommes par bouquet : elles grossiront mieux.", minutes: 5, months: [6, 7] }),
+    ],
+    varieties: [
+      { id: "polka", name: "Ballerina Polka", note: "Pommes rouges et vertes en septembre-octobre, très productif et peu encombrant." },
+      { id: "rondo", name: "Rondo", note: "Colonnaire compact à pommes rouges ; il lui faut un 2ᵉ pommier en fleur en même temps." },
+      { id: "maypole", name: "Ballerina Maypole", note: "Pommier d’ornement colonnaire à fleurs rose vif : le bon voisin pour polliniser un autre colonnaire." },
+    ],
+  }),
+  plant({
+    id: "dwarf-peach", name: "Pêcher nain", label: "le pêcher", gender: "m", emoji: "🍑", category: "fruit-tree",
+    sunlight: ["sunny"], minSpace: "balcony", difficulty: "medium", perennial: true, melliferous: true, goals: ["bees"], potLiters: 40,
+    pitch: "Des fleurs roses en mars et des pêches juteuses en août, sur un arbre plus petit que toi.",
+    sowMonths: [], plantMonths: [2, 3, 4, 10, 11], harvestMonths: [7, 8, 9],
+    harvestTip: "Cueille la pêche quand elle cède un peu sous le doigt et se détache d’une légère torsion, sans tirer.",
+    care: { ...REGULAR, wateringIntervalHours: 72, heatThresholdC: 35, frostThresholdC: -10, frostSensitive: false },
+    wateringMonths: [4, 5, 6, 7, 8, 9],
+    wateringInstruction: "Arrose en profondeur quand la terre est sèche sur 3 cm, et vide la soucoupe : il craint l’excès d’eau.",
+    extraTasks: [
+      customTask({ id: "leaf-curl", type: "protection", title: "Aujourd’hui, protège le pêcher de la cloque.", instruction: "Pulvérise de la bouillie bordelaise (utilisable en agriculture biologique) à la chute des feuilles, puis avant que les bourgeons gonflent : seule la prévention marche.", minutes: 10, months: [11, 2] }),
+      customTask({ id: "prune", type: "pruning", title: "Aujourd’hui, taille le pêcher.", instruction: "Il donne sur les rameaux de l’an dernier : raccourcis les vieux rameaux pour en faire pousser des neufs.", minutes: 10, months: [2, 3] }),
+      customTask({ id: "thin-fruits", type: "pruning", title: "Aujourd’hui, éclaircis les pêches.", instruction: "Garde une petite pêche tous les 15 cm de rameau et enlève les autres : elles seront plus grosses.", minutes: 5, months: [5, 6] }),
+    ],
+    varieties: [
+      { id: "bonanza", name: "Bonanza", note: "Le pêcher nain classique, 1,50 m au plus, autofertile, pêches jaunes dès août." },
+      { id: "crimson-bonfire", name: "Crimson Bonfire", note: "Feuillage pourpre décoratif, autofertile, pêches à chair jaune en août-septembre." },
+      { id: "peach-me-red", name: "Peach Me Red", note: "Pensé pour le pot : sans taille, pêches de taille normale dès la 1ʳᵉ année, très rustique." },
+    ],
+  }),
+  plant({
+    id: "dwarf-cherry", name: "Cerisier nain", label: "le cerisier", gender: "m", emoji: "🍒", category: "fruit-tree",
+    sunlight: ["sunny"], minSpace: "terrace", difficulty: "medium", perennial: true, melliferous: true, goals: ["bees"], potLiters: 70,
+    pitch: "Des cerises cueillies sur ta terrasse, et un nuage de fleurs blanches au printemps.",
+    sowMonths: [], plantMonths: [3, 4, 10, 11], harvestMonths: [6, 7],
+    harvestTip: "Cueille les cerises bien colorées avec leur queue, par temps sec, et mange-les vite.",
+    care: { ...REGULAR, wateringIntervalHours: 72, heatThresholdC: 32, frostThresholdC: -10, frostSensitive: false },
+    wateringMonths: [3, 4, 5, 6, 7, 8, 9, 10],
+    extraTasks: [
+      customTask({ id: "net", type: "protection", title: "Aujourd’hui, pose un filet sur le cerisier.", instruction: "Quand les cerises commencent à rougir, couvre l’arbre d’un filet contre les oiseaux ; retire-le après la récolte.", minutes: 10, months: [5, 6] }),
+      customTask({ id: "prune", type: "pruning", title: "Aujourd’hui, taille le cerisier.", instruction: "Après la récolte, raccourcis un peu les pousses trop longues, sans grosse coupe ni taille d’hiver.", minutes: 10, months: [7, 8] }),
+    ],
+    varieties: [
+      { id: "garden-bing", name: "Garden Bing", note: "Nain autofertile d’environ 1,50 m, grosses cerises rouge foncé en juin : fait pour un bac." },
+      { id: "cherry-me", name: "Cherry Me", note: "Burlat nain autofertile, cerises précoces dès la mi-juin." },
+      { id: "sylvia", name: "Sylvia", note: "Colonnaire autofertile, 50 cm de large seulement, cerises croquantes en juillet." },
+    ],
+  }),
+  plant({
+    id: "kumquat", name: "Kumquat", label: "le kumquat", gender: "m", emoji: "🍊", category: "fruit-tree",
+    sunlight: ["sunny"], minSpace: "balcony", difficulty: "medium", perennial: true, melliferous: true, goals: [], potLiters: 40,
+    pitch: "Un petit oranger couvert de fruits en plein hiver, qui se croquent avec la peau.",
+    sowMonths: [], plantMonths: [4, 5, 6, 7, 8], harvestMonths: [11, 12, 1, 2, 3],
+    harvestTip: "Cueille les kumquats bien orange avec un sécateur et croque-les entiers, peau comprise.",
+    care: { ...REGULAR, wateringIntervalHours: 72, heatThresholdC: 35, frostThresholdC: -2, frostSensitive: true },
+    wateringMonths: WHOLE_YEAR,
+    wateringInstruction: "Arrose quand la terre est sèche sur 3 cm, puis vide la soucoupe ; l’hiver à l’abri, bien moins souvent.",
+    extraTasks: [
+      customTask({ id: "shelter", type: "protection", title: "Aujourd’hui, abrite le kumquat.", instruction: "Avant les nuits froides, rentre-le dans une pièce lumineuse et fraîche (5 à 12 °C), loin des radiateurs.", minutes: 10, months: [10, 11, 12, 1, 2, 3, 4] }),
+      customTask({ id: "prune", type: "pruning", title: "Aujourd’hui, taille le kumquat.", instruction: "Après la récolte, coupe le bois mort et les branches mal placées.", minutes: 5, months: [3, 4] }),
+    ],
+    varieties: [
+      { id: "nagami", name: "Nagami", note: "Le plus vendu : petits fruits ovales acidulés, à croquer avec la peau." },
+      { id: "marumi", name: "Marumi", note: "Fruits ronds plus doux, port compact, un peu plus résistant au froid que Nagami." },
+      { id: "limequat", name: "Limequat", note: "Croisement de lime et de kumquat : petits fruits au goût de citron vert." },
+    ],
+  }),
+  plant({
+    id: "pomegranate", name: "Grenadier", label: "le grenadier", gender: "m", emoji: "🪴", category: "fruit-tree",
+    sunlight: ["sunny"], minSpace: "terrace", difficulty: "medium", perennial: true, melliferous: true, goals: [], potLiters: 60,
+    pitch: "Des fleurs rouge orangé tout l’été, puis des grenades si l’été est chaud.",
+    sowMonths: [], plantMonths: [3, 4, 5, 10], harvestMonths: [9, 10, 11],
+    harvestTip: "Cueille la grenade au sécateur quand elle sonne creux ou commence à se fendre, avant les gelées.",
+    care: { ...DROUGHT, heatThresholdC: 40, frostThresholdC: -5, frostSensitive: true },
+    wateringMonths: [4, 5, 6, 7, 8, 9],
+    wateringInstruction: "Arrose quand la surface est sèche, environ deux fois par semaine l’été : il supporte un peu de sécheresse.",
+    extraTasks: [
+      customTask({ id: "shelter", type: "protection", title: "Aujourd’hui, abrite le grenadier.", instruction: "Avant les gelées, rentre-le au frais et au clair, hors gel (véranda, garage éclairé). Il perd ses feuilles : arrose très peu.", minutes: 10, months: [10, 11, 12, 1, 2, 3, 4] }),
+      customTask({ id: "prune", type: "pruning", title: "Aujourd’hui, taille le grenadier.", instruction: "En fin d’hiver, enlève le bois mort et éclaircis le centre, sans raccourcir les rameaux qui porteront les fruits.", minutes: 10, months: [2, 3] }),
+    ],
+    varieties: [
+      { id: "provence", name: "Provence", note: "Le grenadier fruitier le plus planté en France, le plus rustique ; pousse lentement et tient des années en bac." },
+      { id: "mollar-de-elche", name: "Mollar de Elche", note: "Grenades douces à pépins tendres, en octobre-novembre ; à abriter l’hiver." },
+      { id: "nana", name: "Nana", note: "Grenadier nain d’un mètre à fleurs orange tout l’été ; ses petits fruits sont décoratifs." },
+    ],
+  }),
+
+  // --- Catalogue balcon et terrasse, livraison 3 (23/10) : grimpantes ------------------------------------------
+  plant({
+    id: "star-jasmine", name: "Jasmin étoilé", label: "le jasmin", gender: "m", emoji: "🌼", category: "climber",
+    sunlight: ["sunny", "partial"], minSpace: "balcony", difficulty: "easy", perennial: true, melliferous: true, goals: ["bees"], potLiters: 30, bloomOnly: true,
+    pitch: "Des étoiles blanches au parfum puissant tout l’été, et des feuilles vertes même en hiver.",
+    sowMonths: [], plantMonths: [3, 4, 5, 6], harvestMonths: [6, 7, 8],
+    harvestTip: "Profite de son parfum le soir, quand il est le plus fort, et enlève les bouquets fanés.",
+    care: { ...REGULAR, heatThresholdC: 35, frostThresholdC: -5, frostSensitive: true },
+    wateringMonths: [4, 5, 6, 7, 8, 9, 10],
+    wateringInstruction: "L’été, arrose deux fois par semaine quand la terre est sèche sur 2 cm ; l’hiver, deux ou trois fois par mois suffisent.",
+    extraTasks: [
+      customTask({ id: "guide", type: "observation", title: "Aujourd’hui, guide le jasmin.", instruction: "Enroule les nouvelles tiges autour du treillage ou de la rambarde, et attache-les avec un lien souple.", minutes: 3, months: [4, 5, 6] }),
+      customTask({ id: "prune", type: "pruning", title: "Aujourd’hui, taille le jasmin.", instruction: "Après la floraison, raccourcis les tiges trop longues et enlève le bois sec.", minutes: 10, months: [9] }),
+      customTask({ id: "shelter", type: "protection", title: "Aujourd’hui, prépare l’abri du jasmin.", instruction: "Avant les nuits sous -5 °C, paille le pied, entoure le pot d’un voile et colle-le contre un mur.", minutes: 10, months: [12, 1, 2] }),
+    ],
+    varieties: [
+      { id: "jasminoides", name: "Trachelospermum jasminoides", note: "Le jasmin étoilé classique : fleurs blanches très parfumées, feuillage toujours vert." },
+      { id: "winter-ruby", name: "Winter Ruby", note: "Feuillage qui rougit en hiver, annoncé plus résistant au froid que le classique." },
+      { id: "asiaticum", name: "Trachelospermum asiaticum", note: "Fleurs crème à cœur jaune, plus compact et plus rustique." },
+    ],
+  }),
+  plant({
+    id: "clematis", name: "Clématite", label: "la clématite", gender: "f", emoji: "🌸", category: "climber",
+    sunlight: ["sunny", "partial"], minSpace: "balcony", difficulty: "medium", perennial: true, melliferous: true, goals: ["bees"], potLiters: 35, bloomOnly: true,
+    pitch: "La reine des grimpantes : de grandes fleurs qui couvrent un treillage de mai à l’automne.",
+    sowMonths: [], plantMonths: [3, 4, 5, 9, 10], harvestMonths: [5, 6, 7, 8, 9],
+    harvestTip: "Coupe les fleurs fanées : beaucoup de variétés refleurissent à la fin de l’été.",
+    care: { ...REGULAR, heatThresholdC: 32, frostThresholdC: -15, frostSensitive: false },
+    wateringMonths: [3, 4, 5, 6, 7, 8, 9, 10],
+    wateringInstruction: "Le pied au frais, la tête au soleil : arrose dès que la terre sèche sur 2 cm, et vide la soucoupe.",
+    extraTasks: [
+      customTask({ id: "prune", type: "pruning", title: "Aujourd’hui, taille la clématite.", instruction: "Si elle fleurit l’été, coupe toutes les tiges à 30 cm du sol ; si elle fleurit au printemps, enlève seulement le bois sec.", minutes: 10, months: [2, 3] }),
+      customTask({ id: "guide", type: "observation", title: "Aujourd’hui, guide la clématite.", instruction: "Accroche les nouvelles tiges au treillage avec un lien souple : elles cassent facilement.", minutes: 3, months: [4, 5, 6] }),
+    ],
+    varieties: [
+      { id: "boulevard", name: "Série Boulevard", note: "Clématites compactes d’un mètre et demi, créées pour le pot, fleurs de mai à septembre." },
+      { id: "piilu", name: "Piilu", note: "Fleurs mauve rosé rayées, plante compacte qui fleurit deux fois." },
+      { id: "rouge-cardinal", name: "Rouge Cardinal", note: "Grandes fleurs rouge velours en été ; taille facile, à 30 cm chaque fin d’hiver." },
+    ],
+  }),
+  plant({
+    id: "passionflower", name: "Passiflore", label: "la passiflore", gender: "f", emoji: "🌸", category: "climber",
+    sunlight: ["sunny"], minSpace: "balcony", difficulty: "easy", perennial: true, melliferous: true, goals: ["bees"], potLiters: 30, bloomOnly: true,
+    pitch: "Des fleurs étonnantes, comme dessinées, qui se succèdent de juin aux gelées.",
+    sowMonths: [], plantMonths: [3, 4, 5, 6], harvestMonths: [6, 7, 8, 9, 10],
+    harvestTip: "Chaque fleur ne dure qu’un jour, mais d’autres suivent tout l’été ; ses fruits orange sont décoratifs.",
+    care: { ...REGULAR, heatThresholdC: 35, frostThresholdC: -5, frostSensitive: true },
+    wateringMonths: [4, 5, 6, 7, 8, 9, 10],
+    wateringInstruction: "Arrose quand la terre est sèche sur 2 cm ; à l’automne et l’hiver, beaucoup moins : elle craint l’humidité.",
+    extraTasks: [
+      customTask({ id: "prune", type: "pruning", title: "Aujourd’hui, taille la passiflore.", instruction: "Raccourcis les tiges de l’an dernier et enlève le bois sec : elle fleurit sur les pousses de l’année.", minutes: 10, months: [3, 4] }),
+      customTask({ id: "guide", type: "observation", title: "Aujourd’hui, guide la passiflore.", instruction: "Accroche les nouvelles tiges au treillage : ses vrilles s’agrippent ensuite toutes seules.", minutes: 3, months: [5, 6, 7] }),
+    ],
+    varieties: [
+      { id: "caerulea", name: "Passiflora caerulea", note: "La passiflore bleue, la plus rustique : repart de la souche après un hiver froid." },
+      { id: "constance-elliott", name: "Constance Elliott", note: "Fleurs blanches parfumées, aussi rustique que la bleue." },
+      { id: "edulis", name: "Passiflora edulis", note: "Le fruit de la passion : frileuse, à rentrer l’hiver ; fruits seulement après un été très chaud." },
+    ],
+  }),
+  plant({
+    id: "grapevine", name: "Vigne en pot", label: "la vigne", gender: "f", emoji: "🍇", category: "climber",
+    sunlight: ["sunny"], minSpace: "balcony", difficulty: "medium", perennial: true, melliferous: false, goals: [], potLiters: 35,
+    pitch: "Une treille sur ta rambarde : de l’ombre l’été, et des grappes de raisin à la rentrée.",
+    sowMonths: [], plantMonths: [3, 4, 10, 11], harvestMonths: [8, 9, 10],
+    harvestTip: "Goûte un grain : quand il est souple et sucré, coupe la grappe entière au sécateur.",
+    care: { ...REGULAR, wateringIntervalHours: 72, heatThresholdC: 38, frostThresholdC: -15, frostSensitive: false },
+    wateringMonths: [4, 5, 6, 7, 8, 9],
+    wateringInstruction: "Arrose en profondeur quand la terre est sèche sur 3 cm ; un peu moins quand les raisins changent de couleur.",
+    extraTasks: [
+      customTask({ id: "prune", type: "pruning", title: "Aujourd’hui, taille la vigne.", instruction: "Hors gel, raccourcis chaque rameau de l’an dernier à 2 bourgeons : les grappes viennent sur les nouvelles pousses.", minutes: 10, months: [2, 3] }),
+      customTask({ id: "thin-bunches", type: "pruning", title: "Aujourd’hui, éclaircis la vigne.", instruction: "Garde 2 ou 3 grappes par tige et coupe le bout des tiges 2 feuilles après la dernière grappe : les grains seront plus gros.", minutes: 10, months: [6, 7] }),
+    ],
+    varieties: [
+      { id: "chasselas", name: "Chasselas doré", note: "Raisin blanc de table, l’un des plus faciles à réussir, même au nord." },
+      { id: "centennial-seedless", name: "Centennial Seedless", note: "Grains blancs sans pépins, en août-septembre." },
+      { id: "alvina", name: "Alvina", note: "Raisin noir tardif, en septembre-octobre." },
+    ],
+  }),
+  plant({
+    id: "honeysuckle", name: "Chèvrefeuille", label: "le chèvrefeuille", gender: "m", emoji: "🌼", category: "climber",
+    sunlight: ["sunny", "partial"], minSpace: "balcony", difficulty: "easy", perennial: true, melliferous: true, goals: ["bees"], potLiters: 30, bloomOnly: true,
+    pitch: "Un parfum de miel les soirs d’été, et des fleurs que papillons et abeilles adorent.",
+    sowMonths: [], plantMonths: [3, 4, 5], harvestMonths: [6, 7, 8, 9],
+    harvestTip: "Respire-le le soir, quand son parfum est le plus fort.",
+    care: { ...REGULAR, heatThresholdC: 32, frostThresholdC: -15, frostSensitive: false },
+    wateringMonths: [4, 5, 6, 7, 8, 9, 10],
+    wateringInstruction: "Il aime une terre fraîche : arrose dès qu’elle sèche sur 2 cm, surtout les deux premières années.",
+    extraTasks: [
+      customTask({ id: "guide", type: "observation", title: "Aujourd’hui, guide le chèvrefeuille.", instruction: "Enroule les nouvelles tiges autour du treillage : il s’y tiendra tout seul.", minutes: 3, months: [4, 5, 6] }),
+      customTask({ id: "prune", type: "pruning", title: "Aujourd’hui, taille le chèvrefeuille.", instruction: "Après la floraison, raccourcis les tiges trop longues et enlève le bois mort.", minutes: 10, months: [10, 11] }),
+    ],
+    varieties: [
+      { id: "halliana", name: "Halliana", note: "Fleurs blanches puis jaunes, très parfumées, feuillage presque toujours vert." },
+      { id: "sinensis", name: "Sinensis", note: "Fleurs pourpres et blanches de juin à septembre, feuillage teinté de pourpre." },
+      { id: "serotina", name: "Serotina", note: "Le chèvrefeuille des bois, rouge et crème, fleuri tout l’été." },
+    ],
+  }),
+  plant({
+    id: "morning-glory", name: "Ipomées", label: "les ipomées", gender: "f", plural: true, emoji: "🌺", category: "climber",
+    sunlight: ["sunny"], minSpace: "planter", difficulty: "easy", perennial: false, melliferous: true, goals: ["bees"], potLiters: 15, bloomOnly: true,
+    pitch: "Semées au printemps, elles couvrent un treillage de fleurs bleues ou pourpres jusqu’aux gelées.",
+    sowMonths: [3, 4, 5], plantMonths: [5, 6], harvestMonths: [7, 8, 9, 10],
+    harvestTip: "Chaque fleur s’ouvre le matin et fane le soir : d’autres suivent jusqu’aux gelées.",
+    care: { ...REGULAR, heatThresholdC: 35, frostThresholdC: 5, frostSensitive: true },
+    wateringMonths: [5, 6, 7, 8, 9, 10],
+    extraTasks: [
+      customTask({ id: "guide", type: "observation", title: "Aujourd’hui, guide les ipomées.", instruction: "Enroule les nouvelles tiges autour d’une ficelle ou du treillage, toujours dans le même sens.", minutes: 3, months: [6, 7, 8] }),
+    ],
+    varieties: [
+      { id: "heavenly-blue", name: "Heavenly Blue", note: "Grandes fleurs bleu ciel, l’ipomée la plus spectaculaire." },
+      { id: "purpurea", name: "Volubilis en mélange", note: "Fleurs pourpres, roses ou bleues, très faciles à semer." },
+      { id: "carnevale", name: "Carnevale di Venezia", note: "Fleurs blanches striées de rose, de pourpre ou de bleu." },
+    ],
+  }),
+
+  // --- Livraison 3 (23/10) : légumes ---------------------------------------------------------------------------
+  plant({
+    id: "fava-bean", name: "Fèves", label: "les fèves", gender: "f", plural: true, emoji: "🫘", category: "fruiting-vegetable",
+    sunlight: ["sunny", "partial"], minSpace: "planter", difficulty: "easy", perennial: false, melliferous: true, goals: ["bees"], potLiters: 25,
+    pitch: "Le premier légume de l’année : semées en fin d’hiver, elles se croquent crues dès le mois de mai.",
+    sowMonths: [2, 3, 4], plantMonths: [], harvestMonths: [5, 6, 7],
+    harvestTip: "Cueille les gousses bien vertes, quand les grains font la taille d’un ongle : plus gros, ils deviennent farineux.",
+    care: { ...REGULAR, heatThresholdC: 28, frostThresholdC: -5, frostSensitive: false },
+    wateringMonths: [3, 4, 5, 6, 7],
+    varieties: [
+      { id: "aguadulce", name: "Aguadulce", note: "Très longues cosses, la fève la plus semée, récoltée en 12 à 14 semaines." },
+      { id: "the-sutton", name: "The Sutton", note: "Fève naine de 40 cm, sans tuteur : faite pour le pot." },
+      { id: "witkiem", name: "Witkiem", note: "Précoce et productive, gros grains tendres." },
+    ],
+  }),
+  plant({
+    id: "sweet-potato", name: "Patate douce", label: "la patate douce", gender: "f", emoji: "🍠", category: "root",
+    sunlight: ["sunny"], minSpace: "balcony", difficulty: "medium", perennial: false, melliferous: false, goals: [], potLiters: 40,
+    pitch: "Un feuillage qui retombe joliment du pot tout l’été, et des tubercules sucrés à déterrer en automne.",
+    sowMonths: [], plantMonths: [5, 6], harvestMonths: [9, 10],
+    harvestTip: "Quand les feuilles jaunissent, avant le gel, vide le pot, puis laisse sécher les patates douces au soleil quelques heures.",
+    care: { ...REGULAR, heatThresholdC: 38, frostThresholdC: 10, frostSensitive: true },
+    wateringMonths: [5, 6, 7, 8, 9, 10],
+    wateringInstruction: "Arrose quand la terre est sèche sur 2 cm, plus souvent par temps chaud ; moins en septembre, pour des tubercules qui se gardent.",
+    varieties: [
+      { id: "beauregard", name: "Beauregard", note: "Chair orange, la plus cultivée, assez précoce pour nos étés." },
+      { id: "bonita", name: "Bonita", note: "Chair blanche, vendue en plant au printemps." },
+      { id: "murasaki", name: "Murasaki", note: "Peau violette et chair blanche au goût de châtaigne." },
+    ],
+  }),
+  plant({
+    id: "kuri-squash", name: "Potimarron", label: "le potimarron", gender: "m", emoji: "🎃", category: "fruiting-vegetable",
+    sunlight: ["sunny"], minSpace: "terrace", difficulty: "easy", perennial: false, melliferous: true, goals: ["bees"], potLiters: 60,
+    pitch: "Palissé sur un treillage solide, il donne des courges au goût de châtaigne qui se gardent tout l’hiver.",
+    sowMonths: [4, 5], plantMonths: [5, 6], harvestMonths: [9, 10],
+    harvestTip: "Coupe-le avec 5 cm de queue quand elle sèche et se fendille, avant les gelées ; il se garde des mois au frais.",
+    care: { ...THIRSTY, heatThresholdC: 32, frostThresholdC: 8, frostSensitive: true },
+    wateringMonths: [5, 6, 7, 8, 9],
+    wateringInstruction: "Arrose au pied, sans mouiller les feuilles, dès que la terre sèche sur 2 cm : un grand pot de courge boit beaucoup.",
+    extraTasks: [
+      customTask({ id: "guide", type: "observation", title: "Aujourd’hui, guide le potimarron.", instruction: "Attache les tiges au treillage, et soutiens chaque fruit avec un filet ou un vieux collant noué au support.", minutes: 5, months: [6, 7, 8] }),
+    ],
+    varieties: [
+      { id: "uchiki-kuri", name: "Uchiki Kuri", note: "Le potimarron rouge orangé classique, chair douce au goût de châtaigne." },
+      { id: "green-hokkaido", name: "Green Hokkaido", note: "Peau vert foncé, chair orange très sucrée, se garde longtemps." },
+    ],
+  }),
+  plant({
+    id: "artichoke", name: "Artichaut", label: "l’artichaut", gender: "m", emoji: "🌿", category: "fruiting-vegetable",
+    sunlight: ["sunny"], minSpace: "terrace", difficulty: "medium", perennial: true, melliferous: true, goals: ["bees"], potLiters: 60,
+    pitch: "Une grande plante au feuillage argenté, des artichauts à cueillir l’été, et des fleurs bleues pour les abeilles.",
+    sowMonths: [], plantMonths: [3, 4, 5], harvestMonths: [6, 7, 8, 9],
+    harvestTip: "Coupe l’artichaut avec 10 cm de tige quand il est bien rond et encore serré, avant qu’il s’ouvre.",
+    care: { ...REGULAR, heatThresholdC: 32, frostThresholdC: -5, frostSensitive: true },
+    wateringMonths: [4, 5, 6, 7, 8, 9, 10],
+    extraTasks: [
+      customTask({ id: "shelter", type: "protection", title: "Aujourd’hui, prépare l’abri de l’artichaut.", instruction: "Coupe les grandes feuilles à 20 cm, paille bien le pied et entoure le pot d’un voile avant les nuits sous -5 °C.", minutes: 10, months: [11, 12, 1, 2] }),
+    ],
+    varieties: [
+      { id: "vert-de-laon", name: "Gros vert de Laon", note: "Le plus résistant au froid, pour le nord et l’est." },
+      { id: "camus", name: "Camus de Bretagne", note: "Gros artichaut rond, pour les régions aux hivers doux." },
+      { id: "violet-de-provence", name: "Violet de Provence", note: "Petits artichauts violets à croquer crus ; plus frileux." },
+    ],
+  }),
+  plant({
+    id: "rhubarb", name: "Rhubarbe", label: "la rhubarbe", gender: "f", emoji: "🌿", category: "leafy-vegetable",
+    sunlight: ["sunny", "partial"], minSpace: "balcony", difficulty: "easy", perennial: true, melliferous: false, goals: [], potLiters: 40,
+    pitch: "Une vivace increvable : des tiges acidulées pour les tartes et les compotes, chaque printemps.",
+    sowMonths: [], plantMonths: [3, 4, 10, 11], harvestMonths: [4, 5, 6],
+    harvestTip: "Tire chaque tige en la tournant à la base, jamais plus d’un tiers de la touffe ; coupe la feuille, toxique, et mets-la au compost.",
+    care: { ...REGULAR, heatThresholdC: 30, frostThresholdC: -20, frostSensitive: false },
+    wateringMonths: [3, 4, 5, 6, 7, 8, 9],
+    wateringInstruction: "Elle aime une terre toujours fraîche : arrose dès que la terre sèche sur 2 cm, surtout l’été.",
+    extraTasks: [
+      customTask({ id: "flower-stalk", type: "pruning", title: "Aujourd’hui, coupe la tige à fleurs de la rhubarbe.", instruction: "Coupe à la base la grosse tige qui porte les fleurs : la plante garde sa force pour les tiges à manger.", minutes: 2, months: [5, 6, 7] }),
+    ],
+    varieties: [
+      { id: "victoria", name: "Victoria", note: "La rhubarbe classique, vigoureuse, tiges vertes et rouges." },
+      { id: "glaskins", name: "Glaskins Perpetual", note: "Moins acide, elle se récolte plus longtemps dans la saison." },
+      { id: "frambozen-rood", name: "Frambozen Rood", note: "Tiges rouges et douces, au goût de framboise." },
+    ],
+  }),
+  plant({
+    id: "florence-fennel", name: "Fenouil", label: "le fenouil", gender: "m", emoji: "🌿", category: "leafy-vegetable",
+    sunlight: ["sunny"], minSpace: "planter", difficulty: "medium", perennial: false, melliferous: false, goals: [], potLiters: 15,
+    pitch: "Des bulbes croquants au goût anisé, à semer en été pour une récolte à l’automne.",
+    sowMonths: [5, 6, 7], plantMonths: [], harvestMonths: [8, 9, 10, 11],
+    harvestTip: "Coupe le bulbe au ras de la terre quand il est gros comme une orange : laissé trop longtemps, il durcit.",
+    care: { ...REGULAR, heatThresholdC: 30, frostThresholdC: -3, frostSensitive: false },
+    wateringMonths: [5, 6, 7, 8, 9, 10],
+    wateringInstruction: "Garde la terre fraîche, sans excès : un fenouil qui a soif monte en graines au lieu de faire son bulbe.",
+    extraTasks: [
+      customTask({ id: "earth-up", type: "pruning", title: "Aujourd’hui, butte le fenouil.", instruction: "Ramène un peu de terreau autour du bulbe quand il grossit : il reste blanc et tendre.", minutes: 3, months: [8, 9] }),
+    ],
+    varieties: [
+      { id: "zefa-fino", name: "Zefa Fino", note: "Résiste bien à la montée en graines, peut se semer plus tôt." },
+      { id: "rondo", name: "Rondo", note: "Bulbe bien rond, précoce." },
+      { id: "doux-de-florence", name: "Doux de Florence", note: "Le classique : à semer après le 20 juin, sinon il monte en graines." },
+    ],
+  }),
 ];
 
 const BY_ID = new Map(PLANT_CATALOG.map((entry) => [entry.id, entry]));
@@ -1716,6 +2055,22 @@ const SEARCH_ALIASES: Record<string, string[]> = {
   hellebore: ["rose de noël"],
   houseleek: ["sempervivum", "plante grasse", "succulente"],
   sedum: ["orpin", "plante grasse", "succulente"],
+  "olive-tree": ["olive", "arbre"],
+  "columnar-apple": ["pomme", "colonnaire", "arbre"],
+  "dwarf-peach": ["pêche", "arbre"],
+  "dwarf-cherry": ["cerise", "arbre"],
+  kumquat: ["agrume", "orange"],
+  pomegranate: ["grenade", "arbre"],
+  "star-jasmine": ["trachelospermum", "grimpante", "parfum"],
+  clematis: ["grimpante"],
+  passionflower: ["passiflora", "fruit de la passion", "grimpante"],
+  grapevine: ["raisin", "treille", "grimpante"],
+  honeysuckle: ["lonicera", "grimpante", "parfum"],
+  "morning-glory": ["volubilis", "grimpante"],
+  "sweet-potato": ["patate"],
+  "kuri-squash": ["courge", "potiron", "citrouille"],
+  rhubarb: ["tarte"],
+  "florence-fennel": ["bulbe", "anis"],
 };
 
 export function searchCatalog(query: string, category?: PlantCategory): CatalogPlant[] {

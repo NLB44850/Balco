@@ -4,13 +4,15 @@
  */
 import type { WeatherSnapshot } from "../reminders/reminder-engine";
 
-export type WeatherScenario = "none" | "rain" | "cold" | "frost" | "storm" | "wind" | "heat" | "mild";
+export type WeatherScenario = "none" | "rain" | "cold" | "frost" | "hard-frost" | "storm" | "wind" | "heat" | "mild";
 
 export const WEATHER_SCENARIOS: { id: WeatherScenario; label: string; hint: string }[] = [
   { id: "none", label: "Météo réelle", hint: "Balco utilise la vraie météo de ta ville." },
   { id: "rain", label: "Pluie", hint: "8 mm dans les 12 h. Visible pour les plantes dont l’arrosage est dû." },
   { id: "cold", label: "Nuit fraîche", hint: "9 °C cette nuit, sans gel. Les frileuses en fin de saison le sentent." },
   { id: "frost", label: "Gel", hint: "-3 °C cette nuit. Alerte pour les plantes qui craignent le froid." },
+  // 23/10 : à -3 °C, l'artichaut, l'olivier ou le jasmin (alerte sous -5 °C) ne sont pas concernés.
+  { id: "hard-frost", label: "Grand froid", hint: "-8 °C cette nuit. Alerte aussi pour l’olivier, le jasmin ou l’artichaut." },
   { id: "storm", label: "Orage", hint: "Orage en cours : alerte pour toutes les plantes." },
   { id: "wind", label: "Vent fort", hint: "Rafales à 75 km/h : alerte pour toutes les plantes." },
   // Étape 5 du chantier « Plante hors saison » : la météo réelle d'octobre (vent, nuits fraîches) cachait la sortie
@@ -39,6 +41,8 @@ export function applyWeatherScenario(snapshot: WeatherSnapshot, scenario: Weathe
       return { ...base, current: { ...base.current, temperatureC: 12, apparentTemperatureC: 11, weatherCode: 0 }, today: { ...base.today, temperatureMinC: COLD_NIGHT_C, temperatureMaxC: 15 }, nights: [COLD_NIGHT_C, COLD_NIGHT_C, COLD_NIGHT_C, COLD_NIGHT_C] };
     case "frost":
       return { ...base, current: { ...base.current, temperatureC: 1, apparentTemperatureC: -1, weatherCode: 0 }, today: { ...base.today, temperatureMinC: -3, temperatureMaxC: 6 }, nights: [-3, -3, -3, -3] };
+    case "hard-frost":
+      return { ...base, current: { ...base.current, temperatureC: -2, apparentTemperatureC: -6, weatherCode: 0 }, today: { ...base.today, temperatureMinC: -8, temperatureMaxC: 1 }, nights: [-8, -8, -8, -8] };
     case "storm":
       return { ...base, current: { ...base.current, weatherCode: 95 } };
     case "mild":

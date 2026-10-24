@@ -428,3 +428,99 @@ une seule fois** (*erreur à éviter : arroser souvent avant les feuilles, les t
 **Et après ?** « Balco reprend ses rappels d'arrosage et d'engrais. » et « Un coup de froid annoncé ? Rentre-le
 quelques nuits. » (dahlia : « Les premières pousses sortent en quelques semaines. »). Bouton **C'est ressorti** : la
 plante reprend son état et ses rappels normaux.
+
+## 14. Gestes d'entretien en images (nouveau, 23/10, catalogue balcon et terrasse)
+
+Depuis le détail du geste sur Aujourd'hui (« Pas à pas, en images ») ou la fiche de la plante pendant les mois du geste. Le dernier bouton coche le geste du jour. Logique : `lib/plants/care-guides.ts`.
+
+### Guider la clématite
+
+Pour : haricots à rames, pois de senteur, jasmin étoilé, clématite, passiflore, chèvrefeuille, ipomées, potimarron.
+
+Ce qu'il te faut : un treillage, des fils ou une ficelle ; des liens souples.
+
+1. **Repère les nouvelles tiges qui partent dans le vide.** Les plus jeunes se plient sans casser.
+2. **Enroule chaque tige autour du support.** Sans forcer : elle prendra le pli toute seule.
+3. **Attache-la avec un lien souple, sans serrer.** *Erreur à éviter : un lien serré ou du fil de fer. Il étrangle la tige en grossissant.*
+4. **Recommence chaque semaine, tant qu’elle pousse.** Les nouvelles tiges s’allongent vite au printemps.
+
+**Et après ?** En quelques jours, les tiges s’accrochent toutes seules. Bouton **Tiges attachées**.
+
+### Tailler la clématite
+
+Pour : jasmin étoilé, clématite, passiflore, chèvrefeuille.
+
+Ce qu'il te faut : un sécateur propre et aiguisé ; des liens souples ; des gants.
+
+1. **Prends un sécateur propre et bien aiguisé.** Une coupe nette cicatrise vite.
+2. **Coupe d’abord le bois sec, à la base.** Les tiges grises et cassantes, sans bourgeons.
+3. **Raccourcis les tiges trop longues, au-dessus d’un bourgeon.** Si elle fleurit l’été, coupe toutes les tiges à 30 cm du sol ; si elle fleurit au printemps, enlève seulement le bois sec. *Erreur à éviter : laisser un long bout au-dessus du bourgeon. Il sèche et pourrit.*
+4. **Attache les tiges gardées au support.** Écarte-les en éventail : elles fleuriront de partout.
+
+**Et après ?** De nouvelles pousses repartent sous les coupes, et les fleurs avec. Bouton **C’est taillé**.
+
+### Tailler la vigne
+
+Pour : vigne en pot.
+
+Ce qu'il te faut : un sécateur propre et aiguisé.
+
+1. **Repère les rameaux poussés l’an dernier.** Bruns et lisses, gros comme un crayon : les grappes viendront sur leurs pousses.
+2. **Compte deux bourgeons à partir de la base.** Les petites bosses le long du rameau.
+3. **Coupe un peu au-dessus du deuxième bourgeon.** En biais, à 2 cm du bourgeon. *Erreur à éviter : tailler un jour de gel. Le bois gelé éclate.*
+4. **Coupe aussi le bois mort et les rameaux trop fins.**
+
+**Et après ?** Au printemps, chaque bourgeon gardé donne une pousse, et les grappes viennent dessus. Bouton **C’est taillé**.
+
+### Éclaircir les grappes
+
+Pour : vigne en pot.
+
+Ce qu'il te faut : une petite paire de ciseaux.
+
+1. **Compte les grappes sur chaque tige.** Garde les 2 ou 3 plus belles.
+2. **Coupe les grappes en trop avec de petits ciseaux.** Le pied nourrit mieux celles qui restent. *Erreur à éviter : attendre la fin de l’été. Éclaircis quand les grains sont encore petits.*
+3. **Coupe la tige deux feuilles après la dernière grappe.** La sève va aux raisins plutôt qu’aux feuilles.
+4. **Enlève quelques feuilles qui cachent les grappes.** Juste autour : le soleil fait mûrir les grains.
+
+**Et après ?** Les grains grossissent et mûrissent mieux d’ici la récolte. Bouton **Grappes éclaircies**.
+
+### Couper la tige à fleurs
+
+Pour : rhubarbe.
+
+Ce qu'il te faut : des gants ; un couteau ou un sécateur.
+
+1. **Repère la grosse tige qui porte les fleurs.** Plus haute et plus épaisse que les autres, avec un gros bouton au bout.
+2. **Mets des gants.** Ses feuilles sont toxiques, et la sève colle aux doigts.
+3. **Coupe-la tout en bas, au ras de la touffe.** Il ne doit rien en rester. *Erreur à éviter : la laisser fleurir. La plante s’épuise et donne moins de tiges.*
+4. **Mets la tige coupée au compost.** Elle ne se mange pas : dure, et pleine de feuilles toxiques autour.
+
+**Et après ?** Une autre tige à fleurs peut venir : coupe-la aussi. Bouton **Tige coupée**.
+
+### Butter le fenouil
+
+Pour : pommes de terre en sac, fenouil.
+
+Ce qu'il te faut : du terreau ; un arrosoir.
+
+1. **Prends quelques poignées de terreau.**
+2. **Ramène-les en butte autour du pied.** Ramène un peu de terreau autour du bulbe quand il grossit : il reste blanc et tendre. *Erreur à éviter : enterrer les feuilles. Laisse toujours dépasser le haut.*
+3. **Tasse doucement avec les mains.**
+4. **Arrose doucement, au pied.**
+
+**Et après ?** Le bulbe grossit à l’abri : récolte-le gros comme une orange. Bouton **C’est butté**.
+
+### Protéger l’artichaut du froid
+
+Pour : olivier, jasmin étoilé, artichaut.
+
+Ce qu'il te faut : un sécateur propre et aiguisé ; de la paille ou des feuilles mortes ; du papier bulle ou une natte ; un voile d’hivernage.
+
+1. **Coupe les grandes feuilles à 20 cm du sol.** Le cœur de la plante reste à l’abri dessous.
+2. **Pose de la paille ou des feuilles mortes au pied.** Une couche de 10 cm garde les racines au chaud.
+3. **Entoure le pot de papier bulle ou d’une natte.** En pot, ce sont les racines qui gèlent les premières.
+4. **Pousse le pot contre un mur, à l’abri du vent.** Un mur garde la chaleur du jour.
+5. **Couvre-le d’un voile les nuits de gel.** Retire-le dès que le froid passe : la plante a besoin de lumière. *Erreur à éviter : un plastique fermé. L’humidité fait pourrir les feuilles.*
+
+**Et après ?** Garde la paille tout l’hiver ; enlève le papier bulle au printemps. Bouton **C’est protégé**.

@@ -45,7 +45,7 @@ import {
   type CalendarActivity,
   type CalendarSubject,
 } from "@/lib/plants/calendar";
-import { describeSowing, formatMonthRange, MONTH_LONG, MONTH_SHORT } from "@/lib/plants/catalog";
+import { describeSowing, formatMonthRange, isFlower, MONTH_LONG, MONTH_SHORT } from "@/lib/plants/catalog";
 import { nextSuggestionMonth, seasonalStarters, seasonalSuggestions, seasonSuggestions, suggestionActionLabel, type SeasonalSuggestion } from "@/lib/plants/suggestions";
 import { climateSummary, climateZoneFor } from "@/lib/plants/climate";
 import type { ReminderSnooze } from "@/lib/reminders/reminder-actions";
@@ -361,7 +361,7 @@ export default function CalendarScreen() {
               {[
                 sheetSuggestion.entry.sowMonths.length > 0 ? `🌱 Semis : ${describeSowing(sheetSuggestion.entry)}` : null,
                 sheetSuggestion.entry.plantMonths.length > 0 ? `🪴 Plantation : ${formatMonthRange(sheetSuggestion.entry.plantMonths)}` : null,
-                `${sheetSuggestion.entry.category === "flower" ? "🌸 Floraison" : "🧺 Récolte"} : ${formatMonthRange(sheetSuggestion.entry.harvestMonths)}`,
+                `${isFlower(sheetSuggestion.entry) ? "🌸 Floraison" : "🧺 Récolte"} : ${formatMonthRange(sheetSuggestion.entry.harvestMonths)}`,
                 `🪣 ${capitalize(potNeedShort(sheetSuggestion.entry))}`,
               ].filter(Boolean).join("\n")}
             </Text>

@@ -3,7 +3,7 @@
  * (basilic, tomates, cosmos…). Sans dépendance au jardin, pour servir aussi au profil de soin des rappels.
  * Logique pure.
  */
-import type { CatalogPlant } from "./catalog";
+import { isFlower, type CatalogPlant } from "./catalog";
 import { byForm, possessive, subjectPronoun, verb } from "./grammar";
 
 export const isHarvestedOnce = (entry: Pick<CatalogPlant, "harvestOnceDays">) => entry.harvestOnceDays !== undefined;
@@ -30,7 +30,14 @@ export const freesItsPot = (entry: Pick<CatalogPlant, "id" | "perennial" | "harv
  */
 export function seasonFrostText(entry: CatalogPlant) {
   const bare = entry.label.replace(/^(le |la |les |l’|l')/u, "");
-  const flowers = entry.category === "flower";
+  const flowers = isFlower(entry);
+  // Une fleur qu'on ne cueille pas (ipomées) : rien à couper, sa saison s'arrête.
+  if (entry.bloomOnly) {
+    return {
+      title: `Dernière nuit pour ${possessive(entry)}`,
+      body: `Jusqu’à {min} °C cette nuit : ${subjectPronoun(entry)} n’y ${verb(entry, "résistera", "résisteront")} pas. ${byForm(entry, "Sa", "Sa", "Leur", "Leur")} saison se termine.`,
+    };
+  }
   const title = flowers
     ? `Cueille ${byForm(entry, `ton dernier ${bare}`, `ta dernière ${bare}`, `tes derniers ${bare}`, `tes dernières ${bare}`)} avant cette nuit`
     : `Récolte ${byForm(entry, "tout", "toute", "tous", "toutes")} ${possessive(entry)} avant cette nuit`;

@@ -1,19 +1,16 @@
 /**
  * L'herbier : une carte par plante du catalogue récoltée, ou fleurie, pour la première fois (« Ton herbier · 7 plantes
- * sur 109 »). Les récoltes déjà notées comptent dès son arrivée. Pour les fleurs, « Elle a fleuri » sur la fiche,
+ * sur 127 »). Les récoltes déjà notées comptent dès son arrivée. Pour les fleurs, « Elle a fleuri » sur la fiche,
  * seulement pendant ses mois de floraison. Les cartes vont dans le carnet des récompenses (`herbier:<id>`) : rien ne
  * se perd. Logique pure.
  */
-import { PLANT_CATALOG, type CatalogPlant } from "../plants/catalog";
+import { isFlower, PLANT_CATALOG, type CatalogPlant } from "../plants/catalog";
 import type { MaintenanceEvent } from "../reminders/reminder-engine";
 import type { ResolvedPlant } from "./garden-logic";
 
 export const herbariumKey = (catalogId: string) => `herbier:${catalogId}`;
 
-/** Une plante à fleurs (catégorie fleur) : ses mois de « récolte » sont ceux de sa floraison. */
-export function isFlower(entry: Pick<CatalogPlant, "category">) {
-  return entry.category === "flower";
-}
+export { isFlower };
 
 /** « Elle a fleuri » : une fois par an et par plante. */
 export function bloomEventId(plantId: string, year: number) {

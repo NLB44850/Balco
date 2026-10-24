@@ -146,10 +146,30 @@ const PLANTS = {
   hellebore: "Helleborus niger",
   houseleek: "Sempervivum tectorum",
   sedum: "Hylotelephium spectabile",
+  // Livraison 2 (21/10) : arbres fruitiers en pot
+  "olive-tree": "Olea europaea olive tree pot",
+  "columnar-apple": "columnar apple tree",
+  "dwarf-peach": "Prunus persica peach tree fruits",
+  "dwarf-cherry": "Prunus avium cherries tree",
+  kumquat: "Fortunella kumquat fruits",
+  pomegranate: "Punica granatum fruit tree",
+  // Livraison 3 (23/10) : grimpantes et légumes
+  "star-jasmine": "Trachelospermum jasminoides flowers",
+  clematis: "Clematis flowers climbing",
+  passionflower: "Passiflora caerulea flower",
+  grapevine: "Vitis vinifera grapes vine",
+  honeysuckle: "Lonicera japonica flowers",
+  "morning-glory": "Ipomoea purpurea flowers",
+  "fava-bean": "Vicia faba pods plant",
+  "sweet-potato": "Ipomoea batatas tubers",
+  "kuri-squash": "Red kuri squash",
+  artichoke: "Cynara scolymus artichoke plant",
+  rhubarb: "Rheum rhabarbarum stalks",
+  "florence-fennel": "Florence fennel bulb Foeniculum",
 };
 
 // Planches botaniques, herbiers, cartes… : on veut une vraie photo de la plante.
-const EXCLUDED_WORDS = /herbarium|herbier|illustration|drawing|köhler|koehler|thomé|botanical|plate|flora|map|distribution|stamp|logo|seed packet|diagram|\.svg|\.gif|\.tif/i;
+const EXCLUDED_WORDS = /herbarium|herbier|illustration|drawing|köhler|koehler|thomé|botanical|plate|\bflora\b|map|distribution|stamp|logo|seed packet|diagram|\.svg|\.gif|\.tif/i;
 const ALLOWED_LICENSE = /^(cc0|public domain|pd|cc by(-sa)? [0-9.]+|cc by(-sa)?)$/i;
 
 /** « User:Dupont », « Dupont (Dupont) I'd appreciate… » → « Dupont » */

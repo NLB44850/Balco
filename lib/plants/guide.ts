@@ -5,7 +5,7 @@
  * (lib/plants/planting.ts). Logique pure.
  */
 import type { IllustrationId } from "./illustration-names";
-import { formatMonthRange, MONTH_LONG, type CatalogPlant } from "./catalog";
+import { formatMonthRange, isFlower, MONTH_LONG, type CatalogPlant } from "./catalog";
 import { sowsOnWindowsill } from "./indoor";
 import { PLANTING, type Planting } from "./planting";
 import { ofLabel, startActivity } from "./calendar";
@@ -17,6 +17,7 @@ import type { PotSize } from "./pot-size";
 import { coldTenderOf } from "./cold-hardiness";
 import { wateringIntervalHours } from "./watering";
 import { indoorCareText, indoorWeeksNote } from "../garden/indoors";
+import { careGuideFor, careLinkText, careSteps, careSupplies, careTitle, careWhatsNext, isCareGuideTask, type CareGuideTask } from "./care-guides";
 
 export type GuideModel = "sow-pot" | "sow-indoor" | "plant-seedling" | "plant-bulb" | "perennial-pot" | GuideTask;
 
@@ -30,14 +31,17 @@ export const isFollowUpTask = (value: unknown): value is FollowUpTask => value =
 /** Rentrer une frileuse pour l'hiver, puis la ressortir au printemps (chantier « Plante hors saison »). */
 export type WinterTask = "indoors" | "spring";
 export const isWinterTask = (value: unknown): value is WinterTask => value === "indoors" || value === "spring";
-/** Un pas-à-pas pour un geste précis, ouvert depuis ce geste (`task=` de la route du guide). */
-export type GuideTask = PotTask | FollowUpTask | WinterTask;
-export const isGuideTask = (value: unknown): value is GuideTask => isPotTask(value) || isFollowUpTask(value) || isWinterTask(value);
+/** Un pas-à-pas pour un geste précis, ouvert depuis ce geste (`task=` de la route du guide). Les gestes d'entretien
+ * du catalogue balcon et terrasse (guider, tailler, butter…) : lib/plants/care-guides.ts. */
+export type GuideTask = PotTask | FollowUpTask | WinterTask | CareGuideTask;
+export const isGuideTask = (value: unknown): value is GuideTask => isPotTask(value) || isFollowUpTask(value) || isWinterTask(value) || isCareGuideTask(value);
+export { isCareGuideTask, type CareGuideTask };
 
 /** Le pas-à-pas d'un geste du calendrier, s'il en a un (sinon celui pour planter, ou aucun). */
-export function guideTaskOf(activity: { kind: string; topdress?: true; followUp?: FollowUpTask }): GuideTask | null {
+export function guideTaskOf(activity: { kind: string; topdress?: true; followUp?: FollowUpTask; taskId?: string; entry?: Pick<CatalogPlant, "id" | "category"> }): GuideTask | null {
   if (activity.followUp) return activity.followUp;
   if (activity.kind === "repot") return activity.topdress ? "topdress" : "repot";
+  if (activity.kind === "care" && activity.taskId && activity.entry) return careGuideFor(activity.entry, activity.taskId);
   return null;
 }
 
@@ -116,6 +120,7 @@ const isDenseSowing = (planting: Planting) => planting.perPot === 0;
 export function supplies(entry: CatalogPlant, model: GuideModel, options: GuideOptions = {}): Supply[] {
   // Rentrer une plante : rien à acheter, le pas-à-pas commence tout de suite.
   if (model === "indoors" || model === "spring") return [];
+  if (isCareGuideTask(model)) return careSupplies(entry, model);
   const planting = plantingOf(entry);
   if (model === "repot" || model === "topdress") return potCareSupplies(entry, model, options);
   if (model === "thin") return [{ id: "scissors", label: "Une petite paire de ciseaux", detail: "Des ciseaux à ongles font très bien l’affaire.", shared: true }, { id: "spray", label: "Un vaporisateur ou un arrosoir à pomme fine", detail: "Une pluie fine ne couche pas les pousses.", shared: true }];
@@ -190,6 +195,7 @@ export function delayText([min, max]: [number, number], unit: "days" | "weeks") 
 export function whatsNext(entry: CatalogPlant, model: GuideModel): string[] {
   if (model === "spring") return entry.id === "dahlia" ? ["Les premières pousses sortent en quelques semaines.", "Balco reprend ses rappels quand elles sont là."] : ["Balco reprend ses rappels d’arrosage et d’engrais.", `Un coup de froid annoncé ? Rentre-${objectPronoun(entry)} quelques nuits.`];
   if (model === "indoors") return [indoorCareText(entry, wateringIntervalHours(entry, undefined)), ...(indoorWeeksNote(entry) ? [indoorWeeksNote(entry)!] : [])];
+  if (isCareGuideTask(model)) return careWhatsNext(entry, model);
   const feeding = feedingNext(entry);
   if (model === "repot") return [`Garde-${objectPronoun(entry)} quelques jours à l’ombre légère : ${verb(entry, "ses", "leurs")} racines s’installent.`, "Arrose un peu moins les deux premières semaines.", ...(feeding ? [feeding] : [])];
   if (model === "topdress") return [`Le terreau neuf ${objectBefore(entry, "nourrit")} pour toute la saison.`];
@@ -200,10 +206,10 @@ export function whatsNext(entry: CatalogPlant, model: GuideModel): string[] {
   }
   if (model === "outdoors") {
     const harvest = plantingOf(entry).harvestWeeksFromPlanting;
-    return ["Les premiers jours, garde-les à l’abri du plein soleil de midi.", ...(harvest ? [`${entry.category === "flower" ? "Premières fleurs" : "Première récolte"} dans ${delayText(harvest, "weeks")}.`] : []), ...(feeding ? [feeding] : [])];
+    return ["Les premiers jours, garde-les à l’abri du plein soleil de midi.", ...(harvest ? [`${isFlower(entry) ? "Premières fleurs" : "Première récolte"} dans ${delayText(harvest, "weeks")}.`] : []), ...(feeding ? [feeding] : [])];
   }
   const planting = plantingOf(entry);
-  const flower = entry.category === "flower";
+  const flower = isFlower(entry);
   const lines: string[] = [];
   if (isSowing(model) && planting.germinationDays) lines.push(`Les pousses sortent dans ${delayText(planting.germinationDays, "days")}. Garde la terre humide.`);
   if (model === "plant-bulb") lines.push("Les premières pousses sortent en quelques semaines. Arrose peu tant qu’elles ne sont pas sorties.");
@@ -445,6 +451,7 @@ function springSteps(entry: CatalogPlant): GuideStep[] {
 export function guideSteps(entry: CatalogPlant, model: GuideModel, options: GuideOptions = {}): GuideStep[] {
   if (model === "indoors") return indoorsSteps(entry);
   if (model === "spring") return springSteps(entry);
+  if (isCareGuideTask(model)) return careSteps(entry, model);
   if (model === "repot") return repotSteps(entry, options);
   if (model === "topdress") return topdressSteps();
   if (model === "thin") return thinSteps(plantingOf(entry));
@@ -463,6 +470,7 @@ export function guideTitle(entry: CatalogPlant, model: GuideModel) {
   if (model === "outdoors") return `Sortir tes plants ${ofName(entry.name)}`;
   if (model === "indoors") return `Rentrer ${entry.label}`;
   if (model === "spring") return `Ressortir ${entry.label}`;
+  if (isCareGuideTask(model)) return careTitle(entry, model);
   return `${isSowing(model) ? "Semer" : "Planter"} ${entry.label}`;
 }
 
@@ -475,6 +483,7 @@ export function guideLinkText(entry: CatalogPlant, task: GuideTask | "need") {
   if (task === "spring") return `Comment ${objectBefore(entry, "ressortir")}, pas à pas ›`;
   if (task === "repot") return `Comment ${objectBefore(entry, "rempoter")} ›`;
   if (task === "topdress") return "Changer la terre du dessus, pas à pas ›";
+  if (isCareGuideTask(task)) return careLinkText(entry, task);
   return `Ce qu’il te faut pour ${objectBefore(entry, "planter")} ›`;
 }
 
@@ -487,6 +496,7 @@ function laterPinch(entry: CatalogPlant) {
 export function nextGestures(entry: CatalogPlant, model: GuideModel): string[] {
   if (model === "thin") return [];
   if (model === "spring") return [];
+  if (isCareGuideTask(model)) return [];
   if (model === "indoors") return [`Au printemps, Balco te dira quand ${objectBefore(entry, "ressortir")}.`];
   if (model === "pinch") return ["Tu peux recommencer à chaque fois qu’une tige s’allonge trop."];
   if (model === "outdoors") return plantingOf(entry).pinching ? [`Dans deux semaines, ${laterPinch(entry)}`] : [];

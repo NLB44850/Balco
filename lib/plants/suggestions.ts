@@ -12,6 +12,7 @@ import {
   formatMonthRange,
   getCatalogPlant,
   GOAL_FLAGSHIPS,
+  isFlower,
   MONTH_LONG,
   recommendPlants,
   sowsIndoors,
@@ -116,7 +117,7 @@ export function suggestionFor(catalogEntry: CatalogPlant, month: number, climate
   // « Dernier mois » seulement si plus aucune des deux façons de faire n'est possible le mois suivant.
   const lastChance = (!sow || isLastMonth(entry.sowMonths, m)) && (!plant || isLastMonth(entry.plantMonths, m));
   // Une fleur ne se récolte pas : on dit quand elle fleurit.
-  const harvest = `${entry.category === "flower" ? "fleurit" : "récolte"} ${monthSpan(entry.harvestMonths)}`;
+  const harvest = `${isFlower(entry) ? "fleurit" : "récolte"} ${monthSpan(entry.harvestMonths)}`;
   const parts = lastChance ? [lastChanceText(entry.label, action), harvest] : [capitalize(harvest), entry.difficulty === "easy" ? "facile" : null];
   const indoors = sow && sowsIndoors(entry, m);
   const title = !indoors ? `${VERBS[action]} ${entry.label}` : action === "sow" ? `Sème ${entry.label} au chaud` : `Sème au chaud ou plante ${entry.label}`;

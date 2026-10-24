@@ -189,7 +189,9 @@ type DraftDecision = Omit<ReminderDecision, "plantId" | "plantLabel" | "validUnt
 function safetyDecision(plant: PlantCareProfile, weather: WeatherSnapshot): DraftDecision | null {
   if (!allows(plant, "protection")) return null;
   const name = plant.label ?? plant.displayName;
-  const gust = Math.max(weather.next12h.windGustKmhMax, weather.today.windGustKmhMax);
+  // Les rafales des 12 prochaines heures seulement : le maximum du jour garde celles du matin, déjà passées (retour du
+  // 23/10 : « Vent fort » encore affiché à 22 h, le vent retombé).
+  const gust = weather.next12h.windGustKmhMax;
   const minTemp = weather.today.temperatureMinC;
 
   if (isThunderstorm(weather.current.weatherCode)) {
