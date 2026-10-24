@@ -173,6 +173,17 @@ const PLANTS = {
   "japanese-maple": "Acer palmatum autumn leaves",
   fargesia: "Fargesia bamboo",
   stipa: "Stipa tenuissima",
+  // Livraison 5 (24/10) : 9 fruitiers et le bananier du Japon
+  "dwarf-apricot": "Prunus armeniaca apricots on tree",
+  "dwarf-plum": "mirabelle plums Prunus domestica tree",
+  "columnar-pear": "Pyrus communis pears on tree",
+  calamondin: "Citrus calamondin fruits",
+  mandarin: "Citrus unshiu satsuma tree fruits",
+  lime: "Citrus latifolia lime fruits tree",
+  feijoa: "Acca sellowiana feijoa fruit",
+  loquat: "Eriobotrya japonica fruits",
+  "dwarf-mulberry": "Morus mulberry fruits",
+  "musa-basjoo": "Musa basjoo",
 };
 
 // Planches botaniques, herbiers, cartes… : on veut une vraie photo de la plante.
