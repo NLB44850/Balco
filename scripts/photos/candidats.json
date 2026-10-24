@@ -5580,5 +5580,427 @@
       "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0",
       "file": "stipa-3.jpg"
     }
+  ],
+  "dwarf-apricot": [
+    {
+      "title": "File:Apricots.jpg",
+      "width": 1280,
+      "height": 966,
+      "mime": "image/jpeg",
+      "thumb": "https://thumb.wikimedia.org/wikipedia/commons/thumb/f/f9/Apricots.jpg/500px-Apricots.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
+      "page": "https://commons.wikimedia.org/wiki/File:Apricots.jpg",
+      "author": "Fir0002",
+      "license": "CC BY-SA 3.0",
+      "licenseUrl": "http://creativecommons.org/licenses/by-sa/3.0/",
+      "file": "dwarf-apricot-1.jpg"
+    },
+    {
+      "title": "File:Prunus armeniaca in Donetsk.jpg",
+      "width": 2048,
+      "height": 1536,
+      "mime": "image/jpeg",
+      "thumb": "https://thumb.wikimedia.org/wikipedia/commons/thumb/c/cf/Prunus_armeniaca_in_Donetsk.jpg/500px-Prunus_armeniaca_in_Donetsk.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
+      "page": "https://commons.wikimedia.org/wiki/File:Prunus_armeniaca_in_Donetsk.jpg",
+      "author": "Andrey Butko",
+      "license": "CC BY-SA 3.0",
+      "licenseUrl": "https://creativecommons.org/licenses/by-sa/3.0",
+      "file": "dwarf-apricot-2.jpg"
+    },
+    {
+      "title": "File:Apricot fruits on tree, Niğde 2017-08-05 01-1.jpg",
+      "width": 3250,
+      "height": 2398,
+      "mime": "image/jpeg",
+      "thumb": "https://thumb.wikimedia.org/wikipedia/commons/thumb/0/05/Apricot_fruits_on_tree%2C_Ni%C4%9Fde_2017-08-05_01-1.jpg/500px-Apricot_fruits_on_tree%2C_Ni%C4%9Fde_2017-08-05_01-1.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
+      "page": "https://commons.wikimedia.org/wiki/File:Apricot_fruits_on_tree,_Ni%C4%9Fde_2017-08-05_01-1.jpg",
+      "author": "Zeynel Cebeci",
+      "license": "CC BY-SA 4.0",
+      "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0",
+      "file": "dwarf-apricot-3.jpg"
+    }
+  ],
+  "dwarf-plum": [
+    {
+      "title": "File:Blossom of Mirabelle plum.jpg",
+      "width": 2671,
+      "height": 1768,
+      "mime": "image/jpeg",
+      "thumb": "https://thumb.wikimedia.org/wikipedia/commons/thumb/0/0e/Blossom_of_Mirabelle_plum.jpg/500px-Blossom_of_Mirabelle_plum.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
+      "page": "https://commons.wikimedia.org/wiki/File:Blossom_of_Mirabelle_plum.jpg",
+      "author": "Trachemys",
+      "license": "CC BY-SA 3.0",
+      "licenseUrl": "https://creativecommons.org/licenses/by-sa/3.0",
+      "file": "dwarf-plum-1.jpg"
+    },
+    {
+      "title": "File:Prunus cerasifera 2016 G1.jpg",
+      "width": 6000,
+      "height": 3900,
+      "mime": "image/jpeg",
+      "thumb": "https://thumb.wikimedia.org/wikipedia/commons/thumb/b/b0/Prunus_cerasifera_2016_G1.jpg/500px-Prunus_cerasifera_2016_G1.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
+      "page": "https://commons.wikimedia.org/wiki/File:Prunus_cerasifera_2016_G1.jpg",
+      "author": "George Chernilevsky",
+      "license": "Public domain",
+      "licenseUrl": "",
+      "file": "dwarf-plum-2.jpg"
+    },
+    {
+      "title": "File:Blutpflaume - Prunus cerasifera Nigra - March 22 2026.jpg",
+      "width": 6190,
+      "height": 4126,
+      "mime": "image/jpeg",
+      "thumb": "https://thumb.wikimedia.org/wikipedia/commons/thumb/4/45/Blutpflaume_-_Prunus_cerasifera_Nigra_-_March_22_2026.jpg/500px-Blutpflaume_-_Prunus_cerasifera_Nigra_-_March_22_2026.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
+      "page": "https://commons.wikimedia.org/wiki/File:Blutpflaume_-_Prunus_cerasifera_Nigra_-_March_22_2026.jpg",
+      "author": "NorbertNagel",
+      "license": "CC BY-SA 4.0",
+      "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0",
+      "file": "dwarf-plum-3.jpg"
+    },
+    {
+      "title": "File:Prunus domestica ripe fruits 1.jpg",
+      "width": 3072,
+      "height": 2928,
+      "mime": "image/jpeg",
+      "thumb": "https://thumb.wikimedia.org/wikipedia/commons/thumb/d/d3/Prunus_domestica_ripe_fruits_1.jpg/500px-Prunus_domestica_ripe_fruits_1.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
+      "page": "https://commons.wikimedia.org/wiki/File:Prunus_domestica_ripe_fruits_1.jpg",
+      "author": "Salil Kumar Mukherjee",
+      "license": "CC BY-SA 4.0",
+      "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0",
+      "file": "dwarf-plum-4.jpg",
+      "query": "Prunus domestica fruits"
+    },
+    {
+      "title": "File:Fruits du prunier Mont-Royal (Prunus domestica 'Mont-Royal').jpg",
+      "width": 3840,
+      "height": 2160,
+      "mime": "image/jpeg",
+      "thumb": "https://thumb.wikimedia.org/wikipedia/commons/thumb/6/67/Fruits_du_prunier_Mont-Royal_%28Prunus_domestica_%27Mont-Royal%27%29.jpg/500px-Fruits_du_prunier_Mont-Royal_%28Prunus_domestica_%27Mont-Royal%27%29.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
+      "page": "https://commons.wikimedia.org/wiki/File:Fruits_du_prunier_Mont-Royal_(Prunus_domestica_%27Mont-Royal%27).jpg",
+      "author": "Maxime Laterreur",
+      "license": "CC BY-SA 4.0",
+      "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0",
+      "file": "dwarf-plum-5.jpg",
+      "query": "Prunus domestica fruits"
+    },
+    {
+      "title": "File:Prunus domestica fruits 001.JPG",
+      "width": 3888,
+      "height": 2592,
+      "mime": "image/jpeg",
+      "thumb": "https://thumb.wikimedia.org/wikipedia/commons/thumb/9/90/Prunus_domestica_fruits_001.JPG/500px-Prunus_domestica_fruits_001.JPG?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
+      "page": "https://commons.wikimedia.org/wiki/File:Prunus_domestica_fruits_001.JPG",
+      "author": "StMH",
+      "license": "CC BY-SA 3.0",
+      "licenseUrl": "https://creativecommons.org/licenses/by-sa/3.0",
+      "file": "dwarf-plum-6.jpg",
+      "query": "Prunus domestica fruits"
+    }
+  ],
+  "columnar-pear": [
+    {
+      "title": "File:Pyrus communis mit geborstenem Stamm 01.jpg",
+      "width": 4250,
+      "height": 5160,
+      "mime": "image/jpeg",
+      "thumb": "https://thumb.wikimedia.org/wikipedia/commons/thumb/0/0e/Pyrus_communis_mit_geborstenem_Stamm_01.jpg/500px-Pyrus_communis_mit_geborstenem_Stamm_01.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
+      "page": "https://commons.wikimedia.org/wiki/File:Pyrus_communis_mit_geborstenem_Stamm_01.jpg",
+      "author": "Uoaei1",
+      "license": "CC BY-SA 4.0",
+      "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0",
+      "file": "columnar-pear-1.jpg"
+    },
+    {
+      "title": "File:Common pear (Pyrus communis) blooming.jpg",
+      "width": 2112,
+      "height": 2179,
+      "mime": "image/jpeg",
+      "thumb": "https://thumb.wikimedia.org/wikipedia/commons/thumb/f/f6/Common_pear_%28Pyrus_communis%29_blooming.jpg/500px-Common_pear_%28Pyrus_communis%29_blooming.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
+      "page": "https://commons.wikimedia.org/wiki/File:Common_pear_(Pyrus_communis)_blooming.jpg",
+      "author": "Ввласенко",
+      "license": "CC BY-SA 3.0",
+      "licenseUrl": "https://creativecommons.org/licenses/by-sa/3.0",
+      "file": "columnar-pear-2.jpg"
+    },
+    {
+      "title": "File:Pyrus communis mit geborstenem Stamm 02.jpg",
+      "width": 4000,
+      "height": 4856,
+      "mime": "image/jpeg",
+      "thumb": "https://thumb.wikimedia.org/wikipedia/commons/thumb/8/81/Pyrus_communis_mit_geborstenem_Stamm_02.jpg/500px-Pyrus_communis_mit_geborstenem_Stamm_02.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
+      "page": "https://commons.wikimedia.org/wiki/File:Pyrus_communis_mit_geborstenem_Stamm_02.jpg",
+      "author": "Uoaei1",
+      "license": "CC BY-SA 4.0",
+      "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0",
+      "file": "columnar-pear-3.jpg"
+    }
+  ],
+  "calamondin": [
+    {
+      "title": "File:Citrus-Constellation Calamondin-Collection-by-Raju-C-Reddy.jpg",
+      "width": 6000,
+      "height": 4000,
+      "mime": "image/jpeg",
+      "thumb": "https://thumb.wikimedia.org/wikipedia/commons/thumb/4/47/Citrus-Constellation_Calamondin-Collection-by-Raju-C-Reddy.jpg/500px-Citrus-Constellation_Calamondin-Collection-by-Raju-C-Reddy.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
+      "page": "https://commons.wikimedia.org/wiki/File:Citrus-Constellation_Calamondin-Collection-by-Raju-C-Reddy.jpg",
+      "author": "rajucreddy",
+      "license": "CC0",
+      "licenseUrl": "http://creativecommons.org/publicdomain/zero/1.0/deed.en",
+      "file": "calamondin-1.jpg"
+    },
+    {
+      "title": "File:Citrus-Symphony-by-Raju-C-Reddy.jpg",
+      "width": 6000,
+      "height": 4000,
+      "mime": "image/jpeg",
+      "thumb": "https://thumb.wikimedia.org/wikipedia/commons/thumb/b/b8/Citrus-Symphony-by-Raju-C-Reddy.jpg/500px-Citrus-Symphony-by-Raju-C-Reddy.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
+      "page": "https://commons.wikimedia.org/wiki/File:Citrus-Symphony-by-Raju-C-Reddy.jpg",
+      "author": "rajucreddy",
+      "license": "CC0",
+      "licenseUrl": "http://creativecommons.org/publicdomain/zero/1.0/deed.en",
+      "file": "calamondin-2.jpg"
+    },
+    {
+      "title": "File:Citrus × microcarpa Kalamondin 2018-10-06 02.jpg",
+      "width": 4608,
+      "height": 3456,
+      "mime": "image/jpeg",
+      "thumb": "https://thumb.wikimedia.org/wikipedia/commons/thumb/3/3b/Citrus_%C3%97_microcarpa_Kalamondin_2018-10-06_02.jpg/500px-Citrus_%C3%97_microcarpa_Kalamondin_2018-10-06_02.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
+      "page": "https://commons.wikimedia.org/wiki/File:Citrus_%C3%97_microcarpa_Kalamondin_2018-10-06_02.jpg",
+      "author": "Agnieszka Kwiecień, Nova",
+      "license": "CC BY-SA 4.0",
+      "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0",
+      "file": "calamondin-3.jpg"
+    }
+  ],
+  "mandarin": [
+    {
+      "title": "File:Citrus unshiu 20101127 c.jpg",
+      "width": 3072,
+      "height": 2304,
+      "mime": "image/jpeg",
+      "thumb": "https://thumb.wikimedia.org/wikipedia/commons/thumb/3/31/Citrus_unshiu_20101127_c.jpg/500px-Citrus_unshiu_20101127_c.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
+      "page": "https://commons.wikimedia.org/wiki/File:Citrus_unshiu_20101127_c.jpg",
+      "author": "Batholith",
+      "license": "Public domain",
+      "licenseUrl": "",
+      "file": "mandarin-1.jpg",
+      "query": "Citrus unshiu"
+    },
+    {
+      "title": "File:Citrus unshiu 20101118 a.jpg",
+      "width": 2878,
+      "height": 2159,
+      "mime": "image/jpeg",
+      "thumb": "https://thumb.wikimedia.org/wikipedia/commons/thumb/1/1d/Citrus_unshiu_20101118_a.jpg/500px-Citrus_unshiu_20101118_a.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
+      "page": "https://commons.wikimedia.org/wiki/File:Citrus_unshiu_20101118_a.jpg",
+      "author": "Batholith (talk)",
+      "license": "Public domain",
+      "licenseUrl": "",
+      "file": "mandarin-2.jpg",
+      "query": "Citrus unshiu"
+    },
+    {
+      "title": "File:Citrus unshiu-unshu mikan-2.jpg",
+      "width": 960,
+      "height": 1280,
+      "mime": "image/jpeg",
+      "thumb": "https://thumb.wikimedia.org/wikipedia/commons/thumb/1/1e/Citrus_unshiu-unshu_mikan-2.jpg/500px-Citrus_unshiu-unshu_mikan-2.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
+      "page": "https://commons.wikimedia.org/wiki/File:Citrus_unshiu-unshu_mikan-2.jpg",
+      "author": "Tomomarusan",
+      "license": "CC BY 2.5",
+      "licenseUrl": "https://creativecommons.org/licenses/by/2.5",
+      "file": "mandarin-3.jpg",
+      "query": "Citrus unshiu"
+    }
+  ],
+  "lime": [
+    {
+      "title": "File:Citrus aurantiifolia by Kadavoor.jpg",
+      "width": 2736,
+      "height": 3648,
+      "mime": "image/jpeg",
+      "thumb": "https://thumb.wikimedia.org/wikipedia/commons/thumb/4/4e/Citrus_aurantiifolia_by_Kadavoor.jpg/500px-Citrus_aurantiifolia_by_Kadavoor.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
+      "page": "https://commons.wikimedia.org/wiki/File:Citrus_aurantiifolia_by_Kadavoor.jpg",
+      "author": "Jeevan Jose, Kerala, India",
+      "license": "CC BY-SA 4.0",
+      "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0",
+      "file": "lime-1.jpg"
+    },
+    {
+      "title": "File:Citrus aurantiifolia of Kadavoor.jpg",
+      "width": 2736,
+      "height": 3648,
+      "mime": "image/jpeg",
+      "thumb": "https://thumb.wikimedia.org/wikipedia/commons/thumb/d/d6/Citrus_aurantiifolia_of_Kadavoor.jpg/500px-Citrus_aurantiifolia_of_Kadavoor.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
+      "page": "https://commons.wikimedia.org/wiki/File:Citrus_aurantiifolia_of_Kadavoor.jpg",
+      "author": "Jeevan Jose, Kerala, India",
+      "license": "CC BY-SA 4.0",
+      "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0",
+      "file": "lime-2.jpg"
+    },
+    {
+      "title": "File:Citrus aurantiifolia in Kadavoor.jpg",
+      "width": 3648,
+      "height": 2736,
+      "mime": "image/jpeg",
+      "thumb": "https://thumb.wikimedia.org/wikipedia/commons/thumb/5/55/Citrus_aurantiifolia_in_Kadavoor.jpg/500px-Citrus_aurantiifolia_in_Kadavoor.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
+      "page": "https://commons.wikimedia.org/wiki/File:Citrus_aurantiifolia_in_Kadavoor.jpg",
+      "author": "Jeevan Jose, Kerala, India",
+      "license": "CC BY-SA 4.0",
+      "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0",
+      "file": "lime-3.jpg"
+    }
+  ],
+  "feijoa": [
+    {
+      "title": "File:Acca sellowiana Fruit MHNT Fronton.jpg",
+      "width": 5919,
+      "height": 4499,
+      "mime": "image/jpeg",
+      "thumb": "https://thumb.wikimedia.org/wikipedia/commons/thumb/0/08/Acca_sellowiana_Fruit_MHNT_Fronton.jpg/500px-Acca_sellowiana_Fruit_MHNT_Fronton.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
+      "page": "https://commons.wikimedia.org/wiki/File:Acca_sellowiana_Fruit_MHNT_Fronton.jpg",
+      "author": "Didier Descouens",
+      "license": "CC BY-SA 4.0",
+      "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0",
+      "file": "feijoa-1.jpg"
+    },
+    {
+      "title": "File:Acca sellowiana (fruit) - November 2023 - Sarah Stierch.jpg",
+      "width": 4284,
+      "height": 5712,
+      "mime": "image/jpeg",
+      "thumb": "https://thumb.wikimedia.org/wikipedia/commons/thumb/d/de/Acca_sellowiana_%28fruit%29_-_November_2023_-_Sarah_Stierch.jpg/500px-Acca_sellowiana_%28fruit%29_-_November_2023_-_Sarah_Stierch.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
+      "page": "https://commons.wikimedia.org/wiki/File:Acca_sellowiana_(fruit)_-_November_2023_-_Sarah_Stierch.jpg",
+      "author": "Missvain",
+      "license": "CC BY 4.0",
+      "licenseUrl": "https://creativecommons.org/licenses/by/4.0",
+      "file": "feijoa-2.jpg"
+    },
+    {
+      "title": "File:Acca sellowiana (Mystry guava), AJT Johnsingh.jpg",
+      "width": 3648,
+      "height": 2736,
+      "mime": "image/jpeg",
+      "thumb": "https://thumb.wikimedia.org/wikipedia/commons/thumb/4/4d/Acca_sellowiana_%28Mystry_guava%29%2C_AJT_Johnsingh.jpg/500px-Acca_sellowiana_%28Mystry_guava%29%2C_AJT_Johnsingh.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
+      "page": "https://commons.wikimedia.org/wiki/File:Acca_sellowiana_(Mystry_guava),_AJT_Johnsingh.jpg",
+      "author": "Ajtjohnsingh",
+      "license": "CC BY-SA 4.0",
+      "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0",
+      "file": "feijoa-3.jpg"
+    }
+  ],
+  "loquat": [
+    {
+      "title": "File:Rosales - Eriobotrya japonica - 2.jpg",
+      "width": 5184,
+      "height": 3456,
+      "mime": "image/jpeg",
+      "thumb": "https://thumb.wikimedia.org/wikipedia/commons/thumb/8/83/Rosales_-_Eriobotrya_japonica_-_2.jpg/500px-Rosales_-_Eriobotrya_japonica_-_2.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
+      "page": "https://commons.wikimedia.org/wiki/File:Rosales_-_Eriobotrya_japonica_-_2.jpg",
+      "author": "Emőke Dénes",
+      "license": "CC BY-SA 4.0",
+      "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0",
+      "file": "loquat-1.jpg"
+    },
+    {
+      "title": "File:Rosales - Eriobotrya japonica - 1.jpg",
+      "width": 5184,
+      "height": 3456,
+      "mime": "image/jpeg",
+      "thumb": "https://thumb.wikimedia.org/wikipedia/commons/thumb/a/ac/Rosales_-_Eriobotrya_japonica_-_1.jpg/500px-Rosales_-_Eriobotrya_japonica_-_1.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
+      "page": "https://commons.wikimedia.org/wiki/File:Rosales_-_Eriobotrya_japonica_-_1.jpg",
+      "author": "Emőke Dénes",
+      "license": "CC BY-SA 4.0",
+      "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0",
+      "file": "loquat-2.jpg"
+    },
+    {
+      "title": "File:Eriobotrya japonica - Yenidünya.JPG",
+      "width": 2750,
+      "height": 1897,
+      "mime": "image/jpeg",
+      "thumb": "https://thumb.wikimedia.org/wikipedia/commons/thumb/4/4f/Eriobotrya_japonica_-_Yenid%C3%BCnya.JPG/500px-Eriobotrya_japonica_-_Yenid%C3%BCnya.JPG?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
+      "page": "https://commons.wikimedia.org/wiki/File:Eriobotrya_japonica_-_Yenid%C3%BCnya.JPG",
+      "author": "Zeynel Cebeci",
+      "license": "CC BY-SA 4.0",
+      "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0",
+      "file": "loquat-3.jpg"
+    }
+  ],
+  "dwarf-mulberry": [
+    {
+      "title": "File:White Mulberry (Morus alba).jpg",
+      "width": 3920,
+      "height": 2204,
+      "mime": "image/jpeg",
+      "thumb": "https://thumb.wikimedia.org/wikipedia/commons/thumb/f/fe/White_Mulberry_%28Morus_alba%29.jpg/500px-White_Mulberry_%28Morus_alba%29.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
+      "page": "https://commons.wikimedia.org/wiki/File:White_Mulberry_(Morus_alba).jpg",
+      "author": "Mokkie",
+      "license": "CC BY-SA 3.0",
+      "licenseUrl": "https://creativecommons.org/licenses/by-sa/3.0",
+      "file": "dwarf-mulberry-1.jpg"
+    },
+    {
+      "title": "File:White Mulberry (Morus alba) 2.jpg",
+      "width": 3920,
+      "height": 2204,
+      "mime": "image/jpeg",
+      "thumb": "https://thumb.wikimedia.org/wikipedia/commons/thumb/d/db/White_Mulberry_%28Morus_alba%29_2.jpg/500px-White_Mulberry_%28Morus_alba%29_2.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
+      "page": "https://commons.wikimedia.org/wiki/File:White_Mulberry_(Morus_alba)_2.jpg",
+      "author": "Mokkie",
+      "license": "CC BY-SA 3.0",
+      "licenseUrl": "https://creativecommons.org/licenses/by-sa/3.0",
+      "file": "dwarf-mulberry-2.jpg"
+    },
+    {
+      "title": "File:White Mulberry (Morus alba) 1.jpg",
+      "width": 3920,
+      "height": 2204,
+      "mime": "image/jpeg",
+      "thumb": "https://thumb.wikimedia.org/wikipedia/commons/thumb/9/9e/White_Mulberry_%28Morus_alba%29_1.jpg/500px-White_Mulberry_%28Morus_alba%29_1.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
+      "page": "https://commons.wikimedia.org/wiki/File:White_Mulberry_(Morus_alba)_1.jpg",
+      "author": "Mokkie",
+      "license": "CC BY-SA 3.0",
+      "licenseUrl": "https://creativecommons.org/licenses/by-sa/3.0",
+      "file": "dwarf-mulberry-3.jpg"
+    }
+  ],
+  "musa-basjoo": [
+    {
+      "title": "File:2014 Suchum, Ogród botaniczny (03).jpg",
+      "width": 3076,
+      "height": 4612,
+      "mime": "image/jpeg",
+      "thumb": "https://thumb.wikimedia.org/wikipedia/commons/thumb/9/95/2014_Suchum%2C_Ogr%C3%B3d_botaniczny_%2803%29.jpg/500px-2014_Suchum%2C_Ogr%C3%B3d_botaniczny_%2803%29.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
+      "page": "https://commons.wikimedia.org/wiki/File:2014_Suchum,_Ogr%C3%B3d_botaniczny_(03).jpg",
+      "author": "Hons084",
+      "license": "CC BY-SA 4.0",
+      "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0",
+      "file": "musa-basjoo-1.jpg"
+    },
+    {
+      "title": "File:Musa basjooSochi1.JPG",
+      "width": 2000,
+      "height": 2606,
+      "mime": "image/jpeg",
+      "thumb": "https://thumb.wikimedia.org/wikipedia/commons/thumb/4/44/Musa_basjooSochi1.JPG/500px-Musa_basjooSochi1.JPG?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
+      "page": "https://commons.wikimedia.org/wiki/File:Musa_basjooSochi1.JPG",
+      "author": "Materialscientist",
+      "license": "CC BY-SA 3.0",
+      "licenseUrl": "https://creativecommons.org/licenses/by-sa/3.0",
+      "file": "musa-basjoo-2.jpg"
+    },
+    {
+      "title": "File:Musa basjoo OB Wrocław.jpg",
+      "width": 8160,
+      "height": 4592,
+      "mime": "image/jpeg",
+      "thumb": "https://thumb.wikimedia.org/wikipedia/commons/thumb/7/71/Musa_basjoo_OB_Wroc%C5%82aw.jpg/500px-Musa_basjoo_OB_Wroc%C5%82aw.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
+      "page": "https://commons.wikimedia.org/wiki/File:Musa_basjoo_OB_Wroc%C5%82aw.jpg",
+      "author": "Crusier",
+      "license": "CC BY 4.0",
+      "licenseUrl": "https://creativecommons.org/licenses/by/4.0",
+      "file": "musa-basjoo-3.jpg"
+    }
   ]
 }

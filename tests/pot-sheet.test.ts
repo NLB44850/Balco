@@ -7,7 +7,7 @@ import { POT_WATERING_FACTOR, wateringIntervalHours, wateringLiters } from "../l
 import { ESTIMATE_TEXT, feedingDetail, feedingValue, potFit, potLabel, potNeedFor, potNeedShort, potSheetFor, potSizePhrase, recommendedPotSize, smallestFit, type PotSheet } from "../lib/plants/pot-sheet";
 
 describe("fiches Spécial Pot", () => {
-  it("couvrent les 133 plantes, avec des valeurs plausibles et leurs sources", () => {
+  it("couvrent les 143 plantes, avec des valeurs plausibles et leurs sources", () => {
     for (const entry of PLANT_CATALOG) {
       const sheet = potSheetFor(entry.id);
       expect(sheet, entry.id).toBeDefined();

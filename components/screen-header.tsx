@@ -16,11 +16,13 @@ type Props = {
   subtitle?: string;
   /** Écran secondaire : un bouton retour à gauche du titre, et pas d'avatar. */
   back?: boolean;
+  /** Ce que fait le bouton retour à la place de revenir à l'écran d'avant (catalogue : revenir aux familles). */
+  onBack?: () => void;
   right?: React.ReactNode;
   style?: ViewStyle;
 };
 
-export function ScreenHeader({ title, subtitle, back, right, style }: Props) {
+export function ScreenHeader({ title, subtitle, back, onBack, right, style }: Props) {
   const colors = useColors();
   const router = useRouter();
   const { profile } = useGarden();
@@ -28,7 +30,7 @@ export function ScreenHeader({ title, subtitle, back, right, style }: Props) {
   return (
     <View style={[styles.header, style]}>
       {back && (
-        <BackButton onPress={() => (router.canGoBack() ? router.back() : router.replace("/(tabs)"))} />
+        <BackButton onPress={onBack ?? (() => (router.canGoBack() ? router.back() : router.replace("/(tabs)")))} />
       )}
       <View style={styles.copy}>
         <Text style={[styles.title, { color: colors.foreground }]} numberOfLines={1}>{title}</Text>

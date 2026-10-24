@@ -7,8 +7,8 @@
  */
 import * as Haptics from "expo-haptics";
 import { useLocalSearchParams, useRouter } from "expo-router";
-import { memo, useCallback, useDeferredValue, useMemo, useRef, useState } from "react";
-import { Platform, Pressable, ScrollView, StyleSheet, View } from "react-native";
+import { memo, useCallback, useDeferredValue, useEffect, useMemo, useRef, useState } from "react";
+import { BackHandler, Platform, Pressable, ScrollView, StyleSheet, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { LightScreen } from "@/components/light-screen";
@@ -48,8 +48,8 @@ import { addSpringWish, nextSpringReminder, SPRING_REMINDER_SOURCE, springRemind
 import { scheduleDatedReminder } from "@/lib/reminders/local-notifications";
 import { guideLinkText } from "@/lib/plants/guide";
 import { now as clockNow } from "@/lib/clock";
+import { CATALOG_FAMILIES, catalogFamily, plantCountLabel, plantsOfFamily, type CatalogFamilyId } from "@/lib/plants/catalog-families";
 
-const categories = Object.keys(CATEGORY_LABELS) as PlantCategory[];
 
 export default function AddPlantScreen() {
   const colors = useColors();
@@ -62,7 +62,31 @@ export default function AddPlantScreen() {
   const seasonMonth = askedMonth >= 1 && askedMonth <= 12 ? askedMonth : currentMonth;
   const [inSeason, setInSeason] = useState(Boolean(params.month));
   const [query, setQuery] = useState("");
+  // L'écran s'ouvre sur les tuiles des familles (retour du 24/10) ; une tuile, « Toutes les plantes », le mois ou une
+  // recherche ouvrent la liste.
+  const [family, setFamily] = useState<CatalogFamilyId | "all" | null>(null);
   const [category, setCategory] = useState<PlantCategory | undefined>(undefined);
+  const searching = query.trim().length > 0;
+  const showList = searching || inSeason || family !== null;
+  const familyInfo = family && family !== "all" ? catalogFamily(family) : null;
+  const backToFamilies = () => {
+    setFamily(null);
+    setCategory(undefined);
+    setInSeason(false);
+    setQuery("");
+  };
+  // La flèche du haut et le retour d'Android ramènent d'une liste aux tuiles (retour du 24/10 : ils ramenaient au
+  // balcon). Ouvert depuis Saisons sur les plantes du mois, le retour ramène à Saisons.
+  const openedOnMonth = Boolean(params.month) && inSeason && family === null && !searching;
+  const listBack = showList && !openedOnMonth ? backToFamilies : undefined;
+  useEffect(() => {
+    if (!listBack) return;
+    const subscription = BackHandler.addEventListener("hardwareBackPress", () => {
+      listBack();
+      return true;
+    });
+    return () => subscription.remove();
+  }, [listBack]);
   const hasBalconyInfo = Boolean(onboarding && !onboarding.skipped && (onboarding.sunlight || onboarding.space));
   const [onlyFitting, setOnlyFitting] = useState(hasBalconyInfo);
   const [sheetId, setSheetId] = useState<string | null>(null);
@@ -81,10 +105,13 @@ export default function AddPlantScreen() {
   // La liste suit la frappe sans la bloquer : sur un téléphone moyen, la refaire à chaque lettre figeait le clavier.
   const deferredQuery = useDeferredValue(query);
   const results = useMemo(() => {
-    const matching = new Set(searchCatalog(deferredQuery, category).map((entry) => entry.id));
+    // Une recherche cherche partout ; sinon, la famille ouverte et sa catégorie choisie.
+    const allowed = deferredQuery.trim() ? null : category ? [category] : familyInfo?.categories ?? null;
+    const matching = new Set(searchCatalog(deferredQuery).filter((entry) => !allowed || allowed.includes(entry.category)).map((entry) => entry.id));
     const ordered = onlyFitting ? recommendPlants(onboarding, { month: clockNow().getMonth() + 1 }) : [...PLANT_CATALOG].sort((a, b) => a.name.localeCompare(b.name, "fr"));
     return ordered.filter((entry) => matching.has(entry.id) && (!inSeason || suggestionFor(entry, seasonMonth) !== null));
-  }, [category, inSeason, onboarding, onlyFitting, deferredQuery, seasonMonth]);
+  }, [category, familyInfo, inSeason, onboarding, onlyFitting, deferredQuery, seasonMonth]);
+  const seasonCount = useMemo(() => PLANT_CATALOG.filter((entry) => suggestionFor(entry, seasonMonth) !== null).length, [seasonMonth]);
 
   const fitLabel = hasBalconyInfo
     ? [onboarding?.sunlight && SUNLIGHT_LABELS[onboarding.sunlight as Sunlight], onboarding?.space && SPACE_LABELS[onboarding.space as SpaceSize]].filter(Boolean).join(" · ").toLowerCase()
@@ -150,7 +177,7 @@ export default function AddPlantScreen() {
     const created = await addPlant(catalogId, { toPlant: choice === "toPlant" });
     showToast({ text: plan ? toPlantText(entry, plan, pot) : installedText(entry, month, pot), onUndo: () => void removePlant(created.id) });
   };
-  // Des fonctions stables pour les lignes : seules les lignes qui changent se redessinent (133 lignes avec photo).
+  // Des fonctions stables pour les lignes : seules les lignes qui changent se redessinent (143 lignes avec photo).
   const addRef = useRef(add);
   addRef.current = add;
   const onAsk = useCallback((catalogId: string) => setAskId(catalogId), []);
@@ -159,7 +186,7 @@ export default function AddPlantScreen() {
   return (
     <LightScreen still>
       <ScrollView style={styles.flex} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled" contentContainerStyle={[styles.content, { paddingTop: insets.top + 14, paddingBottom: plants.length > 0 ? 20 : insets.bottom + 40 }]}>
-        <ScreenHeader back title="Ajouter une plante" subtitle={`${PLANT_CATALOG.length} plantes pour le balcon`} />
+        <ScreenHeader back onBack={listBack} title="Ajouter une plante" subtitle={`${PLANT_CATALOG.length} plantes pour le balcon`} />
 
         <View style={[glass.card, styles.search]}>
           <Text style={styles.searchIcon}>🔎</Text>
@@ -167,37 +194,81 @@ export default function AddPlantScreen() {
           {query.length > 0 && <CloseButton accessibilityLabel="Effacer la recherche" onPress={() => setQuery("")} />}
         </View>
 
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.chips}>
-          {hasBalconyInfo && (
-            <Pressable accessibilityRole="button" accessibilityState={{ selected: onlyFitting }} onPress={() => setOnlyFitting((value) => !value)} style={({ pressed }) => [styles.chip, onlyFitting ? { backgroundColor: colors.primary } : glass.soft, pressed && styles.pressed]}>
-              <Text style={[styles.chipText, { color: onlyFitting ? "#FFFFFF" : colors.foreground }]}>{onlyFitting ? "✓ " : ""}Pour mon balcon</Text>
-            </Pressable>
-          )}
-          <Pressable accessibilityRole="button" accessibilityState={{ selected: inSeason }} onPress={() => setInSeason((value) => !value)} style={({ pressed }) => [styles.chip, inSeason ? { backgroundColor: colors.primary } : glass.soft, pressed && styles.pressed]}>
-            <Text style={[styles.chipText, { color: inSeason ? "#FFFFFF" : colors.foreground }]}>{inSeason ? "✓ " : ""}À semer en {MONTH_LONG[seasonMonth - 1]}</Text>
-          </Pressable>
-          {[undefined, ...categories].map((value) => {
-            const active = category === value;
-            return (
-              <Pressable key={value ?? "all"} accessibilityRole="button" accessibilityState={{ selected: active }} onPress={() => setCategory(value)} style={({ pressed }) => [styles.chip, active ? { backgroundColor: colors.primary } : glass.soft, pressed && styles.pressed]}>
-                <Text style={[styles.chipText, { color: active ? "#FFFFFF" : colors.foreground }]}>{value ? CATEGORY_LABELS[value] : "Toutes"}</Text>
+        {!showList && (
+          <>
+            {/* Les familles en tuiles : la photo d'une plante, le nom, le nombre de plantes. */}
+            <View style={styles.tiles}>
+              {CATALOG_FAMILIES.map((item) => {
+                const cover = getCatalogPlant(item.cover)!;
+                const count = plantsOfFamily(item.id).length;
+                return (
+                  <Pressable key={item.id} accessibilityRole="button" accessibilityLabel={`${item.label}, ${plantCountLabel(count)}`} onPress={() => setFamily(item.id)} style={({ pressed }) => [glass.card, styles.tile, pressed && styles.pressed]}>
+                    <CatalogPicture entry={cover} style={styles.tilePhoto} full />
+                    <View style={styles.tileText}>
+                      <Text style={[styles.tileLabel, { color: colors.foreground }]} numberOfLines={2}>{item.label}</Text>
+                      <Text style={[styles.meta, { color: colors.muted }]}>{plantCountLabel(count)} ›</Text>
+                    </View>
+                  </Pressable>
+                );
+              })}
+            </View>
+            <View style={[glass.card, styles.list]}>
+              <Pressable accessibilityRole="button" onPress={() => setInSeason(true)} style={({ pressed }) => [styles.shortcut, glass.line, pressed && styles.pressed]}>
+                <Text style={[styles.name, styles.flex, { color: colors.foreground }]}>📅  À semer ou planter en {MONTH_LONG[seasonMonth - 1]}</Text>
+                <Text style={[styles.meta, { color: colors.muted }]}>{seasonCount} ›</Text>
               </Pressable>
-            );
-          })}
-        </ScrollView>
+              <Pressable accessibilityRole="button" onPress={() => setFamily("all")} style={({ pressed }) => [styles.shortcut, pressed && styles.pressed]}>
+                <Text style={[styles.name, styles.flex, { color: colors.foreground }]}>🌱  Toutes les plantes</Text>
+                <Text style={[styles.meta, { color: colors.muted }]}>{PLANT_CATALOG.length} ›</Text>
+              </Pressable>
+            </View>
+          </>
+        )}
 
-        {onlyFitting && fitLabel && <Text style={[styles.hint, { color: colors.muted }]}>Les plus adaptées d’abord : {fitLabel}, et la saison.</Text>}
-        {results.length === 0 && <Text style={[styles.empty, { color: colors.muted }]}>Aucune plante ne correspond. Essaie un autre mot ou retire un filtre.</Text>}
+        {showList && (
+          <>
+            {!searching && (
+              <View style={styles.listHeader}>
+                <Pressable accessibilityRole="button" accessibilityLabel="Retour aux familles" hitSlop={8} onPress={backToFamilies} style={({ pressed }) => [styles.chip, glass.soft, pressed && styles.pressed]}>
+                  <Text style={[styles.chipText, { color: colors.foreground }]}>‹ Familles</Text>
+                </Pressable>
+                <Text style={[styles.listTitle, { color: colors.foreground }]} numberOfLines={1}>{familyInfo ? familyInfo.label : inSeason && family === null ? `En ${MONTH_LONG[seasonMonth - 1]}` : "Toutes les plantes"}</Text>
+              </View>
+            )}
+            <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.chips}>
+              {hasBalconyInfo && (
+                <Pressable accessibilityRole="button" accessibilityState={{ selected: onlyFitting }} onPress={() => setOnlyFitting((value) => !value)} style={({ pressed }) => [styles.chip, onlyFitting ? { backgroundColor: colors.primary } : glass.soft, pressed && styles.pressed]}>
+                  <Text style={[styles.chipText, { color: onlyFitting ? "#FFFFFF" : colors.foreground }]}>{onlyFitting ? "✓ " : ""}Pour mon balcon</Text>
+                </Pressable>
+              )}
+              <Pressable accessibilityRole="button" accessibilityState={{ selected: inSeason }} onPress={() => setInSeason((value) => !value)} style={({ pressed }) => [styles.chip, inSeason ? { backgroundColor: colors.primary } : glass.soft, pressed && styles.pressed]}>
+                <Text style={[styles.chipText, { color: inSeason ? "#FFFFFF" : colors.foreground }]}>{inSeason ? "✓ " : ""}À semer en {MONTH_LONG[seasonMonth - 1]}</Text>
+              </Pressable>
+              {/* Une famille de plusieurs catégories (Potager, Fruits) : ses catégories en pastilles. */}
+              {!searching && familyInfo && familyInfo.categories.length > 1 && [undefined, ...familyInfo.categories].map((value) => {
+                const active = category === value;
+                return (
+                  <Pressable key={value ?? "all"} accessibilityRole="button" accessibilityState={{ selected: active }} onPress={() => setCategory(value)} style={({ pressed }) => [styles.chip, active ? { backgroundColor: colors.primary } : glass.soft, pressed && styles.pressed]}>
+                    <Text style={[styles.chipText, { color: active ? "#FFFFFF" : colors.foreground }]}>{value ? CATEGORY_LABELS[value] : "Tout"}</Text>
+                  </Pressable>
+                );
+              })}
+            </ScrollView>
 
-        {results.length > 0 && (
-          <View style={[glass.card, styles.list]}>
-            {results.map((entry, index) => {
-              const owned = countByCatalogId.get(entry.id) ?? 0;
-              const seasonal = inSeason ? suggestionFor(entry, seasonMonth) : null;
-              const meta = owned ? `✓ Sur ton balcon${owned > 1 ? ` (${owned})` : ""}` : seasonal ? `${suggestionActionLabel(seasonal)} · ${seasonal.reason}` : effortLabel(entry);
-              return <CatalogRow key={entry.id} entry={entry} owned={owned > 0} meta={meta} metaLines={seasonal && !owned ? 2 : 1} last={index === results.length - 1} onOpen={onOpen} onAdd={onAsk} />;
-            })}
-          </View>
+            {onlyFitting && fitLabel && <Text style={[styles.hint, { color: colors.muted }]}>Les plus adaptées d’abord : {fitLabel}, et la saison.</Text>}
+            {results.length === 0 && <Text style={[styles.empty, { color: colors.muted }]}>Aucune plante ne correspond. Essaie un autre mot ou retire un filtre.</Text>}
+
+            {results.length > 0 && (
+              <View style={[glass.card, styles.list]}>
+                {results.map((entry, index) => {
+                  const owned = countByCatalogId.get(entry.id) ?? 0;
+                  const seasonal = inSeason ? suggestionFor(entry, seasonMonth) : null;
+                  const meta = owned ? `✓ Sur ton balcon${owned > 1 ? ` (${owned})` : ""}` : seasonal ? `${suggestionActionLabel(seasonal)} · ${seasonal.reason}` : effortLabel(entry);
+                  return <CatalogRow key={entry.id} entry={entry} owned={owned > 0} meta={meta} metaLines={seasonal && !owned ? 2 : 1} last={index === results.length - 1} onOpen={onOpen} onAdd={onAsk} />;
+                })}
+              </View>
+            )}
+          </>
         )}
       </ScrollView>
 
@@ -309,6 +380,14 @@ const styles = StyleSheet.create({
   searchIcon: { fontSize: 16 },
   searchInput: { flex: 1, fontSize: 16, paddingVertical: 12 },
   chips: { gap: 8, paddingVertical: 2 },
+  tiles: { flexDirection: "row", flexWrap: "wrap", justifyContent: "space-between", rowGap: 12 },
+  tile: { width: "48%", overflow: "hidden", padding: 0 },
+  tilePhoto: { height: 110, borderRadius: 0 },
+  tileText: { paddingHorizontal: 12, paddingVertical: 10, gap: 2 },
+  tileLabel: { fontSize: 16, fontWeight: "800", letterSpacing: -0.2 },
+  shortcut: { flexDirection: "row", alignItems: "center", gap: 10, paddingVertical: 14 },
+  listHeader: { flexDirection: "row", alignItems: "center", gap: 10 },
+  listTitle: { flex: 1, fontSize: 20, fontWeight: "800", letterSpacing: -0.3 },
   chip: { borderRadius: 999, paddingHorizontal: 14, paddingVertical: 9 },
   chipText: { fontSize: 13, fontWeight: "600" },
   hint: { fontSize: 13, lineHeight: 18, marginTop: -4 },

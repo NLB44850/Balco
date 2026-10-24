@@ -245,6 +245,21 @@ export const COLD_TENDER: Record<string, ColdTender> = {
     note: "Il lui faut au moins 10 °C ; on vide le pot quand les feuilles jaunissent, avant le gel.",
     sources: ["https://www.futura-sciences.com/maison/questions-reponses/jardinage-demarrer-culture-patates-douces-18577/", "https://www.truffaut.com/patate-douce-bonita-pot-diametre-10-5-cm-546962.html"],
   },
+  calamondin: {
+    nightC: 5, indoor: "winters", place: "cool",
+    note: "Gélif sous 5 °C selon certaines fiches, -5 °C au plus pour d'autres ; hiverne au clair vers 10 °C, loin du radiateur.",
+    sources: ["https://www.jardiner-malin.fr/fiche/calamondin-oranger-arrosage-entretien.html", "https://www.truffaut.com/planter-tailler-entretenir-calamondin.html"],
+  },
+  mandarin: {
+    nightC: 3, nightEstimate: true, indoor: "winters", place: "cool",
+    note: "Le Satsuma tient quelques heures vers -9 °C en terre ; en pot, il passe l'hiver hors gel, au frais et au clair.",
+    sources: ["https://www.jardiner-malin.fr/fiche/mandarinier-satsuma.html", "https://www.promessedefleurs.ie/fruit-trees/citrus-trees/mandarin-trees/satsuma-mandarin-tree-citrus-unshiu.html"],
+  },
+  lime: {
+    nightC: 5, indoor: "winters", place: "cool",
+    note: "Le plus frileux des agrumes (sensible dès 0 °C, -2 °C pour la lime de Tahiti) : à rentrer dès que les nuits approchent 5 °C.",
+    sources: ["https://www.jardiner-malin.fr/fiche/citron-vert.html", "https://www.jardiner-malin.fr/fiche/lime-de-tahiti.html", "https://www.jardiner-malin.fr/fiche/citronnier-quelle-variete-choisir-et-comment-le-planter.html"],
+  },
   "kuri-squash": {
     nightC: 10, nightEstimate: true, indoor: "no",
     note: "Craint le gel comme toutes les courges : on récolte les fruits avant les premières gelées.",
@@ -263,6 +278,9 @@ export const NOT_COLD_TENDER: Record<string, string> = {
   "star-jasmine": "La souche tient vers -10 °C, le feuillage souffre dès -5 °C : il reste dehors, pied paillé et pot isolé.",
   passionflower: "Repart de la souche après un hiver froid : dehors, pied paillé ; à rentrer hors gel seulement si le froid passe souvent sous -8 °C.",
   artichoke: "Vivace qui reste dehors : feuilles coupées, pied paillé et pot isolé, voile quand il gèle fort.",
+  feijoa: "Rustique vers -10 °C, moins en pot : il reste dehors, pot isolé et voile par grand froid.",
+  loquat: "L'arbre tient vers -11 °C, mais ses fleurs d'hiver gèlent vers -5 °C : dehors, voile et pot isolé par grand froid.",
+  "musa-basjoo": "Feuillage brûlé dès -2 °C, souche bien plus rustique : paille épaisse au pied et pot isolé ; il repart au printemps.",
   oleander: "Tient vers -5 °C en pot, pot isolé et voile ; si le froid dure, se rentre au frais et au clair (5 à 15 °C).",
 };
 

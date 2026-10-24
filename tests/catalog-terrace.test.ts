@@ -16,8 +16,8 @@ const BULBS = ["tulip", "daffodil", "muscari", "crocus"];
 /** Livraison 3 : les grimpantes qu'on ne cueille pas (la vigne, elle, se récolte). */
 const FLOWERING_CLIMBERS = ["star-jasmine", "clematis", "passionflower", "honeysuckle", "morning-glory"];
 /** Livraison 4 : arbustes à fleurs, puis feuillages (belle saison). */
-const SHRUBS = ["hydrangea", "rose-bush", "oleander", "japanese-maple", "fargesia", "stipa"];
-const FOLIAGE = ["japanese-maple", "fargesia", "stipa"];
+const SHRUBS = ["hydrangea", "rose-bush", "oleander", "japanese-maple", "fargesia", "stipa", "musa-basjoo"];
+const FOLIAGE = ["japanese-maple", "fargesia", "stipa", "musa-basjoo"];
 
 const plant = (catalogId: string) => resolvePlants([{ id: "p", catalogId, addedAt: new Date(2026, 9, 1).toISOString() }])[0];
 
@@ -76,10 +76,11 @@ describe("catalogue balcon et terrasse : livraison 1", () => {
 
 describe("catalogue balcon et terrasse : livraison 2, arbres fruitiers", () => {
   const TREES = ["olive-tree", "columnar-apple", "dwarf-peach", "dwarf-cherry", "kumquat", "pomegranate"];
+  const MORE_TREES = ["dwarf-apricot", "dwarf-plum", "columnar-pear", "calamondin", "mandarin", "lime", "feijoa", "loquat", "dwarf-mulberry"];
 
   it("une catégorie « Arbres fruitiers », avec le citronnier et le figuier", () => {
     expect(CATEGORY_LABELS["fruit-tree"]).toBe("Arbres fruitiers");
-    expect(searchCatalog("", "fruit-tree").map((entry) => entry.id).sort()).toEqual([...TREES, "lemon-tree", "dwarf-fig"].sort());
+    expect(searchCatalog("", "fruit-tree").map((entry) => entry.id).sort()).toEqual([...TREES, ...MORE_TREES, "lemon-tree", "dwarf-fig"].sort());
     for (const id of TREES) {
       const entry = getCatalogPlant(id)!;
       expect(entry.perennial, id).toBe(true);
@@ -177,7 +178,7 @@ describe("catalogue balcon et terrasse : livraison 3, grimpantes et légumes", (
 });
 
 describe("catalogue balcon et terrasse : livraison 4, arbustes et graminées", () => {
-  it("une catégorie « Arbustes et feuillages » : 3 arbustes à fleurs, 3 feuillages", () => {
+  it("une catégorie « Arbustes et feuillages » : 3 arbustes à fleurs, 4 feuillages (avec le bananier, livraison 5)", () => {
     expect(CATEGORY_LABELS.shrub).toBe("Arbustes et feuillages");
     expect(searchCatalog("", "shrub").map((entry) => entry.id).sort()).toEqual([...SHRUBS].sort());
     for (const id of SHRUBS) {
@@ -227,5 +228,40 @@ describe("catalogue balcon et terrasse : livraison 4, arbustes et graminées", (
     expect(searchCatalog("bambou").map((entry) => entry.id)).toContain("fargesia");
     expect(searchCatalog("graminée").map((entry) => entry.id)).toContain("stipa");
     expect(searchCatalog("feuillage").length).toBeGreaterThanOrEqual(3);
+  });
+});
+
+describe("catalogue balcon et terrasse : livraison 5, fruitiers et bananier (retour du 24/10)", () => {
+  it("les agrumes se rentrent l'hiver ; feijoa, néflier et bananier restent dehors avec leur abri", () => {
+    for (const id of ["calamondin", "mandarin", "lime"]) expect(canComeIndoors(getCatalogPlant(id)!), id).toBe(true);
+    for (const id of ["feijoa", "loquat", "musa-basjoo"]) {
+      expect(isColdTender(getCatalogPlant(id)!), id).toBe(false);
+      expect(getCatalogPlant(id)!.tasks.some((task) => task.id === "shelter"), id).toBe(true);
+    }
+  });
+
+  it("le bananier du Japon est un feuillage : pas de récolte, et la fiche dit que ses bananes ne se mangent pas", () => {
+    const banana = getCatalogPlant("musa-basjoo")!;
+    expect(hasHarvest(banana)).toBe(false);
+    expect(seasonFact(banana)).toBe("🍁  Belle saison");
+    expect(banana.pitch).toMatch(/pas bonnes à manger/u);
+  });
+
+  it("se trouvent par le nom du fruit", () => {
+    expect(searchCatalog("banane").map((entry) => entry.id)).toContain("musa-basjoo");
+    expect(searchCatalog("mirabelle").map((entry) => entry.id)).toContain("dwarf-plum");
+    expect(searchCatalog("mandarine").map((entry) => entry.id)).toContain("mandarin");
+    expect(searchCatalog("nèfle").map((entry) => entry.id)).toContain("loquat");
+  });
+});
+
+describe("familles du catalogue en tuiles (retour du 24/10 : « la liste commence à être longue »)", () => {
+  it("chaque plante est dans une seule famille, et chaque tuile a sa photo", async () => {
+    const { CATALOG_FAMILIES, familyOfCategory, plantsOfFamily } = await import("../lib/plants/catalog-families");
+    const total = CATALOG_FAMILIES.reduce((sum, family) => sum + plantsOfFamily(family.id).length, 0);
+    expect(total).toBe(PLANT_CATALOG.length);
+    for (const entry of PLANT_CATALOG) expect(familyOfCategory(entry.category), entry.id).toBeDefined();
+    for (const family of CATALOG_FAMILIES) expect(familyOfCategory(getCatalogPlant(family.cover)!.category).id, family.id).toBe(family.id);
+    expect(plantsOfFamily("fruit").map((entry) => entry.id)).toContain("dwarf-apricot");
   });
 });
