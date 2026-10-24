@@ -60,7 +60,7 @@ test("sans réponse, une semaine après la 1ʳᵉ récolte : la question remplac
   await expect(page.getByText(/^[1-9]\/8$/u)).toBeVisible();
   await expect(page.getByRole("button", { name: /Du balcon à l’assiette/u })).toContainText("Graine");
   // La récolte a aussi donné la carte des radis à l'herbier.
-  await expect(page.getByText("1 plante sur 127")).toBeVisible();
+  await expect(page.getByText("1 plante sur 130")).toBeVisible();
   expect(errors).toEqual([]);
 });
 

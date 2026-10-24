@@ -793,4 +793,40 @@ export const PLANTING: Record<string, Planting> = {
     thinning: true, pinching: null,
     sources: ["https://www.jardiner-malin.fr/fiche/culture-fenouil-semer-recolter.html", "https://www.bricomarche.com/p/fenouil-doux-de-florence/3211500007520", "https://www.greenweez.com/produit/graines-de-fenouil/1LASE0014"],
   },
+  "hydrangea": {
+    sowDepthCm: null, seedsPerHole: null, perPot: 1, spacingCm: 60,
+    germinationDays: null, harvestWeeksFromSowing: null, harvestWeeksFromPlanting: [8, 40],
+    thinning: false, pinching: null,
+    sources: ["https://www.jardiner-malin.fr/fiche/hortensia-en-pot.html", "https://www.futura-sciences.com/maison/questions-reponses/jardinage-entretenir-hortensia-pot-17077/", "https://www.truffaut.com/hydrangea-macrophylla-ctr-25-l-77849.html"],
+  },
+  "rose-bush": {
+    sowDepthCm: null, seedsPerHole: null, perPot: 1, spacingCm: 50,
+    germinationDays: null, harvestWeeksFromSowing: null, harvestWeeksFromPlanting: [6, 12],
+    thinning: false, pinching: null,
+    sources: ["https://www.truffaut.com/quand-tailler-rosiers.html", "https://www.bricomarche.com/conseils/comment-entretenir-ses-rosiers", "https://www.roseraiebarth.com/roseraie/DEPLIANT_CONSEIL_ROSIERS.pdf"],
+  },
+  "oleander": {
+    sowDepthCm: null, seedsPerHole: null, perPot: 1, spacingCm: 60,
+    germinationDays: null, harvestWeeksFromSowing: null, harvestWeeksFromPlanting: [4, 12],
+    thinning: false, pinching: null,
+    sources: ["https://www.truffaut.com/nerium-oleander-pot-15l-1032818.html", "https://espacepourlavie.ca/carnet-horticole/nerium", "https://www.consoglobe.com/?p=10373016"],
+  },
+  "japanese-maple": {
+    sowDepthCm: null, seedsPerHole: null, perPot: 1, spacingCm: 60,
+    germinationDays: null, harvestWeeksFromSowing: null, harvestWeeksFromPlanting: [2, 8],
+    thinning: false, pinching: null,
+    sources: ["https://www.jardiner-malin.fr/fiche/erable-du-japon-en-pot.html", "https://www.truffaut.com/erable-japon-plantation-entretien.html", "https://www.leroymerlin.fr/produits/erable-du-japon-acer-palmatum-atropurpureum-hauteur-60-70cm-19cm-87652032.html"],
+  },
+  "fargesia": {
+    sowDepthCm: null, seedsPerHole: null, perPot: 1, spacingCm: 60,
+    germinationDays: null, harvestWeeksFromSowing: null, harvestWeeksFromPlanting: [2, 8],
+    thinning: false, pinching: null,
+    sources: ["https://www.truffaut.com/fargesia-robusta-pingwu-pot-12l-814663.html", "https://www.jardiner-malin.fr/fiche/bambou-non-tracant-varietes.html", "https://www.truffaut.com/fargesia-angustissima-c12l-814662.html"],
+  },
+  "stipa": {
+    sowDepthCm: null, seedsPerHole: null, perPot: 3, spacingCm: 30,
+    germinationDays: null, harvestWeeksFromSowing: null, harvestWeeksFromPlanting: [8, 16],
+    thinning: false, pinching: null,
+    sources: ["https://www.jardiner-malin.fr/fiche/stipa-tenuifolia-les-cheveux-dange.html", "https://www.truffaut.com/cheveux-d-anges-pony-tails-pot-de-2l-40-60-cm.html", "https://www.promessedefleurs.ie/gardening-tips/familysheet/stipa-angel-hair-planting-pruning-maintenance/"],
+  },
 };

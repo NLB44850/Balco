@@ -263,6 +263,7 @@ export const NOT_COLD_TENDER: Record<string, string> = {
   "star-jasmine": "La souche tient vers -10 °C, le feuillage souffre dès -5 °C : il reste dehors, pied paillé et pot isolé.",
   passionflower: "Repart de la souche après un hiver froid : dehors, pied paillé ; à rentrer hors gel seulement si le froid passe souvent sous -8 °C.",
   artichoke: "Vivace qui reste dehors : feuilles coupées, pied paillé et pot isolé, voile quand il gèle fort.",
+  oleander: "Tient vers -5 °C en pot, pot isolé et voile ; si le froid dure, se rentre au frais et au clair (5 à 15 °C).",
 };
 
 export const coldTenderOf = (entry: Pick<CatalogPlant, "id">): ColdTender | undefined => COLD_TENDER[entry.id];

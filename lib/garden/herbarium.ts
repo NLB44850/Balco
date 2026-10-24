@@ -1,6 +1,6 @@
 /**
  * L'herbier : une carte par plante du catalogue récoltée, ou fleurie, pour la première fois (« Ton herbier · 7 plantes
- * sur 127 »). Les récoltes déjà notées comptent dès son arrivée. Pour les fleurs, « Elle a fleuri » sur la fiche,
+ * sur 130 »). Les récoltes déjà notées comptent dès son arrivée. Pour les fleurs, « Elle a fleuri » sur la fiche,
  * seulement pendant ses mois de floraison. Les cartes vont dans le carnet des récompenses (`herbier:<id>`) : rien ne
  * se perd. Logique pure.
  */
@@ -51,4 +51,5 @@ export function herbariumCards(awards: Record<string, string>): HerbariumCard[] 
     .sort((a, b) => b.at.localeCompare(a.at));
 }
 
-export const herbariumTotal = PLANT_CATALOG.length;
+/** Les plantes de feuillage (érable, bambou, graminée) ne se récoltent ni ne fleurissent : pas de carte pour elles. */
+export const herbariumTotal = PLANT_CATALOG.filter((entry) => !entry.foliage).length;

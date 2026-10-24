@@ -887,5 +887,47 @@
     "license": "CC BY-SA 4.0",
     "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0",
     "page": "https://commons.wikimedia.org/wiki/File:Passiflora_caerulea_-_two_flowers_2019-06-27.jpg"
+  },
+  "fargesia": {
+    "title": "File:Fargesia rufa.jpg",
+    "author": "Anne Antoni",
+    "license": "CC BY-SA 3.0",
+    "licenseUrl": "https://creativecommons.org/licenses/by-sa/3.0",
+    "page": "https://commons.wikimedia.org/wiki/File:Fargesia_rufa.jpg"
+  },
+  "hydrangea": {
+    "title": "File:Hydrangea macrophylla - Hortensia hydrangea.jpg",
+    "author": "Raul654",
+    "license": "CC BY-SA 3.0",
+    "licenseUrl": "http://creativecommons.org/licenses/by-sa/3.0/",
+    "page": "https://commons.wikimedia.org/wiki/File:Hydrangea_macrophylla_-_Hortensia_hydrangea.jpg"
+  },
+  "japanese-maple": {
+    "title": "File:Leaves of Acer palmatum (2005).jpg",
+    "author": "Tomomarusan",
+    "license": "CC BY-SA 3.0",
+    "licenseUrl": "http://creativecommons.org/licenses/by-sa/3.0/",
+    "page": "https://commons.wikimedia.org/wiki/File:Leaves_of_Acer_palmatum_(2005).jpg"
+  },
+  "oleander": {
+    "title": "File:Nerium oleander pink.jpg",
+    "author": "Challiyan at Malayalam Wikipedia",
+    "license": "CC BY 3.0",
+    "licenseUrl": "https://creativecommons.org/licenses/by/3.0",
+    "page": "https://commons.wikimedia.org/wiki/File:Nerium_oleander_pink.jpg"
+  },
+  "rose-bush": {
+    "title": "File:'Rosa Sadlers Wells' modern shrub rose Capel Manor College Gardens Enfield London England.jpg",
+    "author": "Acabashi",
+    "license": "CC BY-SA 4.0",
+    "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0",
+    "page": "https://commons.wikimedia.org/wiki/File:%27Rosa_Sadlers_Wells%27_modern_shrub_rose_Capel_Manor_College_Gardens_Enfield_London_England.jpg"
+  },
+  "stipa": {
+    "title": "File:Nassella tenuissima 1zz.jpg",
+    "author": "Photo by David J. Stang",
+    "license": "CC BY-SA 4.0",
+    "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0",
+    "page": "https://commons.wikimedia.org/wiki/File:Nassella_tenuissima_1zz.jpg"
   }
 }

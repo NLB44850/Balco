@@ -524,3 +524,44 @@ Ce qu'il te faut : un sécateur propre et aiguisé ; de la paille ou des feuille
 5. **Couvre-le d’un voile les nuits de gel.** Retire-le dès que le froid passe : la plante a besoin de lumière. *Erreur à éviter : un plastique fermé. L’humidité fait pourrir les feuilles.*
 
 **Et après ?** Garde la paille tout l’hiver ; enlève le papier bulle au printemps. Bouton **C’est protégé**.
+
+### Ajoutés le 24/10 (livraison 4, arbustes et graminées)
+
+### Tailler l’hortensia
+
+Pour : hortensia, rosier, laurier-rose, érable du japon, bambou non traçant.
+
+Ce qu'il te faut : un sécateur propre et aiguisé.
+
+1. **Prends un sécateur propre et bien aiguisé.** Une coupe nette cicatrise vite.
+2. **Coupe d’abord le bois mort, à la base.** Les tiges sèches, grises ou cassantes. *Erreur à éviter : tailler un jour de gel. Les coupes gèlent et sèchent.*
+3. **Raccourcis les tiges au-dessus d’un bourgeon.** Après les gelées, coupe les fleurs sèches juste au-dessus de la première paire de gros bourgeons, et les tiges mortes à la base.
+4. **Mets les coupes au compost.**
+
+**Et après ?** De nouvelles pousses repartent sous les coupes au printemps. Bouton **C’est taillé**.
+
+### Couper les roses fanées
+
+Pour : rosier.
+
+Ce qu'il te faut : un sécateur propre et aiguisé ; des gants.
+
+1. **Repère les roses fanées, aux pétales qui tombent.**
+2. **Suis la tige jusqu’à la première grande feuille.** Une feuille faite de cinq petites folioles.
+3. **Coupe juste au-dessus de cette feuille.** Un nouveau bouton repartira de là. *Erreur à éviter : arracher la fleur à la main. La tige se déchire.*
+4. **Recommence chaque semaine pendant la floraison.** Il refleurit plus vite et plus longtemps.
+
+**Et après ?** Un nouveau bouton se forme en quelques semaines. Bouton **Fleurs fanées coupées**.
+
+### Nettoyer le stipa
+
+Pour : stipa cheveux d’ange.
+
+Ce qu'il te faut : des gants souples ; un sécateur propre et aiguisé.
+
+1. **Mets des gants souples.** Ses feuilles fines peuvent couper un peu.
+2. **Passe les doigts dans la touffe, comme un peigne.** Les feuilles sèches viennent toutes seules ; le vert reste.
+3. **Rabats-la à 10 cm si elle est toute brune.** Retire à la main les feuilles sèches ; si la touffe est toute brune, rabats-la à 10 cm du sol. *Erreur à éviter : couper au ras du pot. Le cœur de la touffe pourrit.*
+4. **Laisse repartir : les pousses vertes arrivent au printemps.**
+
+**Et après ?** En quelques semaines, la touffe redevient toute verte. Bouton **Touffe nettoyée**.

@@ -2,7 +2,7 @@
  * Les pas-à-pas illustrés des gestes d'entretien arrivés avec le catalogue balcon et terrasse (retour du 23/10 :
  * « illustre les nouveaux gestes dans le pas-à-pas ») : guider les tiges d'une grimpante, tailler une grimpante ou
  * la vigne, éclaircir les grappes, couper la tige à fleurs de la rhubarbe, butter, protéger du froid une plante qui
- * reste dehors. Chaque pas-à-pas part d'un geste du catalogue (`CareTask.id`) : on l'ouvre depuis ce geste
+ * reste dehors ; puis (livraison 4, 24/10) tailler un arbuste, couper les roses fanées, nettoyer une graminée. Chaque pas-à-pas part d'un geste du catalogue (`CareTask.id`) : on l'ouvre depuis ce geste
  * (Aujourd'hui) ou depuis la fiche de la plante pendant ses mois, et « C'est fait » coche le geste du jour.
  * Logique pure ; l'écran est app/guide/[catalogId].tsx, les dessins components/guide/illustrations.tsx.
  */
@@ -11,17 +11,23 @@ import { coldTenderOf } from "./cold-hardiness";
 import { objectBefore, objectPronoun } from "./grammar";
 import type { IllustrationId } from "./illustration-names";
 
-export type CareGuideTask = "train" | "prune" | "prune-vine" | "thin-bunches" | "flower-stalk" | "earth-up" | "wrap";
-export const CARE_GUIDE_TASKS: CareGuideTask[] = ["train", "prune", "prune-vine", "thin-bunches", "flower-stalk", "earth-up", "wrap"];
+export type CareGuideTask = "train" | "prune" | "prune-vine" | "thin-bunches" | "flower-stalk" | "earth-up" | "wrap" | "prune-shrub" | "deadhead" | "comb-grass";
+export const CARE_GUIDE_TASKS: CareGuideTask[] = ["train", "prune", "prune-vine", "thin-bunches", "flower-stalk", "earth-up", "wrap", "prune-shrub", "deadhead", "comb-grass"];
 export const isCareGuideTask = (value: unknown): value is CareGuideTask => CARE_GUIDE_TASKS.includes(value as CareGuideTask);
 
 /** Les grimpantes dont la taille suit le même pas-à-pas (la vigne a le sien). */
 const PRUNED_CLIMBERS = new Set(["star-jasmine", "clematis", "passionflower", "honeysuckle"]);
+/** Les arbustes de la livraison 4 : même pas-à-pas de taille, avec la consigne de chacun. */
+const PRUNED_SHRUBS = new Set(["hydrangea", "rose-bush", "oleander", "japanese-maple"]);
 
 /** Le pas-à-pas d'un geste du catalogue, s'il en a un. */
 export function careGuideFor(entry: Pick<CatalogPlant, "id" | "category">, taskId: string): CareGuideTask | null {
   if (taskId === "guide") return "train";
-  if (taskId === "prune") return entry.id === "grapevine" ? "prune-vine" : PRUNED_CLIMBERS.has(entry.id) ? "prune" : null;
+  if (taskId === "prune") return entry.id === "grapevine" ? "prune-vine" : PRUNED_CLIMBERS.has(entry.id) ? "prune" : PRUNED_SHRUBS.has(entry.id) ? "prune-shrub" : null;
+  if (taskId === "thin-canes") return "prune-shrub";
+  // Les fleurs fanées des bulbes ou des capucines restent un simple geste ; celles du rosier ont leur pas-à-pas.
+  if (taskId === "deadhead" && entry.id === "rose-bush") return "deadhead";
+  if (taskId === "comb") return "comb-grass";
   if (taskId === "thin-bunches") return "thin-bunches";
   if (taskId === "flower-stalk") return "flower-stalk";
   if (taskId === "earth-up") return "earth-up";
@@ -105,6 +111,12 @@ export function careSupplies(entry: CatalogPlant, task: CareGuideTask): Supply[]
         { id: "bubble-wrap", label: "Du papier bulle ou une natte", detail: "Pour entourer le pot.", shared: true },
         { id: "fleece", label: "Un voile d’hivernage", detail: "En jardinerie, au rayon protection.", shared: true },
       ];
+    case "prune-shrub":
+      return [SECATEURS, ...(entry.id === "oleander" || entry.id === "rose-bush" ? [{ id: "gloves", label: "Des gants", detail: entry.id === "oleander" ? "Sa sève est toxique." : "Contre les épines.", shared: true }] : [])];
+    case "deadhead":
+      return [SECATEURS, { id: "gloves", label: "Des gants", detail: "Contre les épines.", shared: true }];
+    case "comb-grass":
+      return [{ id: "gloves", label: "Des gants souples", detail: "Ses feuilles fines peuvent couper.", shared: true }, SECATEURS];
   }
 }
 
@@ -162,6 +174,31 @@ export function careSteps(entry: CatalogPlant, task: CareGuideTask): Step[] {
         { illustration: "winter-wrap", text: "Pousse le pot contre un mur, à l’abri du vent.", why: "Un mur garde la chaleur du jour." },
         { illustration: "fleece", text: `Couvre-${objectPronoun(entry)} d’un voile les nuits de gel.`, why: "Retire-le dès que le froid passe : la plante a besoin de lumière.", mistake: "Erreur à éviter : un plastique fermé. L’humidité fait pourrir les feuilles." },
       ];
+    case "prune-shrub":
+      return [
+        { illustration: "secateurs", text: entry.id === "oleander" ? "Mets des gants et prends un sécateur propre." : "Prends un sécateur propre et bien aiguisé.", why: entry.id === "oleander" ? "Sa sève est toxique : pas de contact avec la peau." : "Une coupe nette cicatrise vite." },
+        { illustration: "secateurs", text: "Coupe d’abord le bois mort, à la base.", why: "Les tiges sèches, grises ou cassantes.", mistake: "Erreur à éviter : tailler un jour de gel. Les coupes gèlent et sèchent." },
+        entry.id === "fargesia"
+          ? { illustration: "secateurs", text: "Coupe à ras les vieilles cannes sèches.", why: how }
+          : entry.id === "japanese-maple"
+            ? { illustration: "secateurs", text: "Coupe les branches qui se croisent.", why: how }
+            : { illustration: "two-buds", text: "Raccourcis les tiges au-dessus d’un bourgeon.", why: how },
+        { illustration: "scrape-top", text: entry.id === "oleander" ? "Jette les coupes, loin des animaux." : "Mets les coupes au compost.", why: entry.id === "oleander" ? "Même sèches, elles restent toxiques." : undefined },
+      ];
+    case "deadhead":
+      return [
+        { illustration: "faded-flower", text: "Repère les roses fanées, aux pétales qui tombent." },
+        { illustration: "faded-flower", text: "Suis la tige jusqu’à la première grande feuille.", why: "Une feuille faite de cinq petites folioles." },
+        { illustration: "secateurs", text: "Coupe juste au-dessus de cette feuille.", why: "Un nouveau bouton repartira de là.", mistake: "Erreur à éviter : arracher la fleur à la main. La tige se déchire." },
+        { illustration: "faded-flower", text: "Recommence chaque semaine pendant la floraison.", why: "Il refleurit plus vite et plus longtemps." },
+      ];
+    case "comb-grass":
+      return [
+        { illustration: "grass-tuft", text: "Mets des gants souples.", why: "Ses feuilles fines peuvent couper un peu." },
+        { illustration: "grass-tuft", text: "Passe les doigts dans la touffe, comme un peigne.", why: "Les feuilles sèches viennent toutes seules ; le vert reste." },
+        { illustration: "secateurs", text: "Rabats-la à 10 cm si elle est toute brune.", why: how, mistake: "Erreur à éviter : couper au ras du pot. Le cœur de la touffe pourrit." },
+        { illustration: "grass-tuft", text: "Laisse repartir : les pousses vertes arrivent au printemps." },
+      ];
   }
 }
 
@@ -174,6 +211,9 @@ export function careTitle(entry: CatalogPlant, task: CareGuideTask) {
     case "flower-stalk": return `Couper la tige à fleurs`;
     case "earth-up": return `Butter ${entry.label}`;
     case "wrap": return `Protéger ${entry.label} du froid`;
+    case "prune-shrub": return entry.id === "fargesia" ? `Éclaircir ${entry.label}` : `Tailler ${entry.label}`;
+    case "deadhead": return "Couper les roses fanées";
+    case "comb-grass": return `Nettoyer ${entry.label}`;
   }
 }
 
@@ -186,6 +226,9 @@ export function careLinkText(entry: CatalogPlant, task: CareGuideTask) {
     case "flower-stalk": return "Comment couper la tige à fleurs, pas à pas ›";
     case "earth-up": return `Comment ${objectBefore(entry, "butter")}, pas à pas ›`;
     case "wrap": return `Comment ${objectBefore(entry, "protéger")} du froid, pas à pas ›`;
+    case "prune-shrub": return entry.id === "fargesia" ? `Comment ${objectBefore(entry, "éclaircir")}, pas à pas ›` : `Comment ${objectBefore(entry, "tailler")}, pas à pas ›`;
+    case "deadhead": return "Comment couper les roses fanées, pas à pas ›";
+    case "comb-grass": return `Comment ${objectBefore(entry, "nettoyer")}, pas à pas ›`;
   }
 }
 
@@ -197,6 +240,9 @@ export const CARE_DONE_LABELS: Record<CareGuideTask, string> = {
   "flower-stalk": "Tige coupée",
   "earth-up": "C’est butté",
   wrap: "C’est protégé",
+  "prune-shrub": "C’est taillé",
+  deadhead: "Fleurs fanées coupées",
+  "comb-grass": "Touffe nettoyée",
 };
 
 /** Le dessin de « Et après ? ». */
@@ -208,6 +254,9 @@ export const CARE_AFTER_ILLUSTRATIONS: Record<CareGuideTask, IllustrationId> = {
   "flower-stalk": "cut-stalk",
   "earth-up": "earth-up",
   wrap: "winter-wrap",
+  "prune-shrub": "two-shoots",
+  deadhead: "faded-flower",
+  "comb-grass": "grass-tuft",
 };
 
 export function careWhatsNext(entry: CatalogPlant, task: CareGuideTask): string[] {
@@ -219,5 +268,8 @@ export function careWhatsNext(entry: CatalogPlant, task: CareGuideTask): string[
     case "flower-stalk": return ["Une autre tige à fleurs peut venir : coupe-la aussi."];
     case "earth-up": return [entry.id === "potato" ? "Recommence quand les tiges ont repoussé de 20 cm." : "Le bulbe grossit à l’abri : récolte-le gros comme une orange."];
     case "wrap": return ["Garde la paille tout l’hiver ; enlève le papier bulle au printemps."];
+    case "prune-shrub": return [entry.id === "fargesia" ? "De nouvelles cannes sortent de la touffe au printemps." : "De nouvelles pousses repartent sous les coupes au printemps."];
+    case "deadhead": return ["Un nouveau bouton se forme en quelques semaines."];
+    case "comb-grass": return ["En quelques semaines, la touffe redevient toute verte."];
   }
 }

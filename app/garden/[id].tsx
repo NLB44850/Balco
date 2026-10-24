@@ -45,12 +45,12 @@ import { useDayPlan } from "@/hooks/use-day-plan";
 import { addSnooze, wakeSnoozeFor } from "@/lib/reminders/reminder-actions";
 import { saveReminderSnoozes } from "@/lib/reminders/local-notifications";
 import { usePlantPhotos } from "@/lib/garden/photos-context";
-import { CATEGORY_LABELS, formatMonthRange, type Month } from "@/lib/plants/catalog";
+import { CATEGORY_LABELS, formatMonthRange, seasonFact, type Month } from "@/lib/plants/catalog";
 import { guideLinkText, startPills } from "@/lib/plants/guide";
 import { plantCareGuides } from "@/lib/plants/care-guides";
 import { REPOTTING } from "@/lib/plants/repotting";
 import { now as clockNow } from "@/lib/clock";
-import { bloomEvent, canMarkBloom, herbariumKey, isFlower } from "@/lib/garden/herbarium";
+import { bloomEvent, canMarkBloom, herbariumKey } from "@/lib/garden/herbarium";
 import { agree, bareName, byForm, objectPronoun } from "@/lib/plants/grammar";
 import { PotSizeSheet } from "@/components/pot-size-sheet";
 import { PotSheetCard } from "@/components/pot-sheet-card";
@@ -302,7 +302,7 @@ export default function PlantScreen() {
             </Pressable>
             <View style={[styles.fact, { backgroundColor: colors.surface }]}><Text style={[styles.factText, { color: colors.foreground }]}>🌱  {growingSince(plant.addedAt, now)}</Text></View>
             {startPills(entry, Boolean(plant.toPlant)).map((pill) => <View key={pill} style={[styles.fact, { backgroundColor: colors.surface }]}><Text style={[styles.factText, { color: colors.foreground }]}>{pill}</Text></View>)}
-            {entry.harvestMonths.length > 0 && <View style={[styles.fact, { backgroundColor: colors.surface }]}><Text style={[styles.factText, { color: colors.foreground }]}>{isFlower(entry) ? "🌸  Floraison" : "🧺  Récolte"} {formatMonthRange(entry.harvestMonths)}</Text></View>}
+            {entry.harvestMonths.length > 0 && <View style={[styles.fact, { backgroundColor: colors.surface }]}><Text style={[styles.factText, { color: colors.foreground }]}>{seasonFact(entry)} {formatMonthRange(entry.harvestMonths)}</Text></View>}
           </View>
 
           {/* Plante toxique ou irritante : en orange, juste sous les pastilles (retour du 23/10). */}

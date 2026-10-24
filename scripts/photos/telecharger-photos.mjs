@@ -166,6 +166,13 @@ const PLANTS = {
   artichoke: "Cynara scolymus artichoke plant",
   rhubarb: "Rheum rhabarbarum stalks",
   "florence-fennel": "Florence fennel bulb Foeniculum",
+  // Livraison 4 (24/10) : arbustes et graminées
+  hydrangea: "Hydrangea macrophylla flowers",
+  "rose-bush": "Rosa garden rose flowers shrub",
+  oleander: "Nerium oleander flowers",
+  "japanese-maple": "Acer palmatum autumn leaves",
+  fargesia: "Fargesia bamboo",
+  stipa: "Stipa tenuissima",
 };
 
 // Planches botaniques, herbiers, cartes… : on veut une vraie photo de la plante.
