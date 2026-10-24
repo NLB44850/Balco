@@ -14,8 +14,8 @@ import { PlantWarningCard } from "@/components/plant-warning";
 import { ScreenContainer } from "@/components/screen-container";
 import { CityPicker } from "@/components/city-picker";
 import { ScreenHeader } from "@/components/screen-header";
+import { ObserveButton } from "@/components/observe-button";
 import { glass } from "@/components/ui/glass";
-import { IconSymbol } from "@/components/ui/icon-symbol";
 import { BALCONY_FLOOR_HEIGHT, BalconySky } from "@/components/today/balcony-sky";
 import { CatalogPicture, PlantPicture } from "@/components/plant-picture";
 import { BottomSheet } from "@/components/today/bottom-sheet";
@@ -33,12 +33,7 @@ import { useColors } from "@/hooks/use-colors";
 import { advisedPotPhrase } from "@/lib/plants/pot-sheet";
 import { useVacation } from "@/hooks/use-vacation";
 import { useWeatherSimulation } from "@/hooks/use-weather-simulation";
-import { cameraWasInterrupted } from "@/lib/ai/camera-interrupt";
-import { setPendingPhoto, setPendingPhotoFailed } from "@/lib/ai/pending-photo";
-import { pickPlantPhoto } from "@/lib/ai/photo";
 import { useGarden } from "@/lib/garden/garden-context";
-import { trpc } from "@/lib/trpc";
-import { deviceId as loadDeviceId } from "@/lib/sync/device-id";
 import { usePlantPhotos } from "@/lib/garden/photos-context";
 import { awardCelebration, celebrationFor, formatLiters, litersPerWatering, withCheer } from "@/lib/garden/progress";
 import { FEEDING_REMINDER_SOURCE, nextFeedingReminder } from "@/lib/garden/feeding-reminder";
@@ -116,44 +111,8 @@ const haptic = () => {
 export default function HomeScreen() {
   const colors = useColors();
   const router = useRouter();
-  const { loaded, resolvedPlants, pastPlants, events, awards, takeUnseenAwards, onboarding, account, addPlant, removePlant, logEvent, removeEvent, reportLocation, updateOnboarding } = useGarden();
-  const aiStatus = trpc.ai.status.useQuery(undefined, { enabled: account.signedIn, retry: false });
-  // Sans compte : l'analyse offerte de cet appareil (Observer sans compte).
-  const [device, setDevice] = useState<string | null>(null);
-  useEffect(() => {
-    if (!account.signedIn) void loadDeviceId().then(setDevice);
-  }, [account.signedIn]);
-  const guestStatus = trpc.ai.guestStatus.useQuery({ deviceId: device ?? "" }, { enabled: !account.signedIn && !!device, retry: false });
+  const { loaded, resolvedPlants, pastPlants, events, awards, takeUnseenAwards, onboarding, addPlant, removePlant, logEvent, removeEvent, reportLocation, updateOnboarding } = useGarden();
   const { vacation } = useVacation();
-
-  /**
-   * Le bouton appareil photo : la photo se prend tout de suite, puis Observer l'affiche prête à
-   * analyser (avec ou sans compte). Sans analyse restante ou si le service manque, on ouvre simplement
-   * Observer, qui explique pourquoi.
-   */
-  const observe = async () => {
-    const status = aiStatus.data;
-    const guest = guestStatus.data;
-    const canScan = account.signedIn
-      ? status?.available !== false && !status?.paused && (status?.scan.remaining ?? 1) > 0
-      : guest?.available === true && !guest.paused && guest.scanLeft;
-    if (canScan) {
-      try {
-        const result = await pickPlantPhoto("camera");
-        if (result.status === "canceled") return;
-        if (result.status === "ok") setPendingPhoto(result.photo);
-      } catch (error) {
-        // Photo illisible : Observer s'ouvre quand même, le dit, et propose d'en reprendre une.
-        console.warn("[observe] photo not prepared", error);
-        setPendingPhotoFailed();
-      }
-    }
-    router.push("/(tabs)/scanner");
-  };
-  // Revenue rechargée pendant la photo (navigateur) : Observer s'ouvre et explique quoi faire.
-  useEffect(() => {
-    if (cameraWasInterrupted()) router.push("/(tabs)/scanner");
-  }, [router]);
   const { covers } = usePlantPhotos();
   // Plan du jour, météo, réglages et reports : les mêmes que Balcon et la fiche plante.
   const { weather, weatherSnapshot, isLoading: weatherLoading, refresh: refreshWeather, searchCities, selectCity, requestDeviceLocation, now, climate, snoozes, snoozesLoaded, reminderSettings, setReminderSettings, reminderSettingsLoaded, reminderDecisions, visibleGroups, plan, planForDate } = useDayPlan();
@@ -539,11 +498,7 @@ export default function HomeScreen() {
         <ScreenHeader
           title="Aujourd’hui"
           subtitle={metaLine}
-          right={
-            <Pressable accessibilityRole="button" accessibilityLabel="Observer une plante : prendre une photo" hitSlop={6} onPress={() => void observe()} style={({ pressed }) => [glass.card, styles.cameraButton, pressed && styles.pressed]}>
-              <IconSymbol name="camera.fill" size={19} color={colors.primary} />
-            </Pressable>
-          }
+          right={<ObserveButton watchInterrupt />}
           style={{ paddingTop: insets.top + 14, paddingHorizontal: 20 }}
         />
 
@@ -987,7 +942,6 @@ const styles = StyleSheet.create({
   trip: { flexDirection: "row", alignItems: "center", gap: 12 },
   tripIcon: { fontSize: 24 },
   tripArrow: { fontSize: 24, fontWeight: "300" },
-  cameraButton: { width: 40, height: 40, borderRadius: 20, alignItems: "center", justifyContent: "center" },
   content: { gap: 18 },
   body: { paddingHorizontal: 20, gap: 18 },
   glass: { backgroundColor: "rgba(255,255,255,0.72)" },

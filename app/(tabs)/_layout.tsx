@@ -3,6 +3,7 @@ import { Platform } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { HapticTab } from "@/components/haptic-tab";
+import { TabAvatar } from "@/components/tab-avatar";
 import { IconSymbol } from "@/components/ui/icon-symbol";
 import { useColors } from "@/hooks/use-colors";
 import { useGarden } from "@/lib/garden/garden-context";
@@ -17,8 +18,9 @@ export default function TabLayout() {
   if (!loaded) return null;
   if (!onboarding) return <Redirect href="/welcome" />;
 
-  // Quatre onglets. « Moi » s'ouvre depuis l'avatar en haut de chaque écran,
-  // et « Observer » (le scanner) depuis Nora et depuis la fiche d'une plante.
+  // Cinq onglets : « Moi » est le 5ᵉ depuis le 24/10 (l'avatar en haut des écrans n'était pas clair), avec l'initiale
+  // et le point vert d'un nouveau badge. « Observer » (le scanner) s'ouvre par l'appareil photo d'Aujourd'hui et de
+  // Balcon, et depuis Nora.
   return (
     <Tabs
       screenOptions={{
@@ -34,8 +36,8 @@ export default function TabLayout() {
       <Tabs.Screen name="balcony" options={{ title: "Balcon", tabBarIcon: ({ color }) => <IconSymbol size={24} name="camera.macro" color={color} /> }} />
       <Tabs.Screen name="calendar" options={{ title: "Saisons", tabBarIcon: ({ color }) => <IconSymbol size={24} name="calendar.badge.clock" color={color} /> }} />
       <Tabs.Screen name="assistant" options={{ title: "Nora", tabBarIcon: ({ color }) => <IconSymbol size={24} name="message.fill" color={color} /> }} />
+      <Tabs.Screen name="profile" options={{ title: "Moi", tabBarAccessibilityLabel: "Moi : profil, badges et réglages", tabBarIcon: ({ color, focused }) => <TabAvatar color={color} focused={focused} /> }} />
       <Tabs.Screen name="scanner" options={{ href: null, tabBarStyle: { display: "none" } }} />
-      <Tabs.Screen name="profile" options={{ href: null, tabBarStyle: { display: "none" } }} />
     </Tabs>
   );
 }

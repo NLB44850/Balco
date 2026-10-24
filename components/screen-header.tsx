@@ -1,20 +1,19 @@
 /**
- * L'en-tête commun des écrans : un grand titre, une ligne de contexte, et l'avatar qui ouvre
- * « Moi » (ou un bouton retour sur les écrans secondaires).
+ * L'en-tête commun des écrans : un grand titre, une ligne de contexte, un bouton à droite (l'appareil photo
+ * d'Aujourd'hui et de Balcon) et un bouton retour sur les écrans secondaires. « Moi » est le 5ᵉ onglet depuis le
+ * 24/10 (l'avatar en haut n'était pas clair).
  */
 import { useRouter } from "expo-router";
-import { Pressable, StyleSheet, View, type ViewStyle } from "react-native";
+import { StyleSheet, View, type ViewStyle } from "react-native";
 import { BackButton } from "@/components/ui/nav-buttons";
 import { Text } from "@/components/ui/typography";
 
 import { useColors } from "@/hooks/use-colors";
-import { useGarden } from "@/lib/garden/garden-context";
-import { initials } from "@/lib/garden/garden-logic";
 
 type Props = {
   title: string;
   subtitle?: string;
-  /** Écran secondaire : un bouton retour à gauche du titre, et pas d'avatar. */
+  /** Écran secondaire : un bouton retour à gauche du titre. */
   back?: boolean;
   /** Ce que fait le bouton retour à la place de revenir à l'écran d'avant (catalogue : revenir aux familles). */
   onBack?: () => void;
@@ -25,8 +24,6 @@ type Props = {
 export function ScreenHeader({ title, subtitle, back, onBack, right, style }: Props) {
   const colors = useColors();
   const router = useRouter();
-  const { profile } = useGarden();
-  const letter = initials(profile.firstName);
   return (
     <View style={[styles.header, style]}>
       {back && (
@@ -38,11 +35,6 @@ export function ScreenHeader({ title, subtitle, back, onBack, right, style }: Pr
         {!!subtitle && <Text style={[styles.subtitle, { color: colors.muted }]} numberOfLines={2}>{subtitle}</Text>}
       </View>
       {right && <View style={styles.right}>{right}</View>}
-      {!back && (
-        <Pressable accessibilityRole="button" accessibilityLabel="Moi : profil et réglages" onPress={() => router.push("/(tabs)/profile")} style={({ pressed }) => [styles.avatar, { backgroundColor: colors.primary }, pressed && styles.pressed]}>
-          <Text style={styles.avatarText}>{letter ?? "🌱"}</Text>
-        </Pressable>
-      )}
     </View>
   );
 }
@@ -53,7 +45,4 @@ const styles = StyleSheet.create({
   title: { fontSize: 32, fontWeight: "800", letterSpacing: -1 },
   subtitle: { fontSize: 14 },
   right: { alignSelf: "center" },
-  avatar: { width: 40, height: 40, borderRadius: 20, alignItems: "center", justifyContent: "center" },
-  avatarText: { color: "#FFFFFF", fontSize: 16, fontWeight: "800" },
-  pressed: { opacity: 0.75, transform: [{ scale: 0.97 }] },
 });
