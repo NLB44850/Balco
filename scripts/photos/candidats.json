@@ -5352,5 +5352,233 @@
       "file": "florence-fennel-5.jpg",
       "query": "fennel bulbs vegetable"
     }
+  ],
+  "hydrangea": [
+    {
+      "title": "File:Hydrangea macrophylla in front of Seongsan Ilchulbong volcano at blue hour in Jeju Island South Korea.jpg",
+      "width": 6114,
+      "height": 3821,
+      "mime": "image/jpeg",
+      "thumb": "https://thumb.wikimedia.org/wikipedia/commons/thumb/1/19/Hydrangea_macrophylla_in_front_of_Seongsan_Ilchulbong_volcano_at_blue_hour_in_Jeju_Island_South_Korea.jpg/500px-Hydrangea_macrophylla_in_front_of_Seongsan_Ilchulbong_volcano_at_blue_hour_in_Jeju_Island_South_Korea.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
+      "page": "https://commons.wikimedia.org/wiki/File:Hydrangea_macrophylla_in_front_of_Seongsan_Ilchulbong_volcano_at_blue_hour_in_Jeju_Island_South_Korea.jpg",
+      "author": "Basile Morin",
+      "license": "CC BY-SA 4.0",
+      "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0",
+      "file": "hydrangea-1.jpg"
+    },
+    {
+      "title": "File:Hydrangea macrophylla - Hortensia hydrangea.jpg",
+      "width": 2016,
+      "height": 1512,
+      "mime": "image/jpeg",
+      "thumb": "https://thumb.wikimedia.org/wikipedia/commons/thumb/7/7f/Hydrangea_macrophylla_-_Hortensia_hydrangea.jpg/500px-Hydrangea_macrophylla_-_Hortensia_hydrangea.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
+      "page": "https://commons.wikimedia.org/wiki/File:Hydrangea_macrophylla_-_Hortensia_hydrangea.jpg",
+      "author": "Raul654",
+      "license": "CC BY-SA 3.0",
+      "licenseUrl": "http://creativecommons.org/licenses/by-sa/3.0/",
+      "file": "hydrangea-2.jpg"
+    },
+    {
+      "title": "File:Hydrangea macrophylla, Lévis.jpg",
+      "width": 5611,
+      "height": 4008,
+      "mime": "image/jpeg",
+      "thumb": "https://thumb.wikimedia.org/wikipedia/commons/thumb/5/54/Hydrangea_macrophylla%2C_L%C3%A9vis.jpg/500px-Hydrangea_macrophylla%2C_L%C3%A9vis.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
+      "page": "https://commons.wikimedia.org/wiki/File:Hydrangea_macrophylla,_L%C3%A9vis.jpg",
+      "author": "Bernard Gagnon",
+      "license": "CC BY 4.0",
+      "licenseUrl": "https://creativecommons.org/licenses/by/4.0",
+      "file": "hydrangea-3.jpg"
+    }
+  ],
+  "rose-bush": [
+    {
+      "title": "File:Trained rose and shrub rose against brick wall in Boreham, Essex, England.jpg",
+      "width": 5320,
+      "height": 3547,
+      "mime": "image/jpeg",
+      "thumb": "https://thumb.wikimedia.org/wikipedia/commons/thumb/1/11/Trained_rose_and_shrub_rose_against_brick_wall_in_Boreham%2C_Essex%2C_England.jpg/500px-Trained_rose_and_shrub_rose_against_brick_wall_in_Boreham%2C_Essex%2C_England.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
+      "page": "https://commons.wikimedia.org/wiki/File:Trained_rose_and_shrub_rose_against_brick_wall_in_Boreham,_Essex,_England.jpg",
+      "author": "Acabashi",
+      "license": "CC BY-SA 4.0",
+      "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0",
+      "file": "rose-bush-1.jpg"
+    },
+    {
+      "title": "File:White shrub rose Copped Hall Kitchen Garden, Epping, Essex, England 1.jpg",
+      "width": 3453,
+      "height": 3453,
+      "mime": "image/jpeg",
+      "thumb": "https://thumb.wikimedia.org/wikipedia/commons/thumb/6/61/White_shrub_rose_Copped_Hall_Kitchen_Garden%2C_Epping%2C_Essex%2C_England_1.jpg/500px-White_shrub_rose_Copped_Hall_Kitchen_Garden%2C_Epping%2C_Essex%2C_England_1.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
+      "page": "https://commons.wikimedia.org/wiki/File:White_shrub_rose_Copped_Hall_Kitchen_Garden,_Epping,_Essex,_England_1.jpg",
+      "author": "Acabashi",
+      "license": "CC BY-SA 4.0",
+      "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0",
+      "file": "rose-bush-2.jpg"
+    },
+    {
+      "title": "File:'Rosa Sadlers Wells' modern shrub rose Capel Manor College Gardens Enfield London England.jpg",
+      "width": 4128,
+      "height": 3303,
+      "mime": "image/jpeg",
+      "thumb": "https://thumb.wikimedia.org/wikipedia/commons/thumb/9/92/%27Rosa_Sadlers_Wells%27_modern_shrub_rose_Capel_Manor_College_Gardens_Enfield_London_England.jpg/500px-%27Rosa_Sadlers_Wells%27_modern_shrub_rose_Capel_Manor_College_Gardens_Enfield_London_England.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
+      "page": "https://commons.wikimedia.org/wiki/File:%27Rosa_Sadlers_Wells%27_modern_shrub_rose_Capel_Manor_College_Gardens_Enfield_London_England.jpg",
+      "author": "Acabashi",
+      "license": "CC BY-SA 4.0",
+      "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0",
+      "file": "rose-bush-3.jpg"
+    }
+  ],
+  "oleander": [
+    {
+      "title": "File:Nerium oleander pink.jpg",
+      "width": 2740,
+      "height": 1899,
+      "mime": "image/jpeg",
+      "thumb": "https://thumb.wikimedia.org/wikipedia/commons/thumb/8/8b/Nerium_oleander_pink.jpg/500px-Nerium_oleander_pink.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
+      "page": "https://commons.wikimedia.org/wiki/File:Nerium_oleander_pink.jpg",
+      "author": "Challiyan at Malayalam Wikipedia",
+      "license": "CC BY 3.0",
+      "licenseUrl": "https://creativecommons.org/licenses/by/3.0",
+      "file": "oleander-1.jpg"
+    },
+    {
+      "title": "File:Nerium oleander pink flower, Alex 005.jpg",
+      "width": 5184,
+      "height": 3456,
+      "mime": "image/jpeg",
+      "thumb": "https://thumb.wikimedia.org/wikipedia/commons/thumb/7/72/Nerium_oleander_pink_flower%2C_Alex_005.jpg/500px-Nerium_oleander_pink_flower%2C_Alex_005.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
+      "page": "https://commons.wikimedia.org/wiki/File:Nerium_oleander_pink_flower,_Alex_005.jpg",
+      "author": "لا روسا",
+      "license": "CC BY-SA 4.0",
+      "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0",
+      "file": "oleander-2.jpg"
+    },
+    {
+      "title": "File:Nerium oleander flowers leaves.jpg",
+      "width": 2477,
+      "height": 1809,
+      "mime": "image/jpeg",
+      "thumb": "https://thumb.wikimedia.org/wikipedia/commons/thumb/c/cc/Nerium_oleander_flowers_leaves.jpg/500px-Nerium_oleander_flowers_leaves.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
+      "page": "https://commons.wikimedia.org/wiki/File:Nerium_oleander_flowers_leaves.jpg",
+      "author": "Alvesgaspar",
+      "license": "CC BY 2.5",
+      "licenseUrl": "https://creativecommons.org/licenses/by/2.5",
+      "file": "oleander-3.jpg"
+    }
+  ],
+  "japanese-maple": [
+    {
+      "title": "File:Acer palmatum 'Inaba Shidare' in autumn sunshine - 2021-10-17 - Andy Mabbett - 01.jpg",
+      "width": 3872,
+      "height": 2592,
+      "mime": "image/jpeg",
+      "thumb": "https://thumb.wikimedia.org/wikipedia/commons/thumb/f/f2/Acer_palmatum_%27Inaba_Shidare%27_in_autumn_sunshine_-_2021-10-17_-_Andy_Mabbett_-_01.jpg/500px-Acer_palmatum_%27Inaba_Shidare%27_in_autumn_sunshine_-_2021-10-17_-_Andy_Mabbett_-_01.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
+      "page": "https://commons.wikimedia.org/wiki/File:Acer_palmatum_%27Inaba_Shidare%27_in_autumn_sunshine_-_2021-10-17_-_Andy_Mabbett_-_01.jpg",
+      "author": "Andy Mabbett",
+      "license": "CC BY-SA 4.0",
+      "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0",
+      "file": "japanese-maple-1.jpg"
+    },
+    {
+      "title": "File:Leaves of Acer palmatum (2005).jpg",
+      "width": 1200,
+      "height": 1600,
+      "mime": "image/jpeg",
+      "thumb": "https://thumb.wikimedia.org/wikipedia/commons/thumb/c/c2/Leaves_of_Acer_palmatum_%282005%29.jpg/500px-Leaves_of_Acer_palmatum_%282005%29.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
+      "page": "https://commons.wikimedia.org/wiki/File:Leaves_of_Acer_palmatum_(2005).jpg",
+      "author": "Tomomarusan",
+      "license": "CC BY-SA 3.0",
+      "licenseUrl": "http://creativecommons.org/licenses/by-sa/3.0/",
+      "file": "japanese-maple-2.jpg"
+    },
+    {
+      "title": "File:Acer palmatum 'Inaba Shidare' in autumn sunshine - 2021-10-17 - Andy Mabbett - 02.jpg",
+      "width": 3872,
+      "height": 2592,
+      "mime": "image/jpeg",
+      "thumb": "https://thumb.wikimedia.org/wikipedia/commons/thumb/9/9f/Acer_palmatum_%27Inaba_Shidare%27_in_autumn_sunshine_-_2021-10-17_-_Andy_Mabbett_-_02.jpg/500px-Acer_palmatum_%27Inaba_Shidare%27_in_autumn_sunshine_-_2021-10-17_-_Andy_Mabbett_-_02.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
+      "page": "https://commons.wikimedia.org/wiki/File:Acer_palmatum_%27Inaba_Shidare%27_in_autumn_sunshine_-_2021-10-17_-_Andy_Mabbett_-_02.jpg",
+      "author": "Andy Mabbett",
+      "license": "CC BY-SA 4.0",
+      "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0",
+      "file": "japanese-maple-3.jpg"
+    }
+  ],
+  "fargesia": [
+    {
+      "title": "File:2009-07-31 (35) Bamboo, Bambus, Fargesia murielae.JPG",
+      "width": 3008,
+      "height": 2000,
+      "mime": "image/jpeg",
+      "thumb": "https://thumb.wikimedia.org/wikipedia/commons/thumb/f/f2/2009-07-31_%2835%29_Bamboo%2C_Bambus%2C_Fargesia_murielae.JPG/500px-2009-07-31_%2835%29_Bamboo%2C_Bambus%2C_Fargesia_murielae.JPG?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
+      "page": "https://commons.wikimedia.org/wiki/File:2009-07-31_(35)_Bamboo,_Bambus,_Fargesia_murielae.JPG",
+      "author": "Vera Buhl",
+      "license": "CC BY-SA 3.0",
+      "licenseUrl": "https://creativecommons.org/licenses/by-sa/3.0",
+      "file": "fargesia-1.jpg"
+    },
+    {
+      "title": "File:Fargesia rufa.jpg",
+      "width": 1280,
+      "height": 1920,
+      "mime": "image/jpeg",
+      "thumb": "https://thumb.wikimedia.org/wikipedia/commons/thumb/7/7b/Fargesia_rufa.jpg/500px-Fargesia_rufa.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
+      "page": "https://commons.wikimedia.org/wiki/File:Fargesia_rufa.jpg",
+      "author": "Anne Antoni",
+      "license": "CC BY-SA 3.0",
+      "licenseUrl": "https://creativecommons.org/licenses/by-sa/3.0",
+      "file": "fargesia-2.jpg"
+    },
+    {
+      "title": "File:2007-03-03 (1) Bamboo, Bambus, Fargesia murielae.JPG",
+      "width": 3008,
+      "height": 2000,
+      "mime": "image/jpeg",
+      "thumb": "https://thumb.wikimedia.org/wikipedia/commons/thumb/2/27/2007-03-03_%281%29_Bamboo%2C_Bambus%2C_Fargesia_murielae.JPG/500px-2007-03-03_%281%29_Bamboo%2C_Bambus%2C_Fargesia_murielae.JPG?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
+      "page": "https://commons.wikimedia.org/wiki/File:2007-03-03_(1)_Bamboo,_Bambus,_Fargesia_murielae.JPG",
+      "author": "Vera Buhl",
+      "license": "CC BY-SA 3.0",
+      "licenseUrl": "https://creativecommons.org/licenses/by-sa/3.0",
+      "file": "fargesia-3.jpg"
+    }
+  ],
+  "stipa": [
+    {
+      "title": "File:Nassella tenuissima 1zz.jpg",
+      "width": 1000,
+      "height": 667,
+      "mime": "image/jpeg",
+      "thumb": "https://thumb.wikimedia.org/wikipedia/commons/thumb/0/0f/Nassella_tenuissima_1zz.jpg/500px-Nassella_tenuissima_1zz.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
+      "page": "https://commons.wikimedia.org/wiki/File:Nassella_tenuissima_1zz.jpg",
+      "author": "Photo by David J. Stang",
+      "license": "CC BY-SA 4.0",
+      "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0",
+      "file": "stipa-1.jpg"
+    },
+    {
+      "title": "File:Nassella tenuissima 2zz.jpg",
+      "width": 1000,
+      "height": 667,
+      "mime": "image/jpeg",
+      "thumb": "https://thumb.wikimedia.org/wikipedia/commons/thumb/e/e6/Nassella_tenuissima_2zz.jpg/500px-Nassella_tenuissima_2zz.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
+      "page": "https://commons.wikimedia.org/wiki/File:Nassella_tenuissima_2zz.jpg",
+      "author": "Photo by David J. Stang",
+      "license": "CC BY-SA 4.0",
+      "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0",
+      "file": "stipa-2.jpg"
+    },
+    {
+      "title": "File:Nassella tenuissima 4zz.jpg",
+      "width": 3504,
+      "height": 2336,
+      "mime": "image/jpeg",
+      "thumb": "https://thumb.wikimedia.org/wikipedia/commons/thumb/d/d5/Nassella_tenuissima_4zz.jpg/500px-Nassella_tenuissima_4zz.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
+      "page": "https://commons.wikimedia.org/wiki/File:Nassella_tenuissima_4zz.jpg",
+      "author": "Photo by David J. Stang",
+      "license": "CC BY-SA 4.0",
+      "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0",
+      "file": "stipa-3.jpg"
+    }
   ]
 }
