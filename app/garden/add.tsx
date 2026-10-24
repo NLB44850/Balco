@@ -7,8 +7,8 @@
  */
 import * as Haptics from "expo-haptics";
 import { useLocalSearchParams, useRouter } from "expo-router";
-import { memo, useCallback, useDeferredValue, useMemo, useRef, useState } from "react";
-import { Platform, Pressable, ScrollView, StyleSheet, View } from "react-native";
+import { memo, useCallback, useDeferredValue, useEffect, useMemo, useRef, useState } from "react";
+import { BackHandler, Platform, Pressable, ScrollView, StyleSheet, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { LightScreen } from "@/components/light-screen";
@@ -73,7 +73,20 @@ export default function AddPlantScreen() {
     setFamily(null);
     setCategory(undefined);
     setInSeason(false);
+    setQuery("");
   };
+  // La flèche du haut et le retour d'Android ramènent d'une liste aux tuiles (retour du 24/10 : ils ramenaient au
+  // balcon). Ouvert depuis Saisons sur les plantes du mois, le retour ramène à Saisons.
+  const openedOnMonth = Boolean(params.month) && inSeason && family === null && !searching;
+  const listBack = showList && !openedOnMonth ? backToFamilies : undefined;
+  useEffect(() => {
+    if (!listBack) return;
+    const subscription = BackHandler.addEventListener("hardwareBackPress", () => {
+      listBack();
+      return true;
+    });
+    return () => subscription.remove();
+  }, [listBack]);
   const hasBalconyInfo = Boolean(onboarding && !onboarding.skipped && (onboarding.sunlight || onboarding.space));
   const [onlyFitting, setOnlyFitting] = useState(hasBalconyInfo);
   const [sheetId, setSheetId] = useState<string | null>(null);
@@ -173,7 +186,7 @@ export default function AddPlantScreen() {
   return (
     <LightScreen still>
       <ScrollView style={styles.flex} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled" contentContainerStyle={[styles.content, { paddingTop: insets.top + 14, paddingBottom: plants.length > 0 ? 20 : insets.bottom + 40 }]}>
-        <ScreenHeader back title="Ajouter une plante" subtitle={`${PLANT_CATALOG.length} plantes pour le balcon`} />
+        <ScreenHeader back onBack={listBack} title="Ajouter une plante" subtitle={`${PLANT_CATALOG.length} plantes pour le balcon`} />
 
         <View style={[glass.card, styles.search]}>
           <Text style={styles.searchIcon}>🔎</Text>

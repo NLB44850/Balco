@@ -457,3 +457,18 @@ test("Saisons : l'ail des ours « à planter » n'a qu'un geste, le même qu'Auj
   await expect(page.getByText("Sème l’ail des ours")).toHaveCount(0);
   expect(errors).toEqual([]);
 });
+
+test("catalogue en tuiles : la flèche du haut ramène d'une famille aux tuiles, puis au balcon", async ({ page }) => {
+  const errors = trackErrors(page);
+  await mockWeather(page);
+  await seedBalcony(page, { plants: ["basil"], wateredDaysAgo: 1 });
+  await open(page, "/balcony", "Ajouter une plante");
+  await page.getByText("Ajouter une plante").first().click();
+  await page.getByRole("button", { name: /^Fruits, \d+ plantes$/ }).click();
+  await expect(page.getByRole("button", { name: "Retour aux familles" })).toBeVisible();
+  await page.getByRole("button", { name: "Retour", exact: true }).click();
+  await expect(page.getByRole("button", { name: /^Fruits, \d+ plantes$/ })).toBeVisible();
+  await page.getByRole("button", { name: "Retour", exact: true }).click();
+  await expect(page.getByRole("button", { name: /^Fruits, \d+ plantes$/ })).toHaveCount(0);
+  expect(errors).toEqual([]);
+});
