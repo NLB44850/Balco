@@ -112,3 +112,5 @@ de droits avec son crédit.
   aussi pour le serveur). 2) « Guider les tiges » introuvable en octobre (geste de juin à août) : la fiche montre
   maintenant tous les pas-à-pas d'entretien de la plante, ceux du moment d'abord, les autres avec « À faire en
   juin–août » (`plantCareGuides`). E2e dans `37-proteger-du-froid`.
+- 24/10 : livraisons 2 et 3 validées sur son téléphone (« tu peux fusionner »), PR #67 fusionnée dans `main`. Reste la
+  livraison 4 (arbustes et graminées).
