@@ -68,7 +68,7 @@ describe("pas-à-pas des gestes d'entretien", () => {
     expect(frostGuideFor(plant("kumquat"))).toBeNull();
     // Toutes les plantes qui restent dehors et reçoivent les alertes gel : pas seulement l'artichaut.
     const outdoor = PLANT_CATALOG.filter((entry) => frostGuideFor(entry)).map((entry) => entry.id).sort();
-    expect(outdoor).toEqual(["artichoke", "olive-tree", "passionflower", "rosemary", "star-jasmine"]);
+    expect(outdoor).toEqual(["artichoke", "oleander", "olive-tree", "passionflower", "rosemary", "star-jasmine"]);
     expect(careGuidesNow(plant("rosemary"), 1, true)).toEqual(["wrap"]);
     expect(careGuidesNow(plant("rosemary"), 1)).toEqual([]);
     expect(careGuidesNow(plant("basil"), 10, true)).toEqual([]);

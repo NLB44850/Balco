@@ -69,7 +69,7 @@ describe("modèles de guide et « Ce qu'il te faut »", () => {
 });
 
 describe("les étapes du pas-à-pas (P7) : règles d'écriture", () => {
-  const VERBS = ["Mets", "Remplis", "Fais", "Pose", "Sème", "Recouvre", "Rebouche", "Laisse", "Arrose", "Couvre", "Pose-les", "Sors", "Ajoute", "Enfonce-les", "Prends", "Garde", "Regarde", "Démêle", "Gratte", "Remets", "Tasse", "Repère", "Coupe", "Coupe-le", "Pince-le", "Sors-les", "Laisse-la", "Laisse-le", "Laisse-les", "Vérifie", "Enroule", "Attache-la", "Attache", "Recommence", "Raccourcis", "Compte", "Enlève", "Glisse", "Coupe-la", "Ramène-les", "Entoure", "Pousse", "Couvre-le", "Couvre-la", "Couvre-les"];
+  const VERBS = ["Mets", "Remplis", "Fais", "Pose", "Sème", "Recouvre", "Rebouche", "Laisse", "Arrose", "Couvre", "Pose-les", "Sors", "Ajoute", "Enfonce-les", "Prends", "Garde", "Regarde", "Démêle", "Gratte", "Remets", "Tasse", "Repère", "Coupe", "Coupe-le", "Pince-le", "Sors-les", "Laisse-la", "Laisse-le", "Laisse-les", "Vérifie", "Enroule", "Attache-la", "Attache", "Recommence", "Raccourcis", "Compte", "Enlève", "Glisse", "Coupe-la", "Ramène-les", "Entoure", "Pousse", "Couvre-le", "Couvre-la", "Couvre-les", "Rabats-la", "Jette", "Suis", "Passe"];
   const words = (text: string) => text.split(/\s+/u).filter(Boolean).length;
   const models = ["sow-pot", "sow-indoor", "plant-seedling", "plant-bulb", "perennial-pot", "repot", "topdress", "thin", "pinch", "outdoors"] as const;
 

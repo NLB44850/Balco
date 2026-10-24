@@ -119,6 +119,7 @@ const SHAPES: Record<string, PotShape> = {
   "small-fruit": "berry",
   "fruit-tree": "bush",
   climber: "tall",
+  shrub: "bush",
 };
 
 /** La silhouette peinte qui correspond à une famille de plantes. */

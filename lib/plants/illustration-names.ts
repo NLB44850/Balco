@@ -39,7 +39,9 @@ export type IllustrationId =
   | "earth-up"
   | "mulch"
   | "winter-wrap"
-  | "fleece";
+  | "fleece"
+  | "faded-flower"
+  | "grass-tuft";
 
 /** Le nom de chaque dessin, pour l'écran de revue et l'accessibilité. */
 export const ILLUSTRATION_LABELS: Record<IllustrationId, string> = {
@@ -82,6 +84,8 @@ export const ILLUSTRATION_LABELS: Record<IllustrationId, string> = {
   mulch: "De la paille au pied de la plante",
   "winter-wrap": "Le pot entouré, contre un mur",
   fleece: "Un voile posé sur la plante, la nuit",
+  "faded-flower": "Une rose fanée, coupée au-dessus d’une feuille",
+  "grass-tuft": "Des doigts peignent une touffe de graminée",
 };
 
 export const ILLUSTRATION_IDS = Object.keys(ILLUSTRATION_LABELS) as IllustrationId[];

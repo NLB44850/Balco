@@ -542,6 +542,34 @@ const DRAWINGS: Record<IllustrationId, () => ReactNode> = {
       <Path d="M114 40 C 104 38 100 46 92 44 M 114 54 C 106 52 102 60 96 58" fill="none" {...thin} />
     </>
   ),
+  "faded-flower": () => (
+    <>
+      {/* La rose fanée penche, ses pétales tombent ; on coupe (pointillés) juste au-dessus de la grande feuille. */}
+      <Path d="M60 112 L 60 44 C 60 30 72 26 80 32" fill="none" {...stroke} />
+      <Path d="M76 32 C 70 40 74 52 82 54 C 90 52 94 40 86 32 Z" fill="#FFFFFF" {...stroke} />
+      <Path d="M78 46 C 81 50 85 50 88 46" fill="none" {...thin} />
+      {[[96, 64], [84, 74], [100, 80]].map(([cx, cy]) => <Ellipse key={`${cx}-${cy}`} cx={cx} cy={cy} rx={3.5} ry={2} fill="#FFFFFF" {...thin} transform={`rotate(30 ${cx} ${cy})`} />)}
+      <Line x1={60} y1={76} x2={24} y2={68} {...thin} />
+      {[[22, 67, 0], [36, 64, -20], [37, 77, 20], [49, 67, -20], [49, 80, 20]].map(([cx, cy, angle]) => <Ellipse key={`l${cx}-${cy}`} cx={cx} cy={cy} rx={6} ry={3.5} fill={LEAF} {...thin} transform={`rotate(${angle} ${cx} ${cy})`} />)}
+      <Line x1={48} y1={66} x2={74} y2={66} {...thin} strokeDasharray="4 3" />
+      <Arrow d="M100 98 C 92 92 82 86 72 76" head="M79 77 L 72 76 L 74 83" />
+    </>
+  ),
+  "grass-tuft": () => (
+    <>
+      {/* Une touffe de graminée dans son pot ; des doigts la peignent, les feuilles sèches tombent. */}
+      <Pot soilTop={76} />
+      {[[-34, 18], [-24, 10], [-12, 6], [0, 4], [12, 6], [24, 10], [34, 18]].map(([dx, top]) => (
+        <Path key={dx} d={`M60 76 C ${60 + dx * 0.3} ${top + 30} ${60 + dx * 0.8} ${top + 8} ${60 + dx} ${top}`} fill="none" {...thin} />
+      ))}
+      <G transform="translate(86 36) rotate(20)">
+        <Rect x={-10} y={-6} width={20} height={12} rx={6} fill="#FFFFFF" {...stroke} />
+        {[-6, -2, 2, 6].map((x) => <Line key={x} x1={x} y1={6} x2={x} y2={16} {...thin} />)}
+      </G>
+      <Arrow d="M100 22 C 98 34 94 46 88 56" head="M86 49 L 88 56 L 94 52" />
+      {[[24, 94], [30, 104], [96, 98]].map(([x, y]) => <Line key={`${x}-${y}`} x1={x} y1={y} x2={x + 6} y2={y + 3} {...thin} />)}
+    </>
+  ),
   fleece: () => (
     <>
       {/* La nuit : un voile léger posé sur la plante, qui laisse passer l'air. */}

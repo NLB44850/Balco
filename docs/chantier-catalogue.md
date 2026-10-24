@@ -114,3 +114,11 @@ de droits avec son crédit.
   juin–août » (`plantCareGuides`). E2e dans `37-proteger-du-froid`.
 - 24/10 : livraisons 2 et 3 validées sur son téléphone (« tu peux fusionner »), PR #67 fusionnée dans `main`. Reste la
   livraison 4 (arbustes et graminées).
+- 24/10, « OK, livraison 4 » : **livraison 4 codée** (133 plantes). Nouvelle catégorie « Arbustes et feuillages »
+  (`shrub`) : hortensia, rosier, laurier-rose (fleurs, sans récolte) ; érable du Japon, bambou non traçant (Fargesia),
+  stipa cheveux d'ange : plantes de feuillage (`foliage`), pastille « 🍁 Belle saison » au lieu de Floraison ou Récolte
+  (`seasonFact`), pas de carte d'herbier (le total passe à 130). Laurier-rose : reste dehors avec son abri (alerte gel à
+  -5 °C, « Protéger du froid »), carte orange « Très toxique » ; hortensia « Toxique pour les animaux ». 3 nouveaux
+  pas-à-pas en images : tailler un arbuste (hortensia, rosier, laurier-rose, érable ; « éclaircir » le bambou), couper
+  les roses fanées, nettoyer le stipa ; 2 dessins. Sources : `docs/sources-calendrier.md` (dernière partie). Nouvelle
+  PR, à valider sur son téléphone.

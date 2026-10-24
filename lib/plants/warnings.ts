@@ -59,6 +59,16 @@ export const WARNINGS: Record<string, PlantWarning> = {
     text: "Ses petites baies ne se mangent pas : garde-les hors de portée des enfants et des animaux.",
     sources: ["https://www.chien.com/sante/chevrefeuille-chien-428-17097.php", "https://www.molenbeek.irisnet.be/fr/fichiers/environnement-energie/Molenbeautiful/molenbeautiful-annexe-1-fr.pdf"],
   },
+  oleander: {
+    title: "Très toxique",
+    text: "Toute la plante : feuilles, tiges et fleurs. Mets des gants pour la tailler, et garde-la hors de portée des enfants et des animaux.",
+    sources: ["https://www.truffaut.com/nerium-oleander-pot-15l-1032818.html", "https://espacepourlavie.ca/carnet-horticole/nerium"],
+  },
+  hydrangea: {
+    title: "Toxique pour les animaux",
+    text: "Surtout les feuilles et les boutons : garde-le hors de portée des chats et des chiens qui mâchonnent.",
+    sources: ["https://www.chien.com/sante/plante-toxique-chien-428.php", "https://www.santevet.com/?p=35402"],
+  },
 };
 
 export const warningOf = (entry: Pick<CatalogPlant, "id">): PlantWarning | null => WARNINGS[entry.id] ?? null;

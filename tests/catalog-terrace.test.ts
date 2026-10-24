@@ -3,18 +3,21 @@ import { upcomingHarvests } from "../lib/garden/progress";
 import { resolvePlants } from "../lib/garden/garden-logic";
 import { restUntil } from "../lib/garden/off-season";
 import { calendarActivities } from "../lib/plants/calendar";
-import { CATEGORY_LABELS, getCatalogPlant, hasHarvest, isFlower, PLANT_CATALOG, searchCatalog } from "../lib/plants/catalog";
+import { CATEGORY_LABELS, getCatalogPlant, hasHarvest, isFlower, PLANT_CATALOG, searchCatalog, seasonFact } from "../lib/plants/catalog";
 import { bulbOf, guideModelFor, startPills } from "../lib/plants/guide";
 import { canComeIndoors, isColdTender } from "../lib/plants/cold-hardiness";
+import { canMarkBloom } from "../lib/garden/herbarium";
 import { familyOf } from "../lib/plants/families";
 import { endsWithSeason, isHarvestedOnce, seasonFrostText } from "../lib/plants/season-end";
-import { canMarkBloom } from "../lib/garden/herbarium";
 
 /** Chantier « Catalogue balcon et terrasse », livraison 1 : bulbes, fleurs d'hiver, plantes grasses. */
 const DELIVERY_1 = ["tulip", "daffodil", "muscari", "crocus", "winter-heath", "hellebore", "houseleek", "sedum"];
 const BULBS = ["tulip", "daffodil", "muscari", "crocus"];
 /** Livraison 3 : les grimpantes qu'on ne cueille pas (la vigne, elle, se récolte). */
 const FLOWERING_CLIMBERS = ["star-jasmine", "clematis", "passionflower", "honeysuckle", "morning-glory"];
+/** Livraison 4 : arbustes à fleurs, puis feuillages (belle saison). */
+const SHRUBS = ["hydrangea", "rose-bush", "oleander", "japanese-maple", "fargesia", "stipa"];
+const FOLIAGE = ["japanese-maple", "fargesia", "stipa"];
 
 const plant = (catalogId: string) => resolvePlants([{ id: "p", catalogId, addedAt: new Date(2026, 9, 1).toISOString() }])[0];
 
@@ -43,7 +46,7 @@ describe("catalogue balcon et terrasse : livraison 1", () => {
     }
     // Les autres fleurs se cueillent toujours (bouquets, fleurs comestibles).
     expect(hasHarvest(getCatalogPlant("nasturtium")!)).toBe(true);
-    expect(PLANT_CATALOG.filter((entry) => !hasHarvest(entry)).map((entry) => entry.id).sort()).toEqual([...DELIVERY_1, ...FLOWERING_CLIMBERS].sort());
+    expect(PLANT_CATALOG.filter((entry) => !hasHarvest(entry)).map((entry) => entry.id).sort()).toEqual([...DELIVERY_1, ...FLOWERING_CLIMBERS, ...SHRUBS].sort());
   });
 
   it("les bulbes se plantent à l'automne, avec le pas-à-pas des bulbes, et se reposent l'été", () => {
@@ -170,5 +173,59 @@ describe("catalogue balcon et terrasse : livraison 3, grimpantes et légumes", (
     expect(guideModelFor(getCatalogPlant("morning-glory")!, 3)).toBe("sow-indoor");
     expect(guideModelFor(getCatalogPlant("grapevine")!, 3)).toBe("perennial-pot");
     expect(guideModelFor(getCatalogPlant("fava-bean")!, 3)).toBe("sow-pot");
+  });
+});
+
+describe("catalogue balcon et terrasse : livraison 4, arbustes et graminées", () => {
+  it("une catégorie « Arbustes et feuillages » : 3 arbustes à fleurs, 3 feuillages", () => {
+    expect(CATEGORY_LABELS.shrub).toBe("Arbustes et feuillages");
+    expect(searchCatalog("", "shrub").map((entry) => entry.id).sort()).toEqual([...SHRUBS].sort());
+    for (const id of SHRUBS) {
+      const entry = getCatalogPlant(id)!;
+      expect(entry.perennial, id).toBe(true);
+      expect(hasHarvest(entry), id).toBe(false);
+      expect(entry.sources.length, id).toBeGreaterThanOrEqual(3);
+    }
+  });
+
+  it("les feuillages ont une belle saison, ni récolte ni floraison, et pas de carte d'herbier", async () => {
+    const { herbariumTotal } = await import("../lib/garden/herbarium");
+    for (const id of FOLIAGE) {
+      expect(isFlower(getCatalogPlant(id)!), id).toBe(false);
+      expect(seasonFact(getCatalogPlant(id)!), id).toBe("🍁  Belle saison");
+    }
+    expect(seasonFact(getCatalogPlant("hydrangea")!)).toBe("🌸  Floraison");
+    expect(seasonFact(getCatalogPlant("basil")!)).toBe("🧺  Récolte");
+    expect(herbariumTotal).toBe(PLANT_CATALOG.length - FOLIAGE.length);
+    expect(canMarkBloom(plant("japanese-maple"), [], new Date(2026, 9, 10))).toBe(false);
+  });
+
+  it("le laurier-rose reste dehors avec son abri ; il est très toxique", async () => {
+    const { warningOf } = await import("../lib/plants/warnings");
+    const oleander = getCatalogPlant("oleander")!;
+    expect(isColdTender(oleander)).toBe(false);
+    expect(oleander.tasks.some((task) => task.id === "shelter")).toBe(true);
+    expect(warningOf(oleander)?.title).toBe("Très toxique");
+    expect(warningOf(getCatalogPlant("hydrangea")!)?.title).toBe("Toxique pour les animaux");
+  });
+
+  it("chaque geste d'entretien a son pas-à-pas en images", async () => {
+    const { careGuideFor } = await import("../lib/plants/care-guides");
+    expect(careGuideFor(getCatalogPlant("hydrangea")!, "prune")).toBe("prune-shrub");
+    expect(careGuideFor(getCatalogPlant("fargesia")!, "thin-canes")).toBe("prune-shrub");
+    expect(careGuideFor(getCatalogPlant("rose-bush")!, "deadhead")).toBe("deadhead");
+    expect(careGuideFor(getCatalogPlant("tulip")!, "deadhead")).toBeNull();
+    expect(careGuideFor(getCatalogPlant("stipa")!, "comb")).toBe("comb-grass");
+    for (const id of SHRUBS) {
+      const entry = getCatalogPlant(id)!;
+      expect(entry.tasks.filter((task) => task.type === "pruning").every((task) => careGuideFor(entry, task.id) !== null), id).toBe(true);
+    }
+  });
+
+  it("se trouvent par les mots de tous les jours", () => {
+    expect(searchCatalog("rose").map((entry) => entry.id)).toContain("rose-bush");
+    expect(searchCatalog("bambou").map((entry) => entry.id)).toContain("fargesia");
+    expect(searchCatalog("graminée").map((entry) => entry.id)).toContain("stipa");
+    expect(searchCatalog("feuillage").length).toBeGreaterThanOrEqual(3);
   });
 });

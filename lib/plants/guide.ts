@@ -206,7 +206,7 @@ export function whatsNext(entry: CatalogPlant, model: GuideModel): string[] {
   }
   if (model === "outdoors") {
     const harvest = plantingOf(entry).harvestWeeksFromPlanting;
-    return ["Les premiers jours, garde-les à l’abri du plein soleil de midi.", ...(harvest ? [`${isFlower(entry) ? "Premières fleurs" : "Première récolte"} dans ${delayText(harvest, "weeks")}.`] : []), ...(feeding ? [feeding] : [])];
+    return ["Les premiers jours, garde-les à l’abri du plein soleil de midi.", ...(harvest && !entry.foliage ? [`${isFlower(entry) ? "Premières fleurs" : "Première récolte"} dans ${delayText(harvest, "weeks")}.`] : []), ...(feeding ? [feeding] : [])];
   }
   const planting = plantingOf(entry);
   const flower = isFlower(entry);
@@ -214,7 +214,7 @@ export function whatsNext(entry: CatalogPlant, model: GuideModel): string[] {
   if (isSowing(model) && planting.germinationDays) lines.push(`Les pousses sortent dans ${delayText(planting.germinationDays, "days")}. Garde la terre humide.`);
   if (model === "plant-bulb") lines.push("Les premières pousses sortent en quelques semaines. Arrose peu tant qu’elles ne sont pas sorties.");
   const harvest = isSowing(model) ? planting.harvestWeeksFromSowing : planting.harvestWeeksFromPlanting;
-  if (harvest) lines.push(`${flower ? "Premières fleurs" : "Première récolte"} dans ${delayText(harvest, "weeks")}.`);
+  if (harvest && !entry.foliage) lines.push(`${flower ? "Premières fleurs" : "Première récolte"} dans ${delayText(harvest, "weeks")}.`);
   if (feeding) lines.push(feeding);
   return lines;
 }

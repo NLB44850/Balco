@@ -17,7 +17,7 @@ import { PLANT_VARIETIES } from "./varieties";
 export type Sunlight = "shade" | "partial" | "sunny";
 export type SpaceSize = "windowsill" | "planter" | "balcony" | "terrace";
 export type GoalTag = "tomatoes" | "aromatics" | "bees" | "salads";
-export type PlantCategory = "aromatic" | "fruiting-vegetable" | "leafy-vegetable" | "root" | "flower" | "small-fruit" | "fruit-tree" | "climber";
+export type PlantCategory = "aromatic" | "fruiting-vegetable" | "leafy-vegetable" | "root" | "flower" | "small-fruit" | "fruit-tree" | "climber" | "shrub";
 export type Month = 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10 | 11 | 12;
 
 export type CareTask = {
@@ -89,6 +89,11 @@ export type CatalogPlant = {
    * geste « Récolte » chaque jour ni récolte à venir ; `harvestTip` dit quoi faire pendant la floraison.
    */
   bloomOnly?: true;
+  /**
+   * Plante de feuillage (érable du Japon, bambou, graminée ; toujours avec `bloomOnly`) : `harvestMonths` est sa belle
+   * saison (couleurs, épis), ni récolte ni floraison à noter.
+   */
+  foliage?: true;
   care: CareThresholds;
   tasks: CareTask[];
   /** Variétés conseillées en pot, de la plus facile à la plus originale. */
@@ -103,8 +108,13 @@ export function hasHarvest(entry: Pick<CatalogPlant, "bloomOnly">) {
 }
 
 /** Une plante à fleurs (fleur, ou grimpante d'ornement comme la clématite) : ses mois de « récolte » sont sa floraison. */
-export function isFlower(entry: Pick<CatalogPlant, "category" | "bloomOnly">) {
-  return entry.category === "flower" || entry.bloomOnly === true;
+export function isFlower(entry: Pick<CatalogPlant, "category" | "bloomOnly" | "foliage">) {
+  return (entry.category === "flower" || entry.bloomOnly === true) && !entry.foliage;
+}
+
+/** Ce que disent ses mois de « récolte » : « 🌸  Floraison », « 🍁  Belle saison » (feuillage) ou « 🧺  Récolte ». */
+export function seasonFact(entry: Pick<CatalogPlant, "category" | "bloomOnly" | "foliage">) {
+  return isFlower(entry) ? "🌸  Floraison" : entry.foliage ? "🍁  Belle saison" : "🧺  Récolte";
 }
 
 export const CATEGORY_LABELS: Record<PlantCategory, string> = {
@@ -116,6 +126,7 @@ export const CATEGORY_LABELS: Record<PlantCategory, string> = {
   "small-fruit": "Petits fruits",
   "fruit-tree": "Arbres fruitiers",
   climber: "Grimpantes",
+  shrub: "Arbustes et feuillages",
 };
 
 export const SUNLIGHT_LABELS: Record<Sunlight, string> = { shade: "Ombre", partial: "Mi-ombre", sunny: "Soleil" };
@@ -1877,6 +1888,117 @@ export const PLANT_CATALOG: CatalogPlant[] = [
       { id: "doux-de-florence", name: "Doux de Florence", note: "Le classique : à semer après le 20 juin, sinon il monte en graines." },
     ],
   }),
+
+  // --- Catalogue balcon et terrasse, livraison 4 (24/10) : arbustes et graminées -------------------------------
+  plant({
+    id: "hydrangea", name: "Hortensia", label: "l’hortensia", gender: "m", emoji: "🌸", category: "shrub",
+    sunlight: ["partial", "shade"], minSpace: "balcony", difficulty: "easy", perennial: true, melliferous: false, goals: [], potLiters: 30, bloomOnly: true,
+    pitch: "De grosses boules de fleurs bleues, roses ou blanches tout l’été, pour un balcon à mi-ombre.",
+    sowMonths: [], plantMonths: [3, 4, 5, 9, 10], harvestMonths: [6, 7, 8, 9],
+    harvestTip: "Coupe quelques fleurs pour un bouquet, et laisse les fleurs sèches sur la plante jusqu’au printemps : elles protègent les bourgeons du froid.",
+    care: { ...THIRSTY, heatThresholdC: 30, frostThresholdC: -15, frostSensitive: false },
+    wateringMonths: [4, 5, 6, 7, 8, 9, 10],
+    wateringInstruction: "Il a très soif en pot : arrose dès que la terre sèche en surface, avec de l’eau de pluie si tu peux (le calcaire jaunit ses feuilles).",
+    extraTasks: [
+      customTask({ id: "prune", type: "pruning", title: "Aujourd’hui, taille l’hortensia.", instruction: "Après les gelées, coupe les fleurs sèches juste au-dessus de la première paire de gros bourgeons, et les tiges mortes à la base.", minutes: 10, months: [3] }),
+    ],
+    varieties: [
+      { id: "endless-summer", name: "Endless Summer", note: "Refleurit sur les pousses de l’année : des fleurs même après un hiver froid." },
+      { id: "annabelle", name: "Annabelle", note: "Grosses boules blanches, très rustique, taille facile en fin d’hiver." },
+      { id: "bobo", name: "Bobo", note: "Hortensia paniculé compact, fleurs blanches puis roses ; supporte plus de soleil." },
+    ],
+  }),
+  plant({
+    id: "rose-bush", name: "Rosier", label: "le rosier", gender: "m", emoji: "🌹", category: "shrub",
+    sunlight: ["sunny"], minSpace: "balcony", difficulty: "medium", perennial: true, melliferous: true, goals: ["bees"], potLiters: 30, bloomOnly: true,
+    pitch: "Des roses de mai aux gelées : choisis un rosier buisson ou paysager, fait pour le pot.",
+    sowMonths: [], plantMonths: [2, 3, 4, 10, 11], harvestMonths: [5, 6, 7, 8, 9, 10],
+    harvestTip: "Coupe des roses pour un bouquet le matin, quand le bouton commence à s’ouvrir.",
+    care: { ...REGULAR, heatThresholdC: 32, frostThresholdC: -15, frostSensitive: false },
+    wateringMonths: [4, 5, 6, 7, 8, 9, 10],
+    wateringInstruction: "Arrose au pied, sans mouiller les feuilles, dès que la terre sèche sur 2 cm : en pot, elle ne doit jamais sécher tout à fait.",
+    extraTasks: [
+      customTask({ id: "prune", type: "pruning", title: "Aujourd’hui, taille le rosier.", instruction: "Un jour sans gel, garde 3 à 5 belles tiges et raccourcis-les au-dessus d’un bourgeon tourné vers l’extérieur.", minutes: 10, months: [2, 3] }),
+      customTask({ id: "deadhead", type: "pruning", title: "Aujourd’hui, coupe les roses fanées.", instruction: "Coupe chaque rose fanée au-dessus de la première grande feuille : il refleurit plus vite.", minutes: 5, months: [6, 7, 8, 9] }),
+    ],
+    varieties: [
+      { id: "the-fairy", name: "The Fairy", note: "Rosier paysager couvert de petites roses roses jusqu’aux gelées, très résistant aux maladies." },
+      { id: "bonica", name: "Bonica", note: "Buisson compact, roses rose tendre en bouquets, très florifère." },
+      { id: "peace", name: "Madame A. Meilland (Peace)", note: "Grandes roses jaune pâle bordées de rose, le classique à bouquets." },
+    ],
+  }),
+  plant({
+    id: "oleander", name: "Laurier-rose", label: "le laurier-rose", gender: "m", emoji: "🌺", category: "shrub",
+    sunlight: ["sunny"], minSpace: "balcony", difficulty: "easy", perennial: true, melliferous: false, goals: [], potLiters: 30, bloomOnly: true,
+    pitch: "Un air de vacances du Midi : des fleurs tout l’été et des feuilles vertes toute l’année.",
+    sowMonths: [], plantMonths: [4, 5, 6], harvestMonths: [6, 7, 8, 9, 10],
+    harvestTip: "Avec des gants, coupe les bouquets de fleurs fanées : il en refait tout l’été.",
+    care: { ...REGULAR, heatThresholdC: 40, frostThresholdC: -5, frostSensitive: true },
+    wateringMonths: [4, 5, 6, 7, 8, 9, 10],
+    wateringInstruction: "En pot, l’été, arrose copieusement dès que la terre sèche en surface ; l’hiver, presque plus.",
+    extraTasks: [
+      customTask({ id: "prune", type: "pruning", title: "Aujourd’hui, taille le laurier-rose.", instruction: "Après la floraison, avec des gants, rabats de moitié les tiges qui ont fleuri : il restera compact et fleurira plus.", minutes: 10, months: [9, 10] }),
+      customTask({ id: "shelter", type: "protection", title: "Aujourd’hui, prépare l’abri du laurier-rose.", instruction: "Sous -5 °C, isole le pot et couvre-le d’un voile ; si le froid dure, rentre-le dans une pièce fraîche et lumineuse (5 à 15 °C).", minutes: 10, months: [11, 12, 1, 2] }),
+    ],
+    varieties: [
+      { id: "soeur-agnes", name: "Sœur Agnès", note: "Fleurs blanches simples." },
+      { id: "italia", name: "Italia", note: "Fleurs rouge vif tout l’été." },
+      { id: "villa-romaine", name: "Villa Romaine", note: "Fleurs rose tendre en bouquets." },
+    ],
+  }),
+  plant({
+    id: "japanese-maple", name: "Érable du Japon", label: "l’érable", gender: "m", emoji: "🍁", category: "shrub",
+    sunlight: ["partial", "shade"], minSpace: "balcony", difficulty: "medium", perennial: true, melliferous: false, goals: [], potLiters: 30, bloomOnly: true, foliage: true,
+    pitch: "Un petit arbre aux feuilles découpées, tendres au printemps et rouge feu à l’automne.",
+    sowMonths: [], plantMonths: [3, 4, 10, 11], harvestMonths: [4, 5, 10, 11],
+    harvestTip: "Profite de ses couleurs, et garde-le à l’abri du vent et du soleil de l’après-midi : ses feuilles grillent vite.",
+    care: { ...REGULAR, heatThresholdC: 30, frostThresholdC: -15, frostSensitive: false },
+    wateringMonths: [3, 4, 5, 6, 7, 8, 9, 10],
+    wateringInstruction: "Garde la terre fraîche sans la détremper : arrose dès qu’elle sèche sur 2 cm, de préférence à l’eau de pluie.",
+    extraTasks: [
+      customTask({ id: "prune", type: "pruning", title: "Aujourd’hui, nettoie l’érable.", instruction: "En hiver, enlève seulement le bois mort et les branches qui se croisent : il n’aime pas les grosses tailles.", minutes: 5, months: [12, 1, 2] }),
+    ],
+    varieties: [
+      { id: "atropurpureum", name: "Atropurpureum", note: "Feuillage pourpre tout l’été, rouge vif à l’automne." },
+      { id: "shaina", name: "Shaina", note: "Compact, idéal en pot : rouge au printemps, rouge vif à l’automne." },
+      { id: "katsura", name: "Katsura", note: "Jeunes feuilles orange clair au printemps, petit et léger." },
+    ],
+  }),
+  plant({
+    id: "fargesia", name: "Bambou non traçant", label: "le bambou", gender: "m", emoji: "🎋", category: "shrub",
+    sunlight: ["partial", "sunny", "shade"], minSpace: "balcony", difficulty: "easy", perennial: true, melliferous: false, goals: [], potLiters: 40, bloomOnly: true, foliage: true,
+    pitch: "Un brise-vue vert toute l’année qui bruisse au vent ; ce bambou ne court pas, il reste en touffe.",
+    sowMonths: [], plantMonths: [3, 4, 9, 10, 11], harvestMonths: WHOLE_YEAR,
+    harvestTip: "Si ses feuilles s’enroulent sur elles-mêmes, il a soif : arrose tout de suite, copieusement.",
+    care: { ...THIRSTY, heatThresholdC: 32, frostThresholdC: -15, frostSensitive: false },
+    wateringMonths: [3, 4, 5, 6, 7, 8, 9, 10],
+    wateringInstruction: "En pot, il boit beaucoup : arrose copieusement dès que la terre sèche en surface, et garde une soucoupe l’été.",
+    extraTasks: [
+      customTask({ id: "thin-canes", type: "pruning", title: "Aujourd’hui, éclaircis le bambou.", instruction: "Coupe à ras les vieilles cannes sèches ou abîmées : la touffe s’aère et se renouvelle.", minutes: 10, months: [3, 4] }),
+    ],
+    varieties: [
+      { id: "asian-wonder", name: "Asian Wonder", note: "Cannes rougeâtres et feuillage fin, convient en pot." },
+      { id: "angustissima", name: "Fargesia angustissima", note: "Feuillage très fin et léger, rustique jusque vers -15 °C, se plaît en pot." },
+      { id: "pingwu", name: "Robusta Pingwu", note: "Port droit et dense, brise-vue efficace, très rustique." },
+    ],
+  }),
+  plant({
+    id: "stipa", name: "Stipa cheveux d’ange", label: "le stipa", gender: "m", emoji: "🌾", category: "shrub",
+    sunlight: ["sunny"], minSpace: "planter", difficulty: "easy", perennial: true, melliferous: false, goals: [], potLiters: 10, bloomOnly: true, foliage: true,
+    pitch: "Une graminée aux feuilles fines comme des cheveux, qui ondule au moindre souffle et blondit l’été.",
+    sowMonths: [], plantMonths: [3, 4, 5, 10, 11], harvestMonths: [6, 7, 8, 9, 10],
+    harvestTip: "Laisse les épis sécher sur pied jusqu’à la fin de l’hiver : ils restent beaux et protègent le cœur de la touffe.",
+    care: { ...DROUGHT, heatThresholdC: 36, frostThresholdC: -10, frostSensitive: false },
+    wateringMonths: [4, 5, 6, 7, 8, 9],
+    wateringInstruction: "Elle aime les terres sèches : arrose seulement quand la terre est sèche sur 4 cm, et jamais d’eau dans la soucoupe.",
+    extraTasks: [
+      customTask({ id: "comb", type: "pruning", title: "Aujourd’hui, nettoie le stipa.", instruction: "Retire à la main les feuilles sèches ; si la touffe est toute brune, rabats-la à 10 cm du sol.", minutes: 5, months: [2, 3] }),
+    ],
+    varieties: [
+      { id: "pony-tails", name: "Pony Tails", note: "Le stipa cheveux d’ange classique, 40 à 60 cm, épis blonds l’été." },
+      { id: "gigantea", name: "Stipa gigantea", note: "L’avoine géante : grands épis dorés à 1,50 m, pour un grand bac." },
+    ],
+  }),
 ];
 
 const BY_ID = new Map(PLANT_CATALOG.map((entry) => [entry.id, entry]));
@@ -2071,6 +2193,12 @@ const SEARCH_ALIASES: Record<string, string[]> = {
   "kuri-squash": ["courge", "potiron", "citrouille"],
   rhubarb: ["tarte"],
   "florence-fennel": ["bulbe", "anis"],
+  hydrangea: ["hydrangea", "arbuste"],
+  "rose-bush": ["rose", "arbuste"],
+  oleander: ["nerium", "arbuste"],
+  "japanese-maple": ["acer", "arbre", "feuillage"],
+  fargesia: ["brise-vue", "feuillage"],
+  stipa: ["graminée", "herbe", "feuillage"],
 };
 
 export function searchCatalog(query: string, category?: PlantCategory): CatalogPlant[] {
