@@ -123,8 +123,12 @@ describe("Balco MVP content", () => {
     expect(weather).toContain("loadForecastPayload");
     expect(forecast).toContain("/api/weather");
     expect(forecast).toContain("api.open-meteo.com/v1/forecast");
-    expect(forecast).toContain('hourly: "precipitation,precipitation_probability,wind_gusts_10m"');
-    expect(forecast).toContain('daily: "precipitation_sum,temperature_2m_min,temperature_2m_max,wind_gusts_10m_max"');
+    expect(forecast).toContain('hourly: "temperature_2m,weather_code,is_day,precipitation,precipitation_probability,wind_gusts_10m"');
+    expect(forecast).toContain('daily: "weather_code,precipitation_sum,temperature_2m_min,temperature_2m_max,wind_gusts_10m_max"');
+    // Le serveur demande les mêmes champs (carte météo illustrée du 24/10).
+    const server = readProjectFile("server/weather-cache.ts");
+    expect(server).toContain('hourly: "temperature_2m,weather_code,is_day,precipitation,precipitation_probability,wind_gusts_10m"');
+    expect(server).toContain('daily: "weather_code,precipitation_sum,temperature_2m_min,temperature_2m_max,wind_gusts_10m_max"');
     expect(weather).toContain("buildSnapshot");
     expect(weather).toContain("decideReminder");
     expect(weather).toContain("reminderDecision");

@@ -18,11 +18,16 @@ export type OpenMeteoPayload = {
   };
   hourly?: {
     time?: string[];
+    temperature_2m?: number[];
+    weather_code?: number[];
+    is_day?: number[];
     precipitation?: number[];
     precipitation_probability?: number[];
     wind_gusts_10m?: number[];
   };
   daily?: {
+    time?: string[];
+    weather_code?: number[];
     precipitation_sum?: number[];
     temperature_2m_min?: number[];
     temperature_2m_max?: number[];
@@ -35,11 +40,17 @@ const SERVER_TIMEOUT_MS = 6000;
 
 const QUERY = {
   current: "temperature_2m,apparent_temperature,weather_code,is_day",
-  hourly: "precipitation,precipitation_probability,wind_gusts_10m",
-  daily: "precipitation_sum,temperature_2m_min,temperature_2m_max,wind_gusts_10m_max",
+  // Températures, ciel et jour/nuit heure par heure, ciel des jours suivants : la carte météo illustrée (24/10).
+  hourly: "temperature_2m,weather_code,is_day,precipitation,precipitation_probability,wind_gusts_10m",
+  daily: "weather_code,precipitation_sum,temperature_2m_min,temperature_2m_max,wind_gusts_10m_max",
   forecast_days: "4",
   timezone: "auto",
 };
+
+/** La prévision a-t-elle de quoi dessiner les prochaines heures et les jours suivants ? */
+export function hasIllustratedForecast(payload: OpenMeteoPayload) {
+  return Array.isArray(payload.hourly?.temperature_2m) && Array.isArray(payload.hourly?.weather_code) && Array.isArray(payload.daily?.weather_code);
+}
 
 /** Zone d'environ 1 km, comme sur le serveur. */
 export function forecastKey(latitude: number, longitude: number) {
@@ -78,7 +89,10 @@ export function loadForecastPayload(latitude: number, longitude: number, options
   const now = options.now ?? Date.now();
   const entry = shared.get(key);
   if (!options.force && entry && now - entry.at < CLIENT_TTL_MS) return entry.promise;
-  const promise = fromServer(latitude, longitude).catch(() => fromOpenMeteo(latitude, longitude));
+  // Un serveur pas encore à jour (sans le ciel heure par heure) : la prévision complète vient d'Open-Meteo.
+  const promise = fromServer(latitude, longitude)
+    .then((payload) => (hasIllustratedForecast(payload) ? payload : fromOpenMeteo(latitude, longitude).catch(() => payload)))
+    .catch(() => fromOpenMeteo(latitude, longitude));
   shared.set(key, { at: now, promise });
   // Un échec n'est pas gardé : le prochain écran réessaie.
   promise.catch(() => {
