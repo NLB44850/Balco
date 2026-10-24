@@ -80,12 +80,15 @@ describe("Balco MVP content", () => {
     expect(profile).not.toMatch(/>12<\/Text>/);
   });
 
-  it("keeps four tabs, with Moi behind the avatar and Observer inside Nora", () => {
+  it("keeps five tabs, with Moi as the 5th and Observer behind the camera of Aujourd'hui and Balcon", () => {
     const layout = readProjectFile("app/(tabs)/_layout.tsx");
-    expect(layout.match(/tabBarIcon/g)).toHaveLength(4);
-    expect(layout).toContain('name="profile" options={{ href: null');
+    expect(layout.match(/tabBarIcon/g)).toHaveLength(5);
+    expect(layout).toContain('name="profile" options={{ title: "Moi"');
     expect(layout).toContain('name="scanner" options={{ href: null');
-    expect(readProjectFile("components/screen-header.tsx")).toContain('push("/(tabs)/profile")');
+    // Plus d'avatar en haut des écrans : le profil est un onglet.
+    expect(readProjectFile("components/screen-header.tsx")).not.toContain('push("/(tabs)/profile")');
+    expect(readProjectFile("app/(tabs)/index.tsx")).toContain("<ObserveButton");
+    expect(readProjectFile("app/(tabs)/balcony.tsx")).toContain("<ObserveButton");
     expect(readProjectFile("app/(tabs)/assistant.tsx")).toContain('push("/(tabs)/scanner")');
   });
 

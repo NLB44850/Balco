@@ -12,6 +12,7 @@ import { LightScreen } from "@/components/light-screen";
 import { usePlantPhotoCapture } from "@/components/photo-source-sheet";
 import { PlantPicture } from "@/components/plant-picture";
 import { ScreenHeader } from "@/components/screen-header";
+import { ObserveButton } from "@/components/observe-button";
 import { UndoToast, type ToastMessage } from "@/components/today/undo-toast";
 import { glass } from "@/components/ui/glass";
 import { IconSymbol } from "@/components/ui/icon-symbol";
@@ -97,7 +98,7 @@ export default function BalconyScreen() {
   return (
     <LightScreen>
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={[styles.content, { paddingTop: insets.top + 14 }]}>
-        <ScreenHeader title="Balcon" subtitle={subtitle} />
+        <ScreenHeader title="Balcon" subtitle={subtitle} right={<ObserveButton />} />
 
         {loaded && resolvedPlants.length === 0 && (
           <View style={[glass.card, styles.empty]}>
@@ -114,7 +115,6 @@ export default function BalconyScreen() {
 
         <Button label="Ajouter une plante" onPress={() => router.push("/garden/add")} />
         {resolvedPlants.length > 0 && <Button variant="secondary" label="🛒  Voir ma liste de courses" onPress={() => router.push("/shopping")} />}
-        <Button variant="secondary" label="📷  Observer une plante avec Nora" onPress={() => router.push("/(tabs)/scanner")} />
       </ScrollView>
       {capture.sheet}
       <UndoToast message={toast} onDone={hideToast} />

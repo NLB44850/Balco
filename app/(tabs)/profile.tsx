@@ -1,3 +1,4 @@
+import { useIsFocused } from "@react-navigation/native";
 import { useRouter } from "expo-router";
 import { useMemo, useState } from "react";
 import { Pressable, ScrollView, StyleSheet, View } from "react-native";
@@ -10,6 +11,7 @@ import { ScreenHeader } from "@/components/screen-header";
 import { glass } from "@/components/ui/glass";
 import { useColors } from "@/hooks/use-colors";
 import { useVacation } from "@/hooks/use-vacation";
+import { useMarkBadgesSeen } from "@/hooks/use-badge-dot";
 import { useGarden } from "@/lib/garden/garden-context";
 import { computeBadges, computeProgress, computeStats, TIER_NAMES } from "@/lib/garden/garden-logic";
 import { usePlantPhotos } from "@/lib/garden/photos-context";
@@ -34,6 +36,8 @@ export default function ProfileScreen() {
   const [openBadge, setOpenBadge] = useState<string | null>(null);
   const { photos } = usePlantPhotos();
   const now = useNow();
+  // Le point vert de l'onglet s'éteint dès que Moi est ouvert.
+  useMarkBadgesSeen(useIsFocused());
   const week = useMemo(() => weekSummary(resolvedPlants, events, photos, now, pastPlants), [events, now, pastPlants, photos, resolvedPlants]);
   const { vacation } = useVacation();
   const trip = vacationState(vacation);
@@ -58,7 +62,6 @@ export default function ProfileScreen() {
   const header = (
     <>
       <ScreenHeader
-        back
         title={profile.firstName?.trim() || "Moi"}
         subtitle={balconyMeta}
         right={
